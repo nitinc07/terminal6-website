@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal6 — The Agentic Brain for E-Commerce</title>
+<meta name="description" content="Terminal6 is an AI-powered operating system for e-commerce brand operators. Intelligent decision-making across marketing, supply chain, and category management.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,300;1,8..60,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFAF8;
+  --bg-warm: #F5F0EB;
+  --bg-dark: #1C1917;
+  --bg-card: #FFFFFF;
+  --text: #1C1917;
+  --text-mid: #57534E;
+  --text-light: #A8A29E;
+  --accent: #C2410C;
+  --accent-light: #FFF7ED;
+  --teal: #0F766E;
+  --teal-light: #F0FDFA;
+  --border: #E7E5E4;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ---- NAV ---- */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(250,250,248,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 16px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-family: var(--serif); font-size: 22px; font-weight: 700;
+  color: var(--accent); text-decoration: none; letter-spacing: -0.5px;
+}
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  font-size: 14px; color: var(--text-mid); text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  font-size: 13px; font-weight: 600; color: var(--bg) !important;
+  background: var(--text); padding: 8px 20px; border-radius: 6px;
+  transition: background 0.2s;
+}
+.nav-cta:hover { background: var(--accent) !important; }
+
+/* ---- HERO ---- */
+.hero {
+  max-width: 1100px; margin: 0 auto;
+  padding: 140px 32px 80px;
+}
+.hero-label {
+  font-size: 12px; font-weight: 600; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 20px;
+  opacity: 0; animation: fadeUp 0.6s ease 0.1s forwards;
+}
+.hero h1 {
+  font-family: var(--serif); font-size: clamp(38px, 5.5vw, 62px);
+  font-weight: 700; line-height: 1.1; letter-spacing: -1.5px;
+  color: var(--text); max-width: 800px; margin-bottom: 28px;
+  opacity: 0; animation: fadeUp 0.6s ease 0.2s forwards;
+}
+.hero h1 em {
+  font-style: italic; color: var(--accent); font-weight: 300;
+}
+.hero-sub {
+  font-size: 18px; line-height: 1.8; color: var(--text-mid);
+  max-width: 560px; margin-bottom: 40px;
+  opacity: 0; animation: fadeUp 0.6s ease 0.35s forwards;
+}
+.hero-cta-row {
+  display: flex; gap: 16px; align-items: center;
+  opacity: 0; animation: fadeUp 0.6s ease 0.5s forwards;
+}
+.btn-primary {
+  display: inline-block; padding: 14px 32px;
+  background: var(--text); color: var(--bg); font-size: 15px; font-weight: 600;
+  border-radius: 8px; text-decoration: none; transition: all 0.2s;
+}
+.btn-primary:hover { background: var(--accent); }
+.btn-ghost {
+  font-size: 14px; color: var(--text-mid); text-decoration: none;
+  border-bottom: 1px solid var(--border); padding-bottom: 2px;
+  transition: all 0.2s;
+}
+.btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+/* ---- SIGNAL STRIP ---- */
+.signal-strip {
+  max-width: 1100px; margin: 0 auto 80px;
+  padding: 0 32px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  background: var(--border); border-radius: 12px; overflow: hidden;
+  opacity: 0; animation: fadeUp 0.6s ease 0.65s forwards;
+}
+.signal-card {
+  background: var(--bg-card); padding: 32px;
+}
+.signal-num {
+  font-family: var(--serif); font-size: 36px; font-weight: 700;
+  color: var(--text); margin-bottom: 4px;
+}
+.signal-label { font-size: 14px; color: var(--text-mid); }
+
+/* ---- SECTIONS ---- */
+.section {
+  max-width: 1100px; margin: 0 auto;
+  padding: 80px 32px;
+}
+.section-divider {
+  width: 100%; height: 1px; background: var(--border);
+  max-width: 1100px; margin: 0 auto;
+}
+.section-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
+}
+.section h2 {
+  font-family: var(--serif); font-size: 36px; font-weight: 600;
+  line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.5px;
+}
+.section-desc {
+  font-size: 17px; line-height: 1.8; color: var(--text-mid);
+  max-width: 620px; margin-bottom: 48px;
+}
+
+/* ---- PROBLEM ---- */
+.problem-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+}
+.problem-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 32px;
+  transition: border-color 0.2s;
+}
+.problem-card:hover { border-color: var(--text-light); }
+.problem-icon {
+  font-size: 24px; margin-bottom: 16px; display: block;
+}
+.problem-card h3 {
+  font-family: var(--serif); font-size: 18px; font-weight: 600;
+  margin-bottom: 8px;
+}
+.problem-card p { font-size: 14px; color: var(--text-mid); line-height: 1.7; }
+
+/* ---- HOW IT WORKS ---- */
+.how-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px;
+  background: var(--border); border-radius: 12px; overflow: hidden;
+}
+.how-card {
+  background: var(--bg-card); padding: 36px 28px;
+}
+.how-num {
+  font-family: var(--serif); font-size: 48px; font-weight: 700;
+  color: var(--border); margin-bottom: 16px; line-height: 1;
+}
+.how-card h3 {
+  font-family: var(--serif); font-size: 18px; font-weight: 600;
+  margin-bottom: 8px;
+}
+.how-card p { font-size: 14px; color: var(--text-mid); line-height: 1.7; }
+
+/* ---- AGENTS ---- */
+.agent-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.agent-card {
+  border: 1px solid var(--border); border-radius: 12px; padding: 28px;
+  background: var(--bg-card); position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.agent-card:hover { border-color: var(--text-light); transform: translateY(-2px); }
+.agent-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.agent-card:nth-child(1)::before { background: var(--accent); }
+.agent-card:nth-child(2)::before { background: var(--teal); }
+.agent-card:nth-child(3)::before { background: #B45309; }
+.agent-tag {
+  font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase; margin-bottom: 12px; display: inline-block;
+  padding: 3px 8px; border-radius: 4px;
+}
+.agent-card:nth-child(1) .agent-tag { background: var(--accent-light); color: var(--accent); }
+.agent-card:nth-child(2) .agent-tag { background: var(--teal-light); color: var(--teal); }
+.agent-card:nth-child(3) .agent-tag { background: #FFFBEB; color: #B45309; }
+.agent-card h3 {
+  font-family: var(--serif); font-size: 20px; font-weight: 600;
+  margin-bottom: 10px;
+}
+.agent-card p { font-size: 14px; color: var(--text-mid); line-height: 1.7; }
+
+/* ---- FOUNDER ---- */
+.founder-section {
+  background: var(--bg-warm); border-radius: 16px; padding: 56px 48px;
+  display: flex; gap: 48px; align-items: flex-start;
+}
+.founder-text { flex: 1; }
+.founder-text h3 {
+  font-family: var(--serif); font-size: 24px; font-weight: 600;
+  margin-bottom: 16px;
+}
+.founder-text p {
+  font-size: 15px; color: var(--text-mid); line-height: 1.8;
+  margin-bottom: 12px;
+}
+.founder-creds {
+  display: flex; gap: 24px; margin-top: 20px; flex-wrap: wrap;
+}
+.founder-cred {
+  font-size: 13px; color: var(--text-mid);
+  padding: 6px 14px; background: var(--bg-card);
+  border-radius: 6px; border: 1px solid var(--border);
+}
+
+/* ---- CTA SECTION ---- */
+.cta-section {
+  background: var(--bg-dark); border-radius: 16px;
+  padding: 64px 48px; text-align: center;
+}
+.cta-section h2 {
+  font-family: var(--serif); font-size: 36px; font-weight: 600;
+  color: #FAFAF8; margin-bottom: 16px;
+}
+.cta-section p {
+  font-size: 16px; color: #A8A29E; max-width: 500px;
+  margin: 0 auto 32px; line-height: 1.7;
+}
+.btn-cta {
+  display: inline-block; padding: 14px 36px;
+  background: var(--accent); color: #FFF; font-size: 15px; font-weight: 600;
+  border-radius: 8px; text-decoration: none; transition: all 0.2s;
+}
+.btn-cta:hover { background: #DC2626; }
+
+/* ---- FOOTER ---- */
+footer {
+  max-width: 1100px; margin: 0 auto;
+  padding: 40px 32px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--border);
+}
+footer p { font-size: 13px; color: var(--text-light); }
+footer a { color: var(--text-mid); text-decoration: none; font-size: 13px; }
+footer a:hover { color: var(--text); }
+
+/* ---- ANIMATIONS ---- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .signal-strip { grid-template-columns: 1fr; }
+  .problem-grid { grid-template-columns: 1fr; }
+  .how-grid { grid-template-columns: 1fr; }
+  .agent-row { grid-template-columns: 1fr; }
+  .founder-section { flex-direction: column; padding: 36px 28px; }
+  .cta-section { padding: 48px 28px; }
+  .nav-links a:not(.nav-cta) { display: none; }
+  .hero { padding: 120px 20px 60px; }
+  .section { padding: 60px 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">Terminal6</a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#agents">Agents</a>
+      <a href="#founder">About</a>
+      <a href="mailto:connect@terminal6.io" class="nav-cta">Get in touch</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-label">The Agentic Brain for E-Commerce</div>
+  <h1>Your brands deserve<br>an <em>operating system</em>,<br>not more dashboards.</h1>
+  <p class="hero-sub">
+    Terminal6 connects inventory, ad spend, pricing, and delivery signals into one intelligent layer — so AI employees can make cross-functional decisions that your tools can't and your team doesn't have time to.
+  </p>
+  <div class="hero-cta-row">
+    <a href="mailto:connect@terminal6.io" class="btn-primary">Talk to us</a>
+    <a href="#how" class="btn-ghost">See how it works →</a>
+  </div>
+</section>
+
+<!-- SIGNAL STRIP -->
+<div class="signal-strip">
+  <div class="signal-card">
+    <div class="signal-num">6</div>
+    <div class="signal-label">Throttle signals cross-referenced per SKU decision</div>
+  </div>
+  <div class="signal-card">
+    <div class="signal-num">90s</div>
+    <div class="signal-label">To detect, decide, and act — vs. 2 days manually</div>
+  </div>
+  <div class="signal-card">
+    <div class="signal-num">24/7</div>
+    <div class="signal-label">Always-on agents that learn from every outcome</div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- PROBLEM -->
+<section class="section">
+  <div class="section-label">The Problem</div>
+  <h2>Your tools show data.<br>Nobody connects the dots.</h2>
+  <p class="section-desc">
+    E-commerce brands run on 5-6 disconnected tools. When inventory drops, nobody pauses the ads. When margins erode, nobody adjusts the bids. The gap between insight and action is where revenue leaks.
+  </p>
+  <div class="problem-grid">
+    <div class="problem-card">
+      <span class="problem-icon">📊</span>
+      <h3>Fragmented data</h3>
+      <p>Seller Central, Ads Console, Unicommerce, Shopify, 3PL dashboards, Excel. Every tool shows a slice. No tool shows the whole picture.</p>
+    </div>
+    <div class="problem-card">
+      <span class="problem-icon">🔥</span>
+      <h3>Reactive decisions</h3>
+      <p>You discover the problem after the damage is done. Ads ran on out-of-stock SKUs all weekend. ROAS collapsed before anyone noticed.</p>
+    </div>
+    <div class="problem-card">
+      <span class="problem-icon">⏱️</span>
+      <h3>Manual coordination</h3>
+      <p>Marketing doesn't talk to inventory. Category doesn't talk to supply chain. Every cross-functional decision requires 3 people and 2 days.</p>
+    </div>
+    <div class="problem-card">
+      <span class="problem-icon">💸</span>
+      <h3>No margin visibility</h3>
+      <p>SKU-level contribution margin across channels? Most brands can't compute this without a week of Excel work. By then, the data is stale.</p>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="section-label">How It Works</div>
+  <h2>Data in. Decisions out. Humans govern.</h2>
+  <p class="section-desc">
+    Terminal6 ingests your data, builds a unified brand context, and deploys specialist AI agents that monitor, reason, and act — with full auditability and your rules enforced.
+  </p>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-num">01</div>
+      <h3>Connect your sources</h3>
+      <p>Amazon SP-API, Flipkart, Shopify, Unicommerce, your ad tools, 3PLs. All normalised into one unified SKU-level data model with your COGS, margins, and brand rules.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">02</div>
+      <h3>AI agents analyse and decide</h3>
+      <p>Specialist agents cross-reference 6 signals — inventory cover, margin health, catalogue quality, ratings, price competitiveness, delivery speed — to make decisions no single tool can.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">03</div>
+      <h3>You stay in control</h3>
+      <p>Every decision comes with reasoning and a confidence score. Your rules determine what auto-executes and what needs approval. Full audit trail. Kill switches. No black boxes.</p>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- PRODUCT PREVIEW -->
+<section class="section" id="preview">
+  <div class="section-label">Product Preview</div>
+  <h2>What your morning looks like with Terminal6.</h2>
+  <p class="section-desc">
+    Unified cross-channel view, SKU-level economics, and AI-generated recommendations — updated every morning before your team opens their laptops.
+  </p>
+
+  <!-- Mockup 1: Morning Briefing -->
+  <div style="margin-bottom:40px;">
+    <div style="font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;">Morning Briefing</div>
+    <div style="background:#1C1917;border-radius:12px;padding:32px;color:#FAFAF8;font-family:var(--sans);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #292524;">
+        <div>
+          <div style="font-family:var(--serif);font-size:20px;font-weight:600;">Good morning. Here's your brand at a glance.</div>
+          <div style="font-size:13px;color:#A8A29E;margin-top:4px;">March 30, 2026 · Brand: ████████ · Last refreshed: 5:42am IST</div>
+        </div>
+        <div style="background:#C2410C;color:white;font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;">3 ACTIONS NEEDED</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;">
+        <div style="background:#292524;border-radius:8px;padding:16px;">
+          <div style="font-size:11px;color:#A8A29E;">Revenue (Yesterday)</div>
+          <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:#4ADE80;">₹9.8L</div>
+          <div style="font-size:11px;color:#4ADE80;">↑ 19% vs last week</div>
+        </div>
+        <div style="background:#292524;border-radius:8px;padding:16px;">
+          <div style="font-size:11px;color:#A8A29E;">TACOS</div>
+          <div style="font-family:var(--serif);font-size:22px;font-weight:700;">14.2%</div>
+          <div style="font-size:11px;color:#4ADE80;">↓ 0.8% (improving)</div>
+        </div>
+        <div style="background:#292524;border-radius:8px;padding:16px;">
+          <div style="font-size:11px;color:#A8A29E;">Ad Spend</div>
+          <div style="font-family:var(--serif);font-size:22px;font-weight:700;">₹1.39L</div>
+          <div style="font-size:11px;color:#A8A29E;">Within budget</div>
+        </div>
+        <div style="background:#292524;border-radius:8px;padding:16px;">
+          <div style="font-size:11px;color:#A8A29E;">In-Stock Rate</div>
+          <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:#FBBF24;">87%</div>
+          <div style="font-size:11px;color:#FBBF24;">⚠ 6 SKUs below 7d</div>
+        </div>
+        <div style="background:#292524;border-radius:8px;padding:16px;">
+          <div style="font-size:11px;color:#A8A29E;">Avg. Rating</div>
+          <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:#4ADE80;">4.3★</div>
+          <div style="font-size:11px;color:#4ADE80;">Stable</div>
+        </div>
+      </div>
+      <div style="background:#292524;border-radius:8px;padding:16px;border-left:3px solid #C2410C;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:#C2410C;margin-bottom:4px;">⚠ CRITICAL — Growth Agent</div>
+            <div style="font-size:14px;color:#E7E5E4;">SKU ████-PRO-500 has 3 days inventory cover but ₹2,400/day active ad spend. Bid reduced by 40% automatically. Budget reallocated to ████-STL-1L which has 38 days cover and 22% margin.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0;margin-left:16px;">
+            <div style="background:#C2410C;color:white;font-size:11px;padding:6px 12px;border-radius:5px;cursor:pointer;">Review</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#292524;border-radius:8px;padding:16px;border-left:3px solid #0F766E;margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:600;color:#0F766E;margin-bottom:4px;">📈 OPPORTUNITY — Growth Agent</div>
+        <div style="font-size:14px;color:#E7E5E4;">3 SKUs in Kitchen category have high cover (30+ days), strong margins (>20%), and ratings above 4.2. Recommend increasing bids by 25% and adding to Sponsored Brand campaign. Estimated incremental revenue: ₹45K/week.</div>
+      </div>
+      <div style="background:#292524;border-radius:8px;padding:16px;border-left:3px solid #A8A29E;">
+        <div style="font-size:11px;font-weight:600;color:#A8A29E;margin-bottom:4px;">📊 INSIGHT — Category Agent</div>
+        <div style="font-size:14px;color:#E7E5E4;">Competitor ████ dropped price on 4 overlapping SKUs by 8-12% yesterday. Your price competitiveness score fell to 84%. No action needed yet — monitoring for 48 hours before recommending a response.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mockup 2: SKU Economics Table -->
+  <div>
+    <div style="font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--teal);margin-bottom:12px;">SKU-Level Channel P&L</div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:#F5F0EB;">
+            <th style="text-align:left;padding:14px 16px;font-weight:600;color:var(--text-mid);font-size:11px;letter-spacing:0.5px;">SKU</th>
+            <th style="text-align:left;padding:14px 16px;font-weight:600;color:var(--text-mid);font-size:11px;">CHANNEL</th>
+            <th style="text-align:right;padding:14px 16px;font-weight:600;color:var(--text-mid);font-size:11px;">REVENUE (7d)</th>
+            <th style="text-align:right;padding:14px 16px;font-weight:600;color:var(--text-mid);font-size:11px;">AD SPEND</th>
+            <th style="text-align:right;padding:14px 16px;font-weight:600;color:var(--text-mid);font-size:11px;">CM%</th>
+            <th style="text-align:center;padding:14px 16px;font-weight:600;color:var(--text-mid);font-size:11px;">COVER</th>
+            <th style="text-align:center;padding:14px 16px;font-weight:600;color:var(--text-mid);font-size:11px;">HEALTH</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:12px 16px;font-weight:600;">████-STL-1L</td>
+            <td style="padding:12px 16px;color:var(--text-mid);">Amazon.in</td>
+            <td style="padding:12px 16px;text-align:right;">₹4.2L</td>
+            <td style="padding:12px 16px;text-align:right;">₹58K</td>
+            <td style="padding:12px 16px;text-align:right;color:#0F766E;font-weight:600;">22.4%</td>
+            <td style="padding:12px 16px;text-align:center;">38d</td>
+            <td style="padding:12px 16px;text-align:center;"><span style="background:#F0FDF4;color:#16A34A;font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;">●●●●●</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:12px 16px;font-weight:600;">████-PRO-500</td>
+            <td style="padding:12px 16px;color:var(--text-mid);">Amazon.in</td>
+            <td style="padding:12px 16px;text-align:right;">₹2.8L</td>
+            <td style="padding:12px 16px;text-align:right;">₹41K</td>
+            <td style="padding:12px 16px;text-align:right;color:#C2410C;font-weight:600;">8.2%</td>
+            <td style="padding:12px 16px;text-align:center;color:#C2410C;font-weight:600;">3d ⚠</td>
+            <td style="padding:12px 16px;text-align:center;"><span style="background:#FEF2F2;color:#DC2626;font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;">●●○○○</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:12px 16px;font-weight:600;">████-CLR-750</td>
+            <td style="padding:12px 16px;color:var(--text-mid);">Flipkart</td>
+            <td style="padding:12px 16px;text-align:right;">₹1.9L</td>
+            <td style="padding:12px 16px;text-align:right;">₹32K</td>
+            <td style="padding:12px 16px;text-align:right;color:#0F766E;font-weight:600;">18.6%</td>
+            <td style="padding:12px 16px;text-align:center;">21d</td>
+            <td style="padding:12px 16px;text-align:center;"><span style="background:#F0FDF4;color:#16A34A;font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;">●●●●○</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border);">
+            <td style="padding:12px 16px;font-weight:600;">████-GLS-400</td>
+            <td style="padding:12px 16px;color:var(--text-mid);">Shopify D2C</td>
+            <td style="padding:12px 16px;text-align:right;">₹86K</td>
+            <td style="padding:12px 16px;text-align:right;">₹18K</td>
+            <td style="padding:12px 16px;text-align:right;color:#B45309;font-weight:600;">12.1%</td>
+            <td style="padding:12px 16px;text-align:center;">14d</td>
+            <td style="padding:12px 16px;text-align:center;"><span style="background:#FFFBEB;color:#B45309;font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;">●●●○○</span></td>
+          </tr>
+          <tr style="border-top:1px solid var(--border);background:#FAFAF8;">
+            <td style="padding:12px 16px;font-weight:600;" colspan="2">+ 43 more SKUs across 3 channels</td>
+            <td style="padding:12px 16px;text-align:right;font-weight:600;">₹28.4L</td>
+            <td style="padding:12px 16px;text-align:right;font-weight:600;">₹4.1L</td>
+            <td style="padding:12px 16px;text-align:right;font-weight:600;">17.8%</td>
+            <td style="padding:12px 16px;text-align:center;font-weight:600;">Avg 19d</td>
+            <td style="padding:12px 16px;text-align:center;"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- AGENTS -->
+<section class="section" id="agents">
+  <div class="section-label">AI Employees</div>
+  <h2>Specialist agents that coordinate like a team.</h2>
+  <p class="section-desc">
+    Each agent has a defined scope, its own domain memory, and communicates with other agents before acting. The Growth Agent asks the Supply Agent about restock timelines before increasing bids.
+  </p>
+  <div class="agent-row">
+    <div class="agent-card">
+      <div class="agent-tag">Launching First</div>
+      <h3>Growth Agent</h3>
+      <p>Inventory-aware ad optimisation. Throttles bids based on stock cover, margin, and competitive signals. Manages TACOS across marketplaces. Reallocates budget from underperformers to opportunities.</p>
+    </div>
+    <div class="agent-card">
+      <div class="agent-tag">Phase 2</div>
+      <h3>Supply Agent</h3>
+      <p>Predicts stockouts before they happen. Coordinates with 3PLs. Syncs inventory intelligence with the Growth Agent to prevent ad waste and capture demand when stock is healthy.</p>
+    </div>
+    <div class="agent-card">
+      <div class="agent-tag">Phase 2</div>
+      <h3>Category Agent</h3>
+      <p>Competitive pricing intelligence. Margin protection. Discount calendar management. Identifies assortment gaps and expansion opportunities across channels.</p>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- FOUNDER -->
+<section class="section" id="founder">
+  <div class="section-label">Who's Building This</div>
+  <div class="founder-section">
+    <div class="founder-text">
+      <h3>Built by operators, for operators.</h3>
+      <p>
+        Terminal6 is founded by e-commerce operators who have built and run growth, supply chain, and finance teams across India, GCC, and Southeast Asia — scaling brands from zero to multi-million dollar ARR across Amazon, Flipkart, Shopify, and regional marketplaces.
+      </p>
+      <p>
+        The thesis is simple: the domain expertise of experienced operators — how to read signals, when to throttle spend, which levers actually move margin — can be encoded as software. Not as dashboards. As decisions.
+      </p>
+      <div class="founder-creds">
+        <span class="founder-cred">17+ years in e-commerce</span>
+        <span class="founder-cred">Multi-marketplace operators</span>
+        <span class="founder-cred">Growth + Supply Chain + Finance</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- CTA -->
+<section class="section">
+  <div class="cta-section">
+    <h2>We're working with our first<br>design partners now.</h2>
+    <p>
+      If you're a brand operator managing ₹10Cr+ GMV across Amazon, Flipkart, or Shopify — and you're tired of flying blind across disconnected tools — let's talk.
+    </p>
+    <a href="mailto:connect@terminal6.io" class="btn-cta">connect@terminal6.io</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 Terminal6. Bengaluru, India.</p>
+  <a href="mailto:connect@terminal6.io">connect@terminal6.io</a>
+</footer>
+
+</body>
+</html>
