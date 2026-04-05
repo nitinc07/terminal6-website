@@ -188,9 +188,19 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
 </div>
 
 <script>
+/* ACCESS CONTROL — only these emails may sign in */
+const ALLOWED_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com'];
+
 function handleGoogleSignIn(response) {
   try {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    if (!ALLOWED_EMAILS.includes((payload.email || '').toLowerCase())) {
+      sessionStorage.removeItem('t6_user');
+      const err = document.getElementById('loginError');
+      err.textContent = 'Access restricted. This account is not authorised for Terminal6.';
+      err.style.display = 'block';
+      return;
+    }
     sessionStorage.setItem('t6_user', JSON.stringify({ name: payload.name, email: payload.email, picture: payload.picture }));
     enterHub(payload);
   } catch (e) {
@@ -217,7 +227,16 @@ document.getElementById('year').textContent = new Date().getFullYear();
 
 window.addEventListener('DOMContentLoaded', function () {
   const saved = sessionStorage.getItem('t6_user');
-  if (saved) { try { enterHub(JSON.parse(saved)); } catch (e) { sessionStorage.removeItem('t6_user'); } }
+  if (saved) {
+    try {
+      const u = JSON.parse(saved);
+      if (!ALLOWED_EMAILS.includes((u.email || '').toLowerCase())) {
+        sessionStorage.removeItem('t6_user');
+        return;
+      }
+      enterHub(u);
+    } catch (e) { sessionStorage.removeItem('t6_user'); }
+  }
 });
 </script>
 </body>
