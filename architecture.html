@@ -142,26 +142,6 @@ footer a { color: var(--accent); text-decoration: none; }
   </div>
 </section>
 
-<!-- PROBLEM -->
-<section>
-  <h2>The Problem</h2>
-  <p>E-commerce brand operators manage their business across 5-6 fragmented tools. Each shows a slice of reality. No tool connects inventory to ad spend to delivery speed to competitive pricing.</p>
-  <div class="g3">
-    <div class="card card-accent">
-      <h4>Marketing blind spot</h4>
-      <p style="margin:0">Ads tools don't see inventory. Ads run on out-of-stock SKUs. Budget sits on underperformers. ROAS collapses before anyone notices.</p>
-    </div>
-    <div class="card card-accent">
-      <h4>Inventory blind spot</h4>
-      <p style="margin:0">OMS tools don't see ad spend. When stock drops to 3 days, nobody throttles the campaigns burning &pound;2,400/day on that SKU.</p>
-    </div>
-    <div class="card card-accent">
-      <h4>No cross-channel P&L</h4>
-      <p style="margin:0">SKU-level contribution margin across Amazon, Flipkart, and Shopify? Most brands need a week of Excel. By then, data is stale.</p>
-    </div>
-  </div>
-</section>
-
 <!-- 6-LAYER OS -->
 <section>
   <h2>Architecture: 6-Layer OS</h2>
@@ -269,10 +249,10 @@ footer a { color: var(--accent); text-decoration: none; }
 <span class="cm">// Capped at brand's max_bid_per_click</span></div>
 </section>
 
-<!-- KNOWLEDGE SYSTEM -->
+<!-- KNOWLEDGE ARCHITECTURE -->
 <section>
-  <h2>Knowledge System: The Moat</h2>
-  <p>Every diagnosis has two parts: the <strong>process</strong> (universal) and the <strong>interpretation</strong> (domain-specific). Terminal6 captures both as structured, composable layers.</p>
+  <h2>Knowledge Architecture</h2>
+  <p>Every diagnosis has two parts: the <strong>process</strong> (universal) and the <strong>interpretation</strong> (domain-specific). Terminal6 represents both as structured, composable layers that are assembled at runtime.</p>
   <div class="g3">
     <div class="card card-teal">
       <h4>Layer 1: Playbooks</h4>
@@ -429,93 +409,20 @@ Decision Record ---> stored in Layer D (Decision Memory)
 30-day Outcome ---> ROAS recovered to 3.8x, &#8377;6,800 saved</div>
 </section>
 
-<!-- FLYWHEEL -->
-<section>
-  <h2>The Knowledge Flywheel</h2>
-  <p>Every brand that onboards makes the system smarter for every other brand in the same category.</p>
-  <div class="g2">
-    <div class="card">
-      <h4>Phase 1 (1-3 brands)</h4>
-      <p style="margin:0">Knowledge lives in brand folders. Patterns validated per-brand. High specificity, low generalisability.</p>
-    </div>
-    <div class="card">
-      <h4>Phase 2 (3-10 brands)</h4>
-      <p style="margin:0">Cross-brand validation. Same pattern in 2+ brands graduates from brand learning to category card.</p>
-    </div>
-    <div class="card">
-      <h4>Phase 3 (10+ brands)</h4>
-      <p style="margin:0">Category cards become authoritative. New brand inherits deep domain expertise from Day 1.</p>
-    </div>
-    <div class="card" style="border-left:3px solid var(--accent)">
-      <h4>The Acceleration</h4>
-      <p style="margin:0"><strong>Brand 1:</strong> Weeks of discovery. <strong>Brand 5:</strong> Days — category card already rich. <strong>Brand 20:</strong> Hours — agent is already an expert.</p>
-    </div>
-  </div>
-</section>
-
 <!-- LLM APPROACH -->
 <section>
   <h2>LLM Strategy</h2>
   <p><strong>Context assembly, not model training.</strong> Playbooks, brand context, category cards, and decision history are injected at runtime. No fine-tuning needed.</p>
-  <div class="g3">
+  <div class="g2">
     <div class="card">
       <h4>Haiku (routine)</h4>
-      <p style="margin:0">Threshold checks, classification, simple rules. Fast and cheap.</p>
+      <p style="margin:0">Threshold checks, classification, simple rules, review triage. Fast and cheap — handles the ~50% of calls that don't need deep reasoning.</p>
     </div>
     <div class="card">
       <h4>Sonnet (complex)</h4>
-      <p style="margin:0">Multi-signal diagnosis, cross-agent synthesis, nuanced reasoning.</p>
-    </div>
-    <div class="card">
-      <h4>~$26/month per brand</h4>
-      <p style="margin:0">All-in infra ~$110-130/month. 65%+ gross margins at scale.</p>
+      <p style="margin:0">Multi-signal diagnosis, cross-agent synthesis, nuanced reasoning, morning briefing. The remaining ~45% plus the handful of big-context synthesis calls.</p>
     </div>
   </div>
-</section>
-
-<!-- CURRENT STATE -->
-<section>
-  <h2>Current State</h2>
-  <p>Building Layer 1 with first design partner Sprig. Data flowing, schema validated, agents next.</p>
-  <div class="g4">
-    <div class="card" style="text-align:center"><div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--green)">20</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">DB Tables Live</div></div>
-    <div class="card" style="text-align:center"><div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--accent)">11,281</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">SKUs Loaded</div></div>
-    <div class="card" style="text-align:center"><div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--teal)">88,844</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">Channel Listings</div></div>
-    <div class="card" style="text-align:center"><div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--blue)">5</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">Playbooks Written</div></div>
-  </div>
-  <div style="margin-top:20px">
-    <span class="badge badge-done">Done</span> Canonical schema &middot; Unicommerce sync &middot; GA4 connector &middot; Google Ads OAuth &middot; Dashboard prototype<br><br>
-    <span class="badge badge-wip">In Progress</span> GA4 normaliser &middot; Google Ads pipeline &middot; Order backfill<br><br>
-    <span class="badge badge-next">Next</span> Amazon SP-API &middot; Cross-channel P&L &middot; Context assembler &middot; Growth Agent v1
-  </div>
-</section>
-
-<!-- MARKET -->
-<section>
-  <h2>Market Context</h2>
-  <table>
-    <thead><tr><th>Company</th><th>What They Do</th><th>Terminal6 Difference</th></tr></thead>
-    <tbody>
-      <tr><td><strong>CommerceIQ</strong></td><td>$136.6M revenue, ~$1B valuation</td><td>Global, enterprise-only. No India presence. Validates the market.</td></tr>
-      <tr><td><strong>Pacvue</strong></td><td>Commerce OS for 100+ retailers</td><td>Rule-based, not agentic. No supply chain or cross-silo decisions.</td></tr>
-      <tr><td><strong>Unicommerce</strong></td><td>IPO'd at &#8377;1,100 Cr. OMS/WMS layer.</td><td>Complementary. Terminal6 sits above Unicommerce as the intelligence layer.</td></tr>
-    </tbody>
-  </table>
-  <p><strong>India TAM:</strong> &#8377;1,000-3,000+ Cr. 5,000+ brands with &#8377;10 Cr+ GMV. 1P sellers manage 500+ brands each — one deal = 100+ brands.</p>
-</section>
-
-<!-- ROADMAP -->
-<section>
-  <h2>Build Sequence</h2>
-  <table>
-    <thead><tr><th>Phase</th><th>Timeline</th><th>What Ships</th><th>Brands</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Layer 1</strong></td><td>Month 0-6</td><td>Cross-channel P&L, 6 signals, morning briefing, playbook recs</td><td>1 &rarr; 3</td></tr>
-      <tr><td><strong>Layer 2</strong></td><td>Month 6-12</td><td>Supply + Category intelligence, inter-agent coordination, approval workflows</td><td>3 &rarr; 10</td></tr>
-      <tr><td><strong>Layer 3</strong></td><td>Month 12-18</td><td>All agents, multi-brand management, competitive tracking</td><td>10 &rarr; 30</td></tr>
-      <tr><td><strong>Full OS</strong></td><td>Month 18-24</td><td>Accounting, international expansion, performance pricing</td><td>30 &rarr; 200</td></tr>
-    </tbody>
-  </table>
 </section>
 
 </div>
