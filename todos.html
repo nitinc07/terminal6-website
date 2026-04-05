@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal6 — Roadmap &amp; TODOs</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFAF8; --bg-card: #FFF; --bg-warm: #F5F0EB;
+  --text: #1C1917; --text-mid: #57534E; --text-light: #A8A29E;
+  --accent: #C2410C; --accent-bg: rgba(194,65,12,.06);
+  --teal: #0F766E; --teal-bg: rgba(15,118,110,.08);
+  --blue: #1565C0; --blue-bg: rgba(21,101,192,.08);
+  --green: #2E7D32; --green-bg: rgba(46,125,50,.08);
+  --border: #E7E5E4;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.65; }
+
+nav { position: sticky; top: 0; background: rgba(250,250,248,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 50; }
+.nav-inner { max-width: 980px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.nav-tag { font-size: 11px; color: var(--text-light); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; margin-left: 10px; }
+.nav-links { display: flex; gap: 20px; font-size: 13px; }
+.nav-links a { color: var(--text-mid); text-decoration: none; }
+.nav-links a:hover { color: var(--accent); }
+
+.page { max-width: 980px; margin: 0 auto; padding: 64px 32px 80px; }
+.hero { margin-bottom: 48px; }
+.label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
+h1 { font-family: var(--serif); font-size: clamp(30px, 4vw, 42px); font-weight: 700; line-height: 1.15; letter-spacing: -1px; margin-bottom: 14px; }
+.lead { font-size: 16px; color: var(--text-mid); line-height: 1.7; max-width: 680px; }
+.updated { font-family: var(--mono); font-size: 12px; color: var(--text-light); margin-top: 12px; }
+
+.layer { margin: 48px 0; padding: 28px 0 0; border-top: 2px solid var(--accent); }
+.layer.current { border-top-color: var(--accent); }
+.layer h2 { font-family: var(--serif); font-size: 26px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+.layer-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; padding: 3px 10px; border-radius: 4px; background: var(--accent-bg); color: var(--accent); font-family: var(--sans); }
+.layer-tag.here { background: var(--accent); color: white; }
+.layer-desc { font-size: 14px; color: var(--text-mid); margin-bottom: 24px; font-style: italic; }
+
+.milestone { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 14px; }
+.m-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+.m-title { font-family: var(--serif); font-size: 17px; font-weight: 600; }
+.m-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 3px 9px; border-radius: 4px; }
+.s-progress { background: var(--accent-bg); color: var(--accent); }
+.s-milestone { background: var(--teal-bg); color: var(--teal); }
+.s-pending { background: var(--bg-warm); color: var(--text-light); }
+ul { list-style: none; }
+.task { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 14px; color: var(--text-mid); line-height: 1.6; }
+.task::before { content: '○'; color: var(--text-light); font-size: 16px; line-height: 1.2; flex-shrink: 0; }
+.task.done::before { content: '●'; color: var(--green); }
+.task.done { color: var(--text-light); text-decoration: line-through; }
+.task-sub { padding-left: 26px; }
+
+.parking { background: var(--bg-warm); border-radius: 12px; padding: 24px 28px; margin-top: 48px; }
+.parking h2 { font-family: var(--serif); font-size: 20px; margin-bottom: 12px; color: var(--text); border: none; padding: 0; }
+.parking p { font-size: 13px; color: var(--text-mid); margin-bottom: 14px; font-style: italic; }
+.parking ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 6px; }
+.parking .task { font-size: 13px; }
+
+footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--border); color: var(--text-light); font-size: 12px; margin-top: 60px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div><a href="/home.html" class="nav-logo">Terminal6</a><span class="nav-tag">Roadmap</span></div>
+    <div class="nav-links">
+      <a href="/home.html">← Workspace</a>
+      <a href="/architecture.html">Architecture</a>
+      <a href="/app.html">Prototype</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="hero">
+    <div class="label">Living Document</div>
+    <h1>Roadmap &amp; TODOs</h1>
+    <p class="lead">Five layers, sixteen milestones. Every commit updates this document. The top layer is where we are today; lower layers are where we're going.</p>
+    <div class="updated">Updated: 5 April 2026 · BrandDirective model shipped, architecture docs updated</div>
+  </div>
+
+  <!-- L1 -->
+  <section class="layer current">
+    <h2>L1: Unified Data Layer <span class="layer-tag here">You are here</span></h2>
+    <div class="layer-desc">Get all data flowing into the canonical schema. No AI, no agents — just clean, unified data.</div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M1 · D2C Funnel Live</div><div class="m-status s-progress">In Progress</div></div>
+      <ul>
+        <li class="task">Finish GA4 normaliser — write site funnel, product funnel, traffic source to DB</li>
+        <li class="task">Backfill 90 days of GA4 funnel data for Sprig (property 311140290)</li>
+        <li class="task">Verify data quality: spot-check GA4 DB rows against GA4 console</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M2 · Unicommerce Fully Loaded</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Backfill 30–90 days of Sprig orders via Unicommerce API (~67K orders)</li>
+        <li class="task">Get COGS spreadsheet from Sprig, build CSV importer → MasterSKU.cogs <em>(blocks all P&amp;L)</em></li>
+        <li class="task">Get full facility permissions for contact@terminal6.io (currently limited)</li>
+        <li class="task">Investigate FK resolution gaps: 83 unresolved order items, 555 SKUs without ChannelListing</li>
+        <li class="task">Verify returns data: 0 returns fetched — low returns or permission issue?</li>
+        <li class="task">Schedule recurring syncs: products (daily), inventory (2h), orders (4h) — Celery + Redis</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M3 · Google Ads Pipeline</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Basic Access approval — submitted 4 Apr, check contact@terminal6.io (~3 business days)</li>
+        <li class="task">Re-run OAuth flow once approved → discover Sprig's customer ID</li>
+        <li class="task">Build Google Ads connector — GAQL queries for campaigns, ad groups, keywords</li>
+        <li class="task">Daily pull script → CampaignDailyMetrics</li>
+        <li class="task">Link Google Ads spend to GA4 conversions for D2C ROAS</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M4 · Amazon Pipeline</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Complete SP-API app registration</li>
+        <li class="task">Amazon orders normaliser → DailySales (via SP-API or Business Report CSV)</li>
+        <li class="task">Amazon FBA inventory normaliser → DailyInventory</li>
+        <li class="task">Amazon settlement normaliser → SKUEconomics (reconciled) — source of truth for fees</li>
+        <li class="task">Amazon Ads API access (separate from Seller Central) → CampaignDailyMetrics + SKUAdAttribution</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M5 · Other Channels</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Flipkart: get API credentials from Sprig, build normaliser (23,397 listings already in DB)</li>
+        <li class="task">Flipkart Ads: check if Sprig runs PLA, pull ad metrics</li>
+        <li class="task">Shopify: get store owner to grant API permissions (currently blocked)</li>
+        <li class="task">Meta Ads: check if Sprig runs Meta ads for D2C, get Business Manager access</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M6 · First Cross-Channel P&amp;L</div><div class="m-status s-milestone">L1 Milestone</div></div>
+      <ul>
+        <li class="task">Compute SKUEconomics (estimated) — revenue − fees − COGS − ads = contribution margin</li>
+        <li class="task">Compute ThrottleSignals — the 6 health signals per SKU per day</li>
+        <li class="task">Build the query: "How much did SKU X make across Amazon + Flipkart + Shopify after all fees?"</li>
+        <li class="task">Validate P&amp;L against Sprig's own numbers</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M6 Infra</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Move OAuth tokens to PostgreSQL (currently in-memory on DO droplet, lost on restart)</li>
+        <li class="task">Publish OAuth consent screen (currently restricted to org users, blocks external onboarding)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- L2 -->
+  <section class="layer">
+    <h2>L2: Brand Context Layer</h2>
+    <div class="layer-desc">Build the "brain" that assembles the right context for each agent call. No LLM reasoning yet — just data assembly.</div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M7 · Context Assembler</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Brand context builder: BrandProfile + BrandCategoryPolicy + active BrandDirectives → JSON</li>
+        <li class="task">Domain context queries: per-agent summaries (Growth sees ad data, Supply sees inventory)</li>
+        <li class="task">Task context queries: per-SKU deep dive (signals + P&amp;L + history) for a specific trigger</li>
+        <li class="task">Context size budgeting: ensure each layer fits within token limits (~2K + ~8K + ~5K)</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M8 · Decision Memory</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Design Decision record schema (trigger → context → reasoning → action → outcome)</li>
+        <li class="task">Store every agent decision as a structured record in DB</li>
+        <li class="task">Retrieval: "last 10 decisions on this SKU" and "last 5 decisions by Growth Agent"</li>
+        <li class="task">Pruning: keep recent + high-impact, summarise older decisions</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M9 · Morning Briefing (v1)</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Daily scan job: query ThrottleSignals for anomalies (ROAS drops, OOS, margin breaches)</li>
+        <li class="task">Generate briefing via Haiku (template-driven, not free-form)</li>
+        <li class="task">Surface in dashboard — the "what happened overnight" card</li>
+        <li class="task">Email/notification to operator</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- L3 -->
+  <section class="layer">
+    <h2>L3: Agent Runtime</h2>
+    <div class="layer-desc">First agent goes live. Starts deterministic (Python functions), earns trust before getting LLM powers.</div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M10 · Growth Agent (Deterministic)</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Base agent interface: observe() → reason() → propose()</li>
+        <li class="task">Agent registry: register agents, route triggers to the right agent</li>
+        <li class="task">Growth Agent: implement playbooks as Python functions</li>
+        <li class="task task-sub">OOS response — auto-pause ads</li>
+        <li class="task task-sub">Low cover — throttle bids 30–50%</li>
+        <li class="task task-sub">High cover — boost aggression</li>
+        <li class="task task-sub">ROAS drop — pause underperformers, reallocate budget</li>
+        <li class="task task-sub">D2C conversion drop — investigate funnel, diagnose cause</li>
+        <li class="task">Growth Agent output: structured Intent objects (not free text)</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M11 · Inter-Agent Coordination</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Cross-agent queries: Growth asks Supply "when will this SKU restock?"</li>
+        <li class="task">Shared decision feed: agents can read each other's recent decisions</li>
+        <li class="task">Conflict detection: Growth wants to boost, Supply says OOS → Growth defers</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M12 · Approval Workflow</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Approval queue in DB (pending decisions awaiting operator response)</li>
+        <li class="task">Surface in dashboard right panel (already mocked in UI)</li>
+        <li class="task">Approve/reject flow → decision record updated → agent proceeds or backs off</li>
+        <li class="task">Auto-expire: stale approvals expire after 24h with notification</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- L4 -->
+  <section class="layer">
+    <h2>L4: Policy &amp; Governance</h2>
+    <div class="layer-desc">Hard guardrails that agents cannot override. Every action passes through this gate.</div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M13 · Policy Engine</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Rule evaluator: check BrandProfile + BrandCategoryPolicy + BrandDirectives</li>
+        <li class="task">Policy types: hard constraint, approval routing, auto-execute, time window, escalation</li>
+        <li class="task">Kill switch: halt all automated actions for a brand instantly</li>
+        <li class="task">Audit trail: every decision shows trigger → reasoning → policy check → outcome</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M14 · Operator Controls</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Directive management UI: create/edit/revoke directives from dashboard</li>
+        <li class="task">Policy dashboard: see all active policies, directives, and their status</li>
+        <li class="task">Override history: "who changed what and when"</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- L5 -->
+  <section class="layer">
+    <h2>L5: LLM-Powered Reasoning</h2>
+    <div class="layer-desc">Swap deterministic playbooks for LLM reasoning. Playbooks become system prompt context, not code.</div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M15 · LLM Agent Mode</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Playbook .md files → system prompt injection (the "skill file" approach)</li>
+        <li class="task">Model router: Haiku for routine checks, Sonnet for complex multi-signal decisions</li>
+        <li class="task">Confidence scoring: agent reports confidence level, low confidence → escalate</li>
+        <li class="task">Reasoning trace: agent explains its thinking (stored in Decision record)</li>
+      </ul>
+    </div>
+
+    <div class="milestone">
+      <div class="m-head"><div class="m-title">M16 · Full Agent Roster</div><div class="m-status s-pending">Pending</div></div>
+      <ul>
+        <li class="task">Supply Agent: stockout prediction, reorder triggers, FC rebalancing</li>
+        <li class="task">Category Agent: competitive pricing, discount strategy, BSR tracking</li>
+        <li class="task">Creative Agent: creative fatigue detection, brief generation</li>
+        <li class="task">Each agent follows the same interface, plugs into the same policy engine</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- PARKING LOT -->
+  <div class="parking">
+    <h2>Parking Lot</h2>
+    <p>Not scheduled yet — on the horizon.</p>
+    <ul>
+      <li class="task">Multi-brand management — one Terminal6 instance serving multiple brands</li>
+      <li class="task">1P seller support — one operator managing 100+ brands (RetailEZ, Cocoblu)</li>
+      <li class="task">Shopify Plus international expansion</li>
+      <li class="task">Performance-based pricing model</li>
+      <li class="task">Mobile app for operator approvals</li>
+    </ul>
+  </div>
+</div>
+
+<footer>Terminal6 · Roadmap updated on every commit</footer>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal6 — Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root {
+  --bg: #FAFAF8; --bg-card: #FFF; --bg-warm: #F5F0EB;
+  --text: #1C1917; --text-mid: #57534E; --text-light: #A8A29E;
+  --accent: #C2410C; --accent-light: #FFF7ED; --accent-bg: rgba(194,65,12,.06);
+  --teal: #0F766E; --blue: #1565C0; --green: #2E7D32;
+  --border: #E7E5E4; --r: #B91C1C;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; min-height: 100vh; }
+
+/* LOGIN */
+.login { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); z-index: 1000; padding: 24px; }
+.login.hidden { display: none; }
+.login-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 48px 44px; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,.04); }
+.login-logo { font-family: var(--serif); font-size: 36px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+.login-title { font-family: var(--serif); font-size: 26px; font-weight: 600; margin-bottom: 8px; }
+.login-sub { font-size: 14px; color: var(--text-mid); margin-bottom: 32px; line-height: 1.7; }
+.g-btn-wrap { display: flex; justify-content: center; }
+.login-footer { margin-top: 28px; font-size: 11px; color: var(--text-light); line-height: 1.6; }
+.login-footer a { color: var(--accent); text-decoration: none; }
+.login-error { color: var(--r); font-size: 12px; margin-top: 12px; display: none; }
+
+/* HUB */
+.hub { display: none; }
+.hub.active { display: block; }
+.nav { position: sticky; top: 0; background: rgba(250,250,248,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 50; }
+.nav-inner { max-width: 1000px; margin: 0 auto; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.nav-tag { font-size: 11px; color: var(--text-light); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; margin-left: 10px; }
+.user { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-mid); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--bg-warm); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--accent); font-size: 13px; }
+.signout { font-size: 12px; color: var(--text-light); background: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: var(--sans); }
+.signout:hover { color: var(--accent); border-color: var(--accent); }
+
+.page { max-width: 1000px; margin: 0 auto; padding: 64px 32px 80px; }
+.hero { margin-bottom: 56px; }
+.hero-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 14px; }
+.hero h1 { font-family: var(--serif); font-size: clamp(32px, 4.5vw, 44px); font-weight: 700; line-height: 1.15; letter-spacing: -1px; margin-bottom: 16px; max-width: 720px; }
+.hero p { font-size: 17px; color: var(--text-mid); line-height: 1.7; max-width: 640px; }
+
+h2 { font-family: var(--serif); font-size: 22px; font-weight: 600; margin-bottom: 24px; padding-top: 12px; border-top: 2px solid var(--accent); display: inline-block; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px; margin-bottom: 48px; }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 28px 26px; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: all .18s ease; border-left: 4px solid var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.03); }
+.card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,.08); border-color: var(--border); border-left-color: var(--accent); }
+.card-icon { width: 44px; height: 44px; border-radius: 10px; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 18px; }
+.card-kind { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-light); margin-bottom: 6px; }
+.card-title { font-family: var(--serif); font-size: 22px; font-weight: 600; margin-bottom: 10px; line-height: 1.25; }
+.card-desc { font-size: 14px; color: var(--text-mid); line-height: 1.65; flex: 1; margin-bottom: 18px; }
+.card-meta { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-light); padding-top: 14px; border-top: 1px solid var(--border); }
+.card-arrow { color: var(--accent); font-weight: 600; }
+
+.card.teal { border-left-color: var(--teal); }
+.card.teal .card-icon { background: rgba(15,118,110,.08); color: var(--teal); }
+.card.teal .card-arrow { color: var(--teal); }
+.card.blue { border-left-color: var(--blue); }
+.card.blue .card-icon { background: rgba(21,101,192,.08); color: var(--blue); }
+.card.blue .card-arrow { color: var(--blue); }
+
+.section { margin-bottom: 48px; }
+.meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.meta-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+.meta-k { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); margin-bottom: 6px; }
+.meta-v { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--text); }
+.meta-sub { font-size: 12px; color: var(--text-mid); margin-top: 4px; }
+
+footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--border); color: var(--text-light); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">T6</div>
+    <div class="login-title">Terminal6</div>
+    <div class="login-sub">AI-powered operating system for e-commerce brands. Sign in to access your workspace.</div>
+    <div class="g-btn-wrap">
+      <div id="g_id_onload"
+           data-client_id="32739695176-gkc23he5t5l0h7gfq57rkm5pm673l3e5.apps.googleusercontent.com"
+           data-context="signin"
+           data-ux_mode="popup"
+           data-callback="handleGoogleSignIn"
+           data-auto_prompt="false"></div>
+      <div class="g_id_signin"
+           data-type="standard"
+           data-shape="rectangular"
+           data-theme="outline"
+           data-text="sign_in_with"
+           data-size="large"
+           data-logo_alignment="left"
+           data-width="300"></div>
+    </div>
+    <div class="login-error" id="loginError">Sign-in failed. Please try again.</div>
+    <div class="login-footer">By signing in you agree to Terminal6's <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</div>
+  </div>
+</div>
+
+<!-- HUB -->
+<div class="hub" id="hub">
+  <nav class="nav">
+    <div class="nav-inner">
+      <div><a href="/home.html" class="nav-logo">Terminal6</a><span class="nav-tag">Workspace</span></div>
+      <div class="user">
+        <div class="avatar" id="avatar">NR</div>
+        <div>
+          <div style="font-weight:500;color:var(--text)" id="userName">Operator</div>
+          <div style="font-size:11px;color:var(--text-light)" id="userEmail"></div>
+        </div>
+        <button class="signout" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="hero">
+      <div class="hero-label">Living Documents</div>
+      <h1>Your Terminal6 workspace.</h1>
+      <p>Everything that describes what Terminal6 is, what it's becoming, and how it's being built — in one place. These documents update as the product evolves.</p>
+    </div>
+
+    <div class="cards">
+      <a href="/app.html" class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-kind">Prototype</div>
+        <div class="card-title">Dashboard Prototype</div>
+        <div class="card-desc">Interactive mockup of the Terminal6 operator dashboard — agents, approval queue, throttle signals, and the cross-channel P&amp;L view.</div>
+        <div class="card-meta"><span>Clickable UI</span><span class="card-arrow">Open →</span></div>
+      </a>
+
+      <a href="/architecture.html" class="card teal">
+        <div class="card-icon">◈</div>
+        <div class="card-kind">Technical</div>
+        <div class="card-title">Product Architecture</div>
+        <div class="card-desc">The full 6-layer OS design — canonical schema, agent runtime, policy engine, brand directives, knowledge flywheel. Investor-ready.</div>
+        <div class="card-meta"><span>Living doc</span><span class="card-arrow">Read →</span></div>
+      </a>
+
+      <a href="/todos.html" class="card blue">
+        <div class="card-icon">◎</div>
+        <div class="card-kind">Roadmap</div>
+        <div class="card-title">Build Roadmap &amp; TODOs</div>
+        <div class="card-desc">Layered roadmap (L1 → L5) — milestones, tasks, and current state. What's done, what's in progress, what's next.</div>
+        <div class="card-meta"><span>Updated on every commit</span><span class="card-arrow">View →</span></div>
+      </a>
+    </div>
+
+    <div class="section">
+      <h2>Current state</h2>
+      <div class="meta-grid">
+        <div class="meta-card">
+          <div class="meta-k">Phase</div>
+          <div class="meta-v">L1 — Data Layer</div>
+          <div class="meta-sub">Unified ingestion pipeline</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-k">Design Partner</div>
+          <div class="meta-v">Sprig</div>
+          <div class="meta-sub">Mobile accessories — Amazon + D2C</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-k">Canonical Tables</div>
+          <div class="meta-v">20</div>
+          <div class="meta-sub">16 entities + 3 GA4 + BrandDirective</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-k">SKUs Loaded</div>
+          <div class="meta-v">11,281</div>
+          <div class="meta-sub">88,844 channel listings</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Terminal6 · AI-powered OS for e-commerce brands · <span id="year"></span></footer>
+</div>
+
+<script>
+function handleGoogleSignIn(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    sessionStorage.setItem('t6_user', JSON.stringify({ name: payload.name, email: payload.email, picture: payload.picture }));
+    enterHub(payload);
+  } catch (e) {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function enterHub(user) {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('hub').classList.add('active');
+  const av = document.getElementById('avatar');
+  document.getElementById('userName').textContent = user.name || 'Operator';
+  document.getElementById('userEmail').textContent = user.email || '';
+  if (user.name) av.textContent = user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  if (user.picture) { av.style.backgroundImage = 'url(' + user.picture + ')'; av.textContent = ''; }
+}
+
+function signOut() {
+  sessionStorage.removeItem('t6_user');
+  location.reload();
+}
+
+document.getElementById('year').textContent = new Date().getFullYear();
+
+window.addEventListener('DOMContentLoaded', function () {
+  const saved = sessionStorage.getItem('t6_user');
+  if (saved) { try { enterHub(JSON.parse(saved)); } catch (e) { sessionStorage.removeItem('t6_user'); } }
+});
+</script>
+</body>
+</html>

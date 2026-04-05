@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal6 — Product Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFAF8; --bg-warm: #F5F0EB; --bg-dark: #1C1917; --bg-card: #FFF;
+  --text: #1C1917; --text-mid: #57534E; --text-light: #A8A29E;
+  --accent: #C2410C; --accent-light: #FFF7ED; --accent-bg: rgba(194,65,12,.06);
+  --teal: #0F766E; --teal-light: #F0FDFA; --teal-bg: rgba(15,118,110,.06);
+  --blue: #1565C0; --blue-light: #E3F2FD;
+  --green: #2E7D32; --green-light: #E8F5E9;
+  --border: #E7E5E4;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+
+/* NAV */
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(250,250,248,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 960px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.nav-tag { font-size: 11px; color: var(--text-light); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; margin-left: 10px; }
+
+/* LAYOUT */
+.page { max-width: 960px; margin: 0 auto; padding: 100px 32px 80px; }
+section { margin-bottom: 64px; }
+
+/* TYPOGRAPHY */
+h1 { font-family: var(--serif); font-size: clamp(32px, 4.5vw, 48px); font-weight: 700; line-height: 1.15; letter-spacing: -1px; margin-bottom: 16px; }
+h2 { font-family: var(--serif); font-size: 28px; font-weight: 600; margin-bottom: 20px; padding-top: 12px; border-top: 2px solid var(--accent); display: inline-block; }
+h3 { font-family: var(--serif); font-size: 20px; font-weight: 600; margin: 28px 0 12px; }
+h4 { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 8px; }
+p { margin-bottom: 16px; color: var(--text-mid); font-size: 15px; }
+strong { color: var(--text); }
+.lead { font-size: 18px; color: var(--text-mid); line-height: 1.7; margin-bottom: 32px; }
+.label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
+
+/* HERO */
+.hero { text-align: center; padding: 40px 0 48px; }
+.hero h1 { max-width: 700px; margin: 0 auto 16px; }
+.hero .lead { max-width: 600px; margin: 0 auto 32px; }
+.hero-meta { display: flex; gap: 24px; justify-content: center; font-size: 13px; color: var(--text-light); }
+
+/* CARDS */
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.card-accent { border-left: 4px solid var(--accent); }
+.card-teal { border-left: 4px solid var(--teal); }
+
+/* GRIDS */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0; }
+.g4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin: 20px 0; }
+
+/* TABLES */
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 16px 0 24px; background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-light); border-bottom: 1px solid var(--border); font-weight: 600; background: var(--bg-warm); }
+td { padding: 10px 14px; border-bottom: 1px solid #f0eeea; color: var(--text-mid); }
+tr:last-child td { border-bottom: none; }
+
+/* CODE */
+.code-block { background: var(--bg-dark); color: #e8e5e0; border-radius: 10px; padding: 20px 24px; font-family: var(--mono); font-size: 13px; line-height: 1.8; overflow-x: auto; margin: 16px 0 24px; }
+.code-block .cm { color: #7c7a75; }
+.code-block .kw { color: #C2410C; }
+.code-block .fn { color: #0F766E; }
+.code-block .str { color: #93822a; }
+
+/* DIAGRAM */
+.diagram { background: var(--bg-warm); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin: 20px 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.9; overflow-x: auto; white-space: pre; }
+
+/* LAYERS */
+.layer-stack { display: flex; flex-direction: column; gap: 4px; margin: 20px 0; }
+.layer-row { display: grid; grid-template-columns: 60px 160px 1fr; gap: 0; border-radius: 8px; overflow: hidden; font-size: 13.5px; }
+.layer-id { padding: 12px; font-family: var(--mono); font-weight: 600; color: #fff; display: flex; align-items: center; justify-content: center; }
+.layer-name { padding: 12px 14px; font-weight: 600; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; }
+.layer-desc { padding: 12px 14px; color: var(--text-mid); background: var(--bg-card); border: 1px solid var(--border); border-left: none; display: flex; align-items: center; }
+
+/* SIGNALS */
+.signal { display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f0eeea; }
+.signal:last-child { border-bottom: none; }
+.signal-num { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.signal-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+.signal-desc { font-size: 13px; color: var(--text-mid); }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+.badge-done { background: var(--green-light); color: var(--green); }
+.badge-wip { background: var(--accent-light); color: var(--accent); }
+.badge-next { background: var(--blue-light); color: var(--blue); }
+.badge-future { background: var(--bg-warm); color: var(--text-light); }
+
+/* FLOW ARROWS */
+.flow { display: flex; align-items: center; gap: 0; margin: 20px 0; flex-wrap: wrap; }
+.flow-step { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 500; }
+.flow-arrow { padding: 0 8px; color: var(--text-light); font-size: 18px; }
+.flow-step.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+
+/* FOOTER */
+footer { text-align: center; padding: 40px 32px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-light); }
+footer a { color: var(--accent); text-decoration: none; }
+
+/* PRINT */
+@media print { nav { display: none; } .page { padding-top: 20px; } }
+@media (max-width: 768px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } .layer-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">Terminal6</a>
+    <span class="nav-tag">Product Architecture &middot; April 2026</span>
+  </div>
+</nav>
+
+<div class="page">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="label">Product Architecture</div>
+  <h1>The Agentic Operating System for E-Commerce</h1>
+  <p class="lead">Terminal6 aggregates data from every marketplace, builds unified brand context, and deploys AI agents that monitor, reason, and act — 24/7, with full auditability and human governance.</p>
+  <div class="hero-meta">
+    <span>Founded 2026</span>
+    <span>Design Partner: Sprig (11,252 SKUs)</span>
+    <span>contact@terminal6.io</span>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section>
+  <h2>The Problem</h2>
+  <p>E-commerce brand operators manage their business across 5-6 fragmented tools. Each shows a slice of reality. No tool connects inventory to ad spend to delivery speed to competitive pricing.</p>
+  <div class="g3">
+    <div class="card card-accent">
+      <h4>Marketing blind spot</h4>
+      <p style="margin:0">Ads tools don't see inventory. Ads run on out-of-stock SKUs. Budget sits on underperformers. ROAS collapses before anyone notices.</p>
+    </div>
+    <div class="card card-accent">
+      <h4>Inventory blind spot</h4>
+      <p style="margin:0">OMS tools don't see ad spend. When stock drops to 3 days, nobody throttles the campaigns burning &pound;2,400/day on that SKU.</p>
+    </div>
+    <div class="card card-accent">
+      <h4>No cross-channel P&L</h4>
+      <p style="margin:0">SKU-level contribution margin across Amazon, Flipkart, and Shopify? Most brands need a week of Excel. By then, data is stale.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6-LAYER OS -->
+<section>
+  <h2>Architecture: 6-Layer OS</h2>
+  <p>Each layer depends only on the one below. Ship L1 + L2 + one agent without building the full stack.</p>
+  <div class="layer-stack">
+    <div class="layer-row">
+      <div class="layer-id" style="background:#1565C0">L6</div>
+      <div class="layer-name">Workspace UI</div>
+      <div class="layer-desc">Morning briefing, agent views, approval queue, decision feed, agent chat</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:#6A1B9A">L5</div>
+      <div class="layer-name">Execution</div>
+      <div class="layer-desc">Action queue, API executors, retry & backoff, rollback, audit log</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:#C2410C">L4</div>
+      <div class="layer-name">Policy & Governance</div>
+      <div class="layer-desc">Rule engine, approval routing, spend guardrails, kill switch, RBAC</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:#E65100">L3</div>
+      <div class="layer-name">Agent Runtime</div>
+      <div class="layer-desc">Modular agents, intent schema, confidence scoring, inter-agent messaging, model router</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:#0F766E">L2</div>
+      <div class="layer-name">Unified Data & Context</div>
+      <div class="layer-desc">Unified SKU graph, brand profile, inventory ledger, decision history, time-series</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:#2E7D32">L1</div>
+      <div class="layer-name">Integration & Ingestion</div>
+      <div class="layer-desc">Amazon SP-API, Shopify, Flipkart, Unicommerce, GA4, Google Ads, Meta Ads, CSV</div>
+    </div>
+  </div>
+</section>
+
+<!-- 4-LAYER DATA -->
+<section>
+  <h2>Data Architecture</h2>
+  <p>Four layers from raw ingestion to decision memory. Each layer adds proprietary value.</p>
+  <div class="g2">
+    <div class="card">
+      <h4>Layer A: Raw Store</h4>
+      <p style="margin:0">Untouched API responses & CSVs. Audit trail. Re-derive anything from raw data.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--teal)">
+      <h4>Layer B: Canonical Schema</h4>
+      <p style="margin:0">16 normalised PostgreSQL tables. Core: Unified SKU linking ASIN, FSN, Shopify Variant into one Terminal6 ID.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--blue)">
+      <h4>Layer C: Enriched / Computed</h4>
+      <p style="margin:0">Cross-channel attribution, delivery speed scoring, inventory risk, competitive price indices. No third-party computes this.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--accent)">
+      <h4>Layer D: Decision Memory</h4>
+      <p style="margin:0">Every agent decision: trigger &rarr; context &rarr; reasoning &rarr; policy check &rarr; outcome. <strong>This is the flywheel.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- CANONICAL SCHEMA -->
+<section>
+  <h2>Canonical Schema (16 Entities)</h2>
+  <p>ChannelListing is the Rosetta Stone — every daily table FKs to it. MasterSKU is at variant level, not parent.</p>
+  <table>
+    <thead><tr><th>Group</th><th>Entity</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="5"><strong>Core Graph</strong></td><td>BrandProfile</td><td>One per brand. Channels, currency, GST, thresholds.</td></tr>
+      <tr><td>BrandCategoryPolicy</td><td>Per-category margin/spend rules.</td></tr>
+      <tr><td>BrandDirective</td><td>Living strategy: meetings, tactics, overrides. Priority-stacked.</td></tr>
+      <tr><td>MasterSKU</td><td>One per variant. Internal SKU code is universal anchor.</td></tr>
+      <tr><td>ChannelListing</td><td>Maps MasterSKU &rarr; ASIN/FSN/Variant. <strong>Central FK hub.</strong></td></tr>
+      <tr><td rowspan="8"><strong>Time-Series</strong></td><td>DailySales</td><td>Units, revenue, returns per SKU per channel per day.</td></tr>
+      <tr><td>DailyTraffic</td><td>Sessions, page views, conversion rate.</td></tr>
+      <tr><td>DailyInventory</td><td>Stock per SKU per FC per day.</td></tr>
+      <tr><td>CampaignDailyMetrics</td><td>Raw campaign data: spend, clicks, impressions, ACOS.</td></tr>
+      <tr><td>SKUAdAttribution</td><td>Allocated ad spend per SKU (SP=direct, SB/SD=proportional).</td></tr>
+      <tr><td>SKUEconomics</td><td><strong>The P&L table.</strong> Full contribution margin. Quality: estimated &rarr; provisional &rarr; reconciled.</td></tr>
+      <tr><td>ChannelListingSnapshot</td><td>Daily price, rating, Buy Box %, BSR.</td></tr>
+      <tr><td>ThrottleSignals</td><td>6 health signals computed daily per SKU.</td></tr>
+      <tr><td rowspan="3"><strong>Operations</strong></td><td>Returns</td><td>Per-event return data with reason codes.</td></tr>
+      <tr><td>Alert</td><td>Generated by playbook rules. Full lifecycle tracking.</td></tr>
+      <tr><td>DataImportLog</td><td>Tracks every import for auditability.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 6 THROTTLE SIGNALS -->
+<section>
+  <h2>6 Throttle Signals</h2>
+  <p>Every active SKU is scored on 6 signals. The composite drives all agent decisions.</p>
+  <div class="card">
+    <div class="signal"><div class="signal-num">1</div><div><div class="signal-name">Inventory Cover</div><div class="signal-desc">Days of stock remaining. &lt;3d = pause ads. 3-7d = throttle. &gt;30d = push harder.</div></div></div>
+    <div class="signal"><div class="signal-num">2</div><div><div class="signal-name">Margin Health</div><div class="signal-desc">Current margin vs brand's floor. Below floor = stop spending. Above floor+5% = full aggression.</div></div></div>
+    <div class="signal"><div class="signal-num">3</div><div><div class="signal-name">Catalogue Score</div><div class="signal-desc">Listing quality: title, images, A+ content, video. Bad listing = bad CVR = wasted spend.</div></div></div>
+    <div class="signal"><div class="signal-num">4</div><div><div class="signal-name">Rating & Reviews</div><div class="signal-desc">&lt;3.5 stars = pause. Negative spike = throttle + alert CX. &gt;4.0 = boost eligible.</div></div></div>
+    <div class="signal"><div class="signal-num">5</div><div><div class="signal-name">Price Competitiveness</div><div class="signal-desc">Our price vs competitor. &gt;15% more expensive = pause. &lt;5% cheaper = push harder.</div></div></div>
+    <div class="signal"><div class="signal-num">6</div><div><div class="signal-name">Delivery Speed</div><div class="signal-desc">Same-day = 1.15x bid multiplier. 3D+ = 0.8x. Speed drives conversion.</div></div></div>
+  </div>
+  <div class="code-block"><span class="cm">// Final bid computation</span>
+<span class="fn">final_bid</span> = base_bid <span class="kw">&times;</span> inventory_mult <span class="kw">&times;</span> margin_mult <span class="kw">&times;</span> catalogue_mult
+            <span class="kw">&times;</span> rating_mult <span class="kw">&times;</span> price_mult <span class="kw">&times;</span> speed_mult
+<span class="cm">// Capped at brand's max_bid_per_click</span></div>
+</section>
+
+<!-- KNOWLEDGE SYSTEM -->
+<section>
+  <h2>Knowledge System: The Moat</h2>
+  <p>Every diagnosis has two parts: the <strong>process</strong> (universal) and the <strong>interpretation</strong> (domain-specific). Terminal6 captures both as structured, composable layers.</p>
+  <div class="g3">
+    <div class="card card-teal">
+      <h4>Layer 1: Playbooks</h4>
+      <p style="margin:0"><strong>Universal process.</strong> What factors to check, in what order. Category-agnostic. "Check if conversion dropped" but not "why" — that's the category card's job.</p>
+    </div>
+    <div class="card card-teal">
+      <h4>Layer 2: Category Cards</h4>
+      <p style="margin:0"><strong>Domain expertise.</strong> How signals behave in a specific vertical. "Phone lifecycle drives accessories demand. Organic SEO lags new launches by 2-4 weeks."</p>
+    </div>
+    <div class="card card-teal">
+      <h4>Layer 3: Region Cards</h4>
+      <p style="margin:0"><strong>Market context.</strong> India salary cycles, COD dynamics, festival calendars, logistics constraints. Affects all categories in a geography.</p>
+    </div>
+  </div>
+  <h3>How Knowledge Composes at Runtime</h3>
+  <div class="diagram">Trigger: "D2C conversion dropped 15%"
+
+Playbook (Layer 1):    Check funnel stage &rarr; ATC dropped, not sessions
+                       Check traffic source &rarr; organic flat, paid stable
+                       Check product concentration &rarr; top 3 SKUs affected
+
+Category Card (L2):    "ATC dropped on specific SKUs" &rarr; check phone lifecycle
+                       Top SKUs entering decline phase (12-18 month cycle)
+
+Region Card (L3):      Day 12 of month &rarr; salary cycle dip (historically lowest)
+                       No Amazon sale running &rarr; not cannibalisation
+
+Brand Context:         Organic conv declining for 3 months (known trend)
+                       Sprig increased Meta spend (mix effect)
+
+Diagnosis:             Salary cycle dip + phone lifecycle rotation + organic SEO lag.
+                       No action needed. Monitor 2 more days for recovery.</div>
+  <p><strong>This diagnosis is impossible with a single-layer playbook.</strong> It requires composing universal process, category interpretation, regional context, and brand history.</p>
+</section>
+
+<!-- AGENTS -->
+<section>
+  <h2>Agent Design</h2>
+  <p>Agents are modular specialists, not one big model. Each owns a domain, follows a standard interface, and communicates through shared decision memory.</p>
+  <table>
+    <thead><tr><th>Agent</th><th>Human Equivalent</th><th>Watches</th><th>Acts On</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Growth</strong></td><td>Media Buyer</td><td>Ad spend, ROAS, CPC, TACoS</td><td>Bid adjustments, budget reallocation, campaign pauses</td></tr>
+      <tr><td><strong>Supply</strong></td><td>Ops Manager</td><td>Inventory across FCs, PO status</td><td>Restock alerts, PO triggers, FC rebalancing</td></tr>
+      <tr><td><strong>Category</strong></td><td>Category Manager</td><td>Competitive pricing, BSR, ratings</td><td>Pricing recommendations, competitive alerts</td></tr>
+      <tr><td><strong>Finance</strong></td><td>Finance Controller</td><td>Settlement, margins, fees</td><td>P&L reconciliation, margin breach alerts</td></tr>
+    </tbody>
+  </table>
+  <h3>Why Multiple Agents?</h3>
+  <div class="g3">
+    <div class="card"><h4>Context Economics</h4><p style="margin:0">Narrow agents with focused context think better than one agent with shallow context across everything.</p></div>
+    <div class="card"><h4>Accountability</h4><p style="margin:0">Operators need to know which specialist made a decision. Clear audit trail per agent.</p></div>
+    <div class="card"><h4>Composability</h4><p style="margin:0">Start with Growth Agent. Add Supply when ready. Each is independently valuable.</p></div>
+  </div>
+  <h3>Inter-Agent Coordination</h3>
+  <p>Cross-agent coordination is the product. No single tool does this today.</p>
+  <div class="flow">
+    <div class="flow-step active">Growth Agent</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">"Will this SKU restock?"</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step active">Supply Agent</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">"PO lands in 4 days"</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step active">Growth Agent</div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">"Throttle ads for 4 days, then resume"</div>
+  </div>
+</section>
+
+<!-- BRAND DIRECTIVES -->
+<section>
+  <h2>Brand Directives: Living Strategy</h2>
+  <p>Operator intent from meetings and ad-hoc decisions, captured as structured directives with priority stacking.</p>
+  <div class="layer-stack">
+    <div class="layer-row"><div class="layer-id" style="background:#C62828">OVR</div><div class="layer-name">Override</div><div class="layer-desc">Kill switch. Emergency stop. Halts all automated actions.</div></div>
+    <div class="layer-row"><div class="layer-id" style="background:#E65100">TAC</div><div class="layer-name">Tactical</div><div class="layer-desc">"Don't touch THERMO-1L-BLK — PO landing tomorrow." Ad-hoc, expires in hours/days.</div></div>
+    <div class="layer-row"><div class="layer-id" style="background:#C2410C">STR</div><div class="layer-name">Strategy</div><div class="layer-desc">"Go aggressive on Bottles for 10 days, +30% bids, cap 50K/day." From weekly standup.</div></div>
+    <div class="layer-row"><div class="layer-id" style="background:#0F766E">SEA</div><div class="layer-name">Seasonal</div><div class="layer-desc">"Prime Day prep: 2x inventory by July 1." Calendar-driven, annual.</div></div>
+    <div class="layer-row"><div class="layer-id" style="background:#57534E">PRM</div><div class="layer-name">Permanent</div><div class="layer-desc">"Margin floor 28% on Bottles." Set during onboarding, rarely changes.</div></div>
+  </div>
+  <p><strong>Key principle:</strong> Directives give intent. The Policy Engine's hard constraints are never overridden. A "go aggressive" directive cannot push margin below the floor.</p>
+</section>
+
+<!-- CONTEXT ASSEMBLY -->
+<section>
+  <h2>Context Assembly</h2>
+  <p>Agents never see all 50K SKUs. The context assembler builds the right context per call — hierarchical, not monolithic.</p>
+  <div class="g3">
+    <div class="card" style="border-top:3px solid var(--green)">
+      <h4>Layer 1: Brand (~2K tokens)</h4>
+      <p style="margin:0">Always present. Profile, policies, active directives, health summary.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--teal)">
+      <h4>Layer 2: Domain (~8K tokens)</h4>
+      <p style="margin:0">Per agent. Growth sees ad data; Supply sees inventory. Filtered to relevant categories.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--accent)">
+      <h4>Layer 3: Task (~5K tokens)</h4>
+      <p style="margin:0">Per decision. Deep dive on 5-10 SKUs: signals, P&L, ad history, competitor pricing, decision history.</p>
+    </div>
+  </div>
+  <p>Total: ~20K tokens per agent call. Focused context produces sharp decisions.</p>
+</section>
+
+<!-- POLICY ENGINE -->
+<section>
+  <h2>Policy Engine</h2>
+  <p>Every agent action passes through the policy gate. Hard guardrails that agents cannot bypass.</p>
+  <table>
+    <thead><tr><th>Type</th><th>Example</th><th>Enforcement</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Hard Constraint</strong></td><td>Margin floor 28%</td><td>Deterministic block</td></tr>
+      <tr><td><strong>Approval Threshold</strong></td><td>Spend &gt; &#8377;5,000/day</td><td>Routes to founder</td></tr>
+      <tr><td><strong>Auto-Execute</strong></td><td>Pause ads on OOS</td><td>Immediate + logged</td></tr>
+      <tr><td><strong>Time Window</strong></td><td>No changes 10PM-6AM</td><td>Queues for next window</td></tr>
+      <tr><td><strong>Escalation</strong></td><td>ROAS &lt; 2x for 3 days</td><td>Bypasses queue, alerts founder</td></tr>
+      <tr><td><strong>Kill Switch</strong></td><td>Emergency stop</td><td>Halts ALL actions</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- DECISION FLOW -->
+<section>
+  <h2>Decision Flow</h2>
+  <div class="diagram">Data Event (ROAS dropped on Bottles)
+    |
+    v
+Agent Registry ---> routes to Growth Agent
+    |
+    v
+Context Assembler ---> brand + domain + task context (~20K tokens)
+    |
+    v
+Growth Agent
+  observe()  ---> detects ROAS drop trigger
+  reason()   ---> loads playbook + category card + region card, composes diagnosis
+  propose()  ---> Intent: "Pause 3 campaigns, reallocate &#8377;4,200/day to top performer"
+    |
+    v
+Policy Engine
+  |--- margin floor OK?     YES
+  |--- spend threshold?     UNDER &#8377;5K auto-approve ---> AUTO EXECUTE
+  |--- time window?         9:14 AM, within window   ---> PROCEED
+    |
+    v
+Execute ---> campaigns paused, budget reallocated
+    |
+    v
+Decision Record ---> stored in Layer D (Decision Memory)
+    |
+    v
+30-day Outcome ---> ROAS recovered to 3.8x, &#8377;6,800 saved</div>
+</section>
+
+<!-- FLYWHEEL -->
+<section>
+  <h2>The Knowledge Flywheel</h2>
+  <p>Every brand that onboards makes the system smarter for every other brand in the same category.</p>
+  <div class="g2">
+    <div class="card">
+      <h4>Phase 1 (1-3 brands)</h4>
+      <p style="margin:0">Knowledge lives in brand folders. Patterns validated per-brand. High specificity, low generalisability.</p>
+    </div>
+    <div class="card">
+      <h4>Phase 2 (3-10 brands)</h4>
+      <p style="margin:0">Cross-brand validation. Same pattern in 2+ brands graduates from brand learning to category card.</p>
+    </div>
+    <div class="card">
+      <h4>Phase 3 (10+ brands)</h4>
+      <p style="margin:0">Category cards become authoritative. New brand inherits deep domain expertise from Day 1.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--accent)">
+      <h4>The Acceleration</h4>
+      <p style="margin:0"><strong>Brand 1:</strong> Weeks of discovery. <strong>Brand 5:</strong> Days — category card already rich. <strong>Brand 20:</strong> Hours — agent is already an expert.</p>
+    </div>
+  </div>
+</section>
+
+<!-- LLM APPROACH -->
+<section>
+  <h2>LLM Strategy</h2>
+  <p><strong>Context assembly, not model training.</strong> Playbooks, brand context, category cards, and decision history are injected at runtime. No fine-tuning needed.</p>
+  <div class="g3">
+    <div class="card">
+      <h4>Haiku (routine)</h4>
+      <p style="margin:0">Threshold checks, classification, simple rules. Fast and cheap.</p>
+    </div>
+    <div class="card">
+      <h4>Sonnet (complex)</h4>
+      <p style="margin:0">Multi-signal diagnosis, cross-agent synthesis, nuanced reasoning.</p>
+    </div>
+    <div class="card">
+      <h4>~$26/month per brand</h4>
+      <p style="margin:0">All-in infra ~$110-130/month. 65%+ gross margins at scale.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CURRENT STATE -->
+<section>
+  <h2>Current State</h2>
+  <p>Building Layer 1 with first design partner Sprig. Data flowing, schema validated, agents next.</p>
+  <div class="g4">
+    <div class="card" style="text-align:center"><div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--green)">20</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">DB Tables Live</div></div>
+    <div class="card" style="text-align:center"><div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--accent)">11,281</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">SKUs Loaded</div></div>
+    <div class="card" style="text-align:center"><div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--teal)">88,844</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">Channel Listings</div></div>
+    <div class="card" style="text-align:center"><div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--blue)">5</div><div style="font-size:11px;color:var(--text-light);margin-top:4px">Playbooks Written</div></div>
+  </div>
+  <div style="margin-top:20px">
+    <span class="badge badge-done">Done</span> Canonical schema &middot; Unicommerce sync &middot; GA4 connector &middot; Google Ads OAuth &middot; Dashboard prototype<br><br>
+    <span class="badge badge-wip">In Progress</span> GA4 normaliser &middot; Google Ads pipeline &middot; Order backfill<br><br>
+    <span class="badge badge-next">Next</span> Amazon SP-API &middot; Cross-channel P&L &middot; Context assembler &middot; Growth Agent v1
+  </div>
+</section>
+
+<!-- MARKET -->
+<section>
+  <h2>Market Context</h2>
+  <table>
+    <thead><tr><th>Company</th><th>What They Do</th><th>Terminal6 Difference</th></tr></thead>
+    <tbody>
+      <tr><td><strong>CommerceIQ</strong></td><td>$136.6M revenue, ~$1B valuation</td><td>Global, enterprise-only. No India presence. Validates the market.</td></tr>
+      <tr><td><strong>Pacvue</strong></td><td>Commerce OS for 100+ retailers</td><td>Rule-based, not agentic. No supply chain or cross-silo decisions.</td></tr>
+      <tr><td><strong>Unicommerce</strong></td><td>IPO'd at &#8377;1,100 Cr. OMS/WMS layer.</td><td>Complementary. Terminal6 sits above Unicommerce as the intelligence layer.</td></tr>
+    </tbody>
+  </table>
+  <p><strong>India TAM:</strong> &#8377;1,000-3,000+ Cr. 5,000+ brands with &#8377;10 Cr+ GMV. 1P sellers manage 500+ brands each — one deal = 100+ brands.</p>
+</section>
+
+<!-- ROADMAP -->
+<section>
+  <h2>Build Sequence</h2>
+  <table>
+    <thead><tr><th>Phase</th><th>Timeline</th><th>What Ships</th><th>Brands</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Layer 1</strong></td><td>Month 0-6</td><td>Cross-channel P&L, 6 signals, morning briefing, playbook recs</td><td>1 &rarr; 3</td></tr>
+      <tr><td><strong>Layer 2</strong></td><td>Month 6-12</td><td>Supply + Category intelligence, inter-agent coordination, approval workflows</td><td>3 &rarr; 10</td></tr>
+      <tr><td><strong>Layer 3</strong></td><td>Month 12-18</td><td>All agents, multi-brand management, competitive tracking</td><td>10 &rarr; 30</td></tr>
+      <tr><td><strong>Full OS</strong></td><td>Month 18-24</td><td>Accounting, international expansion, performance pricing</td><td>30 &rarr; 200</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div>
+
+<footer>
+  Terminal6 &middot; The Agentic OS for E-Commerce &middot; <a href="https://terminal6.io">terminal6.io</a> &middot; contact@terminal6.io
+</footer>
+
+</body>
+</html>

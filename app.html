@@ -256,7 +256,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
     <div class="si" onclick="sw('cv',this)"><div class="ic">💬</div><span>Agent Chat</span></div>
     <div class="si"><div class="ic">⚙️</div><span>Policies & Rules</span></div>
   </div>
-  <div class="sb-b"><div class="ui"><div class="ua">NR</div><div><div style="font-size:13px;font-weight:500">Nitin R.</div><div style="font-size:11px;color:var(--tm)">Brand Operator</div></div></div></div>
+  <div class="sb-b"><a href="/home.html" style="display:block;font-size:11px;color:var(--tm);text-decoration:none;padding:6px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:8px">← Workspace</a><div class="ui"><div class="ua">NR</div><div><div style="font-size:13px;font-weight:500">Nitin R.</div><div style="font-size:11px;color:var(--tm)">Brand Operator</div></div></div></div>
 </aside>
 
 <!-- MAIN -->
@@ -560,7 +560,12 @@ function enterApp(user){
 /* Auto-login if session exists */
 window.addEventListener('DOMContentLoaded',function(){
   const saved=sessionStorage.getItem('t6_user');
-  if(saved){try{enterApp(JSON.parse(saved))}catch(e){sessionStorage.removeItem('t6_user')}}
+  if(saved){
+    try{enterApp(JSON.parse(saved))}
+    catch(e){sessionStorage.removeItem('t6_user');location.href='/home.html'}
+  } else {
+    location.href='/home.html';
+  }
 });
 </script>
 </body>
