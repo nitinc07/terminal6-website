@@ -234,8 +234,23 @@ Confirm with Nitin whether Sprig runs Flipkart PLA (Product Listing Ads) campaig
 <script type="text/plain" id="p-shopify">
 Shopify API access to Sprig's sprigstore is currently blocked — need the store owner to grant a private app or custom app with read permissions on Products, Orders, Inventory. Draft a message for Nitin to send the store owner explaining exactly what scopes we need and why (for cross-channel P&amp;L). Once access is granted, wire the existing Shopify YAML mapping configs (already in channels/shopify/mappings/) into a channels/shopify/normaliser.py. Traffic data stays on GA4 — Shopify is only for orders + products + inventory. Acceptance: 7-day Sprig Shopify order data lands in DailySales.
 </script>
-<script type="text/plain" id="p-meta">
-Ask Nitin if Sprig runs Meta (Facebook/Instagram) ads for D2C. If yes, get added to Sprig's Meta Business Manager with API access. Build channels/meta_ads/connector.py using the Marketing API. Target CampaignDailyMetrics with channel='meta'. Link spend to GA4 conversion data for D2C ROAS (same pattern as Google Ads). If Sprig doesn't run Meta, mark as N/A and document.
+<script type="text/plain" id="p-meta-access">
+Nitin currently has "Partial access / Basic" in Sprig's Shopify Business Manager (Business ID 888973654932182). System user creation requires Full Control. Ask Vikram Jain (vikram@jamsticks.com, Full Control admin) to upgrade Nitin's role. This is a human task, not code. Until resolved, Meta Ads system user + token generation is blocked.
+</script>
+<script type="text/plain" id="p-meta-2fa">
+2FA enablement on Nitin's Facebook account is failing with "You can't make this change at the moment" — Meta requires device trust before allowing 2FA enrolment on a new device. Retry from a regular browser/device 24–48 hrs after 5 Apr 2026. Do not attempt workarounds — this is a Meta trust-signal issue. 2FA is required on the admin account for system user creation.
+</script>
+<script type="text/plain" id="p-meta-marketing">
+Open the Terminal6 Meta app dashboard (App ID 26326948486966477, https://developers.facebook.com/apps/26326948486966477/). Under "Add Product", add Marketing API and click Set Up. Then go to App Settings → Basic and copy the App ID + App Secret. Store the secret in .env on the DO droplet (same file as other OAuth secrets — see infra/CLAUDE.md) under META_APP_ID and META_APP_SECRET. This task has no blockers and can be done now.
+</script>
+<script type="text/plain" id="p-meta-sysuser">
+BLOCKED until (a) Vikram grants Full Control on Business ID 888973654932182 and (b) 2FA is enabled on Nitin's Facebook account. Once unblocked: go to https://business.facebook.com/latest/settings/business_users/?business_id=888973654932182, then System Users → Add. Name: Terminal6-API, role: Admin. Generate access token with scopes ads_read, ads_management, business_management. Assign Sprig/Jamsticks ad account(s) to this system user. Save token to Postgres (same token table planned for Amazon SP-API). Meta uses single-token-for-all-brands, NOT per-brand OAuth like Amazon — see memory/reference_meta_ads_api.md.
+</script>
+<script type="text/plain" id="p-meta-enums">
+Edit core/models/base.py: add meta_ads = "meta_ads" to the Channel enum (and google_ads = "google_ads" while you're there — it's coming next). Add to AdType: META_SALES, META_TRAFFIC, META_AWARENESS, META_DPA. Create an Alembic migration for the enum additions (Postgres enums require ALTER TYPE ... ADD VALUE). This task has zero blockers and can be done at any time.
+</script>
+<script type="text/plain" id="p-meta-connector">
+BLOCKED until system user token exists. Once ready: build channels/meta_ads/connector.py against Graph API v19.0. Primary endpoint: GET /act_{ad_account_id}/insights with time_increment=1 for daily rows, action_attribution_windows=['7d_click','1d_view'], fields: campaign_id, campaign_name, adset_id, date_start, impressions, clicks, spend, actions, action_values. Write channels/meta_ads/normaliser.py following the Unicommerce pattern, with YAML config at channels/meta_ads/mappings/insights_daily.yaml. Target table: CampaignDailyMetrics with channel='meta_ads'. Note: attributed_sales_14d stays NULL (Meta has no 14d window). SKU-level attribution is only native for Dynamic Product Ads — for non-DPA campaigns, fall back to proportional allocation (same helper as Amazon SB/SD). Rate limit is ~200/hr/ad account. Acceptance: 7-day Sprig Meta Ads data in CampaignDailyMetrics, spot-checked against Meta Ads Manager UI.
 </script>
 
 <script type="text/plain" id="p-sku-econ">
@@ -410,12 +425,13 @@ const TASKS = [
   {layer:"L0", m:"M0", title:"Onboarding runbook — channels/unicommerce/ONBOARDING.md", status:"done"},
 
   // L1 — Unified Data Layer (you are here)
-  {layer:"L1", lname:"Unified Data Layer", ldesc:"Get all data flowing into the canonical schema. No AI, no agents — just clean, unified data.", lhere:true, m:"M1", mname:"D2C Funnel Live", mstatus:"in-progress", title:"GA4 connector with OAuth2 — live tested against Sprig property 311140290", status:"done"},
+  {layer:"L1", lname:"Unified Data Layer", ldesc:"Get all data flowing into the canonical schema. No AI, no agents — just clean, unified data.", lhere:true, m:"M1", mname:"D2C Funnel Live", mstatus:"done", title:"GA4 connector with OAuth2 — live tested against Sprig property 311140290", status:"done"},
   {layer:"L1", m:"M1", title:"GCP project terminal6-492306 — Analytics Data API enabled", status:"done"},
   {layer:"L1", m:"M1", title:"Three GA4 funnel tables created on RDS (DailySiteFunnel, DailyProductFunnel, DailyTrafficSource)", status:"done"},
-  {layer:"L1", m:"M1", title:"Finish GA4 normaliser — write site funnel, product funnel, traffic source to DB", status:"inprogress", prompt:"p-ga4-norm"},
-  {layer:"L1", m:"M1", title:"Backfill 90 days of GA4 funnel data for Sprig (property 311140290)", status:"pending", prompt:"p-ga4-backfill"},
-  {layer:"L1", m:"M1", title:"Verify data quality: spot-check GA4 DB rows against GA4 console", status:"pending", prompt:"p-ga4-verify"},
+  {layer:"L1", m:"M1", title:"GA4 normaliser — site funnel, product funnel, traffic source with upserts, dedup, batching, DataImportLog writes", status:"done"},
+  {layer:"L1", m:"M1", title:"Backfill 90 days of GA4 funnel data for Sprig (5 Apr 2026) — 91 DailySiteFunnel, 82,238 DailyProductFunnel (deduped from 257K raw), 9,014 DailyTrafficSource rows", status:"done"},
+  {layer:"L1", m:"M1", title:"Verify data quality vs GA4 console — 0% variance across 35 cells, 5 sample dates (PASS)", status:"done"},
+  {layer:"L1", m:"M1", title:"GA4 normaliser wired to run_full_validation() + YAML mapping configs at channels/ga4/mappings/ — 3 VALIDATION_CONFIGS entries, re-verified with 0 variance preserved", status:"done"},
 
   {layer:"L1", m:"M2", mname:"Unicommerce Fully Loaded", mstatus:"pending", title:"Unicommerce REST API connector — OAuth2 password grant, pagination, retry with backoff, Layer A raw storage", status:"done"},
   {layer:"L1", m:"M2", title:"Product Master normaliser — 11,281 MasterSKU records (100% HSN/EAN/weight/dimensions coverage)", status:"done"},
@@ -449,7 +465,14 @@ const TASKS = [
   {layer:"L1", m:"M5", mname:"Other Channels", mstatus:"pending", title:"Flipkart: get API credentials from Sprig, build normaliser (23,397 listings already in DB)", status:"pending", prompt:"p-fk"},
   {layer:"L1", m:"M5", title:"Flipkart Ads: check if Sprig runs PLA, pull ad metrics", status:"pending", prompt:"p-fk-ads"},
   {layer:"L1", m:"M5", title:"Shopify: get store owner to grant API permissions (currently blocked)", status:"pending", prompt:"p-shopify"},
-  {layer:"L1", m:"M5", title:"Meta Ads: check if Sprig runs Meta ads for D2C, get Business Manager access", status:"pending", prompt:"p-meta"},
+  {layer:"L1", m:"M5", title:"Meta developer account + Terminal6 Business app created — App ID 26326948486966477, contact contact@terminal6.io", status:"done"},
+  {layer:"L1", m:"M5", title:"Located Sprig's Meta Business portfolio — Shopify Business Manager (Vikram Jain / Jamsticks), Business ID 888973654932182", status:"done"},
+  {layer:"L1", m:"M5", title:"BLOCKED — Vikram to upgrade Nitin from Partial/Basic to Full Control in Shopify Business Manager (required for system user creation)", status:"pending", prompt:"p-meta-access"},
+  {layer:"L1", m:"M5", title:"BLOCKED — Enable 2FA on Nitin's Facebook (Meta device-trust issue; retry 24–48 hrs after 5 Apr)", status:"pending", prompt:"p-meta-2fa"},
+  {layer:"L1", m:"M5", title:"Add Marketing API product to Terminal6 app in dev dashboard; save App ID + App Secret securely", status:"pending", prompt:"p-meta-marketing"},
+  {layer:"L1", m:"M5", title:"Create Terminal6-API System User, generate long-lived token, assign Sprig ad account (blocked on Full Control + 2FA)", status:"pending", prompt:"p-meta-sysuser"},
+  {layer:"L1", m:"M5", title:"Add meta_ads to Channel enum + META_* values to AdType enum (code-ready, no blockers)", status:"pending", prompt:"p-meta-enums"},
+  {layer:"L1", m:"M5", title:"Build Meta Ads connector + normaliser — Insights API, CampaignDailyMetrics (blocked on system user token)", status:"pending", prompt:"p-meta-connector"},
 
   {layer:"L1", m:"M6", mname:"First Cross-Channel P&L", mstatus:"milestone", title:"Compute SKUEconomics (estimated) — revenue minus fees minus COGS minus ads = contribution margin", status:"pending", prompt:"p-sku-econ"},
   {layer:"L1", m:"M6", title:"Compute ThrottleSignals — the 6 health signals per SKU per day", status:"pending", prompt:"p-throttle"},
