@@ -19,61 +19,98 @@
 :root {
   --bg: #FAFAF8; --bg-card: #FFF; --bg-warm: #F5F0EB;
   --text: #1C1917; --text-mid: #57534E; --text-light: #A8A29E;
-  --accent: #C2410C; --accent-bg: rgba(194,65,12,.06);
-  --teal: #0F766E; --teal-bg: rgba(15,118,110,.08);
-  --blue: #1565C0; --blue-bg: rgba(21,101,192,.08);
-  --green: #2E7D32; --green-bg: rgba(46,125,50,.08);
+  --accent: #C2410C; --accent-light: #FFF7ED; --accent-bg: rgba(194,65,12,.08);
+  --teal: #0F766E; --blue: #1565C0;
+  --green: #2E7D32; --green-light: #E8F5E9; --green-bg: rgba(46,125,50,.08);
+  --amber: #B45309; --amber-light: #FFFBEB;
   --border: #E7E5E4;
   --serif: 'Source Serif 4', Georgia, serif;
   --sans: 'DM Sans', system-ui, sans-serif;
   --mono: 'JetBrains Mono', monospace;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.65; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
 
 nav { position: sticky; top: 0; background: rgba(250,250,248,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 50; }
-.nav-inner { max-width: 980px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+.nav-inner { max-width: 1080px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
 .nav-logo { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--accent); text-decoration: none; }
 .nav-tag { font-size: 11px; color: var(--text-light); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; margin-left: 10px; }
 .nav-links { display: flex; gap: 20px; font-size: 13px; }
 .nav-links a { color: var(--text-mid); text-decoration: none; }
 .nav-links a:hover { color: var(--accent); }
 
-.page { max-width: 980px; margin: 0 auto; padding: 64px 32px 80px; }
-.hero { margin-bottom: 48px; }
+.page { max-width: 1080px; margin: 0 auto; padding: 48px 32px 80px; }
+.hero { margin-bottom: 32px; }
 .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
 h1 { font-family: var(--serif); font-size: clamp(30px, 4vw, 42px); font-weight: 700; line-height: 1.15; letter-spacing: -1px; margin-bottom: 14px; }
-.lead { font-size: 16px; color: var(--text-mid); line-height: 1.7; max-width: 680px; }
+.lead { font-size: 16px; color: var(--text-mid); line-height: 1.7; max-width: 720px; }
 .updated { font-family: var(--mono); font-size: 12px; color: var(--text-light); margin-top: 12px; }
 
-.layer { margin: 48px 0; padding: 28px 0 0; border-top: 2px solid var(--accent); }
-.layer.current { border-top-color: var(--accent); }
-.layer h2 { font-family: var(--serif); font-size: 26px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
-.layer-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; padding: 3px 10px; border-radius: 4px; background: var(--accent-bg); color: var(--accent); font-family: var(--sans); }
-.layer-tag.here { background: var(--accent); color: white; }
-.layer-desc { font-size: 14px; color: var(--text-mid); margin-bottom: 24px; font-style: italic; }
+.controls { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; justify-content: space-between; padding: 18px 0; margin-bottom: 28px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.f-btn { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-mid); padding: 8px 16px; border-radius: 20px; font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s ease; display: flex; align-items: center; gap: 8px; }
+.f-btn:hover { border-color: var(--text-mid); color: var(--text); }
+.f-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+.f-btn .count { background: rgba(255,255,255,.25); padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.f-btn:not(.active) .count { background: var(--bg-warm); color: var(--text-light); }
+.stats { font-size: 13px; color: var(--text-mid); font-family: var(--mono); }
+.stats b { color: var(--accent); font-weight: 600; }
+
+.layer { margin: 40px 0; }
+.layer-head { border-top: 2px solid var(--accent); padding-top: 20px; margin-bottom: 24px; }
+.layer-head h2 { font-family: var(--serif); font-size: 26px; font-weight: 600; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.here-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 4px; background: var(--accent); color: white; font-family: var(--sans); }
+.layer-desc { font-size: 13px; color: var(--text-mid); margin-top: 6px; font-style: italic; }
 
 .milestone { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 14px; }
 .m-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
 .m-title { font-family: var(--serif); font-size: 17px; font-weight: 600; }
 .m-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 3px 9px; border-radius: 4px; }
 .s-progress { background: var(--accent-bg); color: var(--accent); }
-.s-milestone { background: var(--teal-bg); color: var(--teal); }
+.s-milestone { background: rgba(15,118,110,.1); color: var(--teal); }
 .s-pending { background: var(--bg-warm); color: var(--text-light); }
+.s-done { background: var(--green-bg); color: var(--green); }
+
+.progress-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.progress { flex: 1; height: 6px; background: var(--bg-warm); border-radius: 3px; overflow: hidden; }
+.progress-bar { height: 100%; background: var(--green); border-radius: 3px; transition: width .3s ease; }
+.progress-text { font-family: var(--mono); font-size: 11px; color: var(--text-light); min-width: 50px; text-align: right; }
+
 ul { list-style: none; }
-.task { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 14px; color: var(--text-mid); line-height: 1.6; }
-.task::before { content: '○'; color: var(--text-light); font-size: 16px; line-height: 1.2; flex-shrink: 0; }
-.task.done::before { content: '●'; color: var(--green); }
-.task.done { color: var(--text-light); text-decoration: line-through; }
-.task-sub { padding-left: 26px; }
+.task { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 14px; line-height: 1.6; transition: background .15s ease; margin: 2px 0; }
+.task:hover { background: var(--bg-warm); }
+.task .icon { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
+.task .title { flex: 1; color: var(--text-mid); }
+.task.done .icon { background: var(--green-light); color: var(--green); }
+.task.done .title { color: var(--text-light); text-decoration: line-through; }
+.task.inprogress { background: var(--accent-light); }
+.task.inprogress .icon { background: var(--accent); color: white; }
+.task.inprogress .title { color: var(--text); font-weight: 500; }
+.task.pending .icon { background: var(--bg-warm); color: var(--text-light); border: 1px solid var(--border); }
+.task.pending .title { color: var(--text-mid); }
+
+.copy-btn { flex-shrink: 0; background: none; border: 1px solid var(--border); color: var(--text-light); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s ease; font-family: var(--sans); }
+.copy-btn:hover { background: var(--accent); border-color: var(--accent); color: white; }
+.copy-btn svg { width: 14px; height: 14px; }
+
+#toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text); color: white; padding: 12px 22px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: 0 10px 30px rgba(0,0,0,.2); transition: transform .25s ease; z-index: 200; display: flex; align-items: center; gap: 10px; }
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast .check { color: #4ade80; font-weight: 700; }
 
 .parking { background: var(--bg-warm); border-radius: 12px; padding: 24px 28px; margin-top: 48px; }
-.parking h2 { font-family: var(--serif); font-size: 20px; margin-bottom: 12px; color: var(--text); border: none; padding: 0; }
+.parking h2 { font-family: var(--serif); font-size: 20px; margin-bottom: 8px; }
 .parking p { font-size: 13px; color: var(--text-mid); margin-bottom: 14px; font-style: italic; }
-.parking ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 6px; }
-.parking .task { font-size: 13px; }
+.parking ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 2px; }
 
 footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--border); color: var(--text-light); font-size: 12px; margin-top: 60px; }
+
+.hidden { display: none !important; }
+
+@media (max-width: 640px) {
+  .page { padding: 32px 20px 60px; }
+  .milestone { padding: 18px 16px; }
+  .controls { flex-direction: column; align-items: flex-start; }
+}
 </style>
 </head>
 <body>
@@ -93,228 +130,553 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
   <div class="hero">
     <div class="label">Living Document</div>
     <h1>Roadmap &amp; TODOs</h1>
-    <p class="lead">Five layers, sixteen milestones. Every commit updates this document. The top layer is where we are today; lower layers are where we're going.</p>
-    <div class="updated">Updated: 5 April 2026 · BrandDirective model shipped, architecture docs updated</div>
+    <p class="lead">Six layers, sixteen milestones. Every pending task has a ready-to-paste prompt for a fresh Claude session — click the copy icon to grab it. Updated on every commit.</p>
+    <div class="updated">Updated: 5 April 2026</div>
   </div>
 
-  <!-- L1 -->
-  <section class="layer current">
-    <h2>L1: Unified Data Layer <span class="layer-tag here">You are here</span></h2>
-    <div class="layer-desc">Get all data flowing into the canonical schema. No AI, no agents — just clean, unified data.</div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M1 · D2C Funnel Live</div><div class="m-status s-progress">In Progress</div></div>
-      <ul>
-        <li class="task">Finish GA4 normaliser — write site funnel, product funnel, traffic source to DB</li>
-        <li class="task">Backfill 90 days of GA4 funnel data for Sprig (property 311140290)</li>
-        <li class="task">Verify data quality: spot-check GA4 DB rows against GA4 console</li>
-      </ul>
+  <div class="controls">
+    <div class="filters">
+      <button class="f-btn active" data-filter="all">All <span class="count" id="c-all">0</span></button>
+      <button class="f-btn" data-filter="inprogress">In Progress <span class="count" id="c-ip">0</span></button>
+      <button class="f-btn" data-filter="pending">Pending <span class="count" id="c-pe">0</span></button>
+      <button class="f-btn" data-filter="done">Done <span class="count" id="c-dn">0</span></button>
     </div>
+    <div class="stats"><b id="s-done">0</b> done · <b id="s-total">0</b> total</div>
+  </div>
 
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M2 · Unicommerce Fully Loaded</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Backfill 30–90 days of Sprig orders via Unicommerce API (~67K orders)</li>
-        <li class="task">Get COGS spreadsheet from Sprig, build CSV importer → MasterSKU.cogs <em>(blocks all P&amp;L)</em></li>
-        <li class="task">Get full facility permissions for contact@terminal6.io (currently limited)</li>
-        <li class="task">Investigate FK resolution gaps: 83 unresolved order items, 555 SKUs without ChannelListing</li>
-        <li class="task">Verify returns data: 0 returns fetched — low returns or permission issue?</li>
-        <li class="task">Schedule recurring syncs: products (daily), inventory (2h), orders (4h) — Celery + Redis</li>
-      </ul>
-    </div>
+  <div id="tasks-root"></div>
 
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M3 · Google Ads Pipeline</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Basic Access approval — submitted 4 Apr, check contact@terminal6.io (~3 business days)</li>
-        <li class="task">Re-run OAuth flow once approved → discover Sprig's customer ID</li>
-        <li class="task">Build Google Ads connector — GAQL queries for campaigns, ad groups, keywords</li>
-        <li class="task">Daily pull script → CampaignDailyMetrics</li>
-        <li class="task">Link Google Ads spend to GA4 conversions for D2C ROAS</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M4 · Amazon Pipeline</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Complete SP-API app registration</li>
-        <li class="task">Amazon orders normaliser → DailySales (via SP-API or Business Report CSV)</li>
-        <li class="task">Amazon FBA inventory normaliser → DailyInventory</li>
-        <li class="task">Amazon settlement normaliser → SKUEconomics (reconciled) — source of truth for fees</li>
-        <li class="task">Amazon Ads API access (separate from Seller Central) → CampaignDailyMetrics + SKUAdAttribution</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M5 · Other Channels</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Flipkart: get API credentials from Sprig, build normaliser (23,397 listings already in DB)</li>
-        <li class="task">Flipkart Ads: check if Sprig runs PLA, pull ad metrics</li>
-        <li class="task">Shopify: get store owner to grant API permissions (currently blocked)</li>
-        <li class="task">Meta Ads: check if Sprig runs Meta ads for D2C, get Business Manager access</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M6 · First Cross-Channel P&amp;L</div><div class="m-status s-milestone">L1 Milestone</div></div>
-      <ul>
-        <li class="task">Compute SKUEconomics (estimated) — revenue − fees − COGS − ads = contribution margin</li>
-        <li class="task">Compute ThrottleSignals — the 6 health signals per SKU per day</li>
-        <li class="task">Build the query: "How much did SKU X make across Amazon + Flipkart + Shopify after all fees?"</li>
-        <li class="task">Validate P&amp;L against Sprig's own numbers</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M6 Infra</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Move OAuth tokens to PostgreSQL (currently in-memory on DO droplet, lost on restart)</li>
-        <li class="task">Publish OAuth consent screen (currently restricted to org users, blocks external onboarding)</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- L2 -->
-  <section class="layer">
-    <h2>L2: Brand Context Layer</h2>
-    <div class="layer-desc">Build the "brain" that assembles the right context for each agent call. No LLM reasoning yet — just data assembly.</div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M7 · Context Assembler</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Brand context builder: BrandProfile + BrandCategoryPolicy + active BrandDirectives → JSON</li>
-        <li class="task">Domain context queries: per-agent summaries (Growth sees ad data, Supply sees inventory)</li>
-        <li class="task">Task context queries: per-SKU deep dive (signals + P&amp;L + history) for a specific trigger</li>
-        <li class="task">Context size budgeting: ensure each layer fits within token limits (~2K + ~8K + ~5K)</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M8 · Decision Memory</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Design Decision record schema (trigger → context → reasoning → action → outcome)</li>
-        <li class="task">Store every agent decision as a structured record in DB</li>
-        <li class="task">Retrieval: "last 10 decisions on this SKU" and "last 5 decisions by Growth Agent"</li>
-        <li class="task">Pruning: keep recent + high-impact, summarise older decisions</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M9 · Morning Briefing (v1)</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Daily scan job: query ThrottleSignals for anomalies (ROAS drops, OOS, margin breaches)</li>
-        <li class="task">Generate briefing via Haiku (template-driven, not free-form)</li>
-        <li class="task">Surface in dashboard — the "what happened overnight" card</li>
-        <li class="task">Email/notification to operator</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- L3 -->
-  <section class="layer">
-    <h2>L3: Agent Runtime</h2>
-    <div class="layer-desc">First agent goes live. Starts deterministic (Python functions), earns trust before getting LLM powers.</div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M10 · Growth Agent (Deterministic)</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Base agent interface: observe() → reason() → propose()</li>
-        <li class="task">Agent registry: register agents, route triggers to the right agent</li>
-        <li class="task">Growth Agent: implement playbooks as Python functions</li>
-        <li class="task task-sub">OOS response — auto-pause ads</li>
-        <li class="task task-sub">Low cover — throttle bids 30–50%</li>
-        <li class="task task-sub">High cover — boost aggression</li>
-        <li class="task task-sub">ROAS drop — pause underperformers, reallocate budget</li>
-        <li class="task task-sub">D2C conversion drop — investigate funnel, diagnose cause</li>
-        <li class="task">Growth Agent output: structured Intent objects (not free text)</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M11 · Inter-Agent Coordination</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Cross-agent queries: Growth asks Supply "when will this SKU restock?"</li>
-        <li class="task">Shared decision feed: agents can read each other's recent decisions</li>
-        <li class="task">Conflict detection: Growth wants to boost, Supply says OOS → Growth defers</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M12 · Approval Workflow</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Approval queue in DB (pending decisions awaiting operator response)</li>
-        <li class="task">Surface in dashboard right panel (already mocked in UI)</li>
-        <li class="task">Approve/reject flow → decision record updated → agent proceeds or backs off</li>
-        <li class="task">Auto-expire: stale approvals expire after 24h with notification</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- L4 -->
-  <section class="layer">
-    <h2>L4: Policy &amp; Governance</h2>
-    <div class="layer-desc">Hard guardrails that agents cannot override. Every action passes through this gate.</div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M13 · Policy Engine</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Rule evaluator: check BrandProfile + BrandCategoryPolicy + BrandDirectives</li>
-        <li class="task">Policy types: hard constraint, approval routing, auto-execute, time window, escalation</li>
-        <li class="task">Kill switch: halt all automated actions for a brand instantly</li>
-        <li class="task">Audit trail: every decision shows trigger → reasoning → policy check → outcome</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M14 · Operator Controls</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Directive management UI: create/edit/revoke directives from dashboard</li>
-        <li class="task">Policy dashboard: see all active policies, directives, and their status</li>
-        <li class="task">Override history: "who changed what and when"</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- L5 -->
-  <section class="layer">
-    <h2>L5: LLM-Powered Reasoning</h2>
-    <div class="layer-desc">Swap deterministic playbooks for LLM reasoning. Playbooks become system prompt context, not code.</div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M15 · LLM Agent Mode</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Playbook .md files → system prompt injection (the "skill file" approach)</li>
-        <li class="task">Model router: Haiku for routine checks, Sonnet for complex multi-signal decisions</li>
-        <li class="task">Confidence scoring: agent reports confidence level, low confidence → escalate</li>
-        <li class="task">Reasoning trace: agent explains its thinking (stored in Decision record)</li>
-      </ul>
-    </div>
-
-    <div class="milestone">
-      <div class="m-head"><div class="m-title">M16 · Full Agent Roster</div><div class="m-status s-pending">Pending</div></div>
-      <ul>
-        <li class="task">Supply Agent: stockout prediction, reorder triggers, FC rebalancing</li>
-        <li class="task">Category Agent: competitive pricing, discount strategy, BSR tracking</li>
-        <li class="task">Creative Agent: creative fatigue detection, brief generation</li>
-        <li class="task">Each agent follows the same interface, plugs into the same policy engine</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- PARKING LOT -->
   <div class="parking">
     <h2>Parking Lot</h2>
-    <p>Not scheduled yet — on the horizon.</p>
+    <p>Not scheduled — on the horizon.</p>
     <ul>
-      <li class="task">Multi-brand management — one Terminal6 instance serving multiple brands</li>
-      <li class="task">1P seller support — one operator managing 100+ brands (RetailEZ, Cocoblu)</li>
-      <li class="task">Shopify Plus international expansion</li>
-      <li class="task">Performance-based pricing model</li>
-      <li class="task">Mobile app for operator approvals</li>
+      <li class="task pending"><span class="icon">○</span><span class="title">Multi-brand management — one Terminal6 instance serving multiple brands</span></li>
+      <li class="task pending"><span class="icon">○</span><span class="title">1P seller support — one operator managing 100+ brands (RetailEZ, Cocoblu)</span></li>
+      <li class="task pending"><span class="icon">○</span><span class="title">Shopify Plus international expansion</span></li>
+      <li class="task pending"><span class="icon">○</span><span class="title">Performance-based pricing model</span></li>
+      <li class="task pending"><span class="icon">○</span><span class="title">Mobile app for operator approvals</span></li>
     </ul>
   </div>
 </div>
 
+<div id="toast"><span class="check">✓</span> <span id="toast-msg">Prompt copied to clipboard</span></div>
+
 <footer>Terminal6 · Roadmap updated on every commit</footer>
+
+<!-- ============= PROMPTS (raw text, no escaping) ============= -->
+<script type="text/plain" id="p-ga4-norm">
+We have channels/ga4/connector.py that successfully pulls data from Sprig's GA4 property (311140290) — OAuth2 tested end-to-end. Target tables are DailySiteFunnel, DailyProductFunnel, DailyTrafficSource in core/models/ga4_funnel.py. Build channels/ga4/normaliser.py following the Unicommerce normaliser pattern (channels/unicommerce/normaliser.py): one class with one method per report type, each reading a YAML mapping config, calling the connector, validating via core/validation.py → run_full_validation(), and upserting rows. GA4 data is keyed on (property_id, date) or (channel_listing_id, date) — map GA4 itemId → ChannelListing via the Sprig brand's Shopify channel. Traffic source table aggregates by (date, source, medium). Add a YAML mapping config under channels/ga4/mappings/. Read core/validation.py and channels/CLAUDE.md for conventions first. Acceptance: run a 7-day pull for Sprig, confirm rows in all three tables with spot-check values matching the GA4 UI.
+</script>
+<script type="text/plain" id="p-ga4-backfill">
+The GA4 normaliser is live. Write a backfill script channels/ga4/backfill.py that pulls 90 days of history for Sprig's GA4 property 311140290. It should call the normaliser day-by-day (or in small date chunks if the API supports it) and log progress to data_import_logs. Handle GA4's quota limits gracefully — back off on 429s. The script should be idempotent (use the normaliser's upsert path so re-runs don't duplicate). Read channels/ga4/connector.py for auth handling. Acceptance: 90 rows per day type in DailySiteFunnel, matching counts in DailyProductFunnel aggregated by date, and a DataImportLog row for each day.
+</script>
+<script type="text/plain" id="p-ga4-verify">
+Now that the GA4 backfill is done, write a validation report script that picks 5 random dates in the last 90 days and, for each, prints the key metrics from DailySiteFunnel (sessions, users, add-to-cart, checkout, purchase) side-by-side with what Nitin sees in the GA4 UI for the same dates. Output should be a simple markdown table written to data/reports/ga4_validation_DATE.md. Also flag any days where the variance is more than 5 percent. The goal is proof that the pipeline matches the source of truth before we build P&amp;L on top of it.
+</script>
+
+<script type="text/plain" id="p-uc-backfill">
+The Unicommerce orders normaliser is live and tested for a 2-day window. Now backfill 30–90 days of Sprig historical orders. Write channels/unicommerce/backfill_orders.py that paginates through the /services/rest/v1/oms/sale/search endpoint day-by-day, calls the existing normaliser, and writes a DataImportLog row per day. Unicommerce has rate limits — sleep between pages. For a brand with ~67K orders over 90 days, expect ~700 pages. Use the displayStart/displayLength pagination pattern already in the connector. Handle OAuth token refresh on 401. Acceptance: 67K plus or minus 5 percent DailySales rows covering 90 days, no FK resolution failures over 1 percent, and backfill completes without manual intervention. Read channels/unicommerce/connector.py and channels/unicommerce/normaliser.py first.
+</script>
+<script type="text/plain" id="p-cogs">
+Sprig will send a COGS spreadsheet (SKU to unit cost). Build channels/csv_import/cogs_importer.py that reads a CSV with columns [sku_code, cogs_per_unit, effective_from, notes], looks up the MasterSKU by sku_code, and updates MasterSKU.cogs (or inserts into a versioned CogsHistory table if we want time-series cost — check core/models/entities.py first). Validate every row: SKU must exist, cogs must be numeric greater than 0, effective_from is a valid date. Skip rows with missing SKUs but log them to data_import_logs.failed_rows. Write a CLI entry point so it runs as python -m channels.csv_import.cogs_importer --file path/to/cogs.csv --brand sprig. This unblocks all P&amp;L work — highest-priority M2 task.
+</script>
+<script type="text/plain" id="p-uc-perms">
+Currently contact@terminal6.io has limited facility access in Sprig's Unicommerce tenant — we see 3 facilities but some order/return queries return empty or partial results. This is an access task, not a code task. Document the exact permissions needed in channels/unicommerce/ONBOARDING.md under a new "Required Facility Permissions" section, listing every endpoint we call and the facility scope it needs. Then draft a Slack or email message to Sprig's Unicommerce admin requesting the missing permissions. Don't attempt to bypass or work around — the goal is to get proper access.
+</script>
+<script type="text/plain" id="p-fk-gaps">
+During the Unicommerce orders normaliser run, 83 order items failed FK resolution and 555 master SKUs have no matching ChannelListing. Write a diagnostic script scripts/diagnose_fk_gaps.py that (1) lists the 83 unresolved order items grouped by reason (missing SKU, missing channel listing, channel code mismatch), (2) lists the 555 SKUs-without-listings grouped by channel, (3) outputs a markdown report. Then propose fixes — usually these are either (a) channel code mismatches in brands/sprig/unicommerce_channel_map.yaml, (b) delisted products still referenced in old orders (acceptable — soft-flag them), or (c) a bug in the normaliser's FK lookup. Read the orders normaliser and the channel map first.
+</script>
+<script type="text/plain" id="p-returns-verify">
+The Unicommerce returns normaliser ran successfully but fetched 0 returns for Sprig. Two possibilities: (a) Sprig genuinely has very few returns in the queried window, or (b) the contact@terminal6.io user doesn't have returns visibility. Write a one-off diagnostic script that (1) queries the returns endpoint directly via the connector with a 90-day window, (2) cross-references against Sprig's Unicommerce UI (ask Nitin for a screenshot of returns for the same window), (3) outputs a comparison. If it's a permission issue, add the missing permission to the facility permissions request. If returns are genuinely low, document that in channels/unicommerce/CLAUDE.md under known characteristics.
+</script>
+<script type="text/plain" id="p-celery">
+Set up Celery + Redis for scheduled data sync. Add celery and redis to requirements, create core/tasks.py with Celery app configured to use Redis (local dev + DO droplet prod). Define three periodic tasks using celery beat: sync_products (daily at 02:00 IST), sync_inventory (every 2 hours), sync_orders (every 4 hours). Each task should call the relevant Unicommerce normaliser for all active brands (query BrandProfile where active=true). Write a simple systemd unit file for running Celery worker + beat on the DO droplet. Read infra/CLAUDE.md for current droplet setup. Acceptance: Celery starts cleanly, runs a sync task manually via celery -A core.tasks sync_products, and cron-scheduled runs appear in logs.
+</script>
+
+<script type="text/plain" id="p-gads-basic">
+Check the inbox of contact@terminal6.io for the Google Ads API Basic Access approval email (application submitted 4 Apr 2026). If approved, note the date and move on to the next task. If rejected, read the rejection reason carefully — Google typically asks for clearer use-case descriptions or policy compliance evidence — and draft a revised application. If still pending after 5 business days, follow up via the Google Ads API support form. This is a process-check task, not a code task.
+</script>
+<script type="text/plain" id="p-gads-oauth">
+Once Basic Access is approved, re-run the OAuth flow at the deployed endpoint (/auth/google/authorize on the DO droplet — see infra/CLAUDE.md) with Sprig's Google Ads login. The response will include the customer ID list via the customers:listAccessibleCustomers call. Update infra/CLAUDE.md with Sprig's Ads customer ID (currently "TBD"). Also update the Sprig BrandProfile row in the DB with google_ads_customer_id (add the column if it doesn't exist — extend core/models/entities.py).
+</script>
+<script type="text/plain" id="p-gads-connector">
+Build channels/google_ads/connector.py using the google-ads-python SDK. Auth uses the developer token + OAuth refresh token already stored in the DO droplet's token store. Implement three query methods: get_campaigns(customer_id, date_range), get_ad_groups(customer_id, date_range), get_keywords(customer_id, date_range) — each returning the GAQL query results as a list of dicts. Follow the pattern in channels/unicommerce/connector.py — retry with backoff on rate limits, log raw responses to Layer A. Read channels/CLAUDE.md and the existing Google Ads OAuth FastAPI endpoints on the droplet first. Acceptance: live-test against Sprig's customer ID, print 7 days of campaign data to console.
+</script>
+<script type="text/plain" id="p-gads-daily">
+With the Google Ads connector live, build channels/google_ads/normaliser.py that pulls daily campaign + ad group + keyword metrics and upserts into CampaignDailyMetrics and related tables. Key fields per row: campaign_id, date, impressions, clicks, cost_micros, conversions, conversion_value. Map Google Ads campaign to internal Campaign record (create if missing). Validate via core/validation.py. Schedule as a daily Celery task (extend the M2 Celery setup). Acceptance: 7-day backfill for Sprig, rows land in CampaignDailyMetrics with non-zero spend for active campaigns.
+</script>
+<script type="text/plain" id="p-gads-roas">
+D2C ROAS needs Google Ads spend (from CampaignDailyMetrics) divided by GA4 conversion value (from DailySiteFunnel or DailyProductFunnel). Write a view or query in domains/data/queries.py that joins the two on date for the Sprig Shopify channel. Handle the attribution question: are we using last-click (GA4 default) or a model? Document the choice in domains/data/CLAUDE.md. Acceptance: a query "show me Sprig D2C ROAS for last 30 days" returns a row per day with spend, conversion_value, and ROAS.
+</script>
+
+<script type="text/plain" id="p-amz-spapi">
+Register a new SP-API application in Amazon Seller Central under Sprig's account (Nitin has full access). Follow Amazon's SP-API developer onboarding: create an IAM role, register the app, get the refresh token via the self-authorization flow. Document every credential in infra/CLAUDE.md under a new "Amazon SP-API" section — same format as the Google Ads section. Do NOT commit credentials to git; keep them in .env on the DO droplet. Acceptance: a working refresh token that can call /sellers/v1/marketplaceParticipations and return Sprig's marketplace data.
+</script>
+<script type="text/plain" id="p-amz-orders">
+Build channels/amazon/normaliser.py for orders. Two data sources possible: (a) SP-API /orders/v0/orders (preferred, real-time), or (b) Business Report CSV export (fallback, no date column issue — download daily). Start with SP-API. Map Amazon orders to DailySales rows keyed on (channel_listing_id, date) where channel_listing_id resolves via ChannelListing where channel='amazon_in' and channel_sku=OrderItem.SellerSKU. Read the existing YAML mapping configs in channels/amazon/mappings/ — they already exist. Follow the Unicommerce normaliser pattern. Run validation. Acceptance: 7-day backfill for Sprig, DailySales rows present with correct order counts vs Seller Central dashboard.
+</script>
+<script type="text/plain" id="p-amz-fba">
+Extend channels/amazon/normaliser.py with an inventory method that pulls FBA inventory from SP-API /fba/inventory/v1/summaries. Map each FNSKU to a ChannelListing and upsert into DailyInventory with fields: available, reserved, inbound, unfulfillable. Key on (channel_listing_id, date, facility_code='amazon_fba'). Schedule as part of the Celery inventory sync (every 2 hours). Acceptance: daily inventory rows for all Sprig FBA SKUs, reconcile against Seller Central Inventory dashboard.
+</script>
+<script type="text/plain" id="p-amz-settle">
+Settlement reports are the ONLY source of truth for Amazon fees (rate cards are estimates — see design decision #5 in .claude/CLAUDE.md). Build a settlement normaliser that reads SP-API /reports/2021-06-30 settlement reports (or the CSV from Seller Central) and writes to SKUEconomics with data_quality='reconciled'. Key fields per row: referral_fee, fba_fee, other_fees, net_proceeds. This supersedes any earlier estimated or provisional SKUEconomics rows for the same SKU+date. Read core/models/time_series.py for the SKUEconomics schema and the data_quality enum progression. Acceptance: reconciled fees for a test period match the settlement report PDF to the penny.
+</script>
+<script type="text/plain" id="p-amz-ads">
+Amazon Ads API is a separate registration from SP-API. Apply for Amazon Ads API access via advertising.amazon.com/API (Sprig login). Once approved, build channels/amazon_ads/connector.py to pull Sponsored Products + Sponsored Brands + Sponsored Display daily metrics. Write into CampaignDailyMetrics (spend, impressions, clicks) and SKUAdAttribution (ad-attributed sales per SKU per campaign per day). This is what enables TACoS calculation. Follow the same pattern as Google Ads. Document credentials in infra/CLAUDE.md. Acceptance: 7-day backfill for Sprig active campaigns.
+</script>
+
+<script type="text/plain" id="p-fk">
+Sprig already has 23,397 Flipkart ChannelListing rows (loaded via Unicommerce CSV). Now we need live Flipkart data. Flipkart Seller API requires app credentials from the seller — ask Nitin to get these from Sprig's Flipkart account. Once received, build channels/flipkart/connector.py + channels/flipkart/normaliser.py following the Unicommerce pattern. Target tables: DailySales, DailyInventory. Flipkart's API is quirky — read their docs carefully, especially the pagination and rate-limit patterns. Store credentials in .env on the DO droplet. Acceptance: 7-day backfill of Flipkart orders for Sprig, DailySales rows land in DB.
+</script>
+<script type="text/plain" id="p-fk-ads">
+Confirm with Nitin whether Sprig runs Flipkart PLA (Product Listing Ads) campaigns. If yes, pull ad metrics via Flipkart's ads API or the seller portal export. Target table: CampaignDailyMetrics with channel='flipkart'. If Sprig doesn't run Flipkart ads, mark this task as "N/A for Sprig" and move on — it's a design-partner-specific task. Document the decision in channels/flipkart/CLAUDE.md.
+</script>
+<script type="text/plain" id="p-shopify">
+Shopify API access to Sprig's sprigstore is currently blocked — need the store owner to grant a private app or custom app with read permissions on Products, Orders, Inventory. Draft a message for Nitin to send the store owner explaining exactly what scopes we need and why (for cross-channel P&amp;L). Once access is granted, wire the existing Shopify YAML mapping configs (already in channels/shopify/mappings/) into a channels/shopify/normaliser.py. Traffic data stays on GA4 — Shopify is only for orders + products + inventory. Acceptance: 7-day Sprig Shopify order data lands in DailySales.
+</script>
+<script type="text/plain" id="p-meta">
+Ask Nitin if Sprig runs Meta (Facebook/Instagram) ads for D2C. If yes, get added to Sprig's Meta Business Manager with API access. Build channels/meta_ads/connector.py using the Marketing API. Target CampaignDailyMetrics with channel='meta'. Link spend to GA4 conversion data for D2C ROAS (same pattern as Google Ads). If Sprig doesn't run Meta, mark as N/A and document.
+</script>
+
+<script type="text/plain" id="p-sku-econ">
+Write domains/finance/sku_economics.py that computes daily SKUEconomics rows with data_quality='estimated'. For each (channel_listing_id, date) in DailySales, compute: gross_revenue (from DailySales), channel_fees (estimated from rate cards — see domains/finance/rate_cards.yaml if it exists, else hardcode Amazon 8–15 percent and Flipkart 5–12 percent by category), cogs (from MasterSKU.cogs times units_sold), ad_spend (from SKUAdAttribution if populated, else prorate from CampaignDailyMetrics), and contribution_margin = revenue minus fees minus cogs minus ad_spend. Upsert into SKUEconomics. Schedule as a Celery daily task. This is the first cut — the reconciled version comes from Amazon settlement later. Acceptance: every SKU with a sale in the last 7 days has an estimated SKUEconomics row.
+</script>
+<script type="text/plain" id="p-throttle">
+Write domains/growth/throttle_signals.py that computes 6 per-SKU-per-day signals: (1) inventory cover in days = available / 30d-avg daily velocity, (2) margin health = contribution_margin / gross_revenue, (3) catalogue score = completeness of listing fields (images, bullets, A+), (4) rating (from reviews data — stub for now if not yet ingested), (5) price competitiveness (stub — needs scraper), (6) delivery speed (stub — needs seller performance data). Each signal outputs a numeric value + a status green/amber/red based on brand-specific thresholds in BrandCategoryPolicy. Write to a new throttle_signals table (or extend an existing one — check core/models/time_series.py). This powers the Growth Agent's triggers later. Read domains/growth/CLAUDE.md for signal definitions. Acceptance: run for Sprig, see green/amber/red distribution across top 100 SKUs.
+</script>
+<script type="text/plain" id="p-pnl-query">
+The moment of truth for L1. Write a query function domains/data/queries.py sku_cross_channel_pnl(sku_code, brand_id, date_range) that joins MasterSKU to ChannelListing to DailySales + SKUEconomics across all channels and returns a per-channel and consolidated P&amp;L: gross revenue, fees, cogs, ads, contribution margin, ROAS. Output as a dict ready for rendering in the dashboard. Also write a CLI entry point so Nitin can run python -m domains.data.queries --sku SPRG-BUDS-01 --days 30. Acceptance: pick 3 Sprig SKUs, print their 30-day cross-channel P&amp;L, manually sanity-check one against Sprig's internal numbers.
+</script>
+<script type="text/plain" id="p-pnl-validate">
+Ask Nitin for Sprig's own calculated P&amp;L for 5 representative SKUs for a 30-day window. Run our sku_cross_channel_pnl query for the same SKUs and window, produce a side-by-side comparison markdown report. Investigate any variance over 5 percent line by line: is it fees, COGS, attribution, or a data gap? This is the gate for declaring L1 "done" — we need proof that our numbers match reality. Document findings in docs/data_model.md under a new "P&amp;L validation" section.
+</script>
+<script type="text/plain" id="p-oauth-db">
+OAuth refresh tokens for Google Ads + GA4 are currently stored in-memory on the FastAPI service on the DO droplet — they're lost on every restart, forcing re-auth. Create a new oauth_tokens table in the canonical schema (or extend BrandProfile if tokens are brand-scoped — probably cleaner to have a dedicated table). Fields: brand_id, provider (google_ads, ga4, amazon, etc.), refresh_token (encrypted — use cryptography.Fernet with a key from env), access_token, expires_at, scopes. Update the OAuth callback endpoints on the droplet to write to DB, and update the connectors to load from DB. Test a full restart — tokens should survive. Read infra/CLAUDE.md for the droplet setup.
+</script>
+<script type="text/plain" id="p-oauth-publish">
+The GCP project's OAuth consent screen is currently in "testing" mode, restricted to org users. This blocks onboarding any brand outside Terminal6. Submit it for Google verification: GCP Console to APIs &amp; Services to OAuth consent screen to Publish App. Google will require proof of domain ownership (already done — terminal6.io) and may ask for a demo video showing the auth flow and a privacy policy URL. Write a one-page privacy policy at terminal6.io/privacy (add to the website repo nitinc07/terminal6-website). Verification typically takes 4–6 weeks — submit early. This is mostly a form-filling + waiting task, not a code task.
+</script>
+
+<script type="text/plain" id="p-ctx-brand">
+Build domains/intelligence/context_assembler.py build_brand_context(brand_id) that queries BrandProfile, all active BrandCategoryPolicy rows, and all active BrandDirective rows (status='active', not expired), then assembles them into a JSON object structured for LLM consumption. Respect the directive priority stack: OVERRIDE then TACTICAL then STRATEGY then SEASONAL then PERMANENT. Include a rendered human-readable summary for the LLM plus the raw structured data. Target size: ~2K tokens max. Read product/knowledge_architecture.md section "Context Assembly" for the exact structure. Read core/models/entities.py BrandDirective model. Acceptance: run for Sprig, print the assembled JSON, verify all active directives appear in priority order.
+</script>
+<script type="text/plain" id="p-ctx-domain">
+Extend the context assembler with build_domain_context(brand_id, domain) where domain is in {growth, supply, category, creative, finance}. Each domain gets a summary tuned for that agent: Growth sees ad metrics + ROAS + throttle signals; Supply sees inventory cover + reorder points + FC allocation; Category sees BSR + price + reviews; etc. Query only the time-series tables relevant to that domain, aggregate into key stats (last 7d, last 30d, vs prior period). Target size: ~5–10K tokens per domain. Read product/knowledge_architecture.md section "Context Assembly" and each domain's CLAUDE.md. Acceptance: build_domain_context('sprig-id', 'growth') returns a dict with ROAS, top-spending campaigns, and throttle signal summary for Sprig.
+</script>
+<script type="text/plain" id="p-ctx-task">
+Build build_task_context(brand_id, sku_code, trigger_type) — the narrowest context layer, ~3–5K tokens, focused on a single SKU and a specific trigger (e.g. "ROAS drop", "stockout imminent"). Include: last 14 days of DailySales, current ThrottleSignals, last 10 SKUEconomics rows, any recent decisions on this SKU from Decision Memory (if table exists), and the 5 most recent comparable triggers on other SKUs. This is what an agent gets loaded BEFORE it reasons about the specific trigger. Acceptance: run for a Sprig SKU with a recent sale, verify output is under 5K tokens and contains everything the agent needs to decide.
+</script>
+<script type="text/plain" id="p-ctx-budget">
+Add token counting to every context builder using tiktoken or Anthropic's token counter. Each layer has a target: brand ~2K, domain ~8K, task ~5K. If a layer exceeds its budget, apply a reduction strategy: (a) drop oldest time-series rows first, (b) summarize verbose fields, (c) truncate decision history. Never silently drop data — log the reduction in the context object so the agent knows it was trimmed. Write unit tests that stress-test with a hypothetical 50K-SKU brand — context must still fit. Read product/knowledge_architecture.md section "Context Assembly".
+</script>
+
+<script type="text/plain" id="p-dec-schema">
+Design a new SQLAlchemy model Decision in core/models/decision_memory.py. Fields: id, brand_id (FK), agent_name, sku_code (nullable — some decisions are brand-level), trigger_type, trigger_payload (JSONB), context_snapshot (JSONB — the context that was assembled), reasoning (Text — the LLM's reasoning or the deterministic rule path), proposed_action (JSONB), status (enum: proposed, approved, rejected, auto_executed, expired), outcome (JSONB — what actually happened, populated after the fact), created_at, resolved_at. Add to core/models/base.py a DecisionStatus enum. Write the Alembic migration. This is the foundation for the knowledge flywheel. Read product/knowledge_architecture.md section "Decision Memory".
+</script>
+<script type="text/plain" id="p-dec-log">
+Add a decision_logger module that every agent calls before taking any action. Signature: log_decision(brand_id, agent_name, trigger, context, reasoning, proposed_action) returns decision_id. Returns the decision_id so the agent can later update it with outcome. Hook this into the base agent interface (observe, reason, propose — see M10). Every decision must land in the DB BEFORE the policy engine evaluates it — this is the audit trail. Acceptance: run a test agent with a fake trigger, verify a Decision row lands with all fields populated.
+</script>
+<script type="text/plain" id="p-dec-retrieve">
+Add retrieval functions to decision_memory.py: get_decisions_for_sku(sku_code, limit=10), get_decisions_by_agent(agent_name, limit=10), get_decisions_by_trigger(trigger_type, limit=10). These are what the context assembler pulls for the "task context" layer. Return decisions ordered by created_at DESC with only the fields agents need (don't include the full context_snapshot by default — it's huge). Add an include_context=False flag for when the full record is needed.
+</script>
+<script type="text/plain" id="p-dec-prune">
+Decision Memory grows forever by default. Implement pruning: any decision older than 90 days and status not equal to auto_executed_with_impact should be summarized. Write a Celery task prune_decisions that runs weekly, groups old decisions by (brand, agent, trigger_type), and replaces them with a single DecisionSummary row (new table) capturing counts, common patterns, and representative examples. Original high-impact decisions are kept as-is. This keeps context assembly fast even as the system scales to years of history.
+</script>
+
+<script type="text/plain" id="p-brief-scan">
+Write domains/intelligence/morning_briefing.py scan_for_anomalies(brand_id) that queries the previous 24 hours of ThrottleSignals and finds: (a) any SKU where a signal flipped from green or amber to red, (b) any SKU where ROAS dropped more than 20 percent day-over-day, (c) any SKU that went out of stock, (d) any brand-level margin breach. Return a list of anomaly records with severity + affected SKU + suggested action. Read domains/growth/CLAUDE.md for anomaly thresholds. Acceptance: run for Sprig on yesterday's data, verify anomalies match what Nitin would flag manually.
+</script>
+<script type="text/plain" id="p-brief-gen">
+Take the anomaly list from scan_for_anomalies and generate a concise morning briefing via Claude Haiku. Use a strict template: "Overnight N events needed attention. X SKUs need reorder, Y campaigns dropped in ROAS, Z margin breaches. Top priority: [single most important item with specific numbers]." Keep it under 150 words. Store the briefing in a new briefings table with brand_id, date, content, anomalies_count. Use anthropic SDK with Haiku, not Sonnet — this is a routine task. Read .claude/CLAUDE.md for model selection guidance.
+</script>
+<script type="text/plain" id="p-brief-dash">
+Add a "Morning Briefing" card to the Terminal6 dashboard (product/terminal6-os-v4_2.html mirrored to the website's app.html). The card sits at the top of the Brand Overview view and shows the latest briefing from the briefings table. Use an API endpoint (new — /api/briefing/latest?brand_id=...) to fetch it, with polling every 5 minutes. Style it with a subtle accent border and a timestamp. Acceptance: briefing appears on dashboard load, updates when a new one is generated.
+</script>
+<script type="text/plain" id="p-brief-email">
+Add email delivery of the morning briefing. Use resend or postmark (lightweight, good deliverability). Send daily at 08:00 IST to BrandProfile.operator_email. Include the briefing content + a link to the dashboard. Later we can add Slack/WhatsApp — email first. Store send status in briefings.email_status. Acceptance: a real email lands in Nitin's inbox with yesterday's Sprig briefing.
+</script>
+
+<script type="text/plain" id="p-agent-base">
+Create domains/intelligence/base_agent.py with an abstract base class BaseAgent exposing three methods: observe(brand_id) returns a list of Trigger (scans data, finds things worth acting on), reason(trigger, context) returns a Reasoning (decides what to do), propose(reasoning) returns an Intent (formats as a structured action). An Intent is a dataclass with fields: action_type, target (SKU/campaign/etc.), parameters, confidence, requires_approval. Every concrete agent inherits from this. Read product/knowledge_architecture.md section "Agent Architecture". Acceptance: a stub EchoAgent that returns a fake trigger and intent runs end-to-end.
+</script>
+<script type="text/plain" id="p-agent-reg">
+Build domains/intelligence/agent_registry.py — a singleton that agents register themselves with at startup (via decorator or explicit call), mapping trigger types to agent classes. Example: @register_trigger('roas_drop') on GrowthAgent means any roas_drop trigger routes to Growth. The registry also tracks which domains each agent owns for cross-agent queries (M11). Read the OpenClaude tool registry pattern for inspiration — it's a similar shape. Acceptance: two stub agents register, trigger dispatch routes correctly.
+</script>
+<script type="text/plain" id="p-growth-impl">
+Create domains/growth/growth_agent.py inheriting from BaseAgent. The reason() method dispatches on trigger type to specific playbook functions defined in domains/growth/playbooks/. Each playbook is a pure Python function taking a context + trigger and returning a Reasoning object. Playbooks to implement (each as its own file and sub-task below): oos_response, low_cover, high_cover, roas_drop, d2c_conversion_drop. Read domains/growth/CLAUDE.md for domain rules. Acceptance: GrowthAgent().observe('sprig-id') returns real triggers from Sprig's throttle signals, and .reason() picks the right playbook.
+</script>
+<script type="text/plain" id="p-pb-oos">
+Implement domains/growth/playbooks/oos_response.py. Logic: if a SKU's inventory cover goes to 0 (OOS), any active ads pointing to it should be paused immediately — running ads on OOS items wastes spend. The playbook receives the trigger ({sku_code, channel, inventory_cover=0}) + context and returns a Reasoning proposing PauseCampaign intents for every active campaign targeting that SKU. Include a reasoning string explaining "SKU X is out of stock on channel Y, pausing N campaigns to prevent wasted spend." Read domains/growth/CLAUDE.md for the playbook contract.
+</script>
+<script type="text/plain" id="p-pb-low">
+Implement domains/growth/playbooks/low_cover.py. Logic: if a SKU has fewer than 7 days inventory cover, reduce its ad bid budgets by 30–50 percent (not pause — just throttle) to extend runway. Return AdjustBid intents with multiplier=0.6 (or 0.7 depending on severity). Include the reasoning explaining cover days and expected runway extension.
+</script>
+<script type="text/plain" id="p-pb-high">
+Implement domains/growth/playbooks/high_cover.py. Logic: if a SKU has more than 90 days cover and margin health is green, increase bid aggression 20–40 percent to accelerate sell-through. This avoids aging inventory and frees working capital. Return AdjustBid intents with multiplier=1.3. Include a safety check: don't boost if contribution margin is already negative.
+</script>
+<script type="text/plain" id="p-pb-roas">
+Implement domains/growth/playbooks/roas_drop.py. Logic: if ROAS on a campaign drops more than 25 percent week-over-week AND absolute ROAS is below brand target (from BrandCategoryPolicy.roas_target), pause the campaign and propose reallocating that budget to the top-ROAS campaigns in the same ad group. Return a PauseCampaign intent + multiple IncreaseBudget intents that sum to the paused budget. This is a compound decision — include detailed reasoning.
+</script>
+<script type="text/plain" id="p-pb-d2c">
+Implement domains/growth/playbooks/d2c_conversion_drop.py. Logic: if GA4 DailySiteFunnel shows a more-than-15-percent drop in conversion rate day-over-day, run a diagnostic chain: check sessions (traffic issue?), bounce rate (landing page issue?), add-to-cart rate (product page issue?), checkout drop-off (checkout flow issue?). Return a Diagnose intent (not a direct action — this one proposes investigation steps for a human). Reasoning should narrate which step in the funnel broke. This is harder than the ad playbooks because the action is "tell the operator what to look at," not "change a bid."
+</script>
+<script type="text/plain" id="p-intents">
+Ensure every playbook returns Intent dataclasses, never strings. Define the Intent hierarchy in domains/intelligence/intents.py: PauseCampaign, AdjustBid, IncreaseBudget, Diagnose, etc. Each has typed fields and a to_dict() for JSON serialization. Add a validate() method on each that checks the fields are sane before it reaches the policy engine. This separation (reasoning in playbooks, intents as the interface to policy engine) is core to the architecture. Read product/knowledge_architecture.md section "Agent Architecture".
+</script>
+
+<script type="text/plain" id="p-cross-query">
+Agents need to query each other without tightly coupling. Add a query_agent(target_agent_name, query_type, payload) returns a response method on the agent registry. Example: Growth sees a low-cover trigger, calls query_agent('supply', 'restock_eta', {sku: 'X'}), Supply returns {eta_date: '2026-04-15', confidence: 0.8}. Queries are synchronous and fast (no LLM). Each agent registers query handlers alongside trigger handlers. Read product/knowledge_architecture.md section "Agent Architecture — Inter-Agent Coordination".
+</script>
+<script type="text/plain" id="p-dec-feed">
+Expose a helper get_recent_decisions(brand_id, sku_code=None, limit=20) that any agent can call to see what other agents decided recently. This prevents redundant or conflicting proposals — Growth shouldn't propose boosting a SKU that Supply just flagged for stockout. Uses the decisions table from M8. Add this as a standard method on BaseAgent so every agent has it.
+</script>
+<script type="text/plain" id="p-conflict">
+Before an agent's intent goes to the policy engine, run it through a conflict checker: detect_conflicts(intent, brand_id) returns a list of Conflict. The checker queries recent decisions from other agents on the same SKU/campaign. If Supply has flagged the SKU for stockout and Growth is proposing a boost, that's a conflict — Growth's intent is downgraded or dropped. The checker returns conflicts with severity and resolution_suggestion. The calling agent decides whether to proceed or defer. Log conflicts to the decision record.
+</script>
+
+<script type="text/plain" id="p-approve-queue">
+Extend the decisions table with an approval_queue view: SELECT * FROM decisions WHERE status='proposed' AND requires_approval=true ORDER BY created_at DESC. Add an index on (brand_id, status) for fast lookup. Write domains/intelligence/approval_queue.py with functions get_pending(brand_id), approve(decision_id, operator_id), reject(decision_id, operator_id, reason). Approval/rejection updates decisions.status and triggers any downstream side effects (e.g. on approval, the intent is executed). Acceptance: insert a pending decision, approve it via the API, verify status updates.
+</script>
+<script type="text/plain" id="p-approve-ui">
+The dashboard (product/terminal6-os-v4_2.html) already has a mocked approval queue in the right panel. Wire it to the real backend: add an API endpoint /api/approvals?brand_id=... that returns pending decisions as JSON. Poll from the frontend every 30 seconds. Clicking Approve/Reject calls /api/approvals/ID/approve or /reject. Update the mock data in the HTML to be live. Also update the mirrored app.html in the website repo (sync rule applies — see feedback_sync_website_docs memory). Acceptance: real Sprig decisions show up in the dashboard queue, approve/reject actually updates the DB.
+</script>
+<script type="text/plain" id="p-approve-exec">
+When an operator approves a decision, the system must actually execute the intent (call the channel connector to pause the campaign, adjust the bid, etc.). Build domains/intelligence/intent_executor.py that takes an approved intent and dispatches to the right channel connector. On reject, log the reason in decisions.rejection_reason and update the agent's state so it doesn't immediately re-propose the same thing. The agent should learn from rejections — feed them into the next context window.
+</script>
+<script type="text/plain" id="p-approve-expire">
+Add a Celery task expire_stale_approvals that runs hourly. Any decision in status='proposed' for more than 24h transitions to status='expired' with a reason "operator did not respond in time". Send an email notification to the operator summarizing expired decisions. The underlying issue may still be present, so the agent should re-propose on its next run (but log that it's a re-proposal, not a new trigger).
+</script>
+
+<script type="text/plain" id="p-policy-eval">
+Build policy/engine.py evaluate(intent, brand_id) returns a PolicyResult. Loads all policies applicable to the intent: BrandProfile (brand-wide rules like "never discount more than 30 percent"), BrandCategoryPolicy (per-category rules like "ROAS target for phone cases = 3.5"), and active BrandDirectives in priority order (OVERRIDE first). Applies them as a chain — any policy that matches the intent can allow, deny, require_approval, or modify. Returns a PolicyResult with decision in {allow, deny, require_approval}, modifications (if the policy tweaked the intent), and rationale (a list of which policies fired). Read product/knowledge_architecture.md section "Policy Engine" and policy/CLAUDE.md.
+</script>
+<script type="text/plain" id="p-policy-types">
+Define the 6 policy types in policy/types.py: (1) HardConstraint — denies the intent outright, (2) ApprovalRouting — forces requires_approval=true and routes to a specific operator, (3) AutoExecute — allows bypassing approval when the intent matches a pre-approved pattern, (4) TimeWindow — only allows the action within certain hours (e.g. no bid changes overnight), (5) Escalation — routes to a senior operator based on impact size, (6) KillSwitch — halts ALL automation for the brand. Each is a dataclass with evaluate(intent) returns a PolicyVerdict. Read product/knowledge_architecture.md — Policy Engine table.
+</script>
+<script type="text/plain" id="p-killswitch">
+Add a brand_kill_switch field to BrandProfile (boolean, default false) and an API endpoint /api/brand/ID/killswitch?enable=true. When enabled, the policy engine returns deny for every intent regardless of other policies. Log every kill-switched attempt to a kill_switch_log table so operators can see what the agents WANTED to do during the freeze. The kill switch can only be disabled by a named operator (audit trail). Add a big red button on the dashboard.
+</script>
+<script type="text/plain" id="p-audit">
+Extend the Decision record from M8 with a policy_evaluation JSONB column that stores the full PolicyResult — which policies fired, what they decided, any modifications. Build a dashboard view /decisions/ID/audit that renders the full chain: trigger to context to reasoning to proposed intent to policy evaluation to approval status to execution to outcome. This is the "show your work" feature that makes the system trustworthy. Acceptance: pick a real decision, click audit, see every step.
+</script>
+
+<script type="text/plain" id="p-dir-ui">
+Add a Directives page to the dashboard with CRUD operations on BrandDirective rows. UI should guide the operator through creating a directive: select type (OVERRIDE/TACTICAL/STRATEGY/SEASONAL/PERMANENT), domain, scope (brand/category/SKU), enter the directive text in plain English, set expiry (date or condition), and confirm. Editing an existing directive marks the old one as superseded and creates a new one — never mutate in place (audit trail). Read core/models/entities.py BrandDirective fields. This UI is the primary way operators give agents strategic direction.
+</script>
+<script type="text/plain" id="p-policy-dash">
+Build a read-only policy dashboard showing: (a) all BrandCategoryPolicy rows for the brand, (b) all active BrandDirectives in priority order, (c) a count of how many times each policy fired in the last 7 days (from the audit trail). This lets operators see what's actually governing agent behavior. Sort directives by priority: OVERRIDE first, then TACTICAL, etc. Show expiry countdown for time-bound directives.
+</script>
+<script type="text/plain" id="p-override-hist">
+Every directive creation/revocation goes into an override_history table with operator_id, timestamp, directive_id, action, previous_state, new_state. Add a view page /overrides/history?brand_id=... that shows this as a timeline. This is the "accountability" feature — when an agent does something surprising, the operator can see whether a human changed a directive that caused it.
+</script>
+
+<script type="text/plain" id="p-skill-file">
+Convert the deterministic playbook Python functions from M10 into markdown files: domains/growth/playbooks/oos_response.md, etc. Each file has a structured format: Trigger, Context Required, Reasoning Steps, Output Format, Examples. At runtime, the LLM agent loads the relevant playbook .md into its system prompt (similar to how Claude Code loads CLAUDE.md). This replaces hardcoded logic with natural-language strategy that the LLM interprets. The Python playbook functions stay as fallback for low-confidence scenarios. Read product/knowledge_architecture.md section "LLM Strategy".
+</script>
+<script type="text/plain" id="p-model-route">
+Build domains/intelligence/model_router.py that picks which Claude model to use based on decision complexity. Simple threshold checks (inventory cover, OOS pause) to Haiku. Complex multi-signal reasoning (ROAS drop investigation, cross-channel rebalance) to Sonnet. The router takes the trigger + context size and returns the model ID. Track token costs per decision in the decisions table. Read .claude/CLAUDE.md for model selection heuristics.
+</script>
+<script type="text/plain" id="p-confidence">
+Add a confidence field to the LLM agent's output (0.0 to 1.0). The agent is prompted to self-assess: high confidence if the situation matches a known playbook pattern cleanly, low confidence if the data is ambiguous or the playbook doesn't quite fit. Low-confidence decisions (confidence under 0.6) are automatically escalated to require operator approval, even if policy would normally auto-execute them. Track confidence calibration over time — if the agent is consistently overconfident, retrain the prompt.
+</script>
+<script type="text/plain" id="p-trace">
+Every LLM decision must include a reasoning trace — the chain of thought that led to the action. Store it in decisions.reasoning_trace as Markdown. The dashboard audit view renders it inline so operators can see "why did the agent do that". Keep traces concise (150–300 words) — Claude tends to over-explain. Prompt engineering: "Explain your reasoning in 3–5 bullet points, citing specific data."
+</script>
+
+<script type="text/plain" id="p-supply-agent">
+Create domains/supply_chain/supply_agent.py inheriting from BaseAgent. Triggers it owns: inventory cover under 14d, stockout imminent, FBA imbalance across FCs, lead time spike. Playbooks: predict_stockout, reorder_signal, rebalance_fcs. Uses DailyInventory + DailySales (for velocity) + MasterSKU.lead_time (add this field if missing). Returns intents: CreatePurchaseOrder, RebalanceShipment, PauseAdsForOOS (which also notifies Growth via M11). Read domains/supply_chain/CLAUDE.md.
+</script>
+<script type="text/plain" id="p-cat-agent">
+Create domains/category/category_agent.py. Triggers: competitor price change detected (needs scraper — future task), BSR rank drop more than 30 percent, discount opportunity (e.g. Amazon Lightning Deal eligible), review rating drop. Playbooks: price_match, discount_strategy, listing_optimization. Most of this needs data sources we don't have yet (price scraper, review monitor) — start with what we have: ChannelListing.price vs MasterSKU.mrp diffs, and DailySales velocity changes. Read domains/category/CLAUDE.md.
+</script>
+<script type="text/plain" id="p-creative-agent">
+Create domains/creative/creative_agent.py. Triggers: ad creative CTR drop more than 20 percent (fatigue), listing main image underperforming A/B test, low review count blocking purchase. Playbooks: detect_fatigue, generate_brief (outputs a creative brief for a designer, not the image itself). This agent is mostly diagnostic + brief-writing — no direct execution. Uses CampaignDailyMetrics CTR time series. Read domains/creative/CLAUDE.md (may not exist yet — create it if so).
+</script>
+<script type="text/plain" id="p-agents-final">
+Final consistency pass once all four agents exist (Growth, Supply, Category, Creative). Verify: (1) all four inherit from BaseAgent, (2) all four go through the policy engine, (3) all four log decisions, (4) inter-agent coordination works (Growth to Supply, Category to Creative). Write integration tests that simulate a day of Sprig operations with all four agents running. This is the "L5 done" milestone — the system is feature-complete for a single brand and ready to scale to multi-brand (parking lot).
+</script>
+
+<!-- ============= TASKS DATA ============= -->
+<script>
+const TASKS = [
+  // L0 — Foundations (all done)
+  {layer:"L0", lname:"Foundations (Completed)", ldesc:"Shared infra, models, and conventions that stood up before L1 started.", lhere:false, m:"M0", mname:"Foundation", mstatus:"done", title:"SQLAlchemy 2.0 models — 16 canonical entities (15 + BrandDirective) + 3 GA4 funnel tables", status:"done"},
+  {layer:"L0", m:"M0", title:"Validation layer — 6-stage check (schema, dedup, FK, business, staleness, conflict), configs for 7 report types", status:"done"},
+  {layer:"L0", m:"M0", title:"AWS RDS PostgreSQL 15 provisioned (terminal6-db, ap-south-1) — 20 tables live", status:"done"},
+  {layer:"L0", m:"M0", title:"Alembic migrations wired, .env + core/db.py session factory", status:"done"},
+  {layer:"L0", m:"M0", title:"CLAUDE.md intelligence files across every directory (policy read by every session)", status:"done"},
+  {layer:"L0", m:"M0", title:"Sprig BrandProfile row created in DB — design partner bootstrap complete", status:"done"},
+  {layer:"L0", m:"M0", title:"Per-brand config system — brands/sprig/unicommerce_channel_map.yaml", status:"done"},
+  {layer:"L0", m:"M0", title:"Onboarding runbook — channels/unicommerce/ONBOARDING.md", status:"done"},
+
+  // L1 — Unified Data Layer (you are here)
+  {layer:"L1", lname:"Unified Data Layer", ldesc:"Get all data flowing into the canonical schema. No AI, no agents — just clean, unified data.", lhere:true, m:"M1", mname:"D2C Funnel Live", mstatus:"in-progress", title:"GA4 connector with OAuth2 — live tested against Sprig property 311140290", status:"done"},
+  {layer:"L1", m:"M1", title:"GCP project terminal6-492306 — Analytics Data API enabled", status:"done"},
+  {layer:"L1", m:"M1", title:"Three GA4 funnel tables created on RDS (DailySiteFunnel, DailyProductFunnel, DailyTrafficSource)", status:"done"},
+  {layer:"L1", m:"M1", title:"Finish GA4 normaliser — write site funnel, product funnel, traffic source to DB", status:"inprogress", prompt:"p-ga4-norm"},
+  {layer:"L1", m:"M1", title:"Backfill 90 days of GA4 funnel data for Sprig (property 311140290)", status:"pending", prompt:"p-ga4-backfill"},
+  {layer:"L1", m:"M1", title:"Verify data quality: spot-check GA4 DB rows against GA4 console", status:"pending", prompt:"p-ga4-verify"},
+
+  {layer:"L1", m:"M2", mname:"Unicommerce Fully Loaded", mstatus:"pending", title:"Unicommerce REST API connector — OAuth2 password grant, pagination, retry with backoff, Layer A raw storage", status:"done"},
+  {layer:"L1", m:"M2", title:"Product Master normaliser — 11,281 MasterSKU records (100% HSN/EAN/weight/dimensions coverage)", status:"done"},
+  {layer:"L1", m:"M2", title:"Channel Listings from CSV — 88,844 ChannelListing records across 7 channels", status:"done"},
+  {layer:"L1", m:"M2", title:"Inventory normaliser — 19,105 DailyInventory records (1.08M units across 3 facilities)", status:"done"},
+  {layer:"L1", m:"M2", title:"Orders normaliser — 631 DailySales records live-tested (Apr 3–4)", status:"done"},
+  {layer:"L1", m:"M2", title:"Returns normaliser built (0 returns fetched — gap to investigate)", status:"done"},
+  {layer:"L1", m:"M2", title:"Backfill 30–90 days of Sprig orders via Unicommerce API (~67K orders)", status:"pending", prompt:"p-uc-backfill"},
+  {layer:"L1", m:"M2", title:"Get COGS spreadsheet from Sprig, build CSV importer to MasterSKU.cogs (blocks all P&L)", status:"pending", prompt:"p-cogs"},
+  {layer:"L1", m:"M2", title:"Get full facility permissions for contact@terminal6.io (currently limited)", status:"pending", prompt:"p-uc-perms"},
+  {layer:"L1", m:"M2", title:"Investigate FK resolution gaps: 83 unresolved order items, 555 SKUs without ChannelListing", status:"pending", prompt:"p-fk-gaps"},
+  {layer:"L1", m:"M2", title:"Verify returns data: 0 returns fetched — low returns or permission issue?", status:"pending", prompt:"p-returns-verify"},
+  {layer:"L1", m:"M2", title:"Schedule recurring syncs: products (daily), inventory (2h), orders (4h) — Celery + Redis", status:"pending", prompt:"p-celery"},
+
+  {layer:"L1", m:"M3", mname:"Google Ads Pipeline", mstatus:"pending", title:"MCC account set up (449-399-2970), developer token obtained", status:"done"},
+  {layer:"L1", m:"M3", title:"Google Ads API enabled in GCP project terminal6-492306", status:"done"},
+  {layer:"L1", m:"M3", title:"OAuth endpoints deployed on DO droplet, OAuth flow tested", status:"done"},
+  {layer:"L1", m:"M3", title:"Basic Access application submitted — 4 Apr 2026", status:"done"},
+  {layer:"L1", m:"M3", title:"Basic Access approval — check contact@terminal6.io inbox", status:"pending", prompt:"p-gads-basic"},
+  {layer:"L1", m:"M3", title:"Re-run OAuth flow once approved — discover Sprig's customer ID", status:"pending", prompt:"p-gads-oauth"},
+  {layer:"L1", m:"M3", title:"Build Google Ads connector — GAQL queries for campaigns, ad groups, keywords", status:"pending", prompt:"p-gads-connector"},
+  {layer:"L1", m:"M3", title:"Daily pull script to CampaignDailyMetrics", status:"pending", prompt:"p-gads-daily"},
+  {layer:"L1", m:"M3", title:"Link Google Ads spend to GA4 conversions for D2C ROAS", status:"pending", prompt:"p-gads-roas"},
+
+  {layer:"L1", m:"M4", mname:"Amazon Pipeline", mstatus:"pending", title:"Complete SP-API app registration", status:"pending", prompt:"p-amz-spapi"},
+  {layer:"L1", m:"M4", title:"Amazon orders normaliser to DailySales (via SP-API or Business Report CSV)", status:"pending", prompt:"p-amz-orders"},
+  {layer:"L1", m:"M4", title:"Amazon FBA inventory normaliser to DailyInventory", status:"pending", prompt:"p-amz-fba"},
+  {layer:"L1", m:"M4", title:"Amazon settlement normaliser to SKUEconomics (reconciled) — source of truth for fees", status:"pending", prompt:"p-amz-settle"},
+  {layer:"L1", m:"M4", title:"Amazon Ads API access to CampaignDailyMetrics + SKUAdAttribution", status:"pending", prompt:"p-amz-ads"},
+
+  {layer:"L1", m:"M5", mname:"Other Channels", mstatus:"pending", title:"Flipkart: get API credentials from Sprig, build normaliser (23,397 listings already in DB)", status:"pending", prompt:"p-fk"},
+  {layer:"L1", m:"M5", title:"Flipkart Ads: check if Sprig runs PLA, pull ad metrics", status:"pending", prompt:"p-fk-ads"},
+  {layer:"L1", m:"M5", title:"Shopify: get store owner to grant API permissions (currently blocked)", status:"pending", prompt:"p-shopify"},
+  {layer:"L1", m:"M5", title:"Meta Ads: check if Sprig runs Meta ads for D2C, get Business Manager access", status:"pending", prompt:"p-meta"},
+
+  {layer:"L1", m:"M6", mname:"First Cross-Channel P&L", mstatus:"milestone", title:"Compute SKUEconomics (estimated) — revenue minus fees minus COGS minus ads = contribution margin", status:"pending", prompt:"p-sku-econ"},
+  {layer:"L1", m:"M6", title:"Compute ThrottleSignals — the 6 health signals per SKU per day", status:"pending", prompt:"p-throttle"},
+  {layer:"L1", m:"M6", title:"Build cross-channel P&L query: 'How much did SKU X make after all fees?'", status:"pending", prompt:"p-pnl-query"},
+  {layer:"L1", m:"M6", title:"Validate P&L against Sprig's own numbers", status:"pending", prompt:"p-pnl-validate"},
+
+  {layer:"L1", m:"M6I", mname:"M6 Infra", mstatus:"pending", title:"Move OAuth tokens to PostgreSQL (currently in-memory on DO droplet, lost on restart)", status:"pending", prompt:"p-oauth-db"},
+  {layer:"L1", m:"M6I", title:"Publish OAuth consent screen (currently restricted to org users, blocks external onboarding)", status:"pending", prompt:"p-oauth-publish"},
+
+  // L2
+  {layer:"L2", lname:"Brand Context Layer", ldesc:"Build the brain that assembles the right context for each agent call. No LLM reasoning yet — just data assembly.", lhere:false, m:"M7", mname:"Context Assembler", mstatus:"pending", title:"Brand context builder: BrandProfile + BrandCategoryPolicy + active BrandDirectives to JSON", status:"pending", prompt:"p-ctx-brand"},
+  {layer:"L2", m:"M7", title:"Domain context queries: per-agent summaries (Growth sees ad data, Supply sees inventory)", status:"pending", prompt:"p-ctx-domain"},
+  {layer:"L2", m:"M7", title:"Task context queries: per-SKU deep dive (signals + P&L + history) for a specific trigger", status:"pending", prompt:"p-ctx-task"},
+  {layer:"L2", m:"M7", title:"Context size budgeting: ensure each layer fits within token limits (~2K + ~8K + ~5K)", status:"pending", prompt:"p-ctx-budget"},
+
+  {layer:"L2", m:"M8", mname:"Decision Memory", mstatus:"pending", title:"Design Decision record schema (trigger, context, reasoning, action, outcome)", status:"pending", prompt:"p-dec-schema"},
+  {layer:"L2", m:"M8", title:"Store every agent decision as a structured record in DB", status:"pending", prompt:"p-dec-log"},
+  {layer:"L2", m:"M8", title:"Retrieval: 'last 10 decisions on this SKU' and 'last 5 decisions by Growth Agent'", status:"pending", prompt:"p-dec-retrieve"},
+  {layer:"L2", m:"M8", title:"Pruning: keep recent + high-impact, summarise older decisions", status:"pending", prompt:"p-dec-prune"},
+
+  {layer:"L2", m:"M9", mname:"Morning Briefing (v1)", mstatus:"pending", title:"Daily scan job: query ThrottleSignals for anomalies (ROAS drops, OOS, margin breaches)", status:"pending", prompt:"p-brief-scan"},
+  {layer:"L2", m:"M9", title:"Generate briefing via Haiku (template-driven, not free-form)", status:"pending", prompt:"p-brief-gen"},
+  {layer:"L2", m:"M9", title:"Surface in dashboard — the 'what happened overnight' card", status:"pending", prompt:"p-brief-dash"},
+  {layer:"L2", m:"M9", title:"Email/notification to operator", status:"pending", prompt:"p-brief-email"},
+
+  // L3
+  {layer:"L3", lname:"Agent Runtime", ldesc:"First agent goes live. Starts deterministic (Python functions), earns trust before getting LLM powers.", lhere:false, m:"M10", mname:"Growth Agent (Deterministic)", mstatus:"pending", title:"Base agent interface: observe() -> reason() -> propose()", status:"pending", prompt:"p-agent-base"},
+  {layer:"L3", m:"M10", title:"Agent registry: register agents, route triggers to the right agent", status:"pending", prompt:"p-agent-reg"},
+  {layer:"L3", m:"M10", title:"Growth Agent: implement playbooks as Python functions", status:"pending", prompt:"p-growth-impl"},
+  {layer:"L3", m:"M10", title:"Growth playbook: OOS response — auto-pause ads", status:"pending", prompt:"p-pb-oos"},
+  {layer:"L3", m:"M10", title:"Growth playbook: Low cover — throttle bids 30–50 percent", status:"pending", prompt:"p-pb-low"},
+  {layer:"L3", m:"M10", title:"Growth playbook: High cover — boost aggression", status:"pending", prompt:"p-pb-high"},
+  {layer:"L3", m:"M10", title:"Growth playbook: ROAS drop — pause underperformers, reallocate budget", status:"pending", prompt:"p-pb-roas"},
+  {layer:"L3", m:"M10", title:"Growth playbook: D2C conversion drop — investigate funnel, diagnose cause", status:"pending", prompt:"p-pb-d2c"},
+  {layer:"L3", m:"M10", title:"Growth Agent output: structured Intent objects (not free text)", status:"pending", prompt:"p-intents"},
+
+  {layer:"L3", m:"M11", mname:"Inter-Agent Coordination", mstatus:"pending", title:"Cross-agent queries: Growth asks Supply 'when will this SKU restock?'", status:"pending", prompt:"p-cross-query"},
+  {layer:"L3", m:"M11", title:"Shared decision feed: agents can read each other's recent decisions", status:"pending", prompt:"p-dec-feed"},
+  {layer:"L3", m:"M11", title:"Conflict detection: Growth wants to boost, Supply says OOS — Growth defers", status:"pending", prompt:"p-conflict"},
+
+  {layer:"L3", m:"M12", mname:"Approval Workflow", mstatus:"pending", title:"Approval queue in DB (pending decisions awaiting operator response)", status:"pending", prompt:"p-approve-queue"},
+  {layer:"L3", m:"M12", title:"Surface in dashboard right panel (already mocked in UI)", status:"pending", prompt:"p-approve-ui"},
+  {layer:"L3", m:"M12", title:"Approve/reject flow — decision record updated — agent proceeds or backs off", status:"pending", prompt:"p-approve-exec"},
+  {layer:"L3", m:"M12", title:"Auto-expire: stale approvals expire after 24h with notification", status:"pending", prompt:"p-approve-expire"},
+
+  // L4
+  {layer:"L4", lname:"Policy & Governance", ldesc:"Hard guardrails that agents cannot override. Every action passes through this gate.", lhere:false, m:"M13", mname:"Policy Engine", mstatus:"pending", title:"Rule evaluator: check BrandProfile + BrandCategoryPolicy + BrandDirectives", status:"pending", prompt:"p-policy-eval"},
+  {layer:"L4", m:"M13", title:"Policy types: hard constraint, approval routing, auto-execute, time window, escalation", status:"pending", prompt:"p-policy-types"},
+  {layer:"L4", m:"M13", title:"Kill switch: halt all automated actions for a brand instantly", status:"pending", prompt:"p-killswitch"},
+  {layer:"L4", m:"M13", title:"Audit trail: every decision shows trigger, reasoning, policy check, outcome", status:"pending", prompt:"p-audit"},
+
+  {layer:"L4", m:"M14", mname:"Operator Controls", mstatus:"pending", title:"Directive management UI: create/edit/revoke directives from dashboard", status:"pending", prompt:"p-dir-ui"},
+  {layer:"L4", m:"M14", title:"Policy dashboard: see all active policies, directives, and their status", status:"pending", prompt:"p-policy-dash"},
+  {layer:"L4", m:"M14", title:"Override history: 'who changed what and when'", status:"pending", prompt:"p-override-hist"},
+
+  // L5
+  {layer:"L5", lname:"LLM-Powered Reasoning", ldesc:"Swap deterministic playbooks for LLM reasoning. Playbooks become system prompt context, not code.", lhere:false, m:"M15", mname:"LLM Agent Mode", mstatus:"pending", title:"Playbook .md files to system prompt injection (the skill file approach)", status:"pending", prompt:"p-skill-file"},
+  {layer:"L5", m:"M15", title:"Model router: Haiku for routine checks, Sonnet for complex multi-signal decisions", status:"pending", prompt:"p-model-route"},
+  {layer:"L5", m:"M15", title:"Confidence scoring: agent reports confidence level, low confidence — escalate", status:"pending", prompt:"p-confidence"},
+  {layer:"L5", m:"M15", title:"Reasoning trace: agent explains its thinking (stored in Decision record)", status:"pending", prompt:"p-trace"},
+
+  {layer:"L5", m:"M16", mname:"Full Agent Roster", mstatus:"pending", title:"Supply Agent: stockout prediction, reorder triggers, FC rebalancing", status:"pending", prompt:"p-supply-agent"},
+  {layer:"L5", m:"M16", title:"Category Agent: competitive pricing, discount strategy, BSR tracking", status:"pending", prompt:"p-cat-agent"},
+  {layer:"L5", m:"M16", title:"Creative Agent: creative fatigue detection, brief generation", status:"pending", prompt:"p-creative-agent"},
+  {layer:"L5", m:"M16", title:"Each agent follows the same interface, plugs into the same policy engine", status:"pending", prompt:"p-agents-final"},
+];
+
+const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const ICONS = { done: '✓', inprogress: '▶', pending: '○' };
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function render() {
+  const root = document.getElementById('tasks-root');
+  root.innerHTML = '';
+
+  const layers = {};
+  const order = [];
+  let currentLayer = null, currentMilestone = null;
+  for (const t of TASKS) {
+    if (t.lname) {
+      currentLayer = { code: t.layer, name: t.lname, desc: t.ldesc, here: t.lhere, milestones: {}, morder: [] };
+      layers[t.layer] = currentLayer;
+      order.push(t.layer);
+    }
+    if (t.mname) {
+      currentMilestone = { code: t.m, name: t.mname, status: t.mstatus, tasks: [] };
+      currentLayer.milestones[t.m] = currentMilestone;
+      currentLayer.morder.push(t.m);
+    }
+    currentMilestone.tasks.push(t);
+  }
+
+  for (const lcode of order) {
+    const layer = layers[lcode];
+    const sec = document.createElement('section');
+    sec.className = 'layer';
+    sec.dataset.layer = lcode;
+
+    const head = document.createElement('div');
+    head.className = 'layer-head';
+    const hereBadge = layer.here ? ' <span class="here-badge">You are here</span>' : '';
+    head.innerHTML = '<h2>' + lcode + ': ' + escapeHtml(layer.name) + hereBadge + '</h2><div class="layer-desc">' + escapeHtml(layer.desc) + '</div>';
+    sec.appendChild(head);
+
+    for (const mcode of layer.morder) {
+      const ms = layer.milestones[mcode];
+      const mdiv = document.createElement('div');
+      mdiv.className = 'milestone';
+
+      const done = ms.tasks.filter(t => t.status === 'done').length;
+      const total = ms.tasks.length;
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+      const statusMap = {
+        'in-progress': { cls: 's-progress', txt: 'In Progress' },
+        'milestone':   { cls: 's-milestone', txt: 'L1 Milestone' },
+        'done':        { cls: 's-done', txt: 'Completed' },
+        'pending':     { cls: 's-pending', txt: 'Pending' }
+      };
+      const statusLabel = statusMap[ms.status] || statusMap['pending'];
+
+      mdiv.innerHTML =
+        '<div class="m-head">' +
+          '<div class="m-title">' + mcode + ' · ' + escapeHtml(ms.name) + '</div>' +
+          '<div class="m-status ' + statusLabel.cls + '">' + statusLabel.txt + '</div>' +
+        '</div>' +
+        '<div class="progress-wrap">' +
+          '<div class="progress"><div class="progress-bar" style="width:' + pct + '%"></div></div>' +
+          '<div class="progress-text">' + done + '/' + total + '</div>' +
+        '</div>';
+
+      const ul = document.createElement('ul');
+      for (const t of ms.tasks) {
+        const li = document.createElement('li');
+        li.className = 'task ' + t.status;
+        li.dataset.status = t.status;
+
+        const icon = ICONS[t.status] || '○';
+        const inner =
+          '<span class="icon">' + icon + '</span>' +
+          '<span class="title">' + escapeHtml(t.title) + '</span>' +
+          (t.prompt ? ('<button class="copy-btn" data-prompt-id="' + t.prompt + '" title="Copy Claude prompt">' + COPY_ICON + '</button>') : '');
+        li.innerHTML = inner;
+        ul.appendChild(li);
+      }
+      mdiv.appendChild(ul);
+      sec.appendChild(mdiv);
+    }
+    root.appendChild(sec);
+  }
+
+  updateCounts();
+}
+
+function updateCounts() {
+  const counts = { all: 0, done: 0, inprogress: 0, pending: 0 };
+  for (const t of TASKS) {
+    counts.all++;
+    counts[t.status] = (counts[t.status] || 0) + 1;
+  }
+  document.getElementById('c-all').textContent = counts.all;
+  document.getElementById('c-dn').textContent = counts.done;
+  document.getElementById('c-ip').textContent = counts.inprogress;
+  document.getElementById('c-pe').textContent = counts.pending;
+  document.getElementById('s-done').textContent = counts.done;
+  document.getElementById('s-total').textContent = counts.all;
+}
+
+function applyFilter(filter) {
+  document.querySelectorAll('#tasks-root .task').forEach(el => {
+    const status = el.dataset.status;
+    if (filter === 'all' || filter === status) {
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+  document.querySelectorAll('#tasks-root .milestone').forEach(m => {
+    const visible = m.querySelectorAll('.task:not(.hidden)').length;
+    m.classList.toggle('hidden', visible === 0);
+  });
+  document.querySelectorAll('#tasks-root .layer').forEach(l => {
+    const visible = l.querySelectorAll('.milestone:not(.hidden)').length;
+    l.classList.toggle('hidden', visible === 0);
+  });
+}
+
+document.querySelectorAll('.f-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilter(btn.dataset.filter);
+  });
+});
+
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.copy-btn');
+  if (!btn) return;
+  const promptId = btn.dataset.promptId;
+  const el = document.getElementById(promptId);
+  if (!el) return;
+  const text = el.textContent.trim();
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Prompt copied to clipboard');
+  } catch (err) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Prompt copied to clipboard');
+  }
+});
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+render();
+</script>
 </body>
 </html>
