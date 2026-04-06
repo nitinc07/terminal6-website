@@ -168,13 +168,26 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
     </div>
 
     <div class="sec">
-      <div class="sec-h"><h3>Channel Sales</h3><span style="font-size:11px;color:var(--t3)">Revenue by channel per day</span></div>
-      <div id="channelSalesTable" class="loading">Loading...</div>
-      <div id="channelSalesNote" style="font-size:10.5px;color:var(--tm);margin-top:6px;font-style:italic"></div>
+      <div class="sec-h"><h3>Channel Performance</h3></div>
+      <div id="channelCards" class="g4" style="margin-bottom:0">
+        <div class="loading">Loading...</div>
+      </div>
     </div>
 
     <div class="sec">
-      <div class="sec-h"><h3>Daily Performance</h3></div>
+      <div class="sec-h">
+        <h3>Channel Sales</h3>
+        <div class="pills" id="granPills">
+          <button data-gran="daily" class="a">Days</button>
+          <button data-gran="weekly">Weeks</button>
+          <button data-gran="monthly">Months</button>
+        </div>
+      </div>
+      <div id="channelSalesTable" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>D2C Daily Performance</h3></div>
       <div id="dailyTable" class="loading">Loading...</div>
     </div>
 
@@ -337,20 +350,32 @@ function mkChart(id,type,labels,ds,extra){if(charts[id])charts[id].destroy();cha
 /* ========== BRAND OVERVIEW ========== */
 let overviewDays=7;
 
+let currentGran='daily';
+
 async function loadOverview(days){
   overviewDays=days;
   document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
   try{
-    const [daily,monthly,chSales]=await Promise.all([
+    const [daily,monthly,chSummary]=await Promise.all([
       api('/v1/overview/daily?days='+days),
       api('/v1/overview/monthly?months=6'),
-      api('/v1/channels/daily?days='+Math.min(days,7)),
+      api('/v1/channels/summary?days='+days),
     ]);
     renderOverviewKPIs(daily.data);
-    renderChannelSalesTable(chSales);
+    renderChannelCards(chSummary.data);
     renderDailyTable(daily.data);
     renderMonthlyTable(monthly.data);
+    loadChannelSales(currentGran);
   }catch(e){document.getElementById('overviewKPIs').innerHTML='<div class="error">'+e.message+'</div>'}
+}
+
+async function loadChannelSales(gran){
+  currentGran=gran;
+  document.querySelectorAll('#granPills button').forEach(b=>b.classList.toggle('a',b.dataset.gran===gran));
+  try{
+    const res=await api('/v1/channels/sales?granularity='+gran+'&periods=7');
+    renderChannelSalesTable(res);
+  }catch(e){document.getElementById('channelSalesTable').innerHTML='<div class="error">'+e.message+'</div>'}
 }
 
 function renderOverviewKPIs(data){
@@ -364,46 +389,54 @@ function renderOverviewKPIs(data){
   document.getElementById('ok-abandon').textContent=avg_abandon.length?pct(avg_abandon.reduce((a,b)=>a+b)/avg_abandon.length*100):'--';
 }
 
+function renderChannelCards(data){
+  const el=document.getElementById('channelCards');
+  if(!data||!data.length){el.innerHTML='<div class="loading">No channel data</div>';return}
+  el.innerHTML=data.map(ch=>`<div class="cd" style="border-left:3px solid ${ch.color}">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:12px;font-family:var(--serif);font-weight:600;font-size:14px">
+      <span style="width:10px;height:10px;border-radius:50%;background:${ch.color}"></span> ${ch.name}
+      <span style="margin-left:auto;font-size:11px;font-weight:500;color:var(--t3)">${ch.share_pct}%</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;font-size:12.5px">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Revenue</span><span class="mn2">${cur(ch.revenue)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Orders</span><span class="mn2">${fmt(ch.orders)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--t3)">Units</span><span class="mn2">${fmt(ch.units)}</span></div>
+    </div>
+  </div>`).join('');
+}
+
 function renderChannelSalesTable(res){
   const el=document.getElementById('channelSalesTable');
-  const noteEl=document.getElementById('channelSalesNote');
-  if(!res.channels||!res.channels.length){el.innerHTML='<div class="loading">No channel sales data</div>';return}
-  const dates=res.dates;
-  const chNames={'AMAZON_IN':'Amazon','FLIPKART_IN':'Flipkart','SHOPIFY':'Shopify','MYNTRA':'Myntra','MEESHO':'Meesho','SNAPDEAL':'Snapdeal','TATACLIQ':'TataCliq'};
-  const fmtD=(d)=>{const p=d.split('-');return p[2]+' '+['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]]};
+  if(!res.channels||!res.channels.length){el.innerHTML='<div class="loading">No sales data</div>';return}
+  const labels=res.labels;
 
   let html='<table class="tbl"><thead><tr><th>Channel</th>';
-  for(const d of dates) html+=`<th class="r" colspan="2">${fmtD(d)}</th>`;
-  html+=`<th class="r" colspan="2">Total</th><th class="r">Avg/Day</th></tr>`;
-  html+='<tr><th></th>';
-  for(let i=0;i<dates.length;i++) html+='<th class="r" style="font-size:9px;color:var(--tm)">Gross</th><th class="r" style="font-size:9px;color:var(--tm)">Net</th>';
-  html+='<th class="r" style="font-size:9px;color:var(--tm)">Gross</th><th class="r" style="font-size:9px;color:var(--tm)">Net</th><th></th></tr></thead><tbody>';
+  for(const l of labels) html+=`<th class="r">${l}</th>`;
+  html+='<th class="r" style="border-left:2px solid var(--border)">MTD</th>';
+  html+='<th class="r">YTD</th></tr></thead><tbody>';
 
   for(const ch of res.channels){
-    html+=`<tr><td class="hi">${chNames[ch.channel]||ch.channel}</td>`;
-    for(const d of dates){
-      const day=ch.days[d]||{gross:0,net:0};
-      html+=`<td class="mn2 r">${cur(day.gross)}</td><td class="mn2 r" style="color:var(--t3)">${cur(day.net)}</td>`;
+    html+=`<tr><td class="hi"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${ch.color};margin-right:6px"></span>${ch.name}</td>`;
+    for(const l of labels){
+      const p=ch.periods[l]||{revenue:0};
+      html+=`<td class="mn2 r">${cur(p.revenue)}</td>`;
     }
-    html+=`<td class="mn2 r" style="font-weight:600">${cur(ch.total_gross)}</td>`;
-    html+=`<td class="mn2 r" style="color:var(--t3)">${cur(ch.total_net)}</td>`;
-    html+=`<td class="mn2 r">${cur(ch.avg_daily_gross)}</td></tr>`;
+    html+=`<td class="mn2 r" style="border-left:2px solid var(--border);font-weight:500">${cur(ch.mtd.revenue)}</td>`;
+    html+=`<td class="mn2 r" style="font-weight:500">${cur(ch.ytd.revenue)}</td></tr>`;
   }
 
-  // Totals row
+  // Totals
   const t=res.totals;
-  html+=`<tr style="border-top:2px solid var(--border);font-weight:600"><td class="hi">Total</td>`;
-  for(const d of dates){
-    const day=t.days[d]||{gross:0,net:0};
-    html+=`<td class="mn2 r" style="font-weight:600">${cur(day.gross)}</td><td class="mn2 r" style="color:var(--t2)">${cur(day.net)}</td>`;
+  html+=`<tr style="border-top:2px solid var(--border)"><td class="hi" style="font-weight:600">Total</td>`;
+  for(const l of labels){
+    const p=t.periods[l]||{revenue:0};
+    html+=`<td class="mn2 r" style="font-weight:600">${cur(p.revenue)}</td>`;
   }
-  html+=`<td class="mn2 r" style="font-weight:700">${cur(t.total_gross)}</td>`;
-  html+=`<td class="mn2 r" style="color:var(--t2);font-weight:600">${cur(t.total_net)}</td>`;
-  html+=`<td class="mn2 r" style="font-weight:600">${cur(t.total_gross/Math.max(dates.length,1))}</td></tr>`;
+  html+=`<td class="mn2 r" style="border-left:2px solid var(--border);font-weight:700">${cur(t.mtd.revenue)}</td>`;
+  html+=`<td class="mn2 r" style="font-weight:700">${cur(t.ytd.revenue)}</td></tr>`;
 
   html+='</tbody></table>';
   el.innerHTML=html;
-  noteEl.textContent=res.note||'';
 }
 
 function renderDailyTable(data){
@@ -594,6 +627,7 @@ function renderCoverageTable(data){
 /* ========== PILL CLICKS ========== */
 document.querySelectorAll('#rangePills button').forEach(b=>b.addEventListener('click',()=>loadOverview(+b.dataset.days)));
 document.querySelectorAll('#funnelPills button').forEach(b=>b.addEventListener('click',()=>loadFunnel(+b.dataset.days)));
+document.querySelectorAll('#granPills button').forEach(b=>b.addEventListener('click',()=>loadChannelSales(b.dataset.gran)));
 
 /* ========== INIT ========== */
 const user=JSON.parse(sessionStorage.getItem('t6_user')||'{}');
