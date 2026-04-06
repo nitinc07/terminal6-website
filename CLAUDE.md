@@ -18,16 +18,55 @@ terminal6-website/
 ├── CNAME                  — "terminal6.io" (GitHub Pages custom domain)
 ├── index.html             — Public landing page. Sign-in button routes to /home.html.
 ├── home.html              — Sign-in + workspace hub. The ONLY entry point for gated pages.
-│                            Shows 3 cards linking to app / architecture / todos, plus a
-│                            "current state" panel (phase, partner, tables, SKUs).
-├── app.html               — Interactive dashboard prototype (mirrored from
-│                            terminal6/product/terminal6-os-v4_2.html). Redirects to
-│                            /home.html if no valid session.
+│                            Shows 5 cards: Sprig V1, Dashboard Prototype, Architecture,
+│                            Roadmap, Investor Thesis. Stores Google credential as
+│                            `t6_token` in sessionStorage for API auth.
+├── sprig.html             — **LIVE PRODUCT PAGE** (6 Apr 2026). Full sidebar app shell
+│                            matching the app.html prototype layout. Views:
+│                            Brand Overview (KPIs, daily table, MoM), Growth Agent,
+│                            D2C Funnel (charts + tables via Chart.js), Supply Agent,
+│                            Category Agent, Policies. Calls api.terminal6.io/v1/*
+│                            endpoints with Bearer token auth.
+├── funnel.html            — Standalone D2C funnel page (superseded by sprig.html but
+│                            kept as a simpler entry point). Same API calls.
+├── app.html               — Interactive dashboard prototype with MOCK DATA (mirrored from
+│                            terminal6/product/terminal6-os-v4_2.html). NOT live data.
 ├── architecture.html      — Investor-facing product architecture doc (mirrored from
 │                            terminal6/product/terminal6-architecture.html). Access gated.
+├── investor_thesis.html   — Pre-seed investor thesis. Access gated.
 └── todos.html             — Layered roadmap (L0–L5, ~80 tasks) with filters, color
                              coding, and per-task copy-prompt buttons. Access gated.
 ```
+
+## API Integration
+
+Product pages (`sprig.html`, `funnel.html`) call the Terminal6 API at `api.terminal6.io`:
+
+- **Auth:** Google ID token passed as `Authorization: Bearer <token>`. Token stored in
+  `sessionStorage.t6_token` at sign-in time (set by `home.html`). Backend verifies with
+  Google's public keys + checks email against allowlist.
+- **Token lifecycle:** Google ID tokens expire after ~1 hour. If API returns 401, the
+  frontend clears session and redirects to `/home.html` for re-auth.
+- **API base URL:** hardcoded as `const API = 'https://api.terminal6.io'` in each page.
+  For local dev, comment and use `http://localhost:8000`.
+- **Endpoints used:**
+  - `/v1/overview/daily?days=7` — Brand Overview daily table
+  - `/v1/overview/monthly?months=6` — Brand Overview MoM table
+  - `/v1/funnel/site?days=90` — D2C Funnel site-level data
+  - `/v1/funnel/products?days=90&limit=20` — D2C Funnel top products
+  - `/v1/funnel/traffic?days=90` — D2C Funnel traffic sources
+- **Chart library:** Chart.js 4.4.7 loaded via CDN `<script>` tag. No build step.
+
+## Live vs Prototype pages
+
+| Page | Data source | Purpose |
+|---|---|---|
+| `sprig.html` | **Live API** (PostgreSQL via api.terminal6.io) | Production product page |
+| `funnel.html` | **Live API** | Standalone funnel view (simpler) |
+| `app.html` | **Mock data** (hardcoded HTML) | Design prototype / demo |
+
+When iterating on the product UI, edit `sprig.html`. The `app.html` prototype is the
+design reference but does NOT receive live data.
 
 ## Access control — SECURITY CRITICAL
 
