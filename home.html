@@ -135,12 +135,20 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
     </div>
 
     <div class="cards">
+      <a href="/funnel.html" class="card">
+        <div class="card-icon">&#9683;</div>
+        <div class="card-kind">Live Data</div>
+        <div class="card-title">D2C Funnel</div>
+        <div class="card-desc">Live GA4 funnel analytics — sessions, add-to-cart, checkout, conversion rates, traffic sources, and top products. 2 years of Sprig data.</div>
+        <div class="card-meta"><span>736 days of data</span><span class="card-arrow">Open &rarr;</span></div>
+      </a>
+
       <a href="/app.html" class="card">
-        <div class="card-icon">⚡</div>
+        <div class="card-icon">&#9889;</div>
         <div class="card-kind">Prototype</div>
         <div class="card-title">Dashboard Prototype</div>
         <div class="card-desc">Interactive mockup of the Terminal6 operator dashboard — agents, approval queue, throttle signals, and the cross-channel P&amp;L view.</div>
-        <div class="card-meta"><span>Clickable UI</span><span class="card-arrow">Open →</span></div>
+        <div class="card-meta"><span>Clickable UI</span><span class="card-arrow">Open &rarr;</span></div>
       </a>
 
       <a href="/architecture.html" class="card teal">
@@ -213,6 +221,7 @@ function handleGoogleSignIn(response) {
       return;
     }
     sessionStorage.setItem('t6_user', JSON.stringify({ name: payload.name, email: payload.email, picture: payload.picture }));
+    sessionStorage.setItem('t6_token', response.credential);
     enterHub(payload);
   } catch (e) {
     document.getElementById('loginError').style.display = 'block';
@@ -231,6 +240,7 @@ function enterHub(user) {
 
 function signOut() {
   sessionStorage.removeItem('t6_user');
+  sessionStorage.removeItem('t6_token');
   location.reload();
 }
 

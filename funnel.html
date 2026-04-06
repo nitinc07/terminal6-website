@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal6 — D2C Funnel</title>
+<script>
+/* ACCESS GATE — block render until allowlisted session confirmed */
+(function(){
+  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com'];
+  const saved=sessionStorage.getItem('t6_user');
+  let ok=false;
+  if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
+  if(!ok){sessionStorage.removeItem('t6_user');location.replace('/home.html');document.documentElement.style.display='none';}
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #FAFAF8; --bg-card: #FFF; --bg-warm: #F5F0EB;
+  --text: #1C1917; --text-mid: #57534E; --text-light: #A8A29E;
+  --accent: #C2410C; --accent-light: #FFF7ED;
+  --teal: #0F766E; --blue: #1565C0; --green: #2E7D32;
+  --border: #E7E5E4;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+
+/* NAV */
+.nav { position: sticky; top: 0; background: rgba(250,250,248,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 50; }
+.nav-inner { max-width: 1200px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+.nav-left { display: flex; align-items: center; gap: 24px; }
+.nav-logo { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.nav-links { display: flex; gap: 6px; }
+.nav-links a { font-size: 13px; color: var(--text-mid); text-decoration: none; padding: 6px 12px; border-radius: 6px; transition: all .15s; }
+.nav-links a:hover { background: var(--bg-warm); color: var(--text); }
+.nav-links a.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.nav-right { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-mid); }
+.nav-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--bg-warm); background-size: cover; background-position: center; }
+
+/* PAGE */
+.page { max-width: 1200px; margin: 0 auto; padding: 32px 32px 80px; }
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+.page-header h1 { font-family: var(--serif); font-size: 28px; font-weight: 700; }
+.page-header p { font-size: 14px; color: var(--text-mid); margin-top: 4px; }
+
+/* DATE RANGE PILLS */
+.range-pills { display: flex; gap: 4px; }
+.range-pills button { font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 6px 14px; border: 1px solid var(--border); background: var(--bg-card); border-radius: 6px; cursor: pointer; color: var(--text-mid); transition: all .15s; }
+.range-pills button:hover { border-color: var(--accent); color: var(--accent); }
+.range-pills button.active { background: var(--accent); color: #FFF; border-color: var(--accent); }
+
+/* KPI ROW */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.kpi { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); margin-bottom: 6px; }
+.kpi-value { font-family: var(--mono); font-size: 24px; font-weight: 600; color: var(--text); }
+.kpi-sub { font-size: 12px; color: var(--text-mid); margin-top: 4px; }
+
+/* CHART CARDS */
+.chart-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 32px; }
+.chart-grid.two { grid-template-columns: 1fr 1fr; }
+@media (max-width: 900px) { .chart-grid.two { grid-template-columns: 1fr; } }
+.chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+.chart-card h3 { font-family: var(--serif); font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.chart-wrap { position: relative; height: 280px; }
+
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); }
+.data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tr:hover { background: var(--bg-warm); }
+.data-table .num { text-align: right; font-family: var(--mono); font-size: 12px; }
+.data-table .bar-cell { width: 80px; }
+.mini-bar { height: 6px; background: var(--accent); border-radius: 3px; opacity: .7; }
+
+/* LOADING & ERROR */
+.loading { text-align: center; padding: 60px; color: var(--text-light); font-size: 14px; }
+.error { text-align: center; padding: 40px; color: #B91C1C; font-size: 14px; background: #FEF2F2; border-radius: 10px; margin: 20px 0; }
+
+footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--border); color: var(--text-light); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a href="/home.html" class="nav-logo">Terminal6</a>
+      <div class="nav-links">
+        <a href="/funnel.html" class="active">D2C Funnel</a>
+        <a href="/app.html">Dashboard</a>
+        <a href="/todos.html">Roadmap</a>
+      </div>
+    </div>
+    <div class="nav-right">
+      <span id="userName"></span>
+      <div class="nav-avatar" id="avatar"></div>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>D2C Funnel</h1>
+      <p>Sprig store (GA4) &mdash; live data from <span id="dateRange">...</span></p>
+    </div>
+    <div class="range-pills">
+      <button data-days="30">30d</button>
+      <button data-days="90" class="active">90d</button>
+      <button data-days="365">1y</button>
+      <button data-days="735">2y</button>
+    </div>
+  </div>
+
+  <div id="kpiRow" class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Sessions</div><div class="kpi-value" id="kSessions">--</div></div>
+    <div class="kpi"><div class="kpi-label">Add to Cart</div><div class="kpi-value" id="kCarts">--</div></div>
+    <div class="kpi"><div class="kpi-label">Transactions</div><div class="kpi-value" id="kTxns">--</div></div>
+    <div class="kpi"><div class="kpi-label">Revenue</div><div class="kpi-value" id="kRevenue">--</div></div>
+    <div class="kpi"><div class="kpi-label">Conv. Rate</div><div class="kpi-value" id="kConvRate">--</div><div class="kpi-sub">Transactions / Sessions</div></div>
+    <div class="kpi"><div class="kpi-label">Cart Abandon</div><div class="kpi-value" id="kCartAbandon">--</div><div class="kpi-sub">Avg daily rate</div></div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Daily Sessions &amp; Transactions</h3>
+      <div class="chart-wrap"><canvas id="chartSessions"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid two">
+    <div class="chart-card">
+      <h3>Daily Revenue</h3>
+      <div class="chart-wrap"><canvas id="chartRevenue"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Funnel Conversion</h3>
+      <div class="chart-wrap"><canvas id="chartFunnel"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:32px">
+    <h3>Top Products (by revenue)</h3>
+    <div id="productsTable" class="loading">Loading product data...</div>
+  </div>
+
+  <div class="chart-card">
+    <h3>Traffic Sources</h3>
+    <div id="trafficTable" class="loading">Loading traffic data...</div>
+  </div>
+</div>
+
+<footer>Terminal6 &middot; D2C Funnel &middot; <span id="year"></span></footer>
+
+<script>
+/* ========== CONFIG ========== */
+const API_BASE = 'https://api.terminal6.io';
+// For local dev, uncomment: const API_BASE = 'http://localhost:8000';
+
+function getToken() {
+  return sessionStorage.getItem('t6_token') || '';
+}
+
+async function apiFetch(path) {
+  const token = getToken();
+  if (!token) {
+    throw new Error('No auth token — please sign in again.');
+  }
+  const resp = await fetch(API_BASE + path, {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  if (resp.status === 401 || resp.status === 403) {
+    sessionStorage.removeItem('t6_user');
+    sessionStorage.removeItem('t6_token');
+    location.replace('/home.html');
+    throw new Error('Session expired');
+  }
+  if (!resp.ok) throw new Error('API error: ' + resp.status);
+  return resp.json();
+}
+
+/* ========== STATE ========== */
+let currentDays = 90;
+let charts = {};
+
+/* ========== FORMAT HELPERS ========== */
+function fmt(n) { return n == null ? '--' : n.toLocaleString('en-IN'); }
+function fmtCur(n) {
+  if (n == null) return '--';
+  if (n >= 10000000) return '\u20B9' + (n / 10000000).toFixed(2) + ' Cr';
+  if (n >= 100000) return '\u20B9' + (n / 100000).toFixed(2) + ' L';
+  if (n >= 1000) return '\u20B9' + (n / 1000).toFixed(1) + 'K';
+  return '\u20B9' + n.toFixed(0);
+}
+function fmtPct(n) { return n == null ? '--' : n.toFixed(2) + '%'; }
+function shortDate(d) { return d.slice(5); } // "2026-01-15" -> "01-15"
+
+/* ========== CHART DEFAULTS ========== */
+const chartDefaults = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, font: { size: 11, family: "'DM Sans'" } } } },
+  scales: {
+    x: { grid: { display: false }, ticks: { font: { size: 10, family: "'JetBrains Mono'" }, maxTicksLimit: 12 } },
+    y: { grid: { color: '#E7E5E4' }, ticks: { font: { size: 10, family: "'JetBrains Mono'" } }, beginAtZero: true }
+  }
+};
+
+function makeChart(id, type, labels, datasets, extraOpts) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: { ...chartDefaults, ...extraOpts }
+  });
+}
+
+/* ========== LOAD DATA ========== */
+async function loadAll(days) {
+  currentDays = days;
+  document.querySelectorAll('.range-pills button').forEach(b => b.classList.toggle('active', +b.dataset.days === days));
+
+  try {
+    const [site, products, traffic] = await Promise.all([
+      apiFetch('/v1/funnel/site?days=' + days),
+      apiFetch('/v1/funnel/products?days=' + days + '&limit=20'),
+      apiFetch('/v1/funnel/traffic?days=' + days),
+    ]);
+
+    renderKPIs(site.data);
+    renderSessionsChart(site.data);
+    renderRevenueChart(site.data);
+    renderFunnelChart(site.data);
+    renderProductsTable(products.data);
+    renderTrafficTable(traffic.data);
+
+    if (site.data.length > 0) {
+      document.getElementById('dateRange').textContent = site.data[0].date + ' to ' + site.data[site.data.length - 1].date;
+    }
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('kpiRow').innerHTML = '<div class="error">' + err.message + '</div>';
+  }
+}
+
+/* ========== RENDERERS ========== */
+function renderKPIs(data) {
+  const sum = (k) => data.reduce((s, r) => s + (r[k] || 0), 0);
+  const avg = (k) => { const vals = data.map(r => r[k]).filter(v => v != null); return vals.length ? vals.reduce((a, b) => a + b) / vals.length : null; };
+
+  const sessions = sum('sessions');
+  const txns = sum('transactions');
+  document.getElementById('kSessions').textContent = fmt(sessions);
+  document.getElementById('kCarts').textContent = fmt(sum('add_to_carts'));
+  document.getElementById('kTxns').textContent = fmt(txns);
+  document.getElementById('kRevenue').textContent = fmtCur(sum('purchase_revenue'));
+  document.getElementById('kConvRate').textContent = sessions > 0 ? fmtPct(txns / sessions * 100) : '--';
+  document.getElementById('kCartAbandon').textContent = fmtPct(avg('cart_abandonment_rate') != null ? avg('cart_abandonment_rate') * 100 : null);
+}
+
+function renderSessionsChart(data) {
+  const labels = data.map(r => shortDate(r.date));
+  makeChart('chartSessions', 'line', labels, [
+    { label: 'Sessions', data: data.map(r => r.sessions), borderColor: '#C2410C', backgroundColor: 'rgba(194,65,12,.08)', fill: true, tension: .3, pointRadius: 0, borderWidth: 2 },
+    { label: 'Transactions', data: data.map(r => r.transactions), borderColor: '#0F766E', backgroundColor: 'rgba(15,118,110,.08)', fill: true, tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: 'y1' },
+  ], {
+    scales: {
+      ...chartDefaults.scales,
+      y1: { position: 'right', grid: { display: false }, ticks: { font: { size: 10, family: "'JetBrains Mono'" } }, beginAtZero: true }
+    }
+  });
+}
+
+function renderRevenueChart(data) {
+  const labels = data.map(r => shortDate(r.date));
+  makeChart('chartRevenue', 'bar', labels, [
+    { label: 'Revenue', data: data.map(r => r.purchase_revenue), backgroundColor: 'rgba(194,65,12,.6)', borderRadius: 2 },
+  ]);
+}
+
+function renderFunnelChart(data) {
+  const sum = (k) => data.reduce((s, r) => s + (r[k] || 0), 0);
+  const sessions = sum('sessions');
+  const carts = sum('add_to_carts');
+  const checkouts = sum('checkouts');
+  const txns = sum('transactions');
+
+  makeChart('chartFunnel', 'bar', ['Sessions', 'Add to Cart', 'Checkouts', 'Transactions'], [
+    {
+      label: 'Funnel',
+      data: [sessions, carts, checkouts, txns],
+      backgroundColor: ['#C2410C', '#EA580C', '#F97316', '#0F766E'],
+      borderRadius: 4,
+    }
+  ], {
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#E7E5E4' }, ticks: { font: { size: 10, family: "'JetBrains Mono'" } } },
+      y: { grid: { display: false }, ticks: { font: { size: 12, family: "'DM Sans'" } } }
+    }
+  });
+}
+
+function renderProductsTable(data) {
+  const el = document.getElementById('productsTable');
+  if (!data.length) { el.innerHTML = '<div class="loading">No product data for this period.</div>'; return; }
+  const maxRev = Math.max(...data.map(r => r.revenue));
+  el.innerHTML = `<table class="data-table">
+    <thead><tr><th>#</th><th>Product</th><th class="num">Views</th><th class="num">Cart</th><th class="num">Purchased</th><th class="num">Revenue</th><th class="num">View&rarr;Cart</th><th class="bar-cell"></th></tr></thead>
+    <tbody>${data.map((r, i) => `<tr>
+      <td style="color:var(--text-light)">${i + 1}</td>
+      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.name || '').replace(/"/g, '&quot;')}">${r.name || r.item_id}</td>
+      <td class="num">${fmt(r.views)}</td>
+      <td class="num">${fmt(r.add_to_carts)}</td>
+      <td class="num">${fmt(r.purchases)}</td>
+      <td class="num">${fmtCur(r.revenue)}</td>
+      <td class="num">${r.view_to_cart_rate != null ? r.view_to_cart_rate + '%' : '--'}</td>
+      <td class="bar-cell"><div class="mini-bar" style="width:${Math.round(r.revenue / maxRev * 100)}%"></div></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderTrafficTable(data) {
+  const el = document.getElementById('trafficTable');
+  if (!data.length) { el.innerHTML = '<div class="loading">No traffic data for this period.</div>'; return; }
+  const maxSess = Math.max(...data.map(r => r.sessions));
+  el.innerHTML = `<table class="data-table">
+    <thead><tr><th>Source</th><th>Medium</th><th class="num">Sessions</th><th class="num">Users</th><th class="num">Transactions</th><th class="num">Revenue</th><th class="num">Conv. Rate</th><th class="bar-cell"></th></tr></thead>
+    <tbody>${data.slice(0, 25).map(r => `<tr>
+      <td>${r.source}</td>
+      <td style="color:var(--text-mid)">${r.medium}</td>
+      <td class="num">${fmt(r.sessions)}</td>
+      <td class="num">${fmt(r.users)}</td>
+      <td class="num">${fmt(r.transactions)}</td>
+      <td class="num">${fmtCur(r.revenue)}</td>
+      <td class="num">${r.conversion_rate != null ? r.conversion_rate + '%' : '--'}</td>
+      <td class="bar-cell"><div class="mini-bar" style="width:${Math.round(r.sessions / maxSess * 100)}%;background:var(--teal)"></div></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+/* ========== INIT ========== */
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// Load user info into nav
+const user = JSON.parse(sessionStorage.getItem('t6_user') || '{}');
+document.getElementById('userName').textContent = user.name || '';
+const av = document.getElementById('avatar');
+if (user.picture) { av.style.backgroundImage = 'url(' + user.picture + ')'; }
+
+// Range pill clicks
+document.querySelectorAll('.range-pills button').forEach(btn => {
+  btn.addEventListener('click', () => loadAll(+btn.dataset.days));
+});
+
+// Initial load
+loadAll(90);
+</script>
+</body>
+</html>
