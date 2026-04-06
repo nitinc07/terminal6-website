@@ -168,6 +168,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
     </div>
 
     <div class="sec">
+      <div class="sec-h"><h3>Channel Sales</h3><span style="font-size:11px;color:var(--t3)">Revenue by channel per day</span></div>
+      <div id="channelSalesTable" class="loading">Loading...</div>
+      <div id="channelSalesNote" style="font-size:10.5px;color:var(--tm);margin-top:6px;font-style:italic"></div>
+    </div>
+
+    <div class="sec">
       <div class="sec-h"><h3>Daily Performance</h3></div>
       <div id="dailyTable" class="loading">Loading...</div>
     </div>
@@ -335,8 +341,13 @@ async function loadOverview(days){
   overviewDays=days;
   document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
   try{
-    const [daily,monthly]=await Promise.all([api('/v1/overview/daily?days='+days),api('/v1/overview/monthly?months=6')]);
+    const [daily,monthly,chSales]=await Promise.all([
+      api('/v1/overview/daily?days='+days),
+      api('/v1/overview/monthly?months=6'),
+      api('/v1/channels/daily?days='+Math.min(days,7)),
+    ]);
     renderOverviewKPIs(daily.data);
+    renderChannelSalesTable(chSales);
     renderDailyTable(daily.data);
     renderMonthlyTable(monthly.data);
   }catch(e){document.getElementById('overviewKPIs').innerHTML='<div class="error">'+e.message+'</div>'}
@@ -351,6 +362,48 @@ function renderOverviewKPIs(data){
   document.getElementById('ok-txns').textContent=fmt(txns);
   document.getElementById('ok-conv').textContent=sessions?pct(txns/sessions*100):'--';
   document.getElementById('ok-abandon').textContent=avg_abandon.length?pct(avg_abandon.reduce((a,b)=>a+b)/avg_abandon.length*100):'--';
+}
+
+function renderChannelSalesTable(res){
+  const el=document.getElementById('channelSalesTable');
+  const noteEl=document.getElementById('channelSalesNote');
+  if(!res.channels||!res.channels.length){el.innerHTML='<div class="loading">No channel sales data</div>';return}
+  const dates=res.dates;
+  const chNames={'AMAZON_IN':'Amazon','FLIPKART_IN':'Flipkart','SHOPIFY':'Shopify','MYNTRA':'Myntra','MEESHO':'Meesho','SNAPDEAL':'Snapdeal','TATACLIQ':'TataCliq'};
+  const fmtD=(d)=>{const p=d.split('-');return p[2]+' '+['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]]};
+
+  let html='<table class="tbl"><thead><tr><th>Channel</th>';
+  for(const d of dates) html+=`<th class="r" colspan="2">${fmtD(d)}</th>`;
+  html+=`<th class="r" colspan="2">Total</th><th class="r">Avg/Day</th></tr>`;
+  html+='<tr><th></th>';
+  for(let i=0;i<dates.length;i++) html+='<th class="r" style="font-size:9px;color:var(--tm)">Gross</th><th class="r" style="font-size:9px;color:var(--tm)">Net</th>';
+  html+='<th class="r" style="font-size:9px;color:var(--tm)">Gross</th><th class="r" style="font-size:9px;color:var(--tm)">Net</th><th></th></tr></thead><tbody>';
+
+  for(const ch of res.channels){
+    html+=`<tr><td class="hi">${chNames[ch.channel]||ch.channel}</td>`;
+    for(const d of dates){
+      const day=ch.days[d]||{gross:0,net:0};
+      html+=`<td class="mn2 r">${cur(day.gross)}</td><td class="mn2 r" style="color:var(--t3)">${cur(day.net)}</td>`;
+    }
+    html+=`<td class="mn2 r" style="font-weight:600">${cur(ch.total_gross)}</td>`;
+    html+=`<td class="mn2 r" style="color:var(--t3)">${cur(ch.total_net)}</td>`;
+    html+=`<td class="mn2 r">${cur(ch.avg_daily_gross)}</td></tr>`;
+  }
+
+  // Totals row
+  const t=res.totals;
+  html+=`<tr style="border-top:2px solid var(--border);font-weight:600"><td class="hi">Total</td>`;
+  for(const d of dates){
+    const day=t.days[d]||{gross:0,net:0};
+    html+=`<td class="mn2 r" style="font-weight:600">${cur(day.gross)}</td><td class="mn2 r" style="color:var(--t2)">${cur(day.net)}</td>`;
+  }
+  html+=`<td class="mn2 r" style="font-weight:700">${cur(t.total_gross)}</td>`;
+  html+=`<td class="mn2 r" style="color:var(--t2);font-weight:600">${cur(t.total_net)}</td>`;
+  html+=`<td class="mn2 r" style="font-weight:600">${cur(t.total_gross/Math.max(dates.length,1))}</td></tr>`;
+
+  html+='</tbody></table>';
+  el.innerHTML=html;
+  noteEl.textContent=res.note||'';
 }
 
 function renderDailyTable(data){
