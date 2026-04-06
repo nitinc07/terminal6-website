@@ -130,6 +130,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
   </div>
   <div class="ss">
     <div class="sl">Workspace</div>
+    <div class="si" onclick="sw('data',this)"><div class="ic">&#128451;</div><span>Data Coverage</span></div>
     <div class="si" onclick="sw('settings',this)"><div class="ic">&#9881;</div><span>Policies &amp; Rules</span></div>
   </div>
   <div class="sb-b">
@@ -245,6 +246,26 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
     <div class="briefing-empty">Category Agent will be available once competitive data is connected.</div>
   </div>
 
+  <!-- ===== DATA COVERAGE ===== -->
+  <div class="vw" id="v-data">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--b);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128451;</div>
+      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Data Coverage</h2><p style="font-size:13px;color:var(--t2);margin:0">Real-time view of all 20 canonical schema tables</p></div>
+      <button onclick="loadDataCoverage()" style="margin-left:auto;padding:6px 14px;border:1px solid var(--border);background:var(--bg-white);border-radius:var(--rs);font-family:var(--sans);font-size:12px;cursor:pointer;color:var(--t2)">&#8635; Refresh</button>
+    </div>
+
+    <div class="g4" style="margin-bottom:24px" id="dataKPIs">
+      <div class="cd"><div class="kl">Total Rows</div><div class="kv" id="dk-rows">--</div></div>
+      <div class="cd"><div class="kl">Active Tables</div><div class="kv" id="dk-active">--</div><div class="kd n" id="dk-active-sub">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Empty Tables</div><div class="kv" id="dk-empty">--</div></div>
+      <div class="cd"><div class="kl">Schema Tables</div><div class="kv" id="dk-total">--</div></div>
+    </div>
+
+    <div class="sec" id="dataTableSection">
+      <div id="coverageTable" class="loading">Loading coverage data...</div>
+    </div>
+  </div>
+
   <!-- ===== SETTINGS ===== -->
   <div class="vw" id="v-settings">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
@@ -277,7 +298,7 @@ function chg(v){if(v==null)return'';const s=v>0?'u':v<0?'d':'n';const a=v>0?'\u2
 function shortD(d){const p=d.split('-');return p[2]+' '+['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]]}
 
 /* ========== VIEW SWITCHING ========== */
-const viewTitles={overview:'&#127968; Brand Overview',growth:'&#128200; Growth Agent',funnel:'&#128200; D2C Funnel',supply:'&#128230; Supply Agent',category:'&#127991; Category Agent',settings:'&#9881; Policies & Rules'};
+const viewTitles={overview:'&#127968; Brand Overview',growth:'&#128200; Growth Agent',funnel:'&#128200; D2C Funnel',supply:'&#128230; Supply Agent',category:'&#127991; Category Agent',data:'&#128451; Data Coverage',settings:'&#9881; Policies & Rules'};
 let currentView='overview';
 
 function sw(id,el){
@@ -293,6 +314,7 @@ function sw(id,el){
 
   if(id==='overview') loadOverview(overviewDays);
   if(id==='funnel') loadFunnel(funnelDays);
+  if(id==='data') loadDataCoverage();
 }
 
 /* ========== CHARTS ========== */
@@ -427,6 +449,47 @@ function renderTrafficTable(data){
     <td class="mn2 r">${cur(r.revenue)}</td><td class="mn2 r">${r.conversion_rate!=null?r.conversion_rate+'%':'--'}</td>
     <td class="bar-cell"><div class="mini-bar" style="width:${Math.round(r.sessions/mx*100)}%;background:var(--g)"></div></td>
   </tr>`).join('')}</tbody></table>`;
+}
+
+/* ========== DATA COVERAGE ========== */
+async function loadDataCoverage(){
+  try{
+    const res=await api('/v1/data/coverage');
+    document.getElementById('dk-rows').textContent=fmt(res.total_rows);
+    document.getElementById('dk-active').textContent=res.active_tables;
+    document.getElementById('dk-active-sub').innerHTML=`of ${res.total_tables} tables`;
+    document.getElementById('dk-empty').textContent=res.empty_tables;
+    document.getElementById('dk-total').textContent=res.total_tables;
+    renderCoverageTable(res.data);
+  }catch(e){document.getElementById('coverageTable').innerHTML='<div class="error">'+e.message+'</div>'}
+}
+
+function renderCoverageTable(data){
+  const el=document.getElementById('coverageTable');
+  // Group by layer
+  const layers=['Entities','Time Series','GA4 Funnel'];
+  let html='';
+  for(const layer of layers){
+    const items=data.filter(d=>d.layer===layer);
+    if(!items.length)continue;
+    html+=`<div style="margin-bottom:20px"><div style="font-family:var(--serif);font-size:14px;font-weight:600;margin-bottom:8px;color:var(--t2)">${layer}</div>`;
+    html+=`<table class="tbl"><thead><tr><th>Table</th><th class="r">Rows</th><th>Date Range</th><th class="r">Days</th><th class="r">Coverage</th><th style="width:120px">Status</th></tr></thead><tbody>`;
+    for(const t of items){
+      const statusColor=t.status==='active'?'var(--g)':t.status==='empty'?'var(--t3)':'var(--r)';
+      const statusBg=t.status==='active'?'var(--gl)':t.status==='empty'?'var(--bg-warm)':'var(--rl)';
+      const bar=t.coverage_pct!=null?`<div style="background:var(--bg-warm);border-radius:3px;height:6px;width:100%"><div style="background:${t.coverage_pct>=99?'var(--g)':t.coverage_pct>=80?'var(--a)':'var(--r)'};height:6px;border-radius:3px;width:${Math.min(t.coverage_pct,100)}%"></div></div>`:'';
+      html+=`<tr>
+        <td><span class="hi">${t.name}</span><br><span style="font-size:10px;color:var(--t3);font-family:var(--mono)">${t.table}</span></td>
+        <td class="mn2 r">${fmt(t.rows)}</td>
+        <td class="mn2">${t.min_date&&t.max_date?t.min_date+' &rarr; '+t.max_date:'--'}</td>
+        <td class="mn2 r">${t.distinct_days!=null?t.distinct_days+' / '+t.span_days:'--'}</td>
+        <td class="r">${t.coverage_pct!=null?'<div style="display:flex;align-items:center;gap:6px"><span class="mn2">'+t.coverage_pct+'%</span><div style="flex:1;min-width:50px">'+bar+'</div></div>':'--'}</td>
+        <td><span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:10.5px;font-weight:600;background:${statusBg};color:${statusColor}">${t.status.toUpperCase()}</span></td>
+      </tr>`;
+    }
+    html+=`</tbody></table></div>`;
+  }
+  el.innerHTML=html;
 }
 
 /* ========== PILL CLICKS ========== */
