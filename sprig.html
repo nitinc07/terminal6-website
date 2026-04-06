@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terminal6 — Sprig</title>
+<script>
+/* ACCESS GATE */
+(function(){
+  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com'];
+  const saved=sessionStorage.getItem('t6_user');
+  let ok=false;
+  if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
+  if(!ok){sessionStorage.removeItem('t6_user');location.replace('/home.html');document.documentElement.style.display='none';}
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F5F5F0;--bg-white:#FFF;--bg-cream:#F9F8F4;--bg-warm:#EEEAE2;--bg-sidebar:#EEEBE4;--bg-hover:#E8E4DB;
+  --border:#DDD9D0;--border-s:#E8E4DC;
+  --t1:#1a1a18;--t2:#5C5B57;--t3:#9C9A93;--tm:#B1ADA1;
+  --acc:#C15F3C;--acc-h:#ae5630;--acc-l:#F0DDD4;--acc-d:rgba(193,95,60,.08);--acc-t:#B8533A;
+  --g:#2E7D32;--gl:#E8F5E9;--r:#C62828;--rl:#FFEBEE;--a:#E65100;--al:#FFF3E0;--b:#1565C0;--bl:#E3F2FD;
+  --sw:240px;
+  --serif:'Source Serif 4',ui-serif,Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  --sh:0 1px 3px rgba(0,0,0,.04);--shm:0 2px 8px rgba(0,0,0,.06);--rad:12px;--rs:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;overflow:hidden;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:var(--sw) 1fr;height:100vh}
+
+/* SIDEBAR */
+.sb{background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.sb-brand h1{font-family:var(--serif);font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
+.sb-brand .lm{width:28px;height:28px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.bs{margin-top:10px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--rs);padding:7px 11px;font-size:13px;width:100%;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh)}
+.bd{width:7px;height:7px;border-radius:50%;background:var(--g)}
+.ss{padding:14px 10px 4px}
+.sl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;color:var(--tm);padding:0 8px 7px}
+.si{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--rs);cursor:pointer;transition:all .15s;font-size:13px;color:var(--t2)}
+.si:hover{background:var(--bg-hover);color:var(--t1)}
+.si.act{background:var(--acc-d);color:var(--acc-t);font-weight:500}
+.si .ic{width:28px;height:28px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.si.sub{padding-left:47px;font-size:12.5px}
+.sb-b{margin-top:auto;padding:10px;border-top:1px solid var(--border)}
+.sb-b .ui{display:flex;align-items:center;gap:9px;padding:6px}
+.sb-b .ua{width:30px;height:30px;border-radius:var(--rs);background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;background-size:cover;background-position:center}
+
+/* MAIN */
+.mn{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.tb{padding:10px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;background:var(--bg-cream)}
+.tb-t{font-family:var(--serif);font-size:16px;font-weight:600;display:flex;align-items:center;gap:9px}
+
+/* VIEWS */
+.vw{display:none;flex:1;overflow-y:auto;padding:24px}
+.vw.act{display:block}
+.vw::-webkit-scrollbar{width:5px}
+.vw::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* CARDS */
+.cd{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:16px;box-shadow:var(--sh)}
+.kl{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;font-weight:500}
+.kv{font-family:var(--mono);font-size:22px;font-weight:700;margin-bottom:3px}
+.kd{font-size:12px;display:flex;align-items:center;gap:4px}
+.kd.u{color:var(--g)}.kd.d{color:var(--r)}.kd.n{color:var(--t3)}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:1100px){.g5{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(2,1fr)}}
+
+/* TABLE */
+.sec{margin-bottom:24px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-h h3{font-family:var(--serif);font-size:15px;font-weight:600}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--bg-white);border-radius:var(--rad);overflow:hidden;border:1px solid var(--border-s);box-shadow:var(--sh)}
+.tbl th{text-align:left;padding:9px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);border-bottom:1px solid var(--border);font-weight:600;background:var(--bg-cream)}
+.tbl td{padding:8px 12px;border-bottom:1px solid var(--border-s);color:var(--t2)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg-cream)}
+.tbl .r{text-align:right}
+.mn2{font-family:var(--mono);font-size:11.5px}
+.hi{color:var(--t1);font-weight:500}
+
+/* BRIEFING PLACEHOLDER */
+.briefing-empty{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:32px;margin-bottom:24px;box-shadow:var(--sh);border-left:4px solid var(--acc);text-align:center;color:var(--t3);font-size:14px}
+
+/* CHART */
+.chart-card{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:20px;box-shadow:var(--sh);margin-bottom:20px}
+.chart-card h3{font-family:var(--serif);font-size:15px;font-weight:600;margin-bottom:14px}
+.chart-wrap{position:relative;height:260px}
+
+/* PILLS */
+.pills{display:flex;gap:3px;margin-left:auto}
+.pills button{padding:4px 11px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--t3);font-family:var(--sans);font-size:11px;cursor:pointer;transition:all .15s}
+.pills button:hover{background:var(--bg-white)}
+.pills button.a{background:var(--bg-white);color:var(--acc-t);border-color:var(--acc);box-shadow:var(--sh);font-weight:500}
+
+.loading{text-align:center;padding:40px;color:var(--t3);font-size:13px}
+.error{text-align:center;padding:20px;color:var(--r);font-size:13px;background:var(--rl);border-radius:var(--rs)}
+
+/* PRODUCT TABLE MINI-BAR */
+.bar-cell{width:70px}
+.mini-bar{height:5px;background:var(--acc);border-radius:3px;opacity:.6}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-brand">
+    <h1><span class="lm">T6</span>Terminal6</h1>
+    <div class="bs"><span style="display:flex;align-items:center;gap:7px"><span class="bd"></span>Sprig</span><span style="font-size:11px;color:var(--tm)">V1</span></div>
+  </div>
+  <div class="ss">
+    <div class="sl">Views</div>
+    <div class="si act" onclick="sw('overview',this)"><div class="ic">&#127968;</div><span>Brand Overview</span></div>
+  </div>
+  <div class="ss">
+    <div class="sl">Agents</div>
+    <div class="si" onclick="sw('growth',this)"><div class="ic">&#128200;</div><span>Growth Agent</span></div>
+    <div class="si sub" onclick="sw('funnel',this)"><span>D2C Funnel</span></div>
+    <div class="si" onclick="sw('supply',this)"><div class="ic">&#128230;</div><span>Supply Agent</span></div>
+    <div class="si" onclick="sw('category',this)"><div class="ic">&#127991;</div><span>Category Agent</span></div>
+  </div>
+  <div class="ss">
+    <div class="sl">Workspace</div>
+    <div class="si" onclick="sw('settings',this)"><div class="ic">&#9881;</div><span>Policies &amp; Rules</span></div>
+  </div>
+  <div class="sb-b">
+    <a href="/home.html" style="display:block;font-size:11px;color:var(--tm);text-decoration:none;padding:6px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:8px">&larr; Workspace</a>
+    <div class="ui">
+      <div class="ua" id="sidebarAvatar">NR</div>
+      <div><div style="font-size:13px;font-weight:500" id="sidebarName">Operator</div><div style="font-size:11px;color:var(--tm)">Brand Operator</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="mn">
+  <div class="tb">
+    <div class="tb-t" id="viewTitle">&#127968; <span>Brand Overview</span></div>
+    <div class="pills" id="rangePills">
+      <button data-days="7" class="a">7D</button>
+      <button data-days="30">30D</button>
+      <button data-days="90">90D</button>
+    </div>
+  </div>
+
+  <!-- ===== BRAND OVERVIEW ===== -->
+  <div class="vw act" id="v-overview">
+    <div class="briefing-empty" id="briefingSlot">
+      &#9728;&#65039; Morning briefing will appear here once the agent pipeline is live.
+    </div>
+
+    <div class="g5" style="margin-bottom:24px" id="overviewKPIs">
+      <div class="cd"><div class="kl">Sessions</div><div class="kv" id="ok-sessions">--</div><div class="kd n" id="ok-sessions-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Revenue (D2C)</div><div class="kv" id="ok-revenue">--</div><div class="kd n" id="ok-revenue-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Transactions</div><div class="kv" id="ok-txns">--</div><div class="kd n" id="ok-txns-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Conversion Rate</div><div class="kv" id="ok-conv">--</div><div class="kd n" id="ok-conv-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Cart Abandon</div><div class="kv" id="ok-abandon">--</div><div class="kd n" id="ok-abandon-d">&nbsp;</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Daily Performance</h3></div>
+      <div id="dailyTable" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Month-on-Month</h3></div>
+      <div id="monthlyTable" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ===== GROWTH AGENT ===== -->
+  <div class="vw" id="v-growth">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128200;</div>
+      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Growth Agent</h2><p style="font-size:13px;color:var(--t2);margin:0">Ad performance, attribution, campaign health, D2C funnel</p></div>
+    </div>
+    <div class="briefing-empty">Growth Agent insights will appear here once the agent pipeline is live. Use the sidebar to access the D2C Funnel for live analytics.</div>
+  </div>
+
+  <!-- ===== D2C FUNNEL ===== -->
+  <div class="vw" id="v-funnel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">D2C Funnel</h2>
+        <p style="font-size:13px;color:var(--t2);margin:4px 0 0">Sprig store (GA4) &mdash; <span id="funnelDateRange">...</span></p>
+      </div>
+      <div class="pills" id="funnelPills">
+        <button data-days="30">30D</button>
+        <button data-days="90" class="a">90D</button>
+        <button data-days="365">1Y</button>
+        <button data-days="735">2Y</button>
+      </div>
+    </div>
+
+    <div class="g5" style="margin-bottom:24px" id="funnelKPIs">
+      <div class="cd"><div class="kl">Sessions</div><div class="kv" id="fk-sessions">--</div></div>
+      <div class="cd"><div class="kl">Add to Cart</div><div class="kv" id="fk-carts">--</div></div>
+      <div class="cd"><div class="kl">Transactions</div><div class="kv" id="fk-txns">--</div></div>
+      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="fk-revenue">--</div></div>
+      <div class="cd"><div class="kl">Conv. Rate</div><div class="kv" id="fk-conv">--</div></div>
+    </div>
+
+    <div class="chart-card"><h3>Daily Sessions &amp; Transactions</h3><div class="chart-wrap"><canvas id="chartSessions"></canvas></div></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+      <div class="chart-card"><h3>Daily Revenue</h3><div class="chart-wrap"><canvas id="chartRevenue"></canvas></div></div>
+      <div class="chart-card"><h3>Funnel Conversion</h3><div class="chart-wrap"><canvas id="chartFunnel"></canvas></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Top Products (by revenue)</h3></div>
+      <div id="productsTable" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Traffic Sources</h3></div>
+      <div id="trafficTable" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ===== SUPPLY AGENT ===== -->
+  <div class="vw" id="v-supply">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--a);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128230;</div>
+      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Supply Agent</h2><p style="font-size:13px;color:var(--t2);margin:0">Inventory health, FC utilization, restock pipeline</p></div>
+    </div>
+    <div class="briefing-empty">Supply Agent will be available once inventory data pipelines are connected.</div>
+  </div>
+
+  <!-- ===== CATEGORY AGENT ===== -->
+  <div class="vw" id="v-category">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--b);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#127991;</div>
+      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Category Agent</h2><p style="font-size:13px;color:var(--t2);margin:0">Competitive pricing, assortment, BSR tracking</p></div>
+    </div>
+    <div class="briefing-empty">Category Agent will be available once competitive data is connected.</div>
+  </div>
+
+  <!-- ===== SETTINGS ===== -->
+  <div class="vw" id="v-settings">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#9881;</div>
+      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Policies &amp; Rules</h2><p style="font-size:13px;color:var(--t2);margin:0">Brand directives, guardrails, approval rules</p></div>
+    </div>
+    <div class="briefing-empty">Policy engine will be available in L4.</div>
+  </div>
+
+</main>
+</div>
+
+<script>
+/* ========== CONFIG ========== */
+const API = 'https://api.terminal6.io';
+function token(){ return sessionStorage.getItem('t6_token')||''; }
+async function api(path){
+  const t=token(); if(!t) throw new Error('No auth token');
+  const r=await fetch(API+path,{headers:{'Authorization':'Bearer '+t}});
+  if(r.status===401||r.status===403){sessionStorage.removeItem('t6_user');sessionStorage.removeItem('t6_token');location.replace('/home.html');throw new Error('Session expired');}
+  if(!r.ok) throw new Error('API '+r.status);
+  return r.json();
+}
+
+/* ========== FORMATTERS ========== */
+function fmt(n){return n==null?'--':n.toLocaleString('en-IN')}
+function cur(n){if(n==null)return'--';if(n>=1e7)return'\u20B9'+(n/1e7).toFixed(2)+' Cr';if(n>=1e5)return'\u20B9'+(n/1e5).toFixed(2)+' L';if(n>=1e3)return'\u20B9'+(n/1e3).toFixed(1)+'K';return'\u20B9'+n.toFixed(0)}
+function pct(n){return n==null?'--':n.toFixed(2)+'%'}
+function chg(v){if(v==null)return'';const s=v>0?'u':v<0?'d':'n';const a=v>0?'\u2191':v<0?'\u2193':'';return `<span class="kd ${s}">${a} ${Math.abs(v).toFixed(1)}%</span>`}
+function shortD(d){const p=d.split('-');return p[2]+' '+['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]]}
+
+/* ========== VIEW SWITCHING ========== */
+const viewTitles={overview:'&#127968; Brand Overview',growth:'&#128200; Growth Agent',funnel:'&#128200; D2C Funnel',supply:'&#128230; Supply Agent',category:'&#127991; Category Agent',settings:'&#9881; Policies & Rules'};
+let currentView='overview';
+
+function sw(id,el){
+  document.querySelectorAll('.vw').forEach(v=>v.classList.remove('act'));
+  document.getElementById('v-'+id).classList.add('act');
+  document.querySelectorAll('.si').forEach(s=>s.classList.remove('act'));
+  if(el) el.classList.add('act');
+  document.getElementById('viewTitle').innerHTML=viewTitles[id]||id;
+  currentView=id;
+
+  // Show/hide range pills based on view
+  document.getElementById('rangePills').style.display=(id==='overview')?'flex':'none';
+
+  if(id==='overview') loadOverview(overviewDays);
+  if(id==='funnel') loadFunnel(funnelDays);
+}
+
+/* ========== CHARTS ========== */
+const charts={};
+const chartOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,font:{size:11,family:"'DM Sans'"}}}},scales:{x:{grid:{display:false},ticks:{font:{size:10,family:"'JetBrains Mono'"},maxTicksLimit:12}},y:{grid:{color:'#E8E4DC'},ticks:{font:{size:10,family:"'JetBrains Mono'"}},beginAtZero:true}}};
+function mkChart(id,type,labels,ds,extra){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id).getContext('2d'),{type,data:{labels,datasets:ds},options:{...chartOpts,...extra}})}
+
+/* ========== BRAND OVERVIEW ========== */
+let overviewDays=7;
+
+async function loadOverview(days){
+  overviewDays=days;
+  document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
+  try{
+    const [daily,monthly]=await Promise.all([api('/v1/overview/daily?days='+days),api('/v1/overview/monthly?months=6')]);
+    renderOverviewKPIs(daily.data);
+    renderDailyTable(daily.data);
+    renderMonthlyTable(monthly.data);
+  }catch(e){document.getElementById('overviewKPIs').innerHTML='<div class="error">'+e.message+'</div>'}
+}
+
+function renderOverviewKPIs(data){
+  const s=(k)=>data.reduce((a,r)=>a+(r[k]||0),0);
+  const sessions=s('sessions'),txns=s('transactions'),rev=s('purchase_revenue');
+  const avg_abandon=data.map(r=>r.bounce_rate).filter(v=>v!=null);
+  document.getElementById('ok-sessions').textContent=fmt(sessions);
+  document.getElementById('ok-revenue').textContent=cur(rev);
+  document.getElementById('ok-txns').textContent=fmt(txns);
+  document.getElementById('ok-conv').textContent=sessions?pct(txns/sessions*100):'--';
+  document.getElementById('ok-abandon').textContent=avg_abandon.length?pct(avg_abandon.reduce((a,b)=>a+b)/avg_abandon.length*100):'--';
+}
+
+function renderDailyTable(data){
+  const el=document.getElementById('dailyTable');
+  if(!data.length){el.innerHTML='<div class="loading">No data</div>';return}
+  el.innerHTML=`<table class="tbl"><thead><tr><th>Date</th><th class="r">Sessions</th><th class="r">Users</th><th class="r">Add to Cart</th><th class="r">Checkouts</th><th class="r">Transactions</th><th class="r">Revenue</th><th class="r">Conv %</th></tr></thead><tbody>${data.map(r=>`<tr>
+    <td class="hi">${shortD(r.date)}</td>
+    <td class="mn2 r">${fmt(r.sessions)}</td>
+    <td class="mn2 r">${fmt(r.total_users)}</td>
+    <td class="mn2 r">${fmt(r.add_to_carts)}</td>
+    <td class="mn2 r">${fmt(r.checkouts)}</td>
+    <td class="mn2 r">${fmt(r.transactions)}</td>
+    <td class="mn2 r">${cur(r.purchase_revenue)}</td>
+    <td class="mn2 r">${pct(r.conversion_rate)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function renderMonthlyTable(data){
+  const el=document.getElementById('monthlyTable');
+  if(!data.length){el.innerHTML='<div class="loading">No data</div>';return}
+  el.innerHTML=`<table class="tbl"><thead><tr><th>Month</th><th class="r">Sessions</th><th class="r">vs Prev</th><th class="r">Transactions</th><th class="r">vs Prev</th><th class="r">Revenue</th><th class="r">vs Prev</th><th class="r">Conv %</th><th class="r">Days</th></tr></thead><tbody>${data.map(r=>`<tr>
+    <td class="hi">${r.label}</td>
+    <td class="mn2 r">${fmt(r.sessions)}</td>
+    <td class="r">${chg(r.sessions_change)}</td>
+    <td class="mn2 r">${fmt(r.transactions)}</td>
+    <td class="r">${chg(r.txn_change)}</td>
+    <td class="mn2 r">${cur(r.revenue)}</td>
+    <td class="r">${chg(r.revenue_change)}</td>
+    <td class="mn2 r">${pct(r.conversion_rate)}</td>
+    <td class="mn2 r" style="color:var(--t3)">${r.days_in_data}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+/* ========== D2C FUNNEL ========== */
+let funnelDays=90;
+
+async function loadFunnel(days){
+  funnelDays=days;
+  document.querySelectorAll('#funnelPills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
+  try{
+    const [site,products,traffic]=await Promise.all([
+      api('/v1/funnel/site?days='+days),
+      api('/v1/funnel/products?days='+days+'&limit=20'),
+      api('/v1/funnel/traffic?days='+days),
+    ]);
+    renderFunnelKPIs(site.data);
+    renderSessionsChart(site.data);
+    renderRevenueChart(site.data);
+    renderFunnelBarChart(site.data);
+    renderProductsTable(products.data);
+    renderTrafficTable(traffic.data);
+    if(site.data.length)document.getElementById('funnelDateRange').textContent=site.data[0].date+' to '+site.data[site.data.length-1].date;
+  }catch(e){document.getElementById('funnelKPIs').innerHTML='<div class="error">'+e.message+'</div>'}
+}
+
+function renderFunnelKPIs(data){
+  const s=(k)=>data.reduce((a,r)=>a+(r[k]||0),0);
+  const sessions=s('sessions'),txns=s('transactions');
+  document.getElementById('fk-sessions').textContent=fmt(sessions);
+  document.getElementById('fk-carts').textContent=fmt(s('add_to_carts'));
+  document.getElementById('fk-txns').textContent=fmt(txns);
+  document.getElementById('fk-revenue').textContent=cur(s('purchase_revenue'));
+  document.getElementById('fk-conv').textContent=sessions?pct(txns/sessions*100):'--';
+}
+
+function renderSessionsChart(data){
+  mkChart('chartSessions','line',data.map(r=>r.date.slice(5)),[
+    {label:'Sessions',data:data.map(r=>r.sessions),borderColor:'#C15F3C',backgroundColor:'rgba(193,95,60,.08)',fill:true,tension:.3,pointRadius:0,borderWidth:2},
+    {label:'Transactions',data:data.map(r=>r.transactions),borderColor:'#2E7D32',backgroundColor:'rgba(46,125,50,.08)',fill:true,tension:.3,pointRadius:0,borderWidth:2,yAxisID:'y1'},
+  ],{scales:{...chartOpts.scales,y1:{position:'right',grid:{display:false},ticks:{font:{size:10,family:"'JetBrains Mono'"}},beginAtZero:true}}});
+}
+
+function renderRevenueChart(data){
+  mkChart('chartRevenue','bar',data.map(r=>r.date.slice(5)),[{label:'Revenue',data:data.map(r=>r.purchase_revenue),backgroundColor:'rgba(193,95,60,.6)',borderRadius:2}]);
+}
+
+function renderFunnelBarChart(data){
+  const s=(k)=>data.reduce((a,r)=>a+(r[k]||0),0);
+  mkChart('chartFunnel','bar',['Sessions','Add to Cart','Checkouts','Transactions'],[{label:'Funnel',data:[s('sessions'),s('add_to_carts'),s('checkouts'),s('transactions')],backgroundColor:['#C15F3C','#EA580C','#F97316','#2E7D32'],borderRadius:4}],{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'#E8E4DC'},ticks:{font:{size:10,family:"'JetBrains Mono'"}}},y:{grid:{display:false},ticks:{font:{size:12,family:"'DM Sans'"}}}}});
+}
+
+function renderProductsTable(data){
+  const el=document.getElementById('productsTable');
+  if(!data.length){el.innerHTML='<div class="loading">No data</div>';return}
+  const mx=Math.max(...data.map(r=>r.revenue));
+  el.innerHTML=`<table class="tbl"><thead><tr><th>#</th><th>Product</th><th class="r">Views</th><th class="r">Cart</th><th class="r">Purchased</th><th class="r">Revenue</th><th class="r">V&rarr;C %</th><th class="bar-cell"></th></tr></thead><tbody>${data.map((r,i)=>`<tr>
+    <td style="color:var(--t3)">${i+1}</td>
+    <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.name||'').replace(/"/g,'&quot;')}">${r.name||r.item_id}</td>
+    <td class="mn2 r">${fmt(r.views)}</td><td class="mn2 r">${fmt(r.add_to_carts)}</td><td class="mn2 r">${fmt(r.purchases)}</td>
+    <td class="mn2 r">${cur(r.revenue)}</td><td class="mn2 r">${r.view_to_cart_rate!=null?r.view_to_cart_rate+'%':'--'}</td>
+    <td class="bar-cell"><div class="mini-bar" style="width:${Math.round(r.revenue/mx*100)}%"></div></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function renderTrafficTable(data){
+  const el=document.getElementById('trafficTable');
+  if(!data.length){el.innerHTML='<div class="loading">No data</div>';return}
+  const mx=Math.max(...data.map(r=>r.sessions));
+  el.innerHTML=`<table class="tbl"><thead><tr><th>Source</th><th>Medium</th><th class="r">Sessions</th><th class="r">Users</th><th class="r">Txns</th><th class="r">Revenue</th><th class="r">Conv %</th><th class="bar-cell"></th></tr></thead><tbody>${data.slice(0,25).map(r=>`<tr>
+    <td>${r.source}</td><td style="color:var(--t3)">${r.medium}</td>
+    <td class="mn2 r">${fmt(r.sessions)}</td><td class="mn2 r">${fmt(r.users)}</td><td class="mn2 r">${fmt(r.transactions)}</td>
+    <td class="mn2 r">${cur(r.revenue)}</td><td class="mn2 r">${r.conversion_rate!=null?r.conversion_rate+'%':'--'}</td>
+    <td class="bar-cell"><div class="mini-bar" style="width:${Math.round(r.sessions/mx*100)}%;background:var(--g)"></div></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+/* ========== PILL CLICKS ========== */
+document.querySelectorAll('#rangePills button').forEach(b=>b.addEventListener('click',()=>loadOverview(+b.dataset.days)));
+document.querySelectorAll('#funnelPills button').forEach(b=>b.addEventListener('click',()=>loadFunnel(+b.dataset.days)));
+
+/* ========== INIT ========== */
+const user=JSON.parse(sessionStorage.getItem('t6_user')||'{}');
+document.getElementById('sidebarName').textContent=user.name||'Operator';
+const av=document.getElementById('sidebarAvatar');
+if(user.picture){av.style.backgroundImage='url('+user.picture+')';av.textContent=''}
+else if(user.name)av.textContent=user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+loadOverview(7);
+</script>
+</body>
+</html>
