@@ -23,10 +23,12 @@ terminal6-website/
 │                            `t6_token` in sessionStorage for API auth.
 ├── sprig.html             — **LIVE PRODUCT PAGE** (6 Apr 2026). Full sidebar app shell
 │                            matching the app.html prototype layout. Views:
-│                            Brand Overview (KPIs, daily table, MoM), Growth Agent,
-│                            D2C Funnel (charts + tables via Chart.js), Supply Agent,
-│                            Category Agent, Policies. Calls api.terminal6.io/v1/*
-│                            endpoints with Bearer token auth.
+│                            Brand Overview (KPIs, channel cards, channel sales table
+│                            with day/week/month granularity + MTD/YTD, D2C daily table,
+│                            MoM comparison), Growth Agent, D2C Funnel (charts + tables
+│                            via Chart.js), Supply Agent, Category Agent, Data Coverage
+│                            (source matrix + table coverage), Policies. Calls
+│                            api.terminal6.io/v1/* endpoints with Bearer token auth.
 ├── funnel.html            — Standalone D2C funnel page (superseded by sprig.html but
 │                            kept as a simpler entry point). Same API calls.
 ├── app.html               — Interactive dashboard prototype with MOCK DATA (mirrored from
@@ -49,12 +51,16 @@ Product pages (`sprig.html`, `funnel.html`) call the Terminal6 API at `api.termi
   frontend clears session and redirects to `/home.html` for re-auth.
 - **API base URL:** hardcoded as `const API = 'https://api.terminal6.io'` in each page.
   For local dev, comment and use `http://localhost:8000`.
-- **Endpoints used:**
-  - `/v1/overview/daily?days=7` — Brand Overview daily table
+- **Endpoints used by sprig.html:**
+  - `/v1/overview/daily?days=7` — Brand Overview D2C daily table
   - `/v1/overview/monthly?months=6` — Brand Overview MoM table
+  - `/v1/channels/summary?days=7` — Channel performance cards (revenue, orders, units, share %)
+  - `/v1/channels/sales?granularity=daily&periods=7` — Channel × period sales matrix + MTD + YTD
   - `/v1/funnel/site?days=90` — D2C Funnel site-level data
   - `/v1/funnel/products?days=90&limit=20` — D2C Funnel top products
   - `/v1/funnel/traffic?days=90` — D2C Funnel traffic sources
+  - `/v1/data/coverage` — Data Coverage tab: per-table row counts and date ranges
+  - `/v1/data/sources` — Data Coverage tab: source connection matrix
 - **Chart library:** Chart.js 4.4.7 loaded via CDN `<script>` tag. No build step.
 
 ## Live vs Prototype pages
@@ -70,7 +76,7 @@ design reference but does NOT receive live data.
 
 ## Access control — SECURITY CRITICAL
 
-The gated pages (`home`, `app`, `architecture`, `todos`) enforce a **client-side email allowlist**:
+The gated pages (`home`, `sprig`, `funnel`, `app`, `architecture`, `todos`, `investor_thesis`) enforce a **client-side email allowlist**:
 
 ```js
 const ALLOWED_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com'];
