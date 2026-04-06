@@ -261,7 +261,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
       <div class="cd"><div class="kl">Schema Tables</div><div class="kv" id="dk-total">--</div></div>
     </div>
 
-    <div class="sec" id="dataTableSection">
+    <div class="sec">
+      <div class="sec-h"><h3>Source Connections</h3></div>
+      <div id="sourceMatrix" class="loading">Loading source data...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Table-Level Coverage</h3></div>
       <div id="coverageTable" class="loading">Loading coverage data...</div>
     </div>
   </div>
@@ -454,14 +460,54 @@ function renderTrafficTable(data){
 /* ========== DATA COVERAGE ========== */
 async function loadDataCoverage(){
   try{
-    const res=await api('/v1/data/coverage');
-    document.getElementById('dk-rows').textContent=fmt(res.total_rows);
-    document.getElementById('dk-active').textContent=res.active_tables;
-    document.getElementById('dk-active-sub').innerHTML=`of ${res.total_tables} tables`;
-    document.getElementById('dk-empty').textContent=res.empty_tables;
-    document.getElementById('dk-total').textContent=res.total_tables;
-    renderCoverageTable(res.data);
+    const [cov,src]=await Promise.all([api('/v1/data/coverage'),api('/v1/data/sources')]);
+    document.getElementById('dk-rows').textContent=fmt(cov.total_rows);
+    document.getElementById('dk-active').textContent=cov.active_tables;
+    document.getElementById('dk-active-sub').innerHTML=`of ${cov.total_tables} tables`;
+    document.getElementById('dk-empty').textContent=cov.empty_tables;
+    document.getElementById('dk-total').textContent=cov.total_tables;
+    renderSourceMatrix(src.data);
+    renderCoverageTable(cov.data);
   }catch(e){document.getElementById('coverageTable').innerHTML='<div class="error">'+e.message+'</div>'}
+}
+
+function renderSourceMatrix(sources){
+  const el=document.getElementById('sourceMatrix');
+  const statusStyles={
+    live:{bg:'var(--gl)',color:'var(--g)',label:'LIVE'},
+    empty:{bg:'var(--bg-warm)',color:'var(--t3)',label:'EMPTY'},
+    not_connected:{bg:'var(--bg-warm)',color:'var(--tm)',label:'NOT CONNECTED'},
+    pending:{bg:'var(--al)',color:'var(--a)',label:'PENDING'},
+    blocked:{bg:'var(--rl)',color:'var(--r)',label:'BLOCKED'},
+    error:{bg:'var(--rl)',color:'var(--r)',label:'ERROR'},
+  };
+  let html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">';
+  for(const s of sources){
+    const st=statusStyles[s.overall_status]||statusStyles.empty;
+    html+=`<div class="cd" style="border-left:4px solid ${s.color}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:8px;background:${s.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--mono)">${s.icon}</div>
+        <div style="flex:1">
+          <div style="font-family:var(--serif);font-weight:600;font-size:15px">${s.source}</div>
+        </div>
+        <span style="padding:2px 8px;border-radius:5px;font-size:10px;font-weight:600;background:${st.bg};color:${st.color}">${st.label}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">`;
+    for(const d of s.data_types){
+      const ds=statusStyles[d.status]||statusStyles.empty;
+      const info=d.status==='live'?`<span class="mn2">${fmt(d.rows)} rows</span>${d.min_date?' &middot; <span style="font-size:10px;color:var(--t3)">'+d.min_date+' &rarr; '+d.max_date+'</span>':''}`:d.note?`<span style="font-size:11px;color:var(--t3)">${d.note}</span>`:'';
+      html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border-s)">
+        <span style="font-size:12.5px;color:var(--t2)">${d.type}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${info}
+          <span style="width:8px;height:8px;border-radius:50%;background:${ds.color};flex-shrink:0"></span>
+        </div>
+      </div>`;
+    }
+    html+=`</div></div>`;
+  }
+  html+='</div>';
+  el.innerHTML=html;
 }
 
 function renderCoverageTable(data){
