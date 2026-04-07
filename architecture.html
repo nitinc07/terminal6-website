@@ -563,22 +563,99 @@ Summary flows BACK UP the tree:
   <p style="font-size:13.5px; color:var(--text-mid); text-align:center;"><strong>This is the difference between a recommendation engine and an operating system.</strong> Without proactive alerts: "Revenue dropped 30% over the weekend &mdash; why?!" With proactive alerts: "Campaign X was suspended and auto-restarted at 8:12pm. Revenue impact: &lt;&#8377;2K. No action needed."</p>
 </section>
 
+<!-- CONVERSATIONAL INTERFACE -->
+<section>
+  <h2>Conversational Interface</h2>
+  <p>Alerts and briefings are push-based (system &rarr; operator). But operators also need to pull &mdash; ask questions, explore data, make sense of what they're seeing. <strong>The chat is the missing piece between the morning briefing and the next day's briefing.</strong></p>
+
+  <h3>Three modes of interaction</h3>
+  <div class="g3">
+    <div class="card" style="border-top:3px solid var(--green)">
+      <h4>Push</h4>
+      <p style="margin:0"><strong>System &rarr; Operator.</strong><br>Morning briefings, proactive alerts, reactive investigations. Covers known patterns. The system speaks first.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--accent)">
+      <h4>Pull</h4>
+      <p style="margin:0"><strong>Operator &rarr; System.</strong><br>"Why is Flipkart outperforming Amazon this month?" "Show me top 10 SKUs by margin." Novel questions no playbook anticipated. The operator speaks first.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--teal)">
+      <h4>Follow-up</h4>
+      <p style="margin:0"><strong>System &rarr; Operator (contextual).</strong><br>"You asked about Samsung S24 stock &mdash; 3 other S2x cases also have &lt;5 day cover with ads still running." The system adds what the operator didn't think to ask.</p>
+    </div>
+  </div>
+
+  <h3>How it works</h3>
+  <div class="diagram">Operator asks: "Why did D2C revenue drop last week?"
+    |
+    v
+Chief of Staff (L0):
+  1. Understands the question (what domain, what time range)
+  2. Checks: recent investigation already covers this?
+     → Yes: "Tuesday's briefing identified 3 factors..."
+     → No: queries data, routes to L1 if deep analysis needed
+  3. Assembles answer from REAL DATA (grounded, not generated)
+  4. Suggests follow-up: "Want me to dig into the Amazon pricing angle?"
+    |
+    v
+Operator: "Yes, show me the pricing detail"
+    |
+    v
+Chief of Staff routes to Sr. Category → Amazon Marketplace Agent
+  → Returns: specific prices, specific SKUs, specific dates
+    |
+    v
+Operator: "Don't bid on these SKUs until Amazon's promo ends"
+    |
+    v
+Chief of Staff captures as BrandDirective:
+  type: TACTICAL, target: [sku_list], expiry: end of Amazon promo
+  → Routes to Amazon Ads Agent: pause campaigns for these SKUs</div>
+
+  <p><strong>Same hierarchy, same routing, same policy engine.</strong> The trigger is a chat message instead of an anomaly. The Chief of Staff handles it, routes to agents for complex questions, and captures directives from natural conversation.</p>
+
+  <h3>Data grounding (the hard part)</h3>
+  <p>Every answer must trace to a real database query. The LLM decides <strong>what</strong> to query; tools execute it; the LLM formats the answer. Data is always real, never generated.</p>
+  <div class="g2">
+    <div class="card" style="border-left:3px solid var(--red)">
+      <h4>Bad: Generated</h4>
+      <p style="margin:0"><em>"Based on typical e-commerce patterns, your top SKU is likely..."</em><br>Hallucination risk. Wrong numbers that get acted on. <strong>Never acceptable.</strong></p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--green)">
+      <h4>Good: Grounded</h4>
+      <p style="margin:0"><em>"Vivo X200 FE EdgeTone case &mdash; &#8377;42,318 this week, +12% vs last week."</em><br>Source: <code>daily_sales</code>, Apr 1&ndash;7. <strong>Traceable, verifiable.</strong></p>
+    </div>
+  </div>
+
+  <h3>Phased rollout</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Capability</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Phase 1 (MVP)</strong></td><td>Read-only chat. Ask questions, get data-grounded answers + follow-up suggestions.</td><td>"What's my Shopify revenue this week?" &rarr; answer + "3 SKUs are phantom OOS, want details?"</td></tr>
+      <tr><td><strong>Phase 2</strong></td><td>Action through chat. Operator gives instructions, system executes via L2 agents + policy checks.</td><td>"Pause that campaign" &rarr; "Paused. Revenue impact est. &#8377;1,200/day. Resume when?"</td></tr>
+      <tr><td><strong>Phase 3</strong></td><td>Directive capture. System recognises recurring instructions and proposes permanent directives.</td><td>"You've paused ads on OOS SKUs 5 times. Make it automatic?" &rarr; new PERMANENT directive</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Why this matters for the business</h3>
+  <p style="font-size:13.5px; color:var(--text-mid);"><strong>Engagement is the wedge.</strong> The operator starts by asking questions (zero setup, zero trust required). Gets useful, grounded answers. Builds trust. Enables alerts. Enables autonomous actions. <strong>Chat is how you earn the right to act.</strong> Daily active usage is the leading indicator of expansion from intelligence &rarr; execution &rarr; full OS. Every conversation is also a directive source &mdash; accelerating the autonomy flywheel.</p>
+</section>
+
 <!-- LLM APPROACH -->
 <section>
   <h2>LLM Strategy</h2>
   <p><strong>Context assembly, not model training.</strong> Playbooks, brand context, category cards, and decision history are injected at runtime. No fine-tuning needed.</p>
   <div class="g3">
     <div class="card">
-      <h4>No LLM (Tier 1)</h4>
-      <p style="margin:0">Statistical anomaly detection. z-scores, change-point detection. Runs on cron. Covers all signals continuously. Cost: zero.</p>
+      <h4>No LLM (Tier 1 + input monitors)</h4>
+      <p style="margin:0">Statistical anomaly detection. Proactive input checks. z-scores, change-point detection. Runs on cron. Cost: zero.</p>
     </div>
     <div class="card">
-      <h4>Haiku (L0 triage)</h4>
-      <p style="margin:0">Chief of Staff: anomaly triage, routing, morning briefing compilation. Fast and cheap &mdash; one call per daily batch.</p>
+      <h4>Haiku (L0 triage + simple chat)</h4>
+      <p style="margin:0">Chief of Staff: anomaly triage, morning briefing, simple data queries. Fast and cheap &mdash; handles 60%+ of all interactions.</p>
     </div>
     <div class="card">
-      <h4>Sonnet (L1 + L2)</h4>
-      <p style="margin:0">Domain diagnosis (L1) and deep execution reasoning (L2). Cross-signal synthesis, nuanced judgment. 3&ndash;6 calls per triggered situation.</p>
+      <h4>Sonnet (L1 + L2 + complex chat)</h4>
+      <p style="margin:0">Domain diagnosis, deep execution reasoning, complex RCA through conversation. 3&ndash;6 calls per triggered situation; 5&ndash;10 per complex chat session.</p>
     </div>
   </div>
 </section>
