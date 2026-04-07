@@ -31,8 +31,21 @@ terminal6-website/
 │                            api.terminal6.io/v1/* endpoints with Bearer token auth.
 ├── funnel.html            — Standalone D2C funnel page (superseded by sprig.html but
 │                            kept as a simpler entry point). Same API calls.
-├── app.html               — Interactive dashboard prototype with MOCK DATA (mirrored from
-│                            terminal6/product/terminal6-os-v4_2.html). NOT live data.
+├── app.html               — Interactive dashboard prototype with MOCK DATA. NOT live data.
+│                            Demonstrates the hierarchical agent model:
+│                            Sidebar: Morning Briefing, Brand Profile, 5 domain views
+│                            (Marketing, Category & Pricing, Marketplace, Operations,
+│                            Finance), Chat, Policies & Directives.
+│                            Morning briefing split: proactive (detected overnight) /
+│                            needs attention / watch list / insights. V1 = recommend
+│                            + inform only, no auto-execution.
+│                            Chat shows 3 interaction modes: data query (grounded),
+│                            investigation (routed to agents), planning (multi-agent).
+│                            Brand Profile page: onboarding context, channels, fulfilment,
+│                            team roles, policies/directives, competitors, timeline.
+│                            Role switcher: "View as" dropdown (Brand Head, Sr. Marketing,
+│                            Sr. Category, Sr. Marketplace, Sr. Ops, Sr. Finance) — dims
+│                            non-primary sidebar items. L0 + Brand Profile always visible.
 ├── architecture.html      — Investor-facing product architecture doc (mirrored from
 │                            terminal6/product/terminal6-architecture.html). Access gated.
 ├── investor_thesis.html   — Pre-seed investor thesis. Access gated.
@@ -158,7 +171,7 @@ Fonts are loaded from Google Fonts via a single `<link>` tag — keep that patte
 
 When the source changes, the website copy must be regenerated, the access gate script re-injected, and both repos committed and pushed in the same session. This rule lives in the main repo's memory as `feedback_sync_website_docs.md`. See it for the exact procedure.
 
-`app.html` is loosely mirrored from `terminal6/product/terminal6-os-v4_2.html` but with the sign-in redirect and sidebar "← Workspace" link added. Keep these additions when syncing.
+`app.html` is the design prototype reflecting the hierarchical agent architecture (Apr 2026 update: 5 senior managers + L2 specialists, role-based views, proactive alerts as recommendations not executions, conversational interface with 4 modes, brand profile page). It is edited directly in this repo — not mirrored from the main repo.
 
 ## Conventions
 
