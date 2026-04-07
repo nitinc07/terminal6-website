@@ -189,8 +189,8 @@ footer a { color: var(--accent); text-decoration: none; }
       <p style="margin:0">16 normalised PostgreSQL tables. Core: Unified SKU linking ASIN, FSN, Shopify Variant into one Terminal6 ID.</p>
     </div>
     <div class="card" style="border-left:3px solid var(--blue)">
-      <h4>Layer C: Enriched / Computed</h4>
-      <p style="margin:0">Cross-channel attribution, delivery speed scoring, inventory risk, competitive price indices. No third-party computes this.</p>
+      <h4>Layer C: Evidence &amp; Signals (= L2.5)</h4>
+      <p style="margin:0">Stock proxy, funnel signals, anomaly scores, cross-channel attribution, delivery speed scoring, competitive price indices. Computed deterministically. Shared across all agents. This is L2.5 in the OS stack.</p>
     </div>
     <div class="card" style="border-left:3px solid var(--accent)">
       <h4>Layer D: Decision Memory</h4>
@@ -229,7 +229,7 @@ footer a { color: var(--accent); text-decoration: none; }
 <!-- 6 THROTTLE SIGNALS -->
 <section>
   <h2>6 Throttle Signals</h2>
-  <p>Every active SKU is scored on 6 signals. The composite drives all agent decisions.</p>
+  <p>Every active SKU is scored on 6 signals. Computed deterministically in L2.5 (Evidence Layer) on cron. Consumed by L2 junior agents for execution decisions and by L1 senior managers for strategic oversight.</p>
   <div class="card">
     <div class="signal"><div class="signal-num">1</div><div><div class="signal-name">Inventory Cover</div><div class="signal-desc">Days of stock remaining. &lt;3d = pause ads. 3-7d = throttle. &gt;30d = push harder.</div></div></div>
     <div class="signal"><div class="signal-num">2</div><div><div class="signal-name">Margin Health</div><div class="signal-desc">Current margin vs brand's floor. Below floor = stop spending. Above floor+5% = full aggression.</div></div></div>
@@ -263,24 +263,26 @@ footer a { color: var(--accent); text-decoration: none; }
     </div>
   </div>
   <h3>How Knowledge Composes at Runtime</h3>
-  <div class="diagram">Trigger: "D2C conversion dropped 15%"
+  <p>Category cards and region cards compose at <strong>L1 (senior manager level)</strong> &mdash; where domain diagnosis happens. L0 doesn't need phone-lifecycle interpretation. L2 doesn't need salary-cycle context. L1 is where expertise matters.</p>
+  <div class="diagram">Trigger arrives at Chief of Staff (L0):
+  L0 playbook:         "D2C conversion dropped 15%. Factors: ATC drop, OOS."
+  L0 context:          Brand profile + anomaly summary. No category/region detail.
+  L0 output:           Routes to Sr. Marketing + Sr. Category
+                       ↓
+Sr. Marketing Manager (L1) diagnoses:
+  L1 playbook:         campaign_diagnosis.md
+  + Category Card:     "In mobile accessories, phone lifecycle drives demand.
+                        Top SKUs entering decline phase (12-18 month cycle)."
+  + Region Card:       "Day 12 of month = salary cycle dip (historically lowest).
+                        No Amazon sale running = not cannibalisation."
+  + Brand Context:     Organic conv declining for 3 months (known trend).
+                        Sprig increased Meta spend recently (mix effect).
 
-Playbook (Layer 1):    Check funnel stage &rarr; ATC dropped, not sessions
-                       Check traffic source &rarr; organic flat, paid stable
-                       Check product concentration &rarr; top 3 SKUs affected
-
-Category Card (L2):    "ATC dropped on specific SKUs" &rarr; check phone lifecycle
-                       Top SKUs entering decline phase (12-18 month cycle)
-
-Region Card (L3):      Day 12 of month &rarr; salary cycle dip (historically lowest)
-                       No Amazon sale running &rarr; not cannibalisation
-
-Brand Context:         Organic conv declining for 3 months (known trend)
-                       Sprig increased Meta spend (mix effect)
-
-Diagnosis:             Salary cycle dip + phone lifecycle rotation + organic SEO lag.
-                       No action needed. Monitor 2 more days for recovery.</div>
-  <p><strong>This diagnosis is impossible with a single-layer playbook.</strong> It requires composing universal process, category interpretation, regional context, and brand history.</p>
+  L1 Diagnosis:        Salary cycle dip + phone lifecycle rotation + organic lag.
+                       No campaign action needed. Monitor 2 more days.
+                       ↓
+Junior Agents (L2):    Not invoked — L1 determined no action needed.</div>
+  <p><strong>This diagnosis is impossible without composing all layers.</strong> But the composition happens at the right level (L1), not everywhere. L0 triages without it. L2 executes without it.</p>
 </section>
 
 <!-- AGENTS -->
@@ -478,7 +480,13 @@ Policy Engine --> check each action --> approve / escalate
 Execute --> API calls to Amazon, Meta, Shopify
     |
     v
-Decision Record --> Layer D (Decision Memory) --> Morning Briefing</div>
+Decision Record --> Layer D (Decision Memory)
+    |
+    v
+Summary flows BACK UP the tree:
+  L2 reports to L1:  "Paused 15 campaigns. Fixed 200 of 345 listings. 145 need manual fix."
+  L1 reports to L0:  "Marketing: OOS SKUs suppressed. Marketplace: 58% auto-fixed, 42% escalated."
+  L0 compiles:       Morning Briefing for operator with actions taken + decisions needed</div>
   <p><strong>Typical call volume per trigger:</strong> 1 Haiku (L0) + 1&ndash;2 Sonnet (L1) + 1&ndash;3 Sonnet (L2) = 3&ndash;6 LLM calls. Not every trigger activates all branches.</p>
 </section>
 
