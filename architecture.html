@@ -427,17 +427,33 @@ Junior Agents (L2):    Not invoked — L1 determined no action needed.</div>
       <p style="margin:0"><em>Junior agents read these.</em><br><strong>Input:</strong> L1 task + deep data<br><strong>Output:</strong> "Paused 15 campaigns. Bid increase &#8377;12&rarr;17 pending approval."<br><strong>Executes:</strong> API calls</p>
     </div>
   </div>
+  <h3>Two types of L0 playbooks</h3>
+  <div class="g2">
+    <div class="card" style="border-top:3px solid var(--accent)">
+      <h4>L0 Situation Playbooks</h4>
+      <p style="margin:0"><strong>Triggered by anomalies.</strong> Reactive monitoring detects outcome degradation &rarr; playbook diagnoses top factors &rarr; routes to L1 managers.<br><em>conversion_drop.md, oos_detected.md, margin_erosion.md</em></p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--teal)">
+      <h4>L0 Planning Playbooks</h4>
+      <p style="margin:0"><strong>Triggered by operator request.</strong> Strategy mode fans out to L1 agents &rarr; synthesizes structured deliverable (plan, forecast, scenario).<br><em>demand_planning.md, budget_allocation.md, launch_planning.md</em></p>
+    </div>
+  </div>
+
   <h3>Routing: Declared in Playbook, Activated by LLM, Dispatched by Harness</h3>
   <p>Every playbook declares a <strong>Routes section</strong> mapping findings &rarr; downstream agents. The LLM activates specific routes based on its diagnosis. The harness mechanically dispatches. Fully auditable.</p>
-  <div class="diagram">L0 playbook (conversion_drop.md) declares:
+  <div class="diagram">L0 situation playbook (conversion_drop.md) declares:
 
   finding: "traffic_degradation"  --> route to: Sr. Marketing
   finding: "partial_oos"          --> route to: Sr. Marketplace + Sr. Ops
   finding: "cannibalisation"      --> route to: Sr. Category
 
-L0 LLM activates: [traffic_degradation, partial_oos]
-Harness dispatches: Sr. Marketing + Sr. Marketplace + Sr. Ops
+L0 planning playbook (budget_allocation.md) declares:
 
+  input_needed: "channel_roas"    --> consult: Sr. Marketing
+  input_needed: "margin_outlook"  --> consult: Sr. Finance
+  input_needed: "growth_priority" --> consult: Sr. Category
+
+Same routing mechanism. Different trigger (anomaly vs operator request).
 Same pattern cascades L1 --> L2.</div>
 </section>
 
@@ -584,34 +600,74 @@ Summary flows BACK UP the tree:
     </div>
   </div>
 
-  <h3>How it works</h3>
-  <div class="diagram">Operator asks: "Why did D2C revenue drop last week?"
-    |
-    v
-Chief of Staff (L0):
-  1. Understands the question (what domain, what time range)
-  2. Checks: recent investigation already covers this?
-     → Yes: "Tuesday's briefing identified 3 factors..."
-     → No: queries data, routes to L1 if deep analysis needed
-  3. Assembles answer from REAL DATA (grounded, not generated)
-  4. Suggests follow-up: "Want me to dig into the Amazon pricing angle?"
-    |
-    v
-Operator: "Yes, show me the pricing detail"
-    |
-    v
-Chief of Staff routes to Sr. Category → Amazon Marketplace Agent
-  → Returns: specific prices, specific SKUs, specific dates
-    |
-    v
-Operator: "Don't bid on these SKUs until Amazon's promo ends"
-    |
-    v
-Chief of Staff captures as BrandDirective:
-  type: TACTICAL, target: [sku_list], expiry: end of Amazon promo
-  → Routes to Amazon Ads Agent: pause campaigns for these SKUs</div>
+  <h3>One interface, four modes</h3>
+  <p>The operator talks to <strong>one interface &mdash; Terminal6.</strong> Behind it, the system detects intent and activates the right mode. The operator never chooses a mode &mdash; the system figures it out.</p>
 
-  <p><strong>Same hierarchy, same routing, same policy engine.</strong> The trigger is a chat message instead of an anomaly. The Chief of Staff handles it, routes to agents for complex questions, and captures directives from natural conversation.</p>
+  <table>
+    <thead><tr><th>Mode</th><th>Triggered by</th><th>What happens</th><th>Model</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Data query</strong></td><td>"What's my revenue this week?"</td><td>CoS: SQL query &rarr; grounded answer + follow-up suggestion</td><td>Haiku</td></tr>
+      <tr><td><strong>Investigation</strong></td><td>"Why did revenue drop?"</td><td>CoS routes to L1 &rarr; L2 cascade. Returns structured diagnosis.</td><td>Sonnet</td></tr>
+      <tr><td><strong>Strategy / Planning</strong></td><td>"Build me a Q2 budget plan"</td><td>Fan-out to multiple L1 agents in parallel &rarr; synthesize into structured plan</td><td>Sonnet / Opus</td></tr>
+      <tr><td><strong>Action</strong></td><td>"Pause that campaign"</td><td>Route to L2 agent + policy check &rarr; execute or escalate</td><td>Sonnet</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Strategy mode: planning with skills</h3>
+  <p>When the operator asks for a plan, the system fans out to multiple L1 domain experts, then synthesizes their inputs into a structured deliverable. <strong>Same hierarchy, same agents &mdash; used in planning mode instead of monitoring mode.</strong></p>
+
+  <div class="diagram">Operator: "Build me a budget allocation plan for Q2"
+    |
+    v
+Strategy mode fans out to L1 agents (parallel):
+    |
+    ├── Sr. Marketing:   "Q1 ROAS per channel? Campaign trends?"
+    ├── Sr. Finance:     "Margin constraints? Cash flow outlook?"
+    ├── Sr. Category:    "Which categories have highest growth potential?"
+    └── Sr. Ops:         "Inventory outlook? Restock risks in Q2?"
+    |
+    v (all respond)
+    |
+Synthesis (Sonnet, big context):
+    "Amazon: ROAS 4.2x, margin 32% → +20% budget
+     Google: ROAS 2.8x, declining CTR → maintain, refresh creative
+     Meta: ROAS 1.9x, strong for launches → shift to launch-only
+     Flipkart: ROAS 3.1x, growing share → +15%
+
+     Proposed Q2 budget: [structured table]
+     Constraints applied: margin floor 28%, TACoS cap 12%
+
+     Want me to detail the per-campaign breakdown?"</div>
+
+  <h3>Planning skills (L0 planning playbooks)</h3>
+  <p>Each skill is a <strong>planning playbook</strong> &mdash; same structure as situation playbooks (input &rarr; reasoning &rarr; routes &rarr; output) but triggered by operator request, not anomalies, and producing structured deliverables.</p>
+  <table>
+    <thead><tr><th>Skill</th><th>What it produces</th><th>L1 agents consulted</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Demand planning</strong></td><td>SKU-level demand forecast per channel, factoring seasonality + launches</td><td>Category + Ops + Marketing</td></tr>
+      <tr><td><strong>Budget allocation</strong></td><td>Optimized marketing spend across channels within margin/TACoS constraints</td><td>Marketing + Finance</td></tr>
+      <tr><td><strong>Launch planning</strong></td><td>New product timeline: inventory, listings, ads, pricing sequence</td><td>All five</td></tr>
+      <tr><td><strong>Scenario analysis</strong></td><td>"What if we cut Amazon 30%?" &mdash; modeled impact on revenue, margin, share</td><td>Depends on scenario</td></tr>
+      <tr><td><strong>Competitive response</strong></td><td>Pricing + ad + listing response plan to competitor move</td><td>Category + Marketing + Marketplace</td></tr>
+      <tr><td><strong>Quarterly review</strong></td><td>90-day synthesis with strategic recommendations for next quarter</td><td>All five + historical data</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Conversation flow: from question to directive</h3>
+  <div class="diagram">Operator: "Why did D2C revenue drop last week?"
+    → Investigation mode: CoS routes to L1/L2, returns diagnosis
+
+Operator: "Show me the Amazon pricing detail"
+    → Follow-up: routes to Sr. Category → Amazon Marketplace Agent
+
+Operator: "Don't bid on these SKUs until Amazon's promo ends"
+    → Action mode: captures as BrandDirective (TACTICAL, [sku_list])
+    → Routes to Amazon Ads Agent: pause campaigns
+
+One conversation: data → diagnosis → decision → directive.
+The system learns from every interaction.</div>
+
+  <p><strong>Same hierarchy, same routing, same policy engine.</strong> The only difference: the trigger is a chat message instead of an anomaly or a cron job.</p>
 
   <h3>Data grounding (the hard part)</h3>
   <p>Every answer must trace to a real database query. The LLM decides <strong>what</strong> to query; tools execute it; the LLM formats the answer. Data is always real, never generated.</p>
