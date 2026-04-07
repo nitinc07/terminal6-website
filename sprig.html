@@ -108,8 +108,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
 .mini-bar{height:5px;background:var(--acc);border-radius:3px;opacity:.6}
 
 /* SKU CATALOG */
-.sku-rows.collapsed{display:none}
 #skuSearch:focus{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc-d)}
+.insight-cd:hover{border-color:var(--acc);box-shadow:var(--shm)}
+.insight-cd .kv{font-size:26px}
+#v-skucatalog .tbl td{padding:6px 10px;font-size:12px}
+#v-skucatalog .tbl th{padding:7px 10px}
 </style>
 </head>
 <body>
@@ -299,9 +302,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
   <!-- ===== SETTINGS ===== -->
   <!-- SKU CATALOG -->
   <div class="vw" id="v-skucatalog">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <div style="width:40px;height:40px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128230;</div>
-      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">SKU Catalog</h2><p style="font-size:13px;color:var(--t2);margin:0">Master SKUs grouped by category with cross-channel metrics</p></div>
+      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">SKU Catalog</h2><p style="font-size:13px;color:var(--t2);margin:0">Cross-channel SKU performance with actionable insights</p></div>
       <div class="pills" id="skuPills" style="margin-left:auto">
         <button data-days="7">7D</button>
         <button data-days="30" class="a">30D</button>
@@ -309,19 +312,59 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
       </div>
     </div>
 
+    <!-- INSIGHT CARDS -->
     <div class="g5" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">SKUs</div><div class="kv" id="sk-skus">--</div></div>
-      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="sk-rev">--</div></div>
-      <div class="cd"><div class="kl">Units Sold</div><div class="kv" id="sk-units">--</div></div>
-      <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="sk-rr">--</div></div>
-      <div class="cd"><div class="kl">Days of Cover</div><div class="kv" id="sk-doc">--</div></div>
+      <div class="cd insight-cd" id="ins-velocity-up" style="cursor:pointer;border-left:3px solid var(--g)">
+        <div class="kl">Accelerating</div>
+        <div class="kv" id="sk-vel-up" style="color:var(--g)">--</div>
+        <div class="kd" style="font-size:11px;color:var(--t3)">7d vs prior 7d</div>
+      </div>
+      <div class="cd insight-cd" id="ins-velocity-down" style="cursor:pointer;border-left:3px solid var(--r)">
+        <div class="kl">Declining</div>
+        <div class="kv" id="sk-vel-down" style="color:var(--r)">--</div>
+        <div class="kd" style="font-size:11px;color:var(--t3)">7d vs prior 7d</div>
+      </div>
+      <div class="cd insight-cd" id="ins-dead" style="cursor:pointer;border-left:3px solid var(--a)">
+        <div class="kl">Dead Stock</div>
+        <div class="kv" id="sk-dead" style="color:var(--a)">--</div>
+        <div class="kd" style="font-size:11px;color:var(--t3)">Inventory, 0 sales</div>
+      </div>
+      <div class="cd insight-cd" id="ins-gap" style="cursor:pointer;border-left:3px solid var(--b)">
+        <div class="kl">Channel Gaps</div>
+        <div class="kv" id="sk-gap" style="color:var(--b)">--</div>
+        <div class="kd" style="font-size:11px;color:var(--t3)">Missing AMZ/FK/SHP</div>
+      </div>
+      <div class="cd insight-cd" id="ins-rr" style="cursor:pointer;border-left:3px solid #9C27B0">
+        <div class="kl">Return Outliers</div>
+        <div class="kv" id="sk-rr-out" style="color:#9C27B0">--</div>
+        <div class="kd" style="font-size:11px;color:var(--t3)">&gt;2x category avg</div>
+      </div>
     </div>
 
-    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
-      <input type="text" id="skuSearch" placeholder="Search SKU, product name, or category..." style="flex:1;padding:8px 14px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--sans);font-size:13px;background:var(--bg-white);outline:none" />
-      <button onclick="loadSKUCatalog(skuDays)" style="padding:8px 16px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg-white);font-family:var(--sans);font-size:13px;cursor:pointer">Search</button>
+    <!-- SUMMARY ROW -->
+    <div style="display:flex;gap:20px;margin-bottom:16px;padding:10px 16px;background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rs);box-shadow:var(--sh);font-size:12px">
+      <span><span style="color:var(--t3)">SKUs</span> <strong class="mn2" id="sk-skus">--</strong></span>
+      <span><span style="color:var(--t3)">Revenue</span> <strong class="mn2" id="sk-rev">--</strong></span>
+      <span><span style="color:var(--t3)">Units</span> <strong class="mn2" id="sk-units">--</strong></span>
+      <span><span style="color:var(--t3)">Return Rate</span> <strong class="mn2" id="sk-rr">--</strong></span>
+      <span><span style="color:var(--t3)">Days of Cover</span> <strong class="mn2" id="sk-doc">--</strong></span>
     </div>
 
+    <!-- SEARCH + FILTER -->
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <input type="text" id="skuSearch" placeholder="Search SKU, product, category..." style="flex:1;padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--sans);font-size:12.5px;background:var(--bg-white);outline:none" />
+      <button onclick="loadSKUCatalog(skuDays)" style="padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg-white);font-family:var(--sans);font-size:12px;cursor:pointer">Search</button>
+      <select id="skuFilter" onchange="renderSKUTable()" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--sans);font-size:12px;background:var(--bg-white)">
+        <option value="all">All SKUs</option>
+        <option value="declining">Declining velocity</option>
+        <option value="dead">Dead stock</option>
+        <option value="gap">Channel gaps</option>
+        <option value="rr_outlier">Return outliers</option>
+      </select>
+      <span id="skuShowing" style="font-size:11px;color:var(--t3);white-space:nowrap"></span>
+    </div>
+
+    <!-- TABLE -->
     <div id="skuCatalogBody" class="loading">Loading...</div>
   </div>
 
@@ -661,6 +704,13 @@ function renderCoverageTable(data){
 /* ========== SKU CATALOG ========== */
 let skuDays=30;
 let skuData=null;
+let skuSort={col:'revenue',asc:false};
+
+const CH_COLORS={AMAZON_IN:'#FF9900',FLIPKART_IN:'#2874F0',SHOPIFY:'#96BF48',MYNTRA:'#F43397',MEESHO:'#570A57',SNAPDEAL:'#E40046',TATACLIQ:'#6C63FF'};
+const CH_SHORT={AMAZON_IN:'AMZ',FLIPKART_IN:'FK',SHOPIFY:'SHP',MYNTRA:'MYN',MEESHO:'MSH',SNAPDEAL:'SD',TATACLIQ:'TC'};
+
+function mrpFmt(n){return n==null?'--':'\u20B9'+n.toLocaleString('en-IN',{maximumFractionDigits:0})}
+function priceFmt(n){return n==null?'--':'\u20B9'+n.toLocaleString('en-IN',{maximumFractionDigits:0})}
 
 async function loadSKUCatalog(days){
   skuDays=days;
@@ -669,14 +719,32 @@ async function loadSKUCatalog(days){
   const el=document.getElementById('skuCatalogBody');
   el.innerHTML='<div class="loading">Loading SKU data...</div>';
   try{
-    const res=await api('/v1/skucatalog/list?days='+days+'&limit=100&search='+encodeURIComponent(search));
+    const res=await api('/v1/skucatalog/list?days='+days+'&search='+encodeURIComponent(search));
     skuData=res;
-    renderSKUKPIs(res);
-    renderSKUGroups(res);
+    renderSKUInsights(res);
+    renderSKUSummary(res);
+    document.getElementById('skuFilter').value='all';
+    renderSKUTable();
   }catch(e){el.innerHTML='<div class="error">'+e.message+'</div>';}
 }
 
-function renderSKUKPIs(res){
+function renderSKUInsights(res){
+  const ins=res.insights;
+  document.getElementById('sk-vel-up').textContent=fmt(ins.velocity_up.count);
+  document.getElementById('sk-vel-down').textContent=fmt(ins.velocity_down.count);
+  document.getElementById('sk-dead').textContent=fmt(ins.dead_stock.count);
+  document.getElementById('sk-gap').textContent=fmt(ins.channel_gaps.count);
+  document.getElementById('sk-rr-out').textContent=fmt(ins.return_outliers.count);
+
+  // Click handlers on insight cards to filter
+  document.getElementById('ins-velocity-down').onclick=()=>{document.getElementById('skuFilter').value='declining';renderSKUTable()};
+  document.getElementById('ins-dead').onclick=()=>{document.getElementById('skuFilter').value='dead';renderSKUTable()};
+  document.getElementById('ins-gap').onclick=()=>{document.getElementById('skuFilter').value='gap';renderSKUTable()};
+  document.getElementById('ins-rr').onclick=()=>{document.getElementById('skuFilter').value='rr_outlier';renderSKUTable()};
+  document.getElementById('ins-velocity-up').onclick=()=>{document.getElementById('skuFilter').value='all';renderSKUTable()};
+}
+
+function renderSKUSummary(res){
   const g=res.grand_totals;
   document.getElementById('sk-skus').textContent=fmt(res.sku_count);
   document.getElementById('sk-rev').textContent=cur(g.revenue);
@@ -685,72 +753,108 @@ function renderSKUKPIs(res){
   document.getElementById('sk-doc').textContent=g.days_of_cover!=null?g.days_of_cover+'d':'--';
 }
 
-const CH_COLORS={AMAZON_IN:'#FF9900',FLIPKART_IN:'#2874F0',SHOPIFY:'#96BF48',MYNTRA:'#F43397',MEESHO:'#570A57',SNAPDEAL:'#E40046',TATACLIQ:'#6C63FF'};
-const CH_SHORT={AMAZON_IN:'AMZ',FLIPKART_IN:'FK',SHOPIFY:'SHP',MYNTRA:'MYN',MEESHO:'MSH',SNAPDEAL:'SD',TATACLIQ:'TC'};
+function skuSortBy(col){
+  if(skuSort.col===col) skuSort.asc=!skuSort.asc;
+  else{skuSort.col=col;skuSort.asc=false;}
+  renderSKUTable();
+}
 
-function renderSKUGroups(res){
+function renderSKUTable(){
+  if(!skuData) return;
   const el=document.getElementById('skuCatalogBody');
-  if(!res.data.length){el.innerHTML='<div class="loading">No SKUs found</div>';return;}
+  const filter=document.getElementById('skuFilter').value;
 
-  let html='';
-  res.data.forEach((grp,gi)=>{
-    const t=grp.totals;
-    const avg_daily=t.units/skuDays;
-    html+=`<div class="sec" style="margin-bottom:16px">
-      <div style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad) var(--rad) 0 0;box-shadow:var(--sh)" onclick="this.parentElement.querySelector('.sku-rows').classList.toggle('collapsed')">
-        <span style="font-family:var(--serif);font-size:14px;font-weight:600;flex:1">${grp.group} <span style="font-size:11px;color:var(--t3);font-weight:400">(${grp.sku_count} SKUs)</span></span>
-        <span class="mn2" style="color:var(--t2)">${cur(t.revenue)}</span>
-        <span class="mn2" style="color:var(--t3);min-width:60px;text-align:right">${fmt(t.units)} u</span>
-        <span class="mn2" style="min-width:50px;text-align:right;color:${t.return_rate!=null&&t.return_rate>15?'var(--r)':'var(--t3)'}">${t.return_rate!=null?t.return_rate+'%':'--'}</span>
-        <span class="mn2" style="min-width:55px;text-align:right;color:${t.days_of_cover!=null&&t.days_of_cover<30?'var(--a)':'var(--t3)'}">${t.days_of_cover!=null?t.days_of_cover+'d':'--'}</span>
-        <span style="font-size:11px;color:var(--t3)">&#9660;</span>
-      </div>
-      <div class="sku-rows${gi>4?' collapsed':''}">
-        <table class="tbl" style="border-top:none;border-radius:0 0 var(--rad) var(--rad)">
-          <thead><tr>
-            <th style="width:30px">#</th>
-            <th>Product</th>
-            <th class="r">MRP</th>
-            <th class="r">Revenue</th>
-            <th class="r">Units</th>
-            <th class="r">RR%</th>
-            <th class="r">DoC</th>
-            <th>Channels</th>
-          </tr></thead>
-          <tbody>`;
+  let data=skuData.data;
+  if(filter==='declining') data=data.filter(s=>s.velocity_pct!=null&&s.velocity_pct<-10);
+  else if(filter==='dead') data=data.filter(s=>s.is_dead_stock);
+  else if(filter==='gap') data=data.filter(s=>{const m=['AMAZON_IN','FLIPKART_IN','SHOPIFY'];return m.some(c=>!s.channels[c])&&s.revenue>0});
+  else if(filter==='rr_outlier') data=data.filter(s=>s.is_rr_outlier);
 
-    grp.skus.forEach((sku,si)=>{
-      const s=sku.summary;
-      const name=sku.product_name.length>55?sku.product_name.slice(0,55)+'...':sku.product_name;
-
-      // Channel pills
-      let chPills='';
-      res.channels.forEach(ch=>{
-        const cd=sku.channels[ch.key];
-        if(cd){
-          const active=cd.is_active;
-          const color=CH_COLORS[ch.key]||'#888';
-          const label=CH_SHORT[ch.key]||ch.key;
-          const title=`${ch.name}: ${cur(cd.revenue)} | ${cd.units}u | Last: ${cd.last_sold_date||'never'} @ ${cd.last_sold_price?'\\u20B9'+cd.last_sold_price:'--'} | Inv: ${cd.inventory} | DoC: ${cd.days_of_cover||'--'} | RR: ${cd.return_rate!=null?cd.return_rate+'%':'--'}`;
-          chPills+=`<span title="${title}" style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:500;margin-right:3px;border:1px solid ${color};color:${active?'#fff':color};background:${active?color:'transparent'};opacity:${active?1:.5};cursor:help">${label}</span>`;
-        }
-      });
-
-      html+=`<tr>
-        <td style="color:var(--t3);font-size:11px">${si+1}</td>
-        <td><span class="hi" style="font-size:12px">${name}</span><br><span style="font-size:10px;color:var(--t3)">${sku.sku_code}</span></td>
-        <td class="mn2 r">${sku.mrp?'\\u20B9'+sku.mrp.toFixed(0):'--'}</td>
-        <td class="mn2 r hi">${cur(s.revenue)}</td>
-        <td class="mn2 r">${fmt(s.units)}</td>
-        <td class="mn2 r" style="color:${s.return_rate!=null&&s.return_rate>15?'var(--r)':'var(--t2)'}">${s.return_rate!=null?s.return_rate+'%':'--'}</td>
-        <td class="mn2 r" style="color:${s.days_of_cover!=null&&s.days_of_cover<30?'var(--a)':'var(--t2)'}">${s.days_of_cover!=null?s.days_of_cover+'d':'--'}</td>
-        <td>${chPills||'<span style="color:var(--t3);font-size:11px">--</span>'}</td>
-      </tr>`;
-    });
-
-    html+=`</tbody></table></div></div>`;
+  // Sort
+  const col=skuSort.col;
+  const dir=skuSort.asc?1:-1;
+  data=[...data].sort((a,b)=>{
+    let va=a[col],vb=b[col];
+    if(va==null) va=-Infinity;if(vb==null) vb=-Infinity;
+    return va>vb?dir:va<vb?-dir:0;
   });
 
+  document.getElementById('skuShowing').textContent=`Showing ${data.length} of ${skuData.sku_count}`;
+
+  if(!data.length){el.innerHTML='<div class="loading">No SKUs match this filter</div>';return;}
+
+  // Paginate — show first 200 for perf
+  const PAGE=200;
+  const show=data.slice(0,PAGE);
+  const mx=Math.max(...show.map(s=>s.revenue));
+
+  const arrow=c=>skuSort.col===c?(skuSort.asc?' \u2191':' \u2193'):'';
+
+  let html=`<table class="tbl"><thead><tr>
+    <th style="width:28px">#</th>
+    <th style="cursor:pointer" onclick="skuSortBy('product_name')">Product${arrow('product_name')}</th>
+    <th class="r" style="width:60px">Category</th>
+    <th class="r" style="cursor:pointer;width:65px" onclick="skuSortBy('mrp')">MRP${arrow('mrp')}</th>
+    <th class="r" style="cursor:pointer;width:80px" onclick="skuSortBy('revenue')">Revenue${arrow('revenue')}</th>
+    <th class="r" style="cursor:pointer;width:55px" onclick="skuSortBy('units')">Units${arrow('units')}</th>
+    <th class="r" style="cursor:pointer;width:55px" onclick="skuSortBy('velocity_pct')">Vel%${arrow('velocity_pct')}</th>
+    <th class="r" style="cursor:pointer;width:45px" onclick="skuSortBy('return_rate')">RR%${arrow('return_rate')}</th>
+    <th class="r" style="cursor:pointer;width:50px" onclick="skuSortBy('inventory')">Stock${arrow('inventory')}</th>
+    <th class="r" style="cursor:pointer;width:50px" onclick="skuSortBy('days_of_cover')">DoC${arrow('days_of_cover')}</th>
+    <th style="width:140px">Channels</th>
+    <th style="width:50px"></th>
+  </tr></thead><tbody>`;
+
+  show.forEach((s,i)=>{
+    const name=s.product_name.length>45?s.product_name.slice(0,45)+'...':s.product_name;
+    const sub=s.sub_category||'';
+
+    // Velocity cell
+    let velHtml='--';
+    if(s.velocity_pct!=null){
+      const vc=s.velocity_pct>10?'var(--g)':s.velocity_pct<-10?'var(--r)':'var(--t3)';
+      const va=s.velocity_pct>0?'\u2191':s.velocity_pct<0?'\u2193':'';
+      velHtml=`<span style="color:${vc}">${va}${Math.abs(s.velocity_pct).toFixed(0)}%</span>`;
+    }
+
+    // Channel pills
+    let chPills='';
+    skuData.channels.forEach(ch=>{
+      const cd=s.channels[ch.key];
+      if(cd){
+        const color=CH_COLORS[ch.key]||'#888';
+        const label=CH_SHORT[ch.key]||ch.key;
+        const title=`${ch.name}: ${cur(cd.revenue)} | ${cd.units}u | Last: ${cd.last_sold_date||'never'} @ ${priceFmt(cd.last_sold_price)} | Stock: ${cd.inventory} | DoC: ${cd.days_of_cover!=null?cd.days_of_cover+'d':'--'} | RR: ${cd.return_rate!=null?cd.return_rate+'%':'--'}`;
+        chPills+=`<span title="${title}" style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:9.5px;font-weight:500;margin-right:2px;border:1px solid ${color};color:${cd.is_active?'#fff':color};background:${cd.is_active?color:'transparent'};opacity:${cd.is_active?1:.4};cursor:help">${label}</span>`;
+      }
+    });
+
+    // Revenue bar
+    const barW=mx>0?Math.round(s.revenue/mx*100):0;
+
+    // Flags
+    let flags='';
+    if(s.is_dead_stock) flags+='<span title="Dead stock" style="color:var(--a);font-size:10px">&#9632;</span> ';
+    if(s.is_rr_outlier) flags+='<span title="High returns" style="color:#9C27B0;font-size:10px">&#9632;</span> ';
+
+    html+=`<tr>
+      <td style="color:var(--t3);font-size:10.5px">${i+1}</td>
+      <td><span class="hi" style="font-size:12px">${name}</span><br><span style="font-size:9.5px;color:var(--t3)">${s.sku_code}</span></td>
+      <td style="font-size:10.5px;color:var(--t3)">${sub}</td>
+      <td class="mn2 r">${mrpFmt(s.mrp)}</td>
+      <td class="mn2 r hi">${cur(s.revenue)}<div class="mini-bar" style="width:${barW}%"></div></td>
+      <td class="mn2 r">${fmt(s.units)}</td>
+      <td class="mn2 r">${velHtml}</td>
+      <td class="mn2 r" style="color:${s.return_rate!=null&&s.return_rate>15?'var(--r)':'var(--t2)'}">${s.return_rate!=null?s.return_rate+'%':'--'}</td>
+      <td class="mn2 r">${s.inventory>0?fmt(s.inventory):'<span style="color:var(--t3)">0</span>'}</td>
+      <td class="mn2 r" style="color:${s.days_of_cover!=null&&s.days_of_cover<30?'var(--a)':'var(--t2)'}">${s.days_of_cover!=null?s.days_of_cover+'d':'--'}</td>
+      <td>${chPills||'--'}</td>
+      <td>${flags}</td>
+    </tr>`;
+  });
+
+  html+='</tbody></table>';
+  if(data.length>PAGE) html+=`<div style="text-align:center;padding:12px;color:var(--t3);font-size:12px">Showing top ${PAGE} of ${data.length} SKUs</div>`;
   el.innerHTML=html;
 }
 
