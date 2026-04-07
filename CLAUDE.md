@@ -21,31 +21,9 @@ terminal6-website/
 │                            Shows 5 cards: Sprig V1, Dashboard Prototype, Architecture,
 │                            Roadmap, Investor Thesis. Stores Google credential as
 │                            `t6_token` in sessionStorage for API auth.
-├── sprig.html             — **LIVE PRODUCT PAGE** (6 Apr 2026). Full sidebar app shell
-│                            matching the app.html prototype layout. Views:
-│                            Brand Overview (KPIs, channel cards, channel sales table
-│                            with day/week/month granularity + MTD/YTD, D2C daily table,
-│                            MoM comparison), Growth Agent, D2C Funnel (charts + tables
-│                            via Chart.js), Supply Agent, Category Agent, Data Coverage
-│                            (source matrix + table coverage), Policies. Calls
-│                            api.terminal6.io/v1/* endpoints with Bearer token auth.
-├── funnel.html            — Standalone D2C funnel page (superseded by sprig.html but
-│                            kept as a simpler entry point). Same API calls.
-├── app.html               — Interactive dashboard prototype with MOCK DATA. NOT live data.
-│                            Demonstrates the hierarchical agent model:
-│                            Sidebar: Morning Briefing, Brand Profile, 5 domain views
-│                            (Marketing, Category & Pricing, Marketplace, Operations,
-│                            Finance), Chat, Policies & Directives.
-│                            Morning briefing split: proactive (detected overnight) /
-│                            needs attention / watch list / insights. V1 = recommend
-│                            + inform only, no auto-execution.
-│                            Chat shows 3 interaction modes: data query (grounded),
-│                            investigation (routed to agents), planning (multi-agent).
-│                            Brand Profile page: onboarding context, channels, fulfilment,
-│                            team roles, policies/directives, competitors, timeline.
-│                            Role switcher: "View as" dropdown (Brand Head, Sr. Marketing,
-│                            Sr. Category, Sr. Marketplace, Sr. Ops, Sr. Finance) — dims
-│                            non-primary sidebar items. L0 + Brand Profile always visible.
+├── sprig.html             — **LIVE PRODUCT PAGE.** See SPRIG_FRONTEND.md for full context.
+├── funnel.html            — Standalone D2C funnel page (simpler entry point, same API).
+├── app.html               — **DESIGN PROTOTYPE** (mock data). See PROTOTYPE.md for full context.
 ├── architecture.html      — Investor-facing product architecture doc (mirrored from
 │                            terminal6/product/terminal6-architecture.html). Access gated.
 ├── investor_thesis.html   — Pre-seed investor thesis. Access gated.
@@ -53,39 +31,15 @@ terminal6-website/
                              coding, and per-task copy-prompt buttons. Access gated.
 ```
 
-## API Integration
+## Live vs Prototype — two separate context files
 
-Product pages (`sprig.html`, `funnel.html`) call the Terminal6 API at `api.terminal6.io`:
-
-- **Auth:** Google ID token passed as `Authorization: Bearer <token>`. Token stored in
-  `sessionStorage.t6_token` at sign-in time (set by `home.html`). Backend verifies with
-  Google's public keys + checks email against allowlist.
-- **Token lifecycle:** Google ID tokens expire after ~1 hour. If API returns 401, the
-  frontend clears session and redirects to `/home.html` for re-auth.
-- **API base URL:** hardcoded as `const API = 'https://api.terminal6.io'` in each page.
-  For local dev, comment and use `http://localhost:8000`.
-- **Endpoints used by sprig.html:**
-  - `/v1/overview/daily?days=7` — Brand Overview D2C daily table
-  - `/v1/overview/monthly?months=6` — Brand Overview MoM table
-  - `/v1/channels/summary?days=7` — Channel performance cards (revenue, orders, units, share %)
-  - `/v1/channels/sales?granularity=daily&periods=7` — Channel × period sales matrix + MTD + YTD
-  - `/v1/funnel/site?days=90` — D2C Funnel site-level data
-  - `/v1/funnel/products?days=90&limit=20` — D2C Funnel top products
-  - `/v1/funnel/traffic?days=90` — D2C Funnel traffic sources
-  - `/v1/data/coverage` — Data Coverage tab: per-table row counts and date ranges
-  - `/v1/data/sources` — Data Coverage tab: source connection matrix
-- **Chart library:** Chart.js 4.4.7 loaded via CDN `<script>` tag. No build step.
-
-## Live vs Prototype pages
-
-| Page | Data source | Purpose |
+| Page | Data | Context file |
 |---|---|---|
-| `sprig.html` | **Live API** (PostgreSQL via api.terminal6.io) | Production product page |
-| `funnel.html` | **Live API** | Standalone funnel view (simpler) |
-| `app.html` | **Mock data** (hardcoded HTML) | Design prototype / demo |
+| `sprig.html` + `funnel.html` | **Live API** (PostgreSQL via api.terminal6.io) | **SPRIG_FRONTEND.md** — API endpoints, auth, views, chart library |
+| `app.html` | **Mock data** (hardcoded HTML) | **PROTOTYPE.md** — hierarchical agent model, view structure, design principles |
 
-When iterating on the product UI, edit `sprig.html`. The `app.html` prototype is the
-design reference but does NOT receive live data.
+When iterating on the live product, read `SPRIG_FRONTEND.md`.
+When iterating on the design prototype, read `PROTOTYPE.md`.
 
 ## Access control — SECURITY CRITICAL
 
@@ -171,7 +125,7 @@ Fonts are loaded from Google Fonts via a single `<link>` tag — keep that patte
 
 When the source changes, the website copy must be regenerated, the access gate script re-injected, and both repos committed and pushed in the same session. This rule lives in the main repo's memory as `feedback_sync_website_docs.md`. See it for the exact procedure.
 
-`app.html` is the design prototype reflecting the hierarchical agent architecture (Apr 2026 update: 5 senior managers + L2 specialists, role-based views, proactive alerts as recommendations not executions, conversational interface with 4 modes, brand profile page). It is edited directly in this repo — not mirrored from the main repo.
+`app.html` is the design prototype — edited directly in this repo, not mirrored. See `PROTOTYPE.md` for full context.
 
 ## Conventions
 
