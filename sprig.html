@@ -106,6 +106,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
 /* PRODUCT TABLE MINI-BAR */
 .bar-cell{width:70px}
 .mini-bar{height:5px;background:var(--acc);border-radius:3px;opacity:.6}
+
+/* SKU CATALOG */
+.sku-rows.collapsed{display:none}
+#skuSearch:focus{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc-d)}
 </style>
 </head>
 <body>
@@ -120,6 +124,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
   <div class="ss">
     <div class="sl">Views</div>
     <div class="si act" onclick="sw('overview',this)"><div class="ic">&#127968;</div><span>Brand Overview</span></div>
+    <div class="si" onclick="sw('skucatalog',this)"><div class="ic">&#128230;</div><span>SKU Catalog</span></div>
   </div>
   <div class="ss">
     <div class="sl">Agents</div>
@@ -292,6 +297,34 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
   </div>
 
   <!-- ===== SETTINGS ===== -->
+  <!-- SKU CATALOG -->
+  <div class="vw" id="v-skucatalog">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128230;</div>
+      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">SKU Catalog</h2><p style="font-size:13px;color:var(--t2);margin:0">Master SKUs grouped by category with cross-channel metrics</p></div>
+      <div class="pills" id="skuPills" style="margin-left:auto">
+        <button data-days="7">7D</button>
+        <button data-days="30" class="a">30D</button>
+        <button data-days="90">90D</button>
+      </div>
+    </div>
+
+    <div class="g5" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">SKUs</div><div class="kv" id="sk-skus">--</div></div>
+      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="sk-rev">--</div></div>
+      <div class="cd"><div class="kl">Units Sold</div><div class="kv" id="sk-units">--</div></div>
+      <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="sk-rr">--</div></div>
+      <div class="cd"><div class="kl">Days of Cover</div><div class="kv" id="sk-doc">--</div></div>
+    </div>
+
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <input type="text" id="skuSearch" placeholder="Search SKU, product name, or category..." style="flex:1;padding:8px 14px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--sans);font-size:13px;background:var(--bg-white);outline:none" />
+      <button onclick="loadSKUCatalog(skuDays)" style="padding:8px 16px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg-white);font-family:var(--sans);font-size:13px;cursor:pointer">Search</button>
+    </div>
+
+    <div id="skuCatalogBody" class="loading">Loading...</div>
+  </div>
+
   <div class="vw" id="v-settings">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
       <div style="width:40px;height:40px;border-radius:10px;background:var(--t1);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#9881;</div>
@@ -323,7 +356,7 @@ function chg(v){if(v==null)return'';const s=v>0?'u':v<0?'d':'n';const a=v>0?'\u2
 function shortD(d){const p=d.split('-');return p[2]+' '+['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]]}
 
 /* ========== VIEW SWITCHING ========== */
-const viewTitles={overview:'&#127968; Brand Overview',growth:'&#128200; Growth Agent',funnel:'&#128200; D2C Funnel',supply:'&#128230; Supply Agent',category:'&#127991; Category Agent',data:'&#128451; Data Coverage',settings:'&#9881; Policies & Rules'};
+const viewTitles={overview:'&#127968; Brand Overview',skucatalog:'&#128230; SKU Catalog',growth:'&#128200; Growth Agent',funnel:'&#128200; D2C Funnel',supply:'&#128230; Supply Agent',category:'&#127991; Category Agent',data:'&#128451; Data Coverage',settings:'&#9881; Policies & Rules'};
 let currentView='overview';
 
 function sw(id,el){
@@ -338,6 +371,7 @@ function sw(id,el){
   document.getElementById('rangePills').style.display=(id==='overview')?'flex':'none';
 
   if(id==='overview') loadOverview(overviewDays);
+  if(id==='skucatalog') loadSKUCatalog(skuDays);
   if(id==='funnel') loadFunnel(funnelDays);
   if(id==='data') loadDataCoverage();
 }
@@ -624,10 +658,108 @@ function renderCoverageTable(data){
   el.innerHTML=html;
 }
 
+/* ========== SKU CATALOG ========== */
+let skuDays=30;
+let skuData=null;
+
+async function loadSKUCatalog(days){
+  skuDays=days;
+  document.querySelectorAll('#skuPills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
+  const search=document.getElementById('skuSearch')?.value||'';
+  const el=document.getElementById('skuCatalogBody');
+  el.innerHTML='<div class="loading">Loading SKU data...</div>';
+  try{
+    const res=await api('/v1/skucatalog/list?days='+days+'&limit=100&search='+encodeURIComponent(search));
+    skuData=res;
+    renderSKUKPIs(res);
+    renderSKUGroups(res);
+  }catch(e){el.innerHTML='<div class="error">'+e.message+'</div>';}
+}
+
+function renderSKUKPIs(res){
+  const g=res.grand_totals;
+  document.getElementById('sk-skus').textContent=fmt(res.sku_count);
+  document.getElementById('sk-rev').textContent=cur(g.revenue);
+  document.getElementById('sk-units').textContent=fmt(g.units);
+  document.getElementById('sk-rr').textContent=g.return_rate!=null?g.return_rate+'%':'--';
+  document.getElementById('sk-doc').textContent=g.days_of_cover!=null?g.days_of_cover+'d':'--';
+}
+
+const CH_COLORS={AMAZON_IN:'#FF9900',FLIPKART_IN:'#2874F0',SHOPIFY:'#96BF48',MYNTRA:'#F43397',MEESHO:'#570A57',SNAPDEAL:'#E40046',TATACLIQ:'#6C63FF'};
+const CH_SHORT={AMAZON_IN:'AMZ',FLIPKART_IN:'FK',SHOPIFY:'SHP',MYNTRA:'MYN',MEESHO:'MSH',SNAPDEAL:'SD',TATACLIQ:'TC'};
+
+function renderSKUGroups(res){
+  const el=document.getElementById('skuCatalogBody');
+  if(!res.data.length){el.innerHTML='<div class="loading">No SKUs found</div>';return;}
+
+  let html='';
+  res.data.forEach((grp,gi)=>{
+    const t=grp.totals;
+    const avg_daily=t.units/skuDays;
+    html+=`<div class="sec" style="margin-bottom:16px">
+      <div style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad) var(--rad) 0 0;box-shadow:var(--sh)" onclick="this.parentElement.querySelector('.sku-rows').classList.toggle('collapsed')">
+        <span style="font-family:var(--serif);font-size:14px;font-weight:600;flex:1">${grp.group} <span style="font-size:11px;color:var(--t3);font-weight:400">(${grp.sku_count} SKUs)</span></span>
+        <span class="mn2" style="color:var(--t2)">${cur(t.revenue)}</span>
+        <span class="mn2" style="color:var(--t3);min-width:60px;text-align:right">${fmt(t.units)} u</span>
+        <span class="mn2" style="min-width:50px;text-align:right;color:${t.return_rate!=null&&t.return_rate>15?'var(--r)':'var(--t3)'}">${t.return_rate!=null?t.return_rate+'%':'--'}</span>
+        <span class="mn2" style="min-width:55px;text-align:right;color:${t.days_of_cover!=null&&t.days_of_cover<30?'var(--a)':'var(--t3)'}">${t.days_of_cover!=null?t.days_of_cover+'d':'--'}</span>
+        <span style="font-size:11px;color:var(--t3)">&#9660;</span>
+      </div>
+      <div class="sku-rows${gi>4?' collapsed':''}">
+        <table class="tbl" style="border-top:none;border-radius:0 0 var(--rad) var(--rad)">
+          <thead><tr>
+            <th style="width:30px">#</th>
+            <th>Product</th>
+            <th class="r">MRP</th>
+            <th class="r">Revenue</th>
+            <th class="r">Units</th>
+            <th class="r">RR%</th>
+            <th class="r">DoC</th>
+            <th>Channels</th>
+          </tr></thead>
+          <tbody>`;
+
+    grp.skus.forEach((sku,si)=>{
+      const s=sku.summary;
+      const name=sku.product_name.length>55?sku.product_name.slice(0,55)+'...':sku.product_name;
+
+      // Channel pills
+      let chPills='';
+      res.channels.forEach(ch=>{
+        const cd=sku.channels[ch.key];
+        if(cd){
+          const active=cd.is_active;
+          const color=CH_COLORS[ch.key]||'#888';
+          const label=CH_SHORT[ch.key]||ch.key;
+          const title=`${ch.name}: ${cur(cd.revenue)} | ${cd.units}u | Last: ${cd.last_sold_date||'never'} @ ${cd.last_sold_price?'\\u20B9'+cd.last_sold_price:'--'} | Inv: ${cd.inventory} | DoC: ${cd.days_of_cover||'--'} | RR: ${cd.return_rate!=null?cd.return_rate+'%':'--'}`;
+          chPills+=`<span title="${title}" style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:500;margin-right:3px;border:1px solid ${color};color:${active?'#fff':color};background:${active?color:'transparent'};opacity:${active?1:.5};cursor:help">${label}</span>`;
+        }
+      });
+
+      html+=`<tr>
+        <td style="color:var(--t3);font-size:11px">${si+1}</td>
+        <td><span class="hi" style="font-size:12px">${name}</span><br><span style="font-size:10px;color:var(--t3)">${sku.sku_code}</span></td>
+        <td class="mn2 r">${sku.mrp?'\\u20B9'+sku.mrp.toFixed(0):'--'}</td>
+        <td class="mn2 r hi">${cur(s.revenue)}</td>
+        <td class="mn2 r">${fmt(s.units)}</td>
+        <td class="mn2 r" style="color:${s.return_rate!=null&&s.return_rate>15?'var(--r)':'var(--t2)'}">${s.return_rate!=null?s.return_rate+'%':'--'}</td>
+        <td class="mn2 r" style="color:${s.days_of_cover!=null&&s.days_of_cover<30?'var(--a)':'var(--t2)'}">${s.days_of_cover!=null?s.days_of_cover+'d':'--'}</td>
+        <td>${chPills||'<span style="color:var(--t3);font-size:11px">--</span>'}</td>
+      </tr>`;
+    });
+
+    html+=`</tbody></table></div></div>`;
+  });
+
+  el.innerHTML=html;
+}
+
 /* ========== PILL CLICKS ========== */
 document.querySelectorAll('#rangePills button').forEach(b=>b.addEventListener('click',()=>loadOverview(+b.dataset.days)));
 document.querySelectorAll('#funnelPills button').forEach(b=>b.addEventListener('click',()=>loadFunnel(+b.dataset.days)));
 document.querySelectorAll('#granPills button').forEach(b=>b.addEventListener('click',()=>loadChannelSales(b.dataset.gran)));
+document.querySelectorAll('#skuPills button').forEach(b=>b.addEventListener('click',()=>loadSKUCatalog(+b.dataset.days)));
+document.getElementById('skuSearch').addEventListener('keydown',e=>{if(e.key==='Enter')loadSKUCatalog(skuDays);});
 
 /* ========== INIT ========== */
 const user=JSON.parse(sessionStorage.getItem('t6_user')||'{}');
