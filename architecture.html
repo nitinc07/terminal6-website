@@ -4,16 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Terminal6 — Product Architecture</title>
-<script>
-/* ACCESS GATE — block render until allowlisted session confirmed */
-(function(){
-  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com'];
-  const saved=sessionStorage.getItem('t6_user');
-  let ok=false;
-  if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
-  if(!ok){sessionStorage.removeItem('t6_user');location.replace('/home.html');document.documentElement.style.display='none';}
-})();
-</script>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -165,7 +155,12 @@ footer a { color: var(--accent); text-decoration: none; }
     <div class="layer-row">
       <div class="layer-id" style="background:#E65100">L3</div>
       <div class="layer-name">Agent Runtime</div>
-      <div class="layer-desc">Modular agents, intent schema, confidence scoring, inter-agent messaging, model router</div>
+      <div class="layer-desc">Hierarchical agents (L0 triage &rarr; L1 diagnosis &rarr; L2 execution), two-tier monitoring, playbook-declared routing</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:#0D7377">L2.5</div>
+      <div class="layer-name">Evidence &amp; Signals</div>
+      <div class="layer-desc">Stock proxy, funnel signals, anomaly scores, cross-channel metrics. Computed deterministically. Shared across all agents.</div>
     </div>
     <div class="layer-row">
       <div class="layer-id" style="background:#0F766E">L2</div>
@@ -290,38 +285,74 @@ Diagnosis:             Salary cycle dip + phone lifecycle rotation + organic SEO
 
 <!-- AGENTS -->
 <section>
-  <h2>Agent Design</h2>
-  <p>Agents are modular specialists, not one big model. Each owns a domain, follows a standard interface, and communicates through shared decision memory.</p>
+  <h2>Agent Design: Hierarchical Team</h2>
+  <p>The agent architecture mirrors a real e-commerce team. Junior agents are specialists who monitor and execute. Senior managers diagnose within their domain and resolve conflicts between their reports. The Brand Head (human operator) makes strategic decisions.</p>
+
+  <h3>The Hierarchy</h3>
   <table>
-    <thead><tr><th>Agent</th><th>Human Equivalent</th><th>Watches</th><th>Acts On</th></tr></thead>
+    <thead><tr><th>Level</th><th>Role</th><th>What They Do</th><th>Model</th></tr></thead>
     <tbody>
-      <tr><td><strong>Growth</strong></td><td>Media Buyer</td><td>Ad spend, ROAS, CPC, TACoS</td><td>Bid adjustments, budget reallocation, campaign pauses</td></tr>
-      <tr><td><strong>Supply</strong></td><td>Ops Manager</td><td>Inventory across FCs, PO status</td><td>Restock alerts, PO triggers, FC rebalancing</td></tr>
-      <tr><td><strong>Category</strong></td><td>Category Manager</td><td>Competitive pricing, BSR, ratings</td><td>Pricing recommendations, competitive alerts</td></tr>
-      <tr><td><strong>Finance</strong></td><td>Finance Controller</td><td>Settlement, margins, fees</td><td>P&L reconciliation, margin breach alerts</td></tr>
+      <tr><td style="color:var(--accent)"><strong>Brand Head</strong></td><td>Human operator</td><td>Strategy, new directives, novel decisions</td><td>&mdash;</td></tr>
+      <tr><td style="color:var(--teal)"><strong>Chief of Staff (L0)</strong></td><td>Anomaly triage</td><td>Morning briefing, routing, follow-ups</td><td>Haiku</td></tr>
+      <tr><td style="color:var(--blue)"><strong>Senior Managers (L1)</strong></td><td>Domain leads</td><td>Diagnosis, strategy, conflict resolution between junior agents</td><td>Sonnet</td></tr>
+      <tr><td style="color:#6A1B9A"><strong>Junior Agents (L2)</strong></td><td>Channel/category specialists</td><td>Deep expertise, monitoring, execution (the "open claw")</td><td>Sonnet</td></tr>
     </tbody>
   </table>
-  <h3>Why Multiple Agents?</h3>
+
+  <h3>Five Senior Managers, Each With Specialists</h3>
+  <div class="diagram">Brand Head (human operator)
+├── Chief of Staff (L0) — triage, morning briefing, routing
+│
+├── Sr. Marketing Manager (L1) — cross-channel budget, marketing strategy
+│   ├── Amazon Ads Agent (L2) — bids, keywords, campaigns
+│   ├── Google Ads Agent (L2) — PPC, shopping
+│   └── Meta Ads Agent (L2) — prospecting, retargeting, creative
+│
+├── Sr. Category Manager (L1) — assortment, pricing, P&L ownership
+│   ├── Category Agent: Phone Cases (L2)
+│   └── Category Agent: Accessories (L2)
+│
+├── Sr. Marketplace Manager (L1) — cross-channel listings, compliance
+│   ├── Amazon Marketplace Agent (L2) — listing, Buy Box, pricing
+│   ├── Flipkart Agent (L2)
+│   └── Shopify D2C Agent (L2) — storefront, conversion, listing sync
+│
+├── Sr. Ops Manager (L1) — inventory, fulfillment
+│   ├── Inventory Agent (L2) — stock, reorder, allocation
+│   └── Fulfillment Agent (L2) — delivery, courier, RTO
+│
+└── Sr. Finance Manager (L1) — P&L, settlements, compliance
+    ├── P&L Agent (L2)
+    └── Settlement Agent (L2)</div>
+
+  <h3>Why Hierarchical?</h3>
   <div class="g3">
-    <div class="card"><h4>Context Economics</h4><p style="margin:0">Narrow agents with focused context think better than one agent with shallow context across everything.</p></div>
-    <div class="card"><h4>Accountability</h4><p style="margin:0">Operators need to know which specialist made a decision. Clear audit trail per agent.</p></div>
-    <div class="card"><h4>Composability</h4><p style="margin:0">Start with Growth Agent. Add Supply when ready. Each is independently valuable.</p></div>
+    <div class="card"><h4>Deep Expertise Fits</h4><p style="margin:0">Amazon Ads Agent only sees Amazon ad data. 50 pages of bid expertise fit in 20K tokens because scope is narrow.</p></div>
+    <div class="card"><h4>Conflicts Resolve at the Right Level</h4><p style="margin:0">Keyword choice &rarr; junior decides alone. Amazon vs Meta budget &rarr; Sr. Marketing. Spend vs stock &rarr; BrandDirective or operator.</p></div>
+    <div class="card"><h4>RCA Matches the Audience</h4><p style="margin:0">Brand Head sees "revenue dropped." Sr. Manager sees "campaigns underperformed." Junior sees "keyword X lost position 3&rarr;8."</p></div>
   </div>
-  <h3>Inter-Agent Coordination</h3>
-  <p>Cross-agent coordination is the product. No single tool does this today.</p>
-  <div class="flow">
-    <div class="flow-step active">Growth Agent</div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step">"Will this SKU restock?"</div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step active">Supply Agent</div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step">"PO lands in 4 days"</div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step active">Growth Agent</div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step">"Throttle ads for 4 days, then resume"</div>
+
+  <h3>Hierarchical Conflict Resolution</h3>
+  <table>
+    <thead><tr><th>Level</th><th>Example</th><th>Resolved By</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Within agent (L2)</strong></td><td>Which keyword to bid on</td><td>Amazon Ads Agent decides alone</td></tr>
+      <tr><td><strong>Between siblings (L1)</strong></td><td>Amazon wants &#8377;50K, Meta wants &#8377;30K, cap is &#8377;60K</td><td>Sr. Marketing: allocates by ROAS</td></tr>
+      <tr><td><strong>Cross-domain</strong></td><td>Marketing wants to spend more, Ops says inventory low</td><td>BrandDirective auto-resolves; novel &rarr; escalate to operator</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- AUTONOMY FLYWHEEL -->
+<section>
+  <h2>The Autonomy Flywheel</h2>
+  <p>The system earns autonomy by encoding operator decisions as directives. Each strategic call the operator makes gets stored, so the same situation auto-resolves next time.</p>
+  <div class="g3">
+    <div class="card" style="border-top:3px solid var(--green)"><h4>Tier 1: Auto-resolve (~80%)</h4><p style="margin:0">BrandDirective covers it. <em>"FBA cover &lt; 7 days &rarr; throttle ads."</em> Pre-decided. No human needed.</p></div>
+    <div class="card" style="border-top:3px solid var(--blue)"><h4>Tier 2: Resolve + inform (~15%)</h4><p style="margin:0">Directive gives direction, agent judges specifics. <em>"Budget split 60/40 by ROAS."</em> Operator sees in briefing, can override.</p></div>
+    <div class="card" style="border-top:3px solid var(--accent)"><h4>Tier 3: Escalate (~5%)</h4><p style="margin:0">Novel strategic question. <em>"Inventory depleting &mdash; increase procurement &#8377;20L?"</em> Operator decides. Decision becomes new directive.</p></div>
   </div>
+  <p><strong>Day 1:</strong> No directives. Everything escalates. <strong>Day 30:</strong> 2&ndash;3 novel situations/day. <strong>Day 90:</strong> System proposes new directives from patterns. Operator evolves from manager &rarr; strategist.</p>
 </section>
 
 <!-- BRAND DIRECTIVES -->
@@ -341,22 +372,22 @@ Diagnosis:             Salary cycle dip + phone lifecycle rotation + organic SEO
 <!-- CONTEXT ASSEMBLY -->
 <section>
   <h2>Context Assembly</h2>
-  <p>Agents never see all 50K SKUs. The context assembler builds the right context per call — hierarchical, not monolithic.</p>
+  <p>Each level of the hierarchy sees <strong>different data at different resolution.</strong> The harness assembles tailored context per agent call.</p>
   <div class="g3">
-    <div class="card" style="border-top:3px solid var(--green)">
-      <h4>Layer 1: Brand (~2K tokens)</h4>
-      <p style="margin:0">Always present. Profile, policies, active directives, health summary.</p>
-    </div>
     <div class="card" style="border-top:3px solid var(--teal)">
-      <h4>Layer 2: Domain (~8K tokens)</h4>
-      <p style="margin:0">Per agent. Growth sees ad data; Supply sees inventory. Filtered to relevant categories.</p>
+      <h4>L0: Chief of Staff (~10K)</h4>
+      <p style="margin:0">Summary metrics across all domains. Anomaly scores. No SKU-level detail. Brand directives. <em>"Revenue dropped 18%. Traffic -19%. 345 SKUs PARTIAL_OOS."</em></p>
     </div>
-    <div class="card" style="border-top:3px solid var(--accent)">
-      <h4>Layer 3: Task (~5K tokens)</h4>
-      <p style="margin:0">Per decision. Deep dive on 5-10 SKUs: signals, P&L, ad history, competitor pricing, decision history.</p>
+    <div class="card" style="border-top:3px solid var(--blue)">
+      <h4>L1: Senior Manager (~15K)</h4>
+      <p style="margin:0">Domain-level detail. Campaign performance, channel trends, inventory overview. Parent's finding. <em>"Google CTR down 40%. Meta ROAS degraded. Amazon stable."</em></p>
+    </div>
+    <div class="card" style="border-top:3px solid #6A1B9A">
+      <h4>L2: Junior Agent (~18K)</h4>
+      <p style="margin:0">Deep, narrow. Specific keywords, bid history, competitor data, SKU listings. Parent's task. Decision history. <em>"Keyword X lost position 3&rarr;8. Competitor increased bid."</em></p>
     </div>
   </div>
-  <p>Total: ~20K tokens per agent call. Focused context produces sharp decisions.</p>
+  <p>All levels include brand context (~2K tokens) + matched playbooks (~2K). Total budget: ~10&ndash;20K per call. The agent never sees all 50K SKUs — it sees the right 5&ndash;10 with deep context.</p>
 </section>
 
 <!-- POLICY ENGINE -->
@@ -376,51 +407,115 @@ Diagnosis:             Salary cycle dip + phone lifecycle rotation + organic SEO
   </table>
 </section>
 
+<!-- PLAYBOOK STRUCTURE -->
+<section>
+  <h2>Three-Level Playbooks</h2>
+  <p>Playbooks match the hierarchy. Each level receives findings from above and produces output for the level below AND a summary going up.</p>
+  <div class="g3">
+    <div class="card" style="border-top:3px solid var(--teal)">
+      <h4>L0 Situation Playbooks</h4>
+      <p style="margin:0"><em>Chief of Staff reads these.</em><br><strong>Input:</strong> anomaly batch<br><strong>Output:</strong> "Revenue dropped X%. Top factors: traffic, OOS, cannibalisation"<br><strong>Routes to:</strong> relevant senior managers</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--blue)">
+      <h4>L1 Domain Diagnosis</h4>
+      <p style="margin:0"><em>Senior managers read these.</em><br><strong>Input:</strong> L0 finding + domain evidence<br><strong>Output:</strong> "Google CTR down 40%. Meta ROAS degraded."<br><strong>Routes to:</strong> relevant junior agents</p>
+    </div>
+    <div class="card" style="border-top:3px solid #6A1B9A">
+      <h4>L2 Execution Playbooks</h4>
+      <p style="margin:0"><em>Junior agents read these.</em><br><strong>Input:</strong> L1 task + deep data<br><strong>Output:</strong> "Paused 15 campaigns. Bid increase &#8377;12&rarr;17 pending approval."<br><strong>Executes:</strong> API calls</p>
+    </div>
+  </div>
+  <h3>Routing: Declared in Playbook, Activated by LLM, Dispatched by Harness</h3>
+  <p>Every playbook declares a <strong>Routes section</strong> mapping findings &rarr; downstream agents. The LLM activates specific routes based on its diagnosis. The harness mechanically dispatches. Fully auditable.</p>
+  <div class="diagram">L0 playbook (conversion_drop.md) declares:
+
+  finding: "traffic_degradation"  --> route to: Sr. Marketing
+  finding: "partial_oos"          --> route to: Sr. Marketplace + Sr. Ops
+  finding: "cannibalisation"      --> route to: Sr. Category
+
+L0 LLM activates: [traffic_degradation, partial_oos]
+Harness dispatches: Sr. Marketing + Sr. Marketplace + Sr. Ops
+
+Same pattern cascades L1 --> L2.</div>
+</section>
+
 <!-- DECISION FLOW -->
 <section>
   <h2>Decision Flow</h2>
-  <div class="diagram">Data Event (ROAS dropped on Bottles)
+  <p>The harness walks the tree: top-down for investigation, bottom-up for summary.</p>
+  <div class="diagram">Tier 1 Statistical Anomaly: "CVR -2.3 sigma, Flipkart revenue +3.1 sigma"
     |
     v
-Agent Registry ---> routes to Growth Agent
+Chief of Staff (L0, Haiku)
+  reads: L0 conversion_drop.md + anomaly evidence
+  activates: [traffic_degradation, partial_oos]
+  routes to: Sr. Marketing, Sr. Marketplace, Sr. Ops
+    |
+    +--> Sr. Marketing (L1, Sonnet)                   }
+    |      reads: L1 campaign_diagnosis.md             }
+    |      activates: [oos_suppression]                } run in
+    |      routes to: Amazon Ads, Meta Ads             } PARALLEL
+    |                                                  }
+    +--> Sr. Marketplace (L1, Sonnet)                  }
+    |      activates: [listing_sync_broken]            }
+    |      routes to: Shopify D2C Agent                }
+    |                                                  }
+    +--> Sr. Ops (L1, Sonnet)                          }
+           activates: [warehouse_depletion]            }
+           routes to: Inventory Agent                  }
     |
     v
-Context Assembler ---> brand + domain + task context (~20K tokens)
+Junior Agents (L2, Sonnet, parallel)
+  Amazon Ads:   "Pause 15 OOS SKU campaigns"
+  Meta Ads:     "Exclude 15 SKUs from retargeting"
+  Shopify D2C:  "Fix inventory sync for 345 SKUs"
+  Inventory:    "Reorder 12 SKUs, reallocate FC stock"
     |
     v
-Growth Agent
-  observe()  ---> detects ROAS drop trigger
-  reason()   ---> loads playbook + category card + region card, composes diagnosis
-  propose()  ---> Intent: "Pause 3 campaigns, reallocate &#8377;4,200/day to top performer"
+Policy Engine --> check each action --> approve / escalate
     |
     v
-Policy Engine
-  |--- margin floor OK?     YES
-  |--- spend threshold?     UNDER &#8377;5K auto-approve ---> AUTO EXECUTE
-  |--- time window?         9:14 AM, within window   ---> PROCEED
+Execute --> API calls to Amazon, Meta, Shopify
     |
     v
-Execute ---> campaigns paused, budget reallocated
-    |
-    v
-Decision Record ---> stored in Layer D (Decision Memory)
-    |
-    v
-30-day Outcome ---> ROAS recovered to 3.8x, &#8377;6,800 saved</div>
+Decision Record --> Layer D (Decision Memory) --> Morning Briefing</div>
+  <p><strong>Typical call volume per trigger:</strong> 1 Haiku (L0) + 1&ndash;2 Sonnet (L1) + 1&ndash;3 Sonnet (L2) = 3&ndash;6 LLM calls. Not every trigger activates all branches.</p>
+</section>
+
+<!-- MONITORING -->
+<section>
+  <h2>Two-Tier Monitoring</h2>
+  <p>Static thresholds don't work &mdash; validated empirically against real data. Replaced with self-calibrating anomaly detection + LLM triage.</p>
+  <div class="g2">
+    <div class="card" style="border-top:3px solid var(--green)">
+      <h4>Tier 1: Statistical Anomaly Detection</h4>
+      <p style="margin:0"><strong>No LLM. Runs on cron. Free.</strong><br>z-scores / percentile ranks adapted to each brand's own variance. Catches sudden deviations AND slow structural trends. Outputs: daily anomaly list with severity scores.</p>
+      <p style="margin:8px 0 0;font-size:13px;color:var(--text-light)">Instead of "fire if CVR drops &gt;15%": fire if CVR is 2.3&sigma; below this brand's trailing-90d distribution, adjusted for day-of-week.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--teal)">
+      <h4>Tier 2: LLM Triage (= Chief of Staff)</h4>
+      <p style="margin:0"><strong>One Haiku call per daily batch. Cheap.</strong><br>Reads anomaly list + brand context + directives. Filters noise ("cart abandon +1.1&sigma; on Saturday = normal"). Connects related anomalies ("CVR dip + Flipkart spike = one situation"). Matches to playbook. Routes to senior managers.</p>
+    </div>
+  </div>
+  <p>Full playbook diagnosis (Sonnet) only runs when Tier 2 says "yes" &mdash; expensive but rare (2&ndash;3 situations/week, not 30/day).</p>
 </section>
 
 <!-- LLM APPROACH -->
 <section>
   <h2>LLM Strategy</h2>
   <p><strong>Context assembly, not model training.</strong> Playbooks, brand context, category cards, and decision history are injected at runtime. No fine-tuning needed.</p>
-  <div class="g2">
+  <div class="g3">
     <div class="card">
-      <h4>Haiku (routine)</h4>
-      <p style="margin:0">Threshold checks, classification, simple rules, review triage. Fast and cheap — handles the ~50% of calls that don't need deep reasoning.</p>
+      <h4>No LLM (Tier 1)</h4>
+      <p style="margin:0">Statistical anomaly detection. z-scores, change-point detection. Runs on cron. Covers all signals continuously. Cost: zero.</p>
     </div>
     <div class="card">
-      <h4>Sonnet (complex)</h4>
-      <p style="margin:0">Multi-signal diagnosis, cross-agent synthesis, nuanced reasoning, morning briefing. The remaining ~45% plus the handful of big-context synthesis calls.</p>
+      <h4>Haiku (L0 triage)</h4>
+      <p style="margin:0">Chief of Staff: anomaly triage, routing, morning briefing compilation. Fast and cheap &mdash; one call per daily batch.</p>
+    </div>
+    <div class="card">
+      <h4>Sonnet (L1 + L2)</h4>
+      <p style="margin:0">Domain diagnosis (L1) and deep execution reasoning (L2). Cross-signal synthesis, nuanced judgment. 3&ndash;6 calls per triggered situation.</p>
     </div>
   </div>
 </section>
