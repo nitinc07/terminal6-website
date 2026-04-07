@@ -492,8 +492,11 @@ Summary flows BACK UP the tree:
 
 <!-- MONITORING -->
 <section>
-  <h2>Two-Tier Monitoring</h2>
-  <p>Static thresholds don't work &mdash; validated empirically against real data. Replaced with self-calibrating anomaly detection + LLM triage.</p>
+  <h2>Monitoring: Reactive + Proactive</h2>
+  <p>Two directions of information flow. <strong>Reactive</strong> (top-down): outcome degraded, investigate why. <strong>Proactive</strong> (bottom-up): input changed, act before the outcome degrades. Both use the same harness, routing, and policy engine.</p>
+
+  <h3>Reactive: Two-Tier Outcome Monitoring</h3>
+  <p>Static thresholds don't work &mdash; validated empirically. Replaced with self-calibrating detection + LLM triage.</p>
   <div class="g2">
     <div class="card" style="border-top:3px solid var(--green)">
       <h4>Tier 1: Statistical Anomaly Detection</h4>
@@ -506,6 +509,58 @@ Summary flows BACK UP the tree:
     </div>
   </div>
   <p>Full playbook diagnosis (Sonnet) only runs when Tier 2 says "yes" &mdash; expensive but rare (2&ndash;3 situations/week, not 30/day).</p>
+
+  <h3>Proactive: Input Monitoring (Bottom-Up)</h3>
+  <p>Don't wait for revenue to drop. L2 agents monitor the <strong>inputs</strong> to revenue &mdash; campaigns, listings, inventory, pricing, delivery &mdash; and act before the impact hits.</p>
+
+  <table>
+    <thead><tr><th>Agent (L2)</th><th>Critical (auto-act)</th><th>High (act in hours)</th><th>Medium (morning briefing)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Amazon Ads</strong></td><td>Campaign suspended</td><td>Budget exhausted mid-day</td><td>CTR declining 3 days (fatigue signal)</td></tr>
+      <tr><td><strong>Google / Meta Ads</strong></td><td>Account suspended</td><td>Spend pacing 2&times; ahead of plan</td><td>CPC rising steadily</td></tr>
+      <tr><td><strong>Amazon Marketplace</strong></td><td>ASIN deactivated</td><td>Buy Box lost on hero SKU</td><td>Competitor price dropped 10%+</td></tr>
+      <tr><td><strong>Shopify D2C</strong></td><td>"Sold Out" despite warehouse stock</td><td>Checkout errors spiking</td><td>SEO ranking dropped</td></tr>
+      <tr><td><strong>Inventory</strong></td><td>Stock = 0 on hero SKU</td><td>Cover &lt; 3 days (past reorder point)</td><td>Cover &lt; 14 days; depletion accelerating</td></tr>
+      <tr><td><strong>Fulfillment</strong></td><td>Courier partner down in region</td><td>Delivery SLA degraded</td><td>RTO rate spiking in pincode cluster</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Proactive Alert Flow</h3>
+  <div class="diagram">L2 agent detects input change (hourly checks or webhooks)
+    |
+    ├── CRITICAL → auto-act if BrandDirective exists
+    |   "Campaign suspended → auto-restart, suppress related ads, notify L1"
+    |   Action logged. Operator sees in morning briefing.
+    |
+    ├── HIGH → propose action to L1 for quick approval
+    |   "Buy Box lost on hero SKU → repricing recommended"
+    |   L1 reviews within hours.
+    |
+    ├── MEDIUM → included in morning briefing
+    |   "CTR declining 3 days on Campaign X — creative fatigue signal"
+    |   L1 assigns to L2 if action needed.
+    |
+    └── CROSS-DOMAIN → L2 flags to L1, L1 escalates to Chief of Staff
+        "Listing suppressed due to pricing violation"
+        → Sr. Marketplace detects, but fix requires Sr. Category (pricing)
+        → Chief of Staff routes to the right manager</div>
+
+  <h3>The Morning Briefing Combines Both</h3>
+  <div class="diagram">Morning Briefing for Brand Head:
+
+  PROACTIVE (caught overnight):
+    ✓ Amazon campaign X suspended — auto-restarted per directive
+    ✓ Stock on SKU Y hit 3-day cover — reorder triggered
+    ⚠ Buy Box lost on hero SKU Z — repricing proposed, awaiting approval
+
+  REACTIVE (detected this morning):
+    📊 D2C CVR anomaly detected (-2.1σ) — investigating traffic mix
+
+  INFORMATIONAL:
+    ↘ CTR declining on 2 Google campaigns (day 3 of trend)
+    ↘ Competitor A dropped price 12% on phone cases — impact TBD</div>
+
+  <p style="font-size:13.5px; color:var(--text-mid); text-align:center;"><strong>This is the difference between a recommendation engine and an operating system.</strong> Without proactive alerts: "Revenue dropped 30% over the weekend &mdash; why?!" With proactive alerts: "Campaign X was suspended and auto-restarted at 8:12pm. Revenue impact: &lt;&#8377;2K. No action needed."</p>
 </section>
 
 <!-- LLM APPROACH -->
