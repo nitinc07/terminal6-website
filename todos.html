@@ -131,7 +131,7 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
     <div class="label">Living Document</div>
     <h1>Roadmap &amp; TODOs</h1>
     <p class="lead">Six layers, sixteen milestones. Every pending task has a ready-to-paste prompt for a fresh Claude session — click the copy icon to grab it. Updated on every commit.</p>
-    <div class="updated">Updated: 5 April 2026</div>
+    <div class="updated">Updated: 7 April 2026</div>
   </div>
 
   <div class="controls">
@@ -441,9 +441,9 @@ const TASKS = [
   {layer:"L1", m:"M2", title:"Returns normaliser built (0 returns fetched — gap to investigate)", status:"done"},
   {layer:"L1", m:"M2", title:"Backfill 91 days of Sprig orders via Unicommerce API — 59,602 DailySales rows, ₹3.03 Cr, 67,559 units, 91/91 days covered (Flipkart ₹1.57 Cr · Shopify ₹1.01 Cr · Myntra ₹25 L · Amazon ₹19 L · Meesho ₹2 K). Fixed silent bug in search_orders date filter.", status:"done"},
   {layer:"L1", m:"M2", title:"Get COGS spreadsheet from Sprig, build CSV importer to MasterSKU.cogs (blocks all P&L)", status:"pending", prompt:"p-cogs"},
-  {layer:"L1", m:"M2", title:"Get full facility permissions for contact@terminal6.io (currently limited)", status:"pending", prompt:"p-uc-perms"},
+  {layer:"L1", m:"M2", title:"Full facility permissions granted for contact@terminal6.io — admin, finance, WHS_mgr, global for all facilities (6 Apr 2026)", status:"done"},
   {layer:"L1", m:"M2", title:"Investigate FK resolution gaps: 83 unresolved order items, 555 SKUs without ChannelListing", status:"pending", prompt:"p-fk-gaps"},
-  {layer:"L1", m:"M2", title:"Verify returns data: 0 returns fetched — low returns or permission issue?", status:"pending", prompt:"p-returns-verify"},
+  {layer:"L1", m:"M2", title:"Returns fixed + 2yr backfill running (7 Apr 2026) — bug was missing facilities + wrong response key, not permissions", status:"done"},
   {layer:"L1", m:"M2", title:"Schedule recurring syncs: products (daily), inventory (2h), orders (4h) — Celery + Redis", status:"pending", prompt:"p-celery"},
 
   {layer:"L1", m:"M3", mname:"Google Ads Pipeline", mstatus:"pending", title:"MCC account set up (449-399-2970), developer token obtained", status:"done"},
@@ -467,12 +467,12 @@ const TASKS = [
   {layer:"L1", m:"M5", title:"Shopify: get store owner to grant API permissions (currently blocked)", status:"pending", prompt:"p-shopify"},
   {layer:"L1", m:"M5", title:"Meta developer account + Terminal6 Business app created — App ID 26326948486966477, contact contact@terminal6.io", status:"done"},
   {layer:"L1", m:"M5", title:"Located Sprig's Meta Business portfolio — Shopify Business Manager (Vikram Jain / Jamsticks), Business ID 888973654932182", status:"done"},
-  {layer:"L1", m:"M5", title:"BLOCKED — Vikram to upgrade Nitin from Partial/Basic to Full Control in Shopify Business Manager (required for system user creation)", status:"pending", prompt:"p-meta-access"},
-  {layer:"L1", m:"M5", title:"BLOCKED — Enable 2FA on Nitin's Facebook (Meta device-trust issue; retry 24–48 hrs after 5 Apr)", status:"pending", prompt:"p-meta-2fa"},
-  {layer:"L1", m:"M5", title:"Add Marketing API product to Terminal6 app in dev dashboard; save App ID + App Secret securely", status:"pending", prompt:"p-meta-marketing"},
-  {layer:"L1", m:"M5", title:"Create Terminal6-API System User, generate long-lived token, assign Sprig ad account (blocked on Full Control + 2FA)", status:"pending", prompt:"p-meta-sysuser"},
-  {layer:"L1", m:"M5", title:"Add meta_ads to Channel enum + META_* values to AdType enum (code-ready, no blockers)", status:"pending", prompt:"p-meta-enums"},
-  {layer:"L1", m:"M5", title:"Build Meta Ads connector + normaliser — Insights API, CampaignDailyMetrics (blocked on system user token)", status:"pending", prompt:"p-meta-connector"},
+  {layer:"L1", m:"M5", title:"Vikram upgraded Nitin to Full Control in Shopify Business Manager (6 Apr 2026)", status:"done"},
+  {layer:"L1", m:"M5", title:"2FA enabled on Nitin's Facebook account (6 Apr 2026)", status:"done"},
+  {layer:"L1", m:"M5", title:"Marketing API product added to Terminal6 app; App ID + App Secret stored in .env", status:"done"},
+  {layer:"L1", m:"M5", title:"Terminal6-API System User created (Employee, ID 61573333589963), token generated, Sprig ad account act_1428831504239719 assigned", status:"done"},
+  {layer:"L1", m:"M5", title:"Added meta_ads + google_ads to Channel enum, META_SALES/TRAFFIC/AWARENESS/ENGAGEMENT to AdType (Python + Postgres)", status:"done"},
+  {layer:"L1", m:"M5", title:"Meta Ads connector + YAML normaliser + 2yr backfill (7 Apr 2026) — 5,124 rows, 189 campaigns, \u20b942.9L spend, 49,953 orders, \u20b93.33 Cr sales", status:"done"},
 
   {layer:"L1", m:"M6", mname:"First Cross-Channel P&L", mstatus:"milestone", title:"Compute SKUEconomics (estimated) — revenue minus fees minus COGS minus ads = contribution margin", status:"pending", prompt:"p-sku-econ"},
   {layer:"L1", m:"M6", title:"Compute ThrottleSignals — the 6 health signals per SKU per day", status:"pending", prompt:"p-throttle"},
