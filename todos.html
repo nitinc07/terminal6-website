@@ -418,6 +418,31 @@ Final consistency pass once all four agents exist (Growth, Supply, Category, Cre
 <!-- ============= TASKS DATA ============= -->
 <script>
 const TASKS = [
+  // V1 — Investor Demo (the goal)
+  {layer:"V1", lname:"V1 Investor Demo", ldesc:"Real data. Real agents. Visible orchestration. Purely agentic — LLM agents read playbooks as system prompts. Full spec: product/v1_investor_demo.md", lhere:true, m:"V1P0", mname:"P0 · Data Foundation", mstatus:"in-progress", title:"Complete UC 2-year sales backfill (~300K+ rows, running)", status:"in-progress"},
+  {layer:"V1", m:"V1P0", title:"Complete GA4 14-month backfill (running in separate thread)", status:"in-progress"},
+  {layer:"V1", m:"V1P0", title:"Get COGS CSV from Sprig — blocks ALL P&L computation", status:"pending"},
+  {layer:"V1", m:"V1P0", title:"Start daily inventory cron — normalise_inventory on 2h schedule", status:"pending"},
+  {layer:"V1", m:"V1P0", title:"Verify data coverage: all channels, all dates, no gaps", status:"pending"},
+
+  {layer:"V1", m:"V1P1", mname:"P1 · Agent Infrastructure", mstatus:"pending", title:"Agent harness — Python tree-walker: invoke(), assemble_context(), route()", status:"pending"},
+  {layer:"V1", m:"V1P1", title:"Agent registry — Chief of Staff + 5 Sr. Managers + key L2 agents", status:"pending"},
+  {layer:"V1", m:"V1P1", title:"Evidence layer API — anomaly scores, stock proxy, P&L, funnel signals as JSON", status:"pending"},
+  {layer:"V1", m:"V1P1", title:"Chat backend — operator message → Chief of Staff → route → streaming response with agent attribution", status:"pending"},
+  {layer:"V1", m:"V1P1", title:"Conversion-drop skill (agentic) — L0 playbook as system prompt + evidence → Sonnet → diagnosis", status:"pending"},
+  {layer:"V1", m:"V1P1", title:"P&L computation — SKU-level contribution margin: daily_sales + COGS + fee schedules", status:"pending"},
+  {layer:"V1", m:"V1P1", title:"P&L skill (agentic) — LLM interprets P&L, surfaces insights", status:"pending"},
+
+  {layer:"V1", m:"V1P2", mname:"P2 · Experience Layer", mstatus:"pending", title:"Morning briefing generator — cron runs Chief of Staff → structured briefing", status:"pending"},
+  {layer:"V1", m:"V1P2", title:"WhatsApp Business API — briefing at 8 AM + reply routing", status:"pending"},
+  {layer:"V1", m:"V1P2", title:"Frontend upgrade (sprig.html) — chat + visible agent cascade + reasoning traces", status:"pending"},
+  {layer:"V1", m:"V1P2", title:"Directive capture — detect always/never/from-now-on → BrandDirective in DB", status:"pending"},
+  {layer:"V1", m:"V1P2", title:"Brand Profile page — populated from real Sprig data", status:"pending"},
+
+  {layer:"V1", m:"V1P3", mname:"P3 · Polish", mstatus:"pending", title:"Reasoning trace UI — expandable L0→L1→L2 audit trail", status:"pending"},
+  {layer:"V1", m:"V1P3", title:"Source citations on every chat answer", status:"pending"},
+  {layer:"V1", m:"V1P3", title:"Follow-up suggestions after every answer", status:"pending"},
+
   // L0 — Foundations (all done)
   {layer:"L0", lname:"Foundations (Completed)", ldesc:"Shared infra, models, and conventions that stood up before L1 started.", lhere:false, m:"M0", mname:"Foundation", mstatus:"done", title:"SQLAlchemy 2.0 models — 16 canonical entities (15 + BrandDirective) + 3 GA4 funnel tables", status:"done"},
   {layer:"L0", m:"M0", title:"Validation layer — 6-stage check (schema, dedup, FK, business, staleness, conflict), configs for 7 report types", status:"done"},
@@ -444,6 +469,9 @@ const TASKS = [
   {layer:"L1", m:"M2", title:"Orders normaliser — live-tested (Apr 3–4 initial run, replaced by full 91-day backfill)", status:"done"},
   {layer:"L1", m:"M2", title:"Returns normaliser built (0 returns fetched — gap to investigate)", status:"done"},
   {layer:"L1", m:"M2", title:"Backfill 91 days of Sprig orders via Unicommerce API — 59,602 DailySales rows, ₹3.03 Cr, 67,559 units, 91/91 days covered (Flipkart ₹1.57 Cr · Shopify ₹1.01 Cr · Myntra ₹25 L · Amazon ₹19 L · Meesho ₹2 K). Fixed silent bug in search_orders date filter.", status:"done"},
+  {layer:"L1", m:"M2", title:"2-year backfill running (Apr 2024 → Apr 2026) — ~300K+ rows, resume logic, Cloudtail/Flipkart channel map case fix (FK-miss 32% → <1%)", status:"in-progress"},
+  {layer:"L1", m:"M2", title:"Conversion-drop playbook analyzer (deterministic prototype) — 27 incidents validated, T2 robust baseline, T4 volume gate, data-lag soft gate", status:"done"},
+  {layer:"L1", m:"M2", title:"Inventory stock proxy — daily_stock_proxy (1.4M rows) + daily_sku_stock_summary (684K rows). Found 345 phantom-OOS, 1,399 PARTIAL_OOS SKUs", status:"done"},
   {layer:"L1", m:"M2", title:"Get COGS spreadsheet from Sprig, build CSV importer to MasterSKU.cogs (blocks all P&L)", status:"pending", prompt:"p-cogs"},
   {layer:"L1", m:"M2", title:"Full facility permissions granted for contact@terminal6.io — admin, finance, WHS_mgr, global for all facilities (6 Apr 2026)", status:"done"},
   {layer:"L1", m:"M2", title:"Investigate FK resolution gaps: 83 unresolved order items, 555 SKUs without ChannelListing", status:"pending", prompt:"p-fk-gaps"},
