@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terminal6 — Roadmap &amp; TODOs</title>
+<title>Terminal6 — Roadmap &amp; ToDos</title>
 <script>
 /* ACCESS GATE — block render until allowlisted session confirmed */
 (function(){
@@ -63,8 +63,12 @@ h1 { font-family: var(--serif); font-size: clamp(30px, 4vw, 42px); font-weight: 
 .layer-desc { font-size: 13px; color: var(--text-mid); margin-top: 6px; font-style: italic; }
 
 .milestone { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 14px; }
-.m-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+.milestone.collapsed ul, .milestone.collapsed .progress-wrap { display: none; }
+.m-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; cursor: pointer; user-select: none; }
+.milestone.collapsed .m-head { margin-bottom: 0; }
 .m-title { font-family: var(--serif); font-size: 17px; font-weight: 600; }
+.m-toggle { font-size: 12px; color: var(--text-light); margin-left: 8px; transition: transform .2s ease; display: inline-block; }
+.milestone.collapsed .m-toggle { transform: rotate(-90deg); }
 .m-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 3px 9px; border-radius: 4px; }
 .s-progress { background: var(--accent-bg); color: var(--accent); }
 .s-milestone { background: rgba(15,118,110,.1); color: var(--teal); }
@@ -129,8 +133,8 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
 <div class="page">
   <div class="hero">
     <div class="label">Living Document</div>
-    <h1>Roadmap &amp; TODOs</h1>
-    <p class="lead">Six layers, sixteen milestones. Every pending task has a ready-to-paste prompt for a fresh Claude session — click the copy icon to grab it. Updated on every commit.</p>
+    <h1>Roadmap &amp; ToDos</h1>
+    <p class="lead">Six layers, sixteen milestones. Every pending task has a ready-to-paste prompt for a fresh Claude session — click the copy icon to grab it. Completed milestones are collapsed — click to expand. Updated on every commit.</p>
     <div class="updated">Updated: 7 April 2026</div>
   </div>
 
@@ -161,7 +165,7 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
 
 <div id="toast"><span class="check">✓</span> <span id="toast-msg">Prompt copied to clipboard</span></div>
 
-<footer>Terminal6 · Roadmap updated on every commit</footer>
+<footer>Terminal6 · ToDos updated on every commit</footer>
 
 <!-- ============= PROMPTS (raw text, no escaping) ============= -->
 <script type="text/plain" id="p-ga4-norm">
@@ -479,7 +483,7 @@ const TASKS = [
   {layer:"L1", m:"M6", title:"Build cross-channel P&L query: 'How much did SKU X make after all fees?'", status:"pending", prompt:"p-pnl-query"},
   {layer:"L1", m:"M6", title:"Validate P&L against Sprig's own numbers", status:"pending", prompt:"p-pnl-validate"},
 
-  {layer:"L1", m:"M6I", mname:"M6 Infra", mstatus:"pending", title:"Move OAuth tokens to PostgreSQL (currently in-memory on DO droplet, lost on restart)", status:"pending", prompt:"p-oauth-db"},
+  {layer:"L1", m:"M6I", mname:"M6 Infra", mstatus:"pending", title:"Move OAuth tokens to PostgreSQL — oauth_tokens table + Fernet encryption + droplet service updated (7 Apr 2026)", status:"done"},
   {layer:"L1", m:"M6I", title:"Publish OAuth consent screen (currently restricted to org users, blocks external onboarding)", status:"pending", prompt:"p-oauth-publish"},
 
   // L2
@@ -597,9 +601,12 @@ function render() {
       };
       const statusLabel = statusMap[ms.status] || statusMap['pending'];
 
+      const allDone = done === total && total > 0;
+      if (allDone) mdiv.classList.add('collapsed');
+
       mdiv.innerHTML =
         '<div class="m-head">' +
-          '<div class="m-title">' + mcode + ' · ' + escapeHtml(ms.name) + '</div>' +
+          '<div class="m-title">' + mcode + ' · ' + escapeHtml(ms.name) + ' <span class="m-toggle">&#9660;</span></div>' +
           '<div class="m-status ' + statusLabel.cls + '">' + statusLabel.txt + '</div>' +
         '</div>' +
         '<div class="progress-wrap">' +
@@ -669,6 +676,15 @@ document.querySelectorAll('.f-btn').forEach(btn => {
     btn.classList.add('active');
     applyFilter(btn.dataset.filter);
   });
+});
+
+document.addEventListener('click', (e) => {
+  const mHead = e.target.closest('.m-head');
+  if (mHead) {
+    const milestone = mHead.closest('.milestone');
+    if (milestone) milestone.classList.toggle('collapsed');
+    return;
+  }
 });
 
 document.addEventListener('click', async (e) => {
