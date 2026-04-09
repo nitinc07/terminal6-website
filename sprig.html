@@ -5,13 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Terminal6 — Sprig</title>
 <script>
-/* ACCESS GATE */
+/* ACCESS GATE — checks sessionStorage for signed-in user.
+   Actual brand access is verified server-side by the API (brand_users table). */
 (function(){
-  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com','kangkan.b14@gmail.com'];
   const saved=sessionStorage.getItem('t6_user');
-  let ok=false;
-  if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
-  if(!ok){sessionStorage.removeItem('t6_user');location.replace('/home.html');document.documentElement.style.display='none';}
+  if(!saved){location.replace('/home.html');document.documentElement.style.display='none';}
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -389,7 +387,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
 
 <script>
 /* ========== CONFIG ========== */
-const API = 'https://api.terminal6.io';
+// On brand subdomains (sprig.terminal6.io), nginx proxies /v1/ with X-Brand header.
+// On main domain (terminal6.io), fall back to api.terminal6.io.
+const IS_SUBDOMAIN = location.hostname.endsWith('.terminal6.io') && location.hostname !== 'terminal6.io' && location.hostname !== 'www.terminal6.io';
+const API = IS_SUBDOMAIN ? '' : 'https://api.terminal6.io';
 function token(){ return sessionStorage.getItem('t6_token')||''; }
 async function api(path){
   const t=token(); if(!t) throw new Error('No auth token');

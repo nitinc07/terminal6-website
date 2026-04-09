@@ -207,13 +207,18 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
 </div>
 
 <script>
-/* ACCESS CONTROL — only these emails may sign in */
-const ALLOWED_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com'];
+/* ACCESS CONTROL
+   On brand subdomains (sprig.terminal6.io): let anyone sign in — API enforces brand access.
+   On main domain (terminal6.io): check client-side allowlist as an extra gate. */
+const PLATFORM_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com', 'kangkan.b14@gmail.com'];
+const IS_SUBDOMAIN = location.hostname.endsWith('.terminal6.io') && location.hostname !== 'terminal6.io' && location.hostname !== 'www.terminal6.io';
 
 function handleGoogleSignIn(response) {
   try {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    if (!ALLOWED_EMAILS.includes((payload.email || '').toLowerCase())) {
+    const email = (payload.email || '').toLowerCase();
+    // On main domain, only platform emails can sign in. On subdomains, anyone can try (API verifies).
+    if (!IS_SUBDOMAIN && !PLATFORM_EMAILS.includes(email)) {
       sessionStorage.removeItem('t6_user');
       const err = document.getElementById('loginError');
       err.textContent = 'Access restricted. This account is not authorised for Terminal6.';
@@ -251,7 +256,8 @@ window.addEventListener('DOMContentLoaded', function () {
   if (saved) {
     try {
       const u = JSON.parse(saved);
-      if (!ALLOWED_EMAILS.includes((u.email || '').toLowerCase())) {
+      const email = (u.email || '').toLowerCase();
+      if (!IS_SUBDOMAIN && !PLATFORM_EMAILS.includes(email)) {
         sessionStorage.removeItem('t6_user');
         return;
       }

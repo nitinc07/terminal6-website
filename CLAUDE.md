@@ -46,7 +46,7 @@ When iterating on the design prototype, read `PROTOTYPE.md`.
 The gated pages (`home`, `sprig`, `funnel`, `app`, `architecture`, `todos`, `investor_thesis`) enforce a **client-side email allowlist**:
 
 ```js
-const ALLOWED_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com'];
+const ALLOWED_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com', 'kangkan.b14@gmail.com'];
 ```
 
 Flow:

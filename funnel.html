@@ -7,7 +7,7 @@
 <script>
 /* ACCESS GATE — block render until allowlisted session confirmed */
 (function(){
-  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com'];
+  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com','kangkan.b14@gmail.com'];
   const saved=sessionStorage.getItem('t6_user');
   let ok=false;
   if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
