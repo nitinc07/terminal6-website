@@ -41,39 +41,40 @@ terminal6-website/
 When iterating on the live product, read `SPRIG_FRONTEND.md`.
 When iterating on the design prototype, read `PROTOTYPE.md`.
 
-## Access control — SECURITY CRITICAL
+## Access control — Two-tier model
 
-The gated pages (`home`, `sprig`, `funnel`, `app`, `architecture`, `todos`, `investor_thesis`) enforce a **client-side email allowlist**:
+### Tier 1: Main domain (terminal6.io — GitHub Pages)
+Platform-internal workspace. Client-side email allowlist in `home.html`:
 
 ```js
-const ALLOWED_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com', 'kangkan.b14@gmail.com'];
+const PLATFORM_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com', 'kangkan.b14@gmail.com'];
 ```
 
-Flow:
-1. User clicks "Sign in" on `index.html` → redirected to `/home.html`
-2. `home.html` shows Google Sign-In button → Google returns a JWT → we decode the `email` claim
-3. If email is in `ALLOWED_EMAILS`, store `{name, email, picture}` in `sessionStorage.t6_user` and show the hub. Otherwise show "Access restricted" error and clear sessionStorage.
-4. Every gated page (`app`, `architecture`, `todos`) has an **access gate script** in `<head>` that runs BEFORE render — it reads `sessionStorage.t6_user`, re-validates the email against `ALLOWED_EMAILS`, and redirects to `/home.html` if invalid.
+On the main domain, only these emails can sign in. Gated pages check `sessionStorage.t6_user` exists and redirect to `/home.html` if not.
 
-### The access gate script (must be preserved everywhere)
+### Tier 2: Brand subdomains (sprig.terminal6.io — DO droplet)
+Customer-facing dashboards. **Anyone can sign in** — the API enforces access via `brand_users` table:
+- `home.html` detects subdomain (`IS_SUBDOMAIN` flag), skips client-side email check
+- After sign-in, redirects straight to `/` (the brand dashboard), skipping the workspace hub
+- API returns 403 if the email isn't in `brand_users` for that brand
+- Platform admins bypass brand check (always have access)
 
-Every gated page has this as the first thing in `<head>`, immediately after the `<title>` tag:
+### The access gate script (must be preserved on gated pages)
 
 ```html
 <script>
+/* ACCESS GATE — checks sessionStorage for signed-in user.
+   Actual brand access is verified server-side by the API (brand_users table). */
 (function(){
-  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com'];
   const saved=sessionStorage.getItem('t6_user');
-  let ok=false;
-  if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
-  if(!ok){sessionStorage.removeItem('t6_user');location.replace('/home.html');document.documentElement.style.display='none';}
+  if(!saved){location.replace('/home.html');document.documentElement.style.display='none';}
 })();
 </script>
 ```
 
-**Why this matters:** This gate was lost once during a naïve sync and the workspace was briefly open to anyone with a Google account. Do NOT remove or weaken it. If you regenerate `architecture.html` or `todos.html` from the main repo's source, you MUST re-inject this script before pushing.
+**Important:** If you regenerate `architecture.html` or `todos.html` from the main repo, you MUST re-inject this gate script.
 
-**Limitation to be honest about:** this is a client-side gate. The static HTML is still public on GitHub Pages — anyone who reads the source can see the content. It prevents casual access, not a determined reader. For real protection we'd need server-side auth (Cloudflare Access, a private host, etc.) — that's a future task.
+**Limitation:** GitHub Pages pages are client-side gated only — prevents casual access, not determined readers.
 
 ### Google OAuth client
 
@@ -106,11 +107,30 @@ The pages use a consistent warm serif-and-sans palette defined as CSS variables.
 
 Fonts are loaded from Google Fonts via a single `<link>` tag — keep that pattern.
 
-## Deployment
+## Deployment — Two serving paths
 
-- **GitHub Pages** serves `main` branch root as `https://terminal6.io`
-- The `CNAME` file contains just `terminal6.io`
-- Pushing to `main` triggers a rebuild — takes ~30 seconds
+### GitHub Pages (dev/testing)
+- **Branch:** `dev` (changed 9 Apr 2026 — was `main` before)
+- **URL:** `https://terminal6.io`
+- Pushing to `dev` triggers a rebuild — takes ~30 seconds
+- Used by Nitin to test changes before shipping to customers
+
+### DO Droplet (production / customer-facing)
+- **Branch:** `main`
+- **Repo on droplet:** `/opt/terminal6-website/` (git clone)
+- **URL:** `<brand>.terminal6.io` (e.g. `sprig.terminal6.io`)
+- Nginx serves `/$brand.html` based on subdomain, proxies `/v1/` to API with `X-Brand` header
+- Deploy: `ssh root@159.89.175.160 "cd /opt/terminal6-website && git pull"`
+
+### Workflow
+```
+dev branch  ──push──▶  GitHub Pages (terminal6.io)  ── Nitin tests
+                │
+                │ merge when ready
+                ▼
+main branch ──pull──▶  Droplet (sprig.terminal6.io)  ── Customer sees
+```
+
 - No build step, no framework — static HTML/CSS/JS only
 - Never add a bundler or SSG without a clear reason — the zero-build simplicity is a feature
 
