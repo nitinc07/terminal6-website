@@ -297,6 +297,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
       <div class="sec-h"><h3>Table-Level Coverage</h3></div>
       <div id="coverageTable" class="loading">Loading coverage data...</div>
     </div>
+
+    <div class="sec">
+      <div class="sec-h" style="display:flex;align-items:center;justify-content:space-between">
+        <h3>Data Quality</h3>
+        <button onclick="loadDataQuality()" style="padding:4px 12px;border:1px solid var(--border);background:var(--bg-white);border-radius:var(--rs);font-family:var(--sans);font-size:11px;cursor:pointer;color:var(--t2)">Run Audit</button>
+      </div>
+      <div id="dqReport" style="font-size:13px;color:var(--t3)">Click "Run Audit" to check data quality across all tables and sources.</div>
+    </div>
   </div>
 
   <!-- ===== SETTINGS ===== -->
@@ -699,6 +707,79 @@ function renderCoverageTable(data){
     html+=`</tbody></table></div>`;
   }
   el.innerHTML=html;
+}
+
+/* ========== DATA QUALITY ========== */
+async function loadDataQuality(){
+  const el=document.getElementById('dqReport');
+  el.innerHTML='<div class="loading">Running data quality audit...</div>';
+  try{
+    const dq=await api('/v1/data/quality?days=30');
+    let html='';
+
+    // Score cards
+    const sc=dq.overall_score>=80?'var(--g)':dq.overall_score>=60?'var(--a)':'var(--r)';
+    html+=`<div class="g4" style="margin-bottom:16px">
+      <div class="cd" style="border-left:3px solid ${sc}"><div class="kl">Overall Score</div><div class="kv" style="color:${sc}">${dq.overall_score}</div><div class="kd n" style="font-size:11px">/ 100</div></div>
+      <div class="cd"><div class="kl">Table Health</div><div class="kv">${dq.table_health_score}</div><div class="kd n" style="font-size:11px">/ 100</div></div>
+      <div class="cd"><div class="kl">Triangulation</div><div class="kv">${dq.triangulation_score}%</div><div class="kd n" style="font-size:11px">checks passing</div></div>
+      <div class="cd"><div class="kl">Issues</div><div class="kv">${dq.issue_summary.errors+dq.issue_summary.warnings}</div><div class="kd n" style="font-size:11px">${dq.issue_summary.errors} errors, ${dq.issue_summary.warnings} warnings</div></div>
+    </div>`;
+
+    // Cross-source triangulation
+    html+=`<div style="font-family:var(--serif);font-weight:600;font-size:14px;margin-bottom:10px">Cross-Source Triangulation</div>`;
+    html+=`<table class="tbl"><thead><tr><th>Check</th><th>Relationship</th><th>Status</th><th>Details</th></tr></thead><tbody>`;
+    for(const t of dq.triangulation.triangulations){
+      const stC=t.status==='OK'?'var(--g)':t.status==='NO_DATA'?'var(--t3)':'var(--r)';
+      const stBg=t.status==='OK'?'var(--gl)':t.status==='NO_DATA'?'var(--bg-warm)':'var(--rl)';
+      let detail='';
+      if(t.ratios){for(const[k,v]of Object.entries(t.ratios)) detail+=k+': median '+v.median+' ';}
+      if(t.per_source){for(const[k,v]of Object.entries(t.per_source)) detail+=k+': '+fmt(v.orders)+' orders ';}
+      if(t.coverage){for(const c of t.coverage) detail+=(c.entity||'')+': '+c.coverage_pct+'% ';}
+      if(t.summary) detail+='OK:'+t.summary.ok+' Mismatch:'+t.summary.mismatch;
+      if(t.issues&&t.issues.length) detail+=t.issues.map(i=>i.message).join('; ');
+      html+=`<tr><td><span class="hi">${t.name}</span></td>
+        <td><span class="mn2">${t.expected_relationship}</span></td>
+        <td><span style="padding:2px 8px;border-radius:5px;font-size:10.5px;font-weight:600;background:${stBg};color:${stC}">${t.status}</span></td>
+        <td style="font-size:11.5px;max-width:300px;overflow:hidden;text-overflow:ellipsis">${detail||'--'}</td></tr>`;
+    }
+    html+=`</tbody></table>`;
+
+    // Recommendations
+    if(dq.recommendations&&dq.recommendations.length){
+      html+=`<div style="font-family:var(--serif);font-weight:600;font-size:14px;margin:16px 0 10px">Recommendations</div>`;
+      for(const r of dq.recommendations){
+        const pc=r.priority==='P0'?'var(--r)':r.priority==='HIGH'?'var(--a)':'var(--t2)';
+        html+=`<div style="padding:10px 14px;margin-bottom:8px;background:var(--bg-warm);border-radius:var(--rs);border-left:3px solid ${pc}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:${pc}">${r.priority}</span>
+            <span style="font-size:13px;font-weight:600">${r.title}</span>
+          </div>
+          <div style="font-size:12px;color:var(--t2)">${r.action}</div>
+          ${r.tables?'<div style="font-size:11px;color:var(--t3);margin-top:4px;font-family:var(--mono)">'+r.tables.join(', ')+'</div>':''}
+        </div>`;
+      }
+    }
+
+    // Sparse columns (top 10)
+    const sparse=[];
+    for(const[tname,t]of Object.entries(dq.table_audit.tables)){
+      if(t.sparse_columns) for(const s of t.sparse_columns) sparse.push({table:tname,col:s.column,pct:s.fill_pct});
+    }
+    sparse.sort((a,b)=>a.pct-b.pct);
+    if(sparse.length){
+      html+=`<div style="font-family:var(--serif);font-weight:600;font-size:14px;margin:16px 0 10px">Sparse Columns (top 15)</div>`;
+      html+=`<table class="tbl"><thead><tr><th>Table</th><th>Column</th><th class="r">Fill %</th><th style="width:120px">Bar</th></tr></thead><tbody>`;
+      for(const s of sparse.slice(0,15)){
+        const bc=s.pct>=50?'var(--g)':s.pct>=20?'var(--a)':'var(--r)';
+        html+=`<tr><td class="mn2">${s.table}</td><td class="mn2">${s.col}</td><td class="mn2 r">${s.pct}%</td>
+          <td><div style="background:var(--bg-warm);border-radius:3px;height:6px"><div style="background:${bc};height:6px;border-radius:3px;width:${Math.max(s.pct,2)}%"></div></div></td></tr>`;
+      }
+      html+=`</tbody></table>`;
+    }
+
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div class="error">'+e.message+'</div>';}
 }
 
 /* ========== SKU CATALOG ========== */
