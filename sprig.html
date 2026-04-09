@@ -7,7 +7,7 @@
 <script>
 /* ACCESS GATE */
 (function(){
-  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com'];
+  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com','kangkan.b14@gmail.com'];
   const saved=sessionStorage.getItem('t6_user');
   let ok=false;
   if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
@@ -746,7 +746,7 @@ function renderSKUInsights(res){
 
 function renderSKUSummary(res){
   const g=res.grand_totals;
-  document.getElementById('sk-skus').textContent=fmt(res.sku_count);
+  document.getElementById('sk-skus').textContent=fmt(res.msku_count||res.sku_count)+' MSKUs / '+fmt(res.sku_count)+' SKUs';
   document.getElementById('sk-rev').textContent=cur(g.revenue);
   document.getElementById('sk-units').textContent=fmt(g.units);
   document.getElementById('sk-rr').textContent=g.return_rate!=null?g.return_rate+'%':'--';
@@ -759,16 +759,49 @@ function skuSortBy(col){
   renderSKUTable();
 }
 
+function velCell(v){
+  if(v==null) return '--';
+  const vc=v>10?'var(--g)':v<-10?'var(--r)':'var(--t3)';
+  const va=v>0?'\u2191':v<0?'\u2193':'';
+  return `<span style="color:${vc}">${va}${Math.abs(v).toFixed(0)}%</span>`;
+}
+function chPillsHtml(channels,compact){
+  let out='';
+  skuData.channels.forEach(ch=>{
+    const cd=channels[ch.key];
+    if(cd){
+      const color=CH_COLORS[ch.key]||'#888';
+      const label=CH_SHORT[ch.key]||ch.key;
+      const title=compact?`${ch.name}: ${cur(cd.revenue)} | ${cd.units}u | Stock: ${cd.inventory}`
+        :`${ch.name}: ${cur(cd.revenue)} | ${cd.units}u | Last: ${cd.last_sold_date||'never'} @ ${priceFmt(cd.last_sold_price)} | Stock: ${cd.inventory} | DoC: ${cd.days_of_cover!=null?cd.days_of_cover+'d':'--'} | RR: ${cd.return_rate!=null?cd.return_rate+'%':'--'}`;
+      const active=cd.is_active!==false;
+      out+=`<span title="${title}" style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:9.5px;font-weight:500;margin-right:2px;border:1px solid ${color};color:${active?'#fff':color};background:${active?color:'transparent'};opacity:${active?1:.4};cursor:help">${label}</span>`;
+    }
+  });
+  return out||'--';
+}
+function toggleMsku(id){
+  const rows=document.querySelectorAll(`.msku-child-${CSS.escape(id)}`);
+  const btn=document.getElementById('msku-btn-'+CSS.escape(id));
+  if(!rows.length) return;
+  const hidden=rows[0].style.display==='none';
+  rows.forEach(r=>r.style.display=hidden?'table-row':'none');
+  if(btn) btn.textContent=hidden?'\u25BC':'\u25B6';
+}
+
 function renderSKUTable(){
   if(!skuData) return;
   const el=document.getElementById('skuCatalogBody');
   const filter=document.getElementById('skuFilter').value;
 
-  let data=skuData.data;
-  if(filter==='declining') data=data.filter(s=>s.velocity_pct!=null&&s.velocity_pct<-10);
-  else if(filter==='dead') data=data.filter(s=>s.is_dead_stock);
-  else if(filter==='gap') data=data.filter(s=>{const m=['AMAZON_IN','FLIPKART_IN','SHOPIFY'];return m.some(c=>!s.channels[c])&&s.revenue>0});
-  else if(filter==='rr_outlier') data=data.filter(s=>s.is_rr_outlier);
+  // Use MSKU data
+  let data=skuData.msku_data||[];
+
+  // Apply filters based on child SKU flags
+  if(filter==='declining') data=data.filter(m=>m.velocity_pct!=null&&m.velocity_pct<-10);
+  else if(filter==='dead') data=data.filter(m=>m.skus.some(s=>s.is_dead_stock));
+  else if(filter==='gap') data=data.filter(m=>{const mc=['AMAZON_IN','FLIPKART_IN','SHOPIFY'];return mc.some(c=>!m.channels[c])&&m.revenue>0});
+  else if(filter==='rr_outlier') data=data.filter(m=>m.skus.some(s=>s.is_rr_outlier));
 
   // Sort
   const col=skuSort.col;
@@ -779,12 +812,11 @@ function renderSKUTable(){
     return va>vb?dir:va<vb?-dir:0;
   });
 
-  document.getElementById('skuShowing').textContent=`Showing ${data.length} of ${skuData.sku_count}`;
+  document.getElementById('skuShowing').textContent=`Showing ${data.length} MSKUs (${skuData.sku_count} SKUs)`;
 
-  if(!data.length){el.innerHTML='<div class="loading">No SKUs match this filter</div>';return;}
+  if(!data.length){el.innerHTML='<div class="loading">No MSKUs match this filter</div>';return;}
 
-  // Paginate — show first 200 for perf
-  const PAGE=200;
+  const PAGE=150;
   const show=data.slice(0,PAGE);
   const mx=Math.max(...show.map(s=>s.revenue));
 
@@ -792,70 +824,63 @@ function renderSKUTable(){
 
   let html=`<table class="tbl"><thead><tr>
     <th style="width:28px">#</th>
-    <th style="cursor:pointer" onclick="skuSortBy('product_name')">Product${arrow('product_name')}</th>
-    <th style="cursor:pointer;width:70px" onclick="skuSortBy('brand')">Brand${arrow('brand')}</th>
-    <th class="r" style="cursor:pointer;width:65px" onclick="skuSortBy('mrp')">MRP${arrow('mrp')}</th>
+    <th style="width:20px"></th>
+    <th style="cursor:pointer" onclick="skuSortBy('msku_device')">MSKU${arrow('msku_device')}</th>
     <th class="r" style="cursor:pointer;width:80px" onclick="skuSortBy('revenue')">Revenue${arrow('revenue')}</th>
     <th class="r" style="cursor:pointer;width:55px" onclick="skuSortBy('units')">Units${arrow('units')}</th>
+    <th class="r" style="cursor:pointer;width:50px" onclick="skuSortBy('sku_count')">SKUs${arrow('sku_count')}</th>
     <th class="r" style="cursor:pointer;width:55px" onclick="skuSortBy('velocity_pct')">Vel%${arrow('velocity_pct')}</th>
     <th class="r" style="cursor:pointer;width:45px" onclick="skuSortBy('return_rate')">RR%${arrow('return_rate')}</th>
     <th class="r" style="cursor:pointer;width:50px" onclick="skuSortBy('inventory')">Stock${arrow('inventory')}</th>
     <th class="r" style="cursor:pointer;width:50px" onclick="skuSortBy('days_of_cover')">DoC${arrow('days_of_cover')}</th>
     <th style="width:140px">Channels</th>
-    <th style="width:50px"></th>
   </tr></thead><tbody>`;
 
-  show.forEach((s,i)=>{
-    const name=s.product_name.length>45?s.product_name.slice(0,45)+'...':s.product_name;
-    const brandLabel=s.brand||'--';
-    const modelLabel=s.model||'';
+  show.forEach((m,i)=>{
+    const mid=m.msku_group||('m'+i);
+    const device=m.msku_device||m.msku_group||'--';
+    const ptype=(m.msku_type||'').replace(/-/g,' ');
+    const tier=m.msku_tier||'';
+    const barW=mx>0?Math.round(m.revenue/mx*100):0;
+    const hasSubs=m.skus&&m.skus.length>1;
 
-    // Velocity cell
-    let velHtml='--';
-    if(s.velocity_pct!=null){
-      const vc=s.velocity_pct>10?'var(--g)':s.velocity_pct<-10?'var(--r)':'var(--t3)';
-      const va=s.velocity_pct>0?'\u2191':s.velocity_pct<0?'\u2193':'';
-      velHtml=`<span style="color:${vc}">${va}${Math.abs(s.velocity_pct).toFixed(0)}%</span>`;
-    }
-
-    // Channel pills
-    let chPills='';
-    skuData.channels.forEach(ch=>{
-      const cd=s.channels[ch.key];
-      if(cd){
-        const color=CH_COLORS[ch.key]||'#888';
-        const label=CH_SHORT[ch.key]||ch.key;
-        const title=`${ch.name}: ${cur(cd.revenue)} | ${cd.units}u | Last: ${cd.last_sold_date||'never'} @ ${priceFmt(cd.last_sold_price)} | Stock: ${cd.inventory} | DoC: ${cd.days_of_cover!=null?cd.days_of_cover+'d':'--'} | RR: ${cd.return_rate!=null?cd.return_rate+'%':'--'}`;
-        chPills+=`<span title="${title}" style="display:inline-block;padding:1px 5px;border-radius:3px;font-size:9.5px;font-weight:500;margin-right:2px;border:1px solid ${color};color:${cd.is_active?'#fff':color};background:${cd.is_active?color:'transparent'};opacity:${cd.is_active?1:.4};cursor:help">${label}</span>`;
-      }
-    });
-
-    // Revenue bar
-    const barW=mx>0?Math.round(s.revenue/mx*100):0;
-
-    // Flags
-    let flags='';
-    if(s.is_dead_stock) flags+='<span title="Dead stock" style="color:var(--a);font-size:10px">&#9632;</span> ';
-    if(s.is_rr_outlier) flags+='<span title="High returns" style="color:#9C27B0;font-size:10px">&#9632;</span> ';
-
-    html+=`<tr>
+    html+=`<tr style="cursor:${hasSubs?'pointer':'default'};background:var(--bg-white)" ${hasSubs?`onclick="toggleMsku('${mid}')"`:''}>
       <td style="color:var(--t3);font-size:10.5px">${i+1}</td>
-      <td><span class="hi" style="font-size:12px">${name}</span><br><span style="font-size:9.5px;color:var(--t3)">${s.variant?s.variant+' \u00B7 ':''}${s.category}</span></td>
-      <td style="font-size:10.5px" title="${s.category}${modelLabel?' / '+modelLabel:''}"><span style="color:var(--t1);font-weight:500">${brandLabel}</span>${modelLabel?'<br><span style="font-size:9.5px;color:var(--t3)">'+modelLabel+'</span>':''}</td>
-      <td class="mn2 r">${mrpFmt(s.mrp)}</td>
-      <td class="mn2 r hi">${cur(s.revenue)}<div class="mini-bar" style="width:${barW}%"></div></td>
-      <td class="mn2 r">${fmt(s.units)}</td>
-      <td class="mn2 r">${velHtml}</td>
-      <td class="mn2 r" style="color:${s.return_rate!=null&&s.return_rate>15?'var(--r)':'var(--t2)'}">${s.return_rate!=null?s.return_rate+'%':'--'}</td>
-      <td class="mn2 r">${s.inventory>0?fmt(s.inventory):'<span style="color:var(--t3)">0</span>'}</td>
-      <td class="mn2 r" style="color:${s.days_of_cover!=null&&s.days_of_cover<30?'var(--a)':'var(--t2)'}">${s.days_of_cover!=null?s.days_of_cover+'d':'--'}</td>
-      <td>${chPills||'--'}</td>
-      <td>${flags}</td>
+      <td style="font-size:10px;color:var(--t3);width:20px">${hasSubs?`<span id="msku-btn-${mid}">\u25B6</span>`:''}</td>
+      <td><span class="hi" style="font-size:12px">${device}</span><br><span style="font-size:9.5px;color:var(--t3)">${ptype}${tier?' \u00B7 '+tier:''} \u00B7 ${m.sku_count} SKUs</span></td>
+      <td class="mn2 r hi">${cur(m.revenue)}<div class="mini-bar" style="width:${barW}%"></div></td>
+      <td class="mn2 r">${fmt(m.units)}</td>
+      <td class="mn2 r">${m.sku_count}</td>
+      <td class="mn2 r">${velCell(m.velocity_pct)}</td>
+      <td class="mn2 r" style="color:${m.return_rate!=null&&m.return_rate>15?'var(--r)':'var(--t2)'}">${m.return_rate!=null?m.return_rate+'%':'--'}</td>
+      <td class="mn2 r">${m.inventory>0?fmt(m.inventory):'<span style="color:var(--t3)">0</span>'}</td>
+      <td class="mn2 r" style="color:${m.days_of_cover!=null&&m.days_of_cover<30?'var(--a)':'var(--t2)'}">${m.days_of_cover!=null?m.days_of_cover+'d':'--'}</td>
+      <td>${chPillsHtml(m.channels,true)}</td>
     </tr>`;
+
+    // Child SKU rows (hidden by default)
+    if(m.skus&&m.skus.length>0){
+      m.skus.forEach(s=>{
+        const sname=s.product_name.length>50?s.product_name.slice(0,50)+'...':s.product_name;
+        html+=`<tr class="msku-child-${mid}" style="display:none;background:var(--bg-page)">
+          <td></td>
+          <td style="color:var(--t3);font-size:9px;text-align:right">\u2514</td>
+          <td><span style="font-size:11px;color:var(--t2)">${sname}</span><br><span style="font-size:9px;color:var(--t3)">${s.sku_code} \u00B7 ${s.variant||''}</span></td>
+          <td class="mn2 r" style="font-size:11px">${cur(s.revenue)}</td>
+          <td class="mn2 r" style="font-size:11px">${fmt(s.units)}</td>
+          <td class="mn2 r" style="font-size:11px">${mrpFmt(s.mrp)}</td>
+          <td class="mn2 r" style="font-size:11px">${velCell(s.velocity_pct)}</td>
+          <td class="mn2 r" style="font-size:11px;color:${s.return_rate!=null&&s.return_rate>15?'var(--r)':'var(--t2)'}">${s.return_rate!=null?s.return_rate+'%':'--'}</td>
+          <td class="mn2 r" style="font-size:11px">${s.inventory>0?fmt(s.inventory):'<span style="color:var(--t3)">0</span>'}</td>
+          <td class="mn2 r" style="font-size:11px;color:${s.days_of_cover!=null&&s.days_of_cover<30?'var(--a)':'var(--t2)'}">${s.days_of_cover!=null?s.days_of_cover+'d':'--'}</td>
+          <td>${chPillsHtml(s.channels,false)}</td>
+        </tr>`;
+      });
+    }
   });
 
   html+='</tbody></table>';
-  if(data.length>PAGE) html+=`<div style="text-align:center;padding:12px;color:var(--t3);font-size:12px">Showing top ${PAGE} of ${data.length} SKUs</div>`;
+  if(data.length>PAGE) html+=`<div style="text-align:center;padding:12px;color:var(--t3);font-size:12px">Showing top ${PAGE} of ${data.length} MSKUs</div>`;
   el.innerHTML=html;
 }
 
