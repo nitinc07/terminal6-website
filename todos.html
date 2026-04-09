@@ -7,7 +7,7 @@
 <script>
 /* ACCESS GATE — block render until allowlisted session confirmed */
 (function(){
-  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com'];
+  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com','kangkan.b14@gmail.com'];
   const saved=sessionStorage.getItem('t6_user');
   let ok=false;
   if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
@@ -169,13 +169,13 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
 
 <!-- ============= PROMPTS (raw text, no escaping) ============= -->
 <script type="text/plain" id="p-ga4-norm">
-We have channels/ga4/connector.py that successfully pulls data from Sprig's GA4 property (311140290) — OAuth2 tested end-to-end. Target tables are DailySiteFunnel, DailyProductFunnel, DailyTrafficSource in core/models/ga4_funnel.py. Build channels/ga4/normaliser.py following the Unicommerce normaliser pattern (channels/unicommerce/normaliser.py): one class with one method per report type, each reading a YAML mapping config, calling the connector, validating via core/validation.py → run_full_validation(), and upserting rows. GA4 data is keyed on (property_id, date) or (channel_listing_id, date) — map GA4 itemId → ChannelListing via the Sprig brand's Shopify channel. Traffic source table aggregates by (date, source, medium). Add a YAML mapping config under channels/ga4/mappings/. Read core/validation.py and channels/CLAUDE.md for conventions first. Acceptance: run a 7-day pull for Sprig, confirm rows in all three tables with spot-check values matching the GA4 UI.
+We have channels/ga4/connector.py that successfully pulls data from Sprig's GA4 property (311140290) — OAuth2 tested end-to-end. Target tables are D2CSiteFunnel, D2CProductFunnel, D2CTrafficSource in core/models/ga4_funnel.py. Build channels/ga4/normaliser.py following the Unicommerce normaliser pattern (channels/unicommerce/normaliser.py): one class with one method per report type, each reading a YAML mapping config, calling the connector, validating via core/validation.py → run_full_validation(), and upserting rows. GA4 data is keyed on (property_id, date) or (channel_listing_id, date) — map GA4 itemId → ChannelListing via the Sprig brand's Shopify channel. Traffic source table aggregates by (date, source, medium). Add a YAML mapping config under channels/ga4/mappings/. Read core/validation.py and channels/CLAUDE.md for conventions first. Acceptance: run a 7-day pull for Sprig, confirm rows in all three tables with spot-check values matching the GA4 UI.
 </script>
 <script type="text/plain" id="p-ga4-backfill">
-The GA4 normaliser is live. Write a backfill script channels/ga4/backfill.py that pulls 90 days of history for Sprig's GA4 property 311140290. It should call the normaliser day-by-day (or in small date chunks if the API supports it) and log progress to data_import_logs. Handle GA4's quota limits gracefully — back off on 429s. The script should be idempotent (use the normaliser's upsert path so re-runs don't duplicate). Read channels/ga4/connector.py for auth handling. Acceptance: 90 rows per day type in DailySiteFunnel, matching counts in DailyProductFunnel aggregated by date, and a DataImportLog row for each day.
+The GA4 normaliser is live. Write a backfill script channels/ga4/backfill.py that pulls 90 days of history for Sprig's GA4 property 311140290. It should call the normaliser day-by-day (or in small date chunks if the API supports it) and log progress to data_import_logs. Handle GA4's quota limits gracefully — back off on 429s. The script should be idempotent (use the normaliser's upsert path so re-runs don't duplicate). Read channels/ga4/connector.py for auth handling. Acceptance: 90 rows per day type in D2CSiteFunnel, matching counts in D2CProductFunnel aggregated by date, and a DataImportLog row for each day.
 </script>
 <script type="text/plain" id="p-ga4-verify">
-Now that the GA4 backfill is done, write a validation report script that picks 5 random dates in the last 90 days and, for each, prints the key metrics from DailySiteFunnel (sessions, users, add-to-cart, checkout, purchase) side-by-side with what Nitin sees in the GA4 UI for the same dates. Output should be a simple markdown table written to data/reports/ga4_validation_DATE.md. Also flag any days where the variance is more than 5 percent. The goal is proof that the pipeline matches the source of truth before we build P&amp;L on top of it.
+Now that the GA4 backfill is done, write a validation report script that picks 5 random dates in the last 90 days and, for each, prints the key metrics from D2CSiteFunnel (sessions, users, add-to-cart, checkout, purchase) side-by-side with what Nitin sees in the GA4 UI for the same dates. Output should be a simple markdown table written to data/reports/ga4_validation_DATE.md. Also flag any days where the variance is more than 5 percent. The goal is proof that the pipeline matches the source of truth before we build P&amp;L on top of it.
 </script>
 
 <script type="text/plain" id="p-uc-backfill">
@@ -210,7 +210,7 @@ Build channels/google_ads/connector.py using the google-ads-python SDK. Auth use
 With the Google Ads connector live, build channels/google_ads/normaliser.py that pulls daily campaign + ad group + keyword metrics and upserts into CampaignDailyMetrics and related tables. Key fields per row: campaign_id, date, impressions, clicks, cost_micros, conversions, conversion_value. Map Google Ads campaign to internal Campaign record (create if missing). Validate via core/validation.py. Schedule as a daily Celery task (extend the M2 Celery setup). Acceptance: 7-day backfill for Sprig, rows land in CampaignDailyMetrics with non-zero spend for active campaigns.
 </script>
 <script type="text/plain" id="p-gads-roas">
-D2C ROAS needs Google Ads spend (from CampaignDailyMetrics) divided by GA4 conversion value (from DailySiteFunnel or DailyProductFunnel). Write a view or query in domains/data/queries.py that joins the two on date for the Sprig Shopify channel. Handle the attribution question: are we using last-click (GA4 default) or a model? Document the choice in domains/data/CLAUDE.md. Acceptance: a query "show me Sprig D2C ROAS for last 30 days" returns a row per day with spend, conversion_value, and ROAS.
+D2C ROAS needs Google Ads spend (from CampaignDailyMetrics) divided by GA4 conversion value (from D2CSiteFunnel or D2CProductFunnel). Write a view or query in domains/data/queries.py that joins the two on date for the Sprig Shopify channel. Handle the attribution question: are we using last-click (GA4 default) or a model? Document the choice in domains/data/CLAUDE.md. Acceptance: a query "show me Sprig D2C ROAS for last 30 days" returns a row per day with spend, conversion_value, and ROAS.
 </script>
 
 <script type="text/plain" id="p-amz-spapi">
@@ -337,7 +337,7 @@ Implement domains/growth/playbooks/high_cover.py. Logic: if a SKU has more than 
 Implement domains/growth/playbooks/roas_drop.py. Logic: if ROAS on a campaign drops more than 25 percent week-over-week AND absolute ROAS is below brand target (from BrandCategoryPolicy.roas_target), pause the campaign and propose reallocating that budget to the top-ROAS campaigns in the same ad group. Return a PauseCampaign intent + multiple IncreaseBudget intents that sum to the paused budget. This is a compound decision — include detailed reasoning.
 </script>
 <script type="text/plain" id="p-pb-d2c">
-Implement domains/growth/playbooks/d2c_conversion_drop.py. Logic: if GA4 DailySiteFunnel shows a more-than-15-percent drop in conversion rate day-over-day, run a diagnostic chain: check sessions (traffic issue?), bounce rate (landing page issue?), add-to-cart rate (product page issue?), checkout drop-off (checkout flow issue?). Return a Diagnose intent (not a direct action — this one proposes investigation steps for a human). Reasoning should narrate which step in the funnel broke. This is harder than the ad playbooks because the action is "tell the operator what to look at," not "change a bid."
+Implement domains/growth/playbooks/d2c_conversion_drop.py. Logic: if GA4 D2CSiteFunnel shows a more-than-15-percent drop in conversion rate day-over-day, run a diagnostic chain: check sessions (traffic issue?), bounce rate (landing page issue?), add-to-cart rate (product page issue?), checkout drop-off (checkout flow issue?). Return a Diagnose intent (not a direct action — this one proposes investigation steps for a human). Reasoning should narrate which step in the funnel broke. This is harder than the ad playbooks because the action is "tell the operator what to look at," not "change a bid."
 </script>
 <script type="text/plain" id="p-intents">
 Ensure every playbook returns Intent dataclasses, never strings. Define the Intent hierarchy in domains/intelligence/intents.py: PauseCampaign, AdjustBid, IncreaseBudget, Diagnose, etc. Each has typed fields and a to_dict() for JSON serialization. Add a validate() method on each that checks the fields are sane before it reaches the policy engine. This separation (reasoning in playbooks, intents as the interface to policy engine) is core to the architecture. Read product/knowledge_architecture.md section "Agent Architecture".
@@ -458,9 +458,9 @@ const TASKS = [
   // L1 — Unified Data Layer (you are here)
   {layer:"L1", lname:"Unified Data Layer", ldesc:"Get all data flowing into the canonical schema. No AI, no agents — just clean, unified data.", lhere:true, m:"M1", mname:"D2C Funnel Live", mstatus:"done", title:"GA4 connector with OAuth2 — live tested against Sprig property 311140290", status:"done"},
   {layer:"L1", m:"M1", title:"GCP project terminal6-492306 — Analytics Data API enabled", status:"done"},
-  {layer:"L1", m:"M1", title:"Three GA4 funnel tables created on RDS (DailySiteFunnel, DailyProductFunnel, DailyTrafficSource)", status:"done"},
+  {layer:"L1", m:"M1", title:"Three GA4 funnel tables created on RDS (D2CSiteFunnel, D2CProductFunnel, D2CTrafficSource)", status:"done"},
   {layer:"L1", m:"M1", title:"GA4 normaliser — site funnel, product funnel, traffic source with upserts, dedup, batching, DataImportLog writes", status:"done"},
-  {layer:"L1", m:"M1", title:"Backfill 90 days of GA4 funnel data for Sprig (5 Apr 2026) — 91 DailySiteFunnel, 82,238 DailyProductFunnel (deduped from 257K raw), 9,014 DailyTrafficSource rows", status:"done"},
+  {layer:"L1", m:"M1", title:"Backfill 90 days of GA4 funnel data for Sprig (5 Apr 2026) — 91 D2CSiteFunnel, 82,238 D2CProductFunnel (deduped from 257K raw), 9,014 D2CTrafficSource rows", status:"done"},
   {layer:"L1", m:"M1", title:"Verify data quality vs GA4 console — 0% variance across 35 cells, 5 sample dates (PASS)", status:"done"},
   {layer:"L1", m:"M1", title:"GA4 normaliser wired to run_full_validation() + YAML mapping configs at channels/ga4/mappings/ — 3 VALIDATION_CONFIGS entries, re-verified with 0 variance preserved", status:"done"},
 
