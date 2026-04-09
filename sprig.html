@@ -822,32 +822,37 @@ function renderSKUTable(){
 
   const arrow=c=>skuSort.col===c?(skuSort.asc?' \u2191':' \u2193'):'';
 
+  const TYPE_LABELS={'back-cover':'Back Covers','tempered-glass':'Tempered Glass','camera-lens-protector':'Camera Lens Protectors','watch-strap':'Watch Straps','watch-bumper':'Watch Bumpers','tab-back-cover':'Tab Back Covers','laptop-back-cover':'Laptop Back Covers','screen-protector':'Screen Protectors','charging-cable':'Charging Cables','dummy-phone':'Dummy Phones','card-holder':'Card Holders','earbuds':'Earbuds','neckband':'Neckbands','headphone':'Headphones','handsfree':'Handsfree','adaptor':'Adaptors','charger':'Chargers','power-bank':'Power Banks','charging-stand':'Charging Stands','mouse-pad':'Mouse Pads','squeegee-pad':'Squeegee Pads'};
+  const TIER_LABELS={'budget':'Budget','mid':'Mid-Range','premium':'Premium','unknown':''};
+
   let html=`<table class="tbl"><thead><tr>
-    <th style="width:28px">#</th>
-    <th style="width:20px"></th>
-    <th style="cursor:pointer" onclick="skuSortBy('msku_device')">MSKU${arrow('msku_device')}</th>
+    <th style="width:24px">#</th>
+    <th style="width:18px"></th>
+    <th style="cursor:pointer;text-align:left" onclick="skuSortBy('msku_device')">MSKU${arrow('msku_device')}</th>
     <th class="r" style="cursor:pointer;width:80px" onclick="skuSortBy('revenue')">Revenue${arrow('revenue')}</th>
     <th class="r" style="cursor:pointer;width:55px" onclick="skuSortBy('units')">Units${arrow('units')}</th>
-    <th class="r" style="cursor:pointer;width:50px" onclick="skuSortBy('sku_count')">SKUs${arrow('sku_count')}</th>
+    <th class="r" style="cursor:pointer;width:45px" onclick="skuSortBy('sku_count')">SKUs${arrow('sku_count')}</th>
     <th class="r" style="cursor:pointer;width:55px" onclick="skuSortBy('velocity_pct')">Vel%${arrow('velocity_pct')}</th>
     <th class="r" style="cursor:pointer;width:45px" onclick="skuSortBy('return_rate')">RR%${arrow('return_rate')}</th>
     <th class="r" style="cursor:pointer;width:50px" onclick="skuSortBy('inventory')">Stock${arrow('inventory')}</th>
     <th class="r" style="cursor:pointer;width:50px" onclick="skuSortBy('days_of_cover')">DoC${arrow('days_of_cover')}</th>
-    <th style="width:140px">Channels</th>
+    <th style="width:130px">Channels</th>
   </tr></thead><tbody>`;
 
   show.forEach((m,i)=>{
     const mid=m.msku_group||('m'+i);
-    const device=m.msku_device||m.msku_group||'--';
-    const ptype=(m.msku_type||'').replace(/-/g,' ');
-    const tier=m.msku_tier||'';
+    const device=m.msku_device||'';
+    const typeLabel=TYPE_LABELS[m.msku_type]||(m.msku_type||'').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    const tierLabel=TIER_LABELS[m.msku_tier]||m.msku_tier||'';
+    // Full MSKU name: "Vivo X200 FE Back Covers" or "Charging Cables" for generic
+    const mskuName=device?`${device} ${typeLabel}`:typeLabel||m.msku_group||'--';
     const barW=mx>0?Math.round(m.revenue/mx*100):0;
     const hasSubs=m.skus&&m.skus.length>1;
 
     html+=`<tr style="cursor:${hasSubs?'pointer':'default'};background:var(--bg-white)" ${hasSubs?`onclick="toggleMsku('${mid}')"`:''}>
       <td style="color:var(--t3);font-size:10.5px">${i+1}</td>
-      <td style="font-size:10px;color:var(--t3);width:20px">${hasSubs?`<span id="msku-btn-${mid}">\u25B6</span>`:''}</td>
-      <td><span class="hi" style="font-size:12px">${device}</span><br><span style="font-size:9.5px;color:var(--t3)">${ptype}${tier?' \u00B7 '+tier:''} \u00B7 ${m.sku_count} SKUs</span></td>
+      <td style="font-size:10px;color:var(--t3)">${hasSubs?`<span id="msku-btn-${mid}">\u25B6</span>`:''}</td>
+      <td style="text-align:left"><span class="hi" style="font-size:12px">${mskuName}</span><br><span style="font-size:9.5px;color:var(--t3)">${tierLabel?tierLabel+' \u00B7 ':''}${m.sku_count} variants</span></td>
       <td class="mn2 r hi">${cur(m.revenue)}<div class="mini-bar" style="width:${barW}%"></div></td>
       <td class="mn2 r">${fmt(m.units)}</td>
       <td class="mn2 r">${m.sku_count}</td>
