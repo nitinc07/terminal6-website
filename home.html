@@ -234,6 +234,8 @@ function handleGoogleSignIn(response) {
 }
 
 function enterHub(user) {
+  // On brand subdomains, skip the hub — go straight to the dashboard
+  if (IS_SUBDOMAIN) { location.replace('/'); return; }
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('hub').classList.add('active');
   const av = document.getElementById('avatar');
