@@ -170,7 +170,7 @@ footer a { color: var(--accent); text-decoration: none; }
     <div class="layer-row">
       <div class="layer-id" style="background:#2E7D32">L1</div>
       <div class="layer-name">Integration & Ingestion</div>
-      <div class="layer-desc">Amazon SP-API, Shopify, Flipkart, Unicommerce, GA4, Google Ads, Meta Ads, CSV</div>
+      <div class="layer-desc">Amazon SP-API, Amazon Vendor Central, Amazon Ads, Shopify, Unicommerce, GA4, Google Ads, Meta Ads, CSV</div>
     </div>
   </div>
 </section>
@@ -316,7 +316,6 @@ L2 channels/shopify: invoked for funnel deep-dive</div>
 │
 ├── Sr. Marketplace Manager (L1) — cross-channel listings, compliance
 │   ├── Amazon Marketplace Agent (L2) — listing, Buy Box, pricing
-│   ├── Flipkart Agent (L2)
 │   └── Shopify D2C Agent (L2) — storefront, conversion, listing sync
 │
 ├── Sr. Ops Manager (L1) — inventory, fulfillment
@@ -461,7 +460,7 @@ Same pattern cascades L1 --> L2.</div>
 <section>
   <h2>Decision Flow</h2>
   <p>The harness walks the tree: top-down for investigation, bottom-up for summary.</p>
-  <div class="diagram">Tier 1 Statistical Anomaly: "CVR -2.3 sigma, Flipkart revenue +3.1 sigma"
+  <div class="diagram">Tier 1 Statistical Anomaly: "CVR -2.3 sigma, Shopify D2C revenue +3.1 sigma"
     |
     v
 Chief of Staff (L0, Haiku)
@@ -521,7 +520,7 @@ Summary flows BACK UP the tree:
     </div>
     <div class="card" style="border-top:3px solid var(--teal)">
       <h4>Tier 2: LLM Triage (= Chief of Staff)</h4>
-      <p style="margin:0"><strong>One Haiku call per daily batch. Cheap.</strong><br>Reads anomaly list + brand context + directives. Filters noise ("cart abandon +1.1&sigma; on Saturday = normal"). Connects related anomalies ("CVR dip + Flipkart spike = one situation"). Matches to investigate.md. Routes to senior managers.</p>
+      <p style="margin:0"><strong>One Haiku call per daily batch. Cheap.</strong><br>Reads anomaly list + brand context + directives. Filters noise ("cart abandon +1.1&sigma; on Saturday = normal"). Connects related anomalies ("Amazon CVR dip + Shopify spike = one situation"). Matches to investigate.md. Routes to senior managers.</p>
     </div>
   </div>
   <p>Full investigation skill (Sonnet) only runs when Tier 2 says "yes" &mdash; expensive but rare (2&ndash;3 situations/week, not 30/day).</p>
@@ -592,7 +591,7 @@ Summary flows BACK UP the tree:
     </div>
     <div class="card" style="border-top:3px solid var(--accent)">
       <h4>Pull</h4>
-      <p style="margin:0"><strong>Operator &rarr; System.</strong><br>"Why is Flipkart outperforming Amazon this month?" "Show me top 10 SKUs by margin." Novel questions no skill anticipated. The operator speaks first.</p>
+      <p style="margin:0"><strong>Operator &rarr; System.</strong><br>"Why is Shopify D2C outperforming Amazon this month?" "Show me top 10 SKUs by margin." Novel questions no skill anticipated. The operator speaks first.</p>
     </div>
     <div class="card" style="border-top:3px solid var(--teal)">
       <h4>Follow-up</h4>
@@ -632,7 +631,7 @@ Synthesis (Sonnet, big context):
     "Amazon: ROAS 4.2x, margin 32% → +20% budget
      Google: ROAS 2.8x, declining CTR → maintain, refresh creative
      Meta: ROAS 1.9x, strong for launches → shift to launch-only
-     Flipkart: ROAS 3.1x, growing share → +15%
+     Shopify D2C: ROAS 3.1x, growing share → +15%
 
      Proposed Q2 budget: [structured table]
      Constraints applied: margin floor 28%, TACoS cap 12%
