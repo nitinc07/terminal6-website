@@ -372,11 +372,11 @@ let currentBrandId = null;
 let selectedPlatforms = new Set();
 
 function initPage() {
-  // Check if brand_id is in URL (returning brand)
+  // Check if brand is in URL (returning brand — accepts UUID or slug)
   const params = new URLSearchParams(location.search);
-  const brandId = params.get('brand');
-  if (brandId) {
-    currentBrandId = brandId;
+  const brandRef = params.get('brand');
+  if (brandRef) {
+    currentBrandId = brandRef;  // can be UUID or slug — API accepts both
     document.getElementById('step1').classList.remove('active');
     document.getElementById('step2').classList.add('active');
     refreshStatus();
@@ -485,8 +485,9 @@ async function submitDiscovery() {
     const data = await resp.json();
     currentBrandId = data.brand_id;
 
-    // Update URL so refreshing stays on step 2
-    history.replaceState(null, '', '?brand=' + data.brand_id);
+    // Update URL with slug (readable) so refreshing stays on step 2
+    const slug = data.brand_name.toLowerCase().replace(/\s+/g, '-');
+    history.replaceState(null, '', '?brand=' + encodeURIComponent(slug));
 
     document.getElementById('step1').classList.remove('active');
     document.getElementById('step2').classList.add('active');
@@ -501,7 +502,7 @@ async function submitDiscovery() {
 async function refreshStatus() {
   if (!currentBrandId) return;
   try {
-    const resp = await fetch(API_BASE + '/v1/onboard/status?brand_id=' + currentBrandId, {
+    const resp = await fetch(API_BASE + '/v1/onboard/status?brand=' + encodeURIComponent(currentBrandId), {
       headers: apiHeaders(),
     });
     if (!resp.ok) { showToast('Failed to load status'); return; }
