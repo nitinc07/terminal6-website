@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <title>Terminal6 — Sprig</title>
 <script>
 /* ACCESS GATE — checks sessionStorage for signed-in user.
@@ -111,6 +112,55 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
 .insight-cd .kv{font-size:26px}
 #v-skucatalog .tbl td{padding:6px 10px;font-size:12px}
 #v-skucatalog .tbl th{padding:7px 10px}
+
+/* "soon" badge in sidebar — set on placeholder L1/L2 pages */
+.si .soon{margin-left:auto;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);background:var(--bg-warm);padding:1px 6px;border-radius:8px;font-weight:600}
+.si.act .soon{background:var(--acc-l);color:var(--acc-t)}
+
+/* AGENTIC TOP STRIP — briefing / decisions / alerts placeholders on Brand Overview */
+.agentic{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.agentic .strip{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:14px 16px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:6px;min-height:88px}
+.agentic .strip-h{display:flex;align-items:center;gap:7px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--t3);font-weight:600}
+.agentic .strip-b{font-size:13px;color:var(--t2);line-height:1.5}
+.agentic .strip.briefing{border-left:3px solid var(--acc)}
+.agentic .strip.decisions{border-left:3px solid var(--b)}
+.agentic .strip.alerts{border-left:3px solid var(--a)}
+.agentic .strip-empty{color:var(--t3);font-size:12px;font-style:italic}
+
+/* MTD strip + blended card — compact stat block */
+.mtd-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+
+/* TOP MOVERS / RED FLAGS — two-column row */
+.tm-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+@media(max-width:1100px){.tm-row{grid-template-columns:1fr}.mtd-strip{grid-template-columns:repeat(2,1fr)}.agentic{grid-template-columns:1fr}}
+.tm-list{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:14px 16px;box-shadow:var(--sh)}
+.tm-list h3{font-family:var(--serif);font-size:14px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.tm-list .tm-item{display:grid;grid-template-columns:1fr auto auto;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-s);font-size:12px}
+.tm-list .tm-item:last-child{border-bottom:none}
+.tm-list .tm-item .name{color:var(--t1);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-list .tm-item .delta{font-family:var(--mono);font-weight:600;text-align:right}
+.tm-list .tm-item .delta.up{color:var(--g)}
+.tm-list .tm-item .delta.dn{color:var(--r)}
+.tm-list .tm-item .pct{font-size:11px;color:var(--t3);font-family:var(--mono);text-align:right}
+
+/* RED FLAGS — same shell as tm-list, distinct row formatting */
+.rf-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-s);font-size:12px;align-items:center}
+.rf-item:last-child{border-bottom:none}
+.rf-sev{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 7px;border-radius:6px;display:inline-block;min-width:60px;text-align:center}
+.rf-sev.CRITICAL{background:var(--rl);color:var(--r)}
+.rf-sev.HIGH{background:#FFF4E5;color:var(--a)}
+.rf-sev.MEDIUM{background:#FFF8E1;color:#B8860B}
+.rf-sev.LOW{background:var(--bg-cream);color:var(--t3)}
+.rf-body{color:var(--t2);font-size:12px;line-height:1.4}
+.rf-body .name{color:var(--t1);font-weight:500;font-family:var(--mono);font-size:11px}
+.rf-owner{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);background:var(--bg-cream);padding:3px 7px;border-radius:6px;font-weight:600}
+
+/* GENERIC PLACEHOLDER VIEW (used by stub L1/L2 pages) */
+.placeholder-view{padding:48px 24px;text-align:center}
+.placeholder-view .icon{width:56px;height:56px;border-radius:14px;background:var(--acc-d);display:inline-flex;align-items:center;justify-content:center;font-size:24px;color:var(--acc-t);margin-bottom:16px}
+.placeholder-view h2{font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:8px}
+.placeholder-view p{color:var(--t3);font-size:14px;max-width:480px;margin:0 auto 6px}
+.placeholder-view .phase{display:inline-block;margin-top:14px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--acc-t);background:var(--acc-l);padding:5px 12px;border-radius:12px;font-weight:600}
 </style>
 </head>
 <body>
@@ -123,21 +173,33 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
     <div class="bs"><span style="display:flex;align-items:center;gap:7px"><span class="bd"></span>Sprig</span><span style="font-size:11px;color:var(--tm)">V1</span></div>
   </div>
   <div class="ss">
-    <div class="sl">Views</div>
+    <div class="sl">Operator</div>
     <div class="si act" onclick="sw('overview',this)"><div class="ic">&#127968;</div><span>Brand Overview</span></div>
-    <div class="si" onclick="sw('skucatalog',this)"><div class="ic">&#128230;</div><span>SKU Catalog</span></div>
+    <div class="si" onclick="sw('inbox',this)"><div class="ic">&#128238;</div><span>Inbox / Briefing</span><span class="soon">soon</span></div>
+    <div class="si" onclick="sw('chat',this)"><div class="ic">&#128172;</div><span>Chat</span><span class="soon">soon</span></div>
   </div>
   <div class="ss">
-    <div class="sl">Agents</div>
-    <div class="si" onclick="sw('growth',this)"><div class="ic">&#128200;</div><span>Growth Agent</span></div>
+    <div class="sl">Domains</div>
+    <div class="si" onclick="sw('marketing',this)"><div class="ic">&#128200;</div><span>Marketing</span></div>
+    <div class="si" onclick="sw('catpricing',this)"><div class="ic">&#127991;</div><span>Category &amp; Pricing</span></div>
+    <div class="si" onclick="sw('channelsdom',this)"><div class="ic">&#128722;</div><span>Channels</span><span class="soon">soon</span></div>
+    <div class="si" onclick="sw('ops',this)"><div class="ic">&#128230;</div><span>Operations</span></div>
+    <div class="si" onclick="sw('finance',this)"><div class="ic">&#128176;</div><span>Finance &amp; P&amp;L</span><span class="soon">soon</span></div>
+  </div>
+  <div class="ss">
+    <div class="sl">Marketplaces</div>
+    <div class="si" onclick="sw('amazon',this)"><div class="ic">&#127344;</div><span>Amazon</span><span class="soon">soon</span></div>
+    <div class="si" onclick="sw('shopify',this)"><div class="ic">&#128717;</div><span>Shopify D2C</span><span class="soon">soon</span></div>
     <div class="si sub" onclick="sw('funnel',this)"><span>D2C Funnel</span></div>
-    <div class="si" onclick="sw('supply',this)"><div class="ic">&#128230;</div><span>Supply Agent</span></div>
-    <div class="si" onclick="sw('category',this)"><div class="ic">&#127991;</div><span>Category Agent</span></div>
+    <div class="si" onclick="sw('flipkart',this)"><div class="ic">&#128230;</div><span>Flipkart</span><span class="soon">soon</span></div>
+    <div class="si" onclick="sw('unicommerce',this)"><div class="ic">&#128295;</div><span>Unicommerce</span><span class="soon">soon</span></div>
   </div>
   <div class="ss">
     <div class="sl">Workspace</div>
+    <div class="si" onclick="sw('skucatalog',this)"><div class="ic">&#128230;</div><span>SKU Catalog</span></div>
+    <div class="si" onclick="sw('brandprofile',this)"><div class="ic">&#129504;</div><span>Brand Profile</span><span class="soon">soon</span></div>
     <div class="si" onclick="sw('data',this)"><div class="ic">&#128451;</div><span>Data Coverage</span></div>
-    <div class="si" onclick="sw('settings',this)"><div class="ic">&#9881;</div><span>Policies &amp; Rules</span></div>
+    <div class="si" onclick="sw('settings',this)"><div class="ic">&#9881;</div><span>Policies &amp; Directives</span></div>
   </div>
   <div class="sb-b">
     <a href="/home.html" style="display:block;font-size:11px;color:var(--tm);text-decoration:none;padding:6px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:8px">&larr; Workspace</a>
@@ -161,16 +223,54 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
 
   <!-- ===== BRAND OVERVIEW ===== -->
   <div class="vw act" id="v-overview">
-    <div class="briefing-empty" id="briefingSlot">
-      &#9728;&#65039; Morning briefing will appear here once the agent pipeline is live.
+
+    <!-- AGENTIC TOP STRIP — briefing / decisions / alerts (Phase 2 wires real data) -->
+    <div class="agentic">
+      <div class="strip briefing">
+        <div class="strip-h">&#9728;&#65039; Morning Briefing</div>
+        <div class="strip-b strip-empty" id="briefingSlot">Briefing will appear here once the cascade pipeline runs in production (Phase 2).</div>
+      </div>
+      <div class="strip decisions">
+        <div class="strip-h">&#9889; Decisions Awaiting You</div>
+        <div class="strip-b strip-empty" id="decisionsSlot">Recommendations needing your approval will surface here.</div>
+      </div>
+      <div class="strip alerts">
+        <div class="strip-h">&#128680; Critical Alerts</div>
+        <div class="strip-b strip-empty" id="alertsSlot">Real-time anomalies will appear here.</div>
+      </div>
     </div>
 
+    <!-- HEADLINE KPIs — D2C funnel snapshot -->
     <div class="g5" style="margin-bottom:24px" id="overviewKPIs">
       <div class="cd"><div class="kl">Sessions</div><div class="kv" id="ok-sessions">--</div><div class="kd n" id="ok-sessions-d">&nbsp;</div></div>
       <div class="cd"><div class="kl">Revenue (D2C)</div><div class="kv" id="ok-revenue">--</div><div class="kd n" id="ok-revenue-d">&nbsp;</div></div>
       <div class="cd"><div class="kl">Transactions</div><div class="kv" id="ok-txns">--</div><div class="kd n" id="ok-txns-d">&nbsp;</div></div>
       <div class="cd"><div class="kl">Conversion Rate</div><div class="kv" id="ok-conv">--</div><div class="kd n" id="ok-conv-d">&nbsp;</div></div>
       <div class="cd"><div class="kl">Cart Abandon</div><div class="kv" id="ok-abandon">--</div><div class="kd n" id="ok-abandon-d">&nbsp;</div></div>
+    </div>
+
+    <!-- MTD STRIP + BLENDED ROAS — cross-channel rollup, no targets -->
+    <div class="mtd-strip">
+      <div class="cd">
+        <div class="kl">MTD Revenue (all channels)</div>
+        <div class="kv" id="mtd-rev">--</div>
+        <div class="kd n" id="mtd-rev-d">&nbsp;</div>
+      </div>
+      <div class="cd">
+        <div class="kl">MTD Units</div>
+        <div class="kv" id="mtd-units">--</div>
+        <div class="kd n" id="mtd-units-d">vs prior month MTD</div>
+      </div>
+      <div class="cd">
+        <div class="kl">Total Ad Spend (7d)</div>
+        <div class="kv" id="bl-spend">--</div>
+        <div class="kd n" id="bl-spend-d">&nbsp;</div>
+      </div>
+      <div class="cd">
+        <div class="kl">Blended ROAS (7d)</div>
+        <div class="kv" id="bl-roas">--</div>
+        <div class="kd n" id="bl-roas-d">TACoS <span id="bl-tacos">--</span></div>
+      </div>
     </div>
 
     <div class="sec">
@@ -201,15 +301,236 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
       <div class="sec-h"><h3>Month-on-Month</h3></div>
       <div id="monthlyTable" class="loading">Loading...</div>
     </div>
+
+    <!-- TOP MOVERS — accelerating + declining MSKUs -->
+    <div class="tm-row">
+      <div class="tm-list">
+        <h3>&#9650; Accelerating MSKUs <span style="margin-left:auto;font-size:11px;color:var(--t3);font-weight:400">7d vs prior 7d</span></h3>
+        <div id="topMoversUp" class="loading">Loading...</div>
+      </div>
+      <div class="tm-list">
+        <h3>&#9660; Declining MSKUs <span style="margin-left:auto;font-size:11px;color:var(--t3);font-weight:400">7d vs prior 7d</span></h3>
+        <div id="topMoversDown" class="loading">Loading...</div>
+      </div>
+    </div>
+
+    <!-- RED FLAGS — top anomalies routed to L1 owners -->
+    <div class="sec">
+      <div class="sec-h">
+        <h3>Red Flags <span id="redFlagsSubtitle" style="font-size:11px;color:var(--t3);font-weight:400;margin-left:8px"></span></h3>
+      </div>
+      <div class="tm-list" id="redFlagsList"><div class="loading">Loading...</div></div>
+    </div>
   </div>
 
-  <!-- ===== GROWTH AGENT ===== -->
-  <div class="vw" id="v-growth">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-      <div style="width:40px;height:40px;border-radius:10px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128200;</div>
-      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Growth Agent</h2><p style="font-size:13px;color:var(--t2);margin:0">Ad performance, attribution, campaign health, D2C funnel</p></div>
+  <!-- ===== L1 / L2 STUBS — placeholders for pages built in P1.2-P1.5 + Phase 2 ===== -->
+  <div class="vw" id="v-inbox">
+    <div class="placeholder-view">
+      <div class="icon">&#128238;</div>
+      <h2>Inbox / Briefing</h2>
+      <p>Threaded morning briefing, alerts, follow-ups, and contradictions from the chief_of_staff cascade.</p>
+      <div class="phase">Phase 2 &middot; needs cascade_runs persistence</div>
     </div>
-    <div class="briefing-empty">Growth Agent insights will appear here once the agent pipeline is live. Use the sidebar to access the D2C Funnel for live analytics.</div>
+  </div>
+
+  <div class="vw" id="v-chat">
+    <div class="placeholder-view">
+      <div class="icon">&#128172;</div>
+      <h2>Chat</h2>
+      <p>Conversational entry to brand_head — ask anything, watch the L0&rarr;L1&rarr;L2 cascade run with reasoning trace.</p>
+      <div class="phase">Phase 2 &middot; needs intelligence/chat_agent + endpoint</div>
+    </div>
+  </div>
+
+  <!-- ===== MARKETING ===== -->
+  <div class="vw" id="v-marketing">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128200;</div>
+      <div>
+        <h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Marketing</h2>
+        <p style="font-size:13px;color:var(--t2);margin:0">Cross-platform ad spend, blended ROAS, TACoS, per-platform breakdown</p>
+      </div>
+      <div class="pills" id="mktPills" style="margin-left:auto">
+        <button data-days="7" class="a">7D</button>
+        <button data-days="30">30D</button>
+        <button data-days="90">90D</button>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Total Ad Spend</div><div class="kv" id="mk-spend">--</div><div class="kd n" id="mk-spend-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Blended ROAS</div><div class="kv" id="mk-roas">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">TACoS</div><div class="kv" id="mk-tacos">--</div><div class="kd n">% of revenue</div></div>
+      <div class="cd"><div class="kl">Total Revenue</div><div class="kv" id="mk-rev">--</div><div class="kd n">all channels, same window</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Spend Mix by Platform</h3></div>
+      <div id="mkPlatformMix" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Per-Platform Performance</h3></div>
+      <div id="mkByPlatform" class="loading">Loading...</div>
+    </div>
+
+    <div class="briefing-empty" style="text-align:left;border-left-color:var(--tm)">
+      <strong>Coming next:</strong> tabs for Meta Ads &middot; Google Ads &middot; Amazon Ads &middot; Flipkart Ads (blocked on Flipkart connector) &middot; Shopify Marketing (blocked on Klaviyo connector). Campaign-level drilldowns, creative fatigue, attribution overlay.
+    </div>
+  </div>
+
+  <!-- ===== CATEGORY & PRICING ===== -->
+  <div class="vw" id="v-catpricing">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--b);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#127991;</div>
+      <div>
+        <h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Category &amp; Pricing</h2>
+        <p style="font-size:13px;color:var(--t2);margin:0">MSKU groups across all channels &mdash; revenue, units, ASP, archetype mix</p>
+      </div>
+      <div class="pills" id="catPills" style="margin-left:auto">
+        <button data-days="7">7D</button>
+        <button data-days="30" class="a">30D</button>
+        <button data-days="90">90D</button>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">MSKU Groups (with sales)</div><div class="kv" id="ct-groups">--</div><div class="kd n" id="ct-total-msku">of 1,893 total</div></div>
+      <div class="cd"><div class="kl">Total Revenue</div><div class="kv" id="ct-rev">--</div><div class="kd n">selected window</div></div>
+      <div class="cd"><div class="kl">Top-20 Share</div><div class="kv" id="ct-top20">--</div><div class="kd n">% of revenue from top 20 MSKUs</div></div>
+      <div class="cd"><div class="kl">Avg ASP</div><div class="kv" id="ct-asp">--</div><div class="kd n">weighted by units</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Archetype Mix</h3></div>
+      <div id="ctArchetype" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>MSKU Groups by Revenue <span style="font-size:11px;color:var(--t3);font-weight:400;margin-left:8px">top 50</span></h3></div>
+      <div id="ctMskuTable" class="loading">Loading...</div>
+    </div>
+
+    <div class="briefing-empty" style="text-align:left;border-left-color:var(--tm)">
+      <strong>Coming next:</strong> cross-channel price ladder (selling_price comparison from channel_listing_snapshots), MRP gap analysis, Buy Box ownership for Amazon, demand by category over time.
+    </div>
+  </div>
+
+  <div class="vw" id="v-channelsdom">
+    <div class="placeholder-view">
+      <div class="icon">&#128722;</div>
+      <h2>Channels</h2>
+      <p>Cross-channel listing health, sync freshness, phantom OOS detector, listing audit. Routes into marketplace hubs.</p>
+      <div class="phase">Phase 2</div>
+    </div>
+  </div>
+
+  <!-- ===== OPERATIONS ===== -->
+  <div class="vw" id="v-ops">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--a);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128230;</div>
+      <div>
+        <h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Operations</h2>
+        <p style="font-size:13px;color:var(--t2);margin:0">Inventory cover, OOS, reorder priorities, returns</p>
+      </div>
+      <span id="opsScopeBadge" style="margin-left:auto;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--a);background:var(--al);padding:4px 10px;border-radius:8px;font-weight:600;display:none">Shopify only</span>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Active Listings</div><div class="kv" id="op-listings">--</div><div class="kd n" id="op-listings-d">&nbsp;</div></div>
+      <div class="cd" style="border-left:3px solid var(--r)"><div class="kl">Out of Stock</div><div class="kv" id="op-oos" style="color:var(--r)">--</div><div class="kd n" id="op-oos-d">&nbsp;</div></div>
+      <div class="cd" style="border-left:3px solid var(--a)"><div class="kl">Low Stock (&lt;7d cover)</div><div class="kv" id="op-low" style="color:var(--a)">--</div><div class="kd n" id="op-low-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Avg Cover Days</div><div class="kv" id="op-cover">--</div><div class="kd n" id="op-as-of">&nbsp;</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Reorder Priorities <span style="font-size:11px;color:var(--t3);font-weight:400;margin-left:8px">low cover &middot; sorted by velocity</span></h3></div>
+      <div id="opReorderTable" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Returns by Channel <span style="font-size:11px;color:var(--t3);font-weight:400;margin-left:8px">last 30 days</span></h3></div>
+      <div id="opReturnsByChannel" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Top Return Reasons</h3></div>
+      <div id="opReturnsByReason" class="loading">Loading...</div>
+    </div>
+
+    <div class="briefing-empty" style="text-align:left;border-left-color:var(--tm)">
+      <strong>Coming next:</strong> marketplace inventory rollup (currently Shopify-only — see GO_LIVE_READINESS B2). UC stock → Amazon/Flipkart/Myntra. Plus SLA tracking and RTO analysis.
+    </div>
+  </div>
+
+  <div class="vw" id="v-finance">
+    <div class="placeholder-view">
+      <div class="icon">&#128176;</div>
+      <h2>Finance &amp; P&amp;L</h2>
+      <p>SKU-level P&amp;L grid, contribution margin by channel, settlement reconciliation, fee load. Margin columns blocked on COGS CSV from Sprig.</p>
+      <div class="phase">Phase 3 &middot; blocked on COGS</div>
+    </div>
+  </div>
+
+  <div class="vw" id="v-amazon">
+    <div class="placeholder-view">
+      <div class="icon">&#127344;</div>
+      <h2>Amazon Hub</h2>
+      <p>Tabs: Listings &middot; Inventory &middot; Pricing &middot; Brand &middot; Analytics &middot; Compliance. Vendor 1P + Seller 3P data flows live.</p>
+      <div class="phase">Phase 2</div>
+    </div>
+  </div>
+
+  <div class="vw" id="v-shopify">
+    <div class="placeholder-view">
+      <div class="icon">&#128717;</div>
+      <h2>Shopify D2C Hub</h2>
+      <p>Tabs: Storefront &middot; SEO &middot; Operations &middot; Analytics. D2C Funnel will move into the Analytics tab.</p>
+      <div class="phase">Phase 2</div>
+    </div>
+  </div>
+
+  <div class="vw" id="v-flipkart">
+    <div class="placeholder-view">
+      <div class="icon">&#128230;</div>
+      <h2>Flipkart Hub</h2>
+      <p>Tabs: Catalogue &middot; Fulfilment &middot; Pricing.</p>
+      <div class="phase">Phase 3 &middot; blocked on Flipkart connector</div>
+    </div>
+  </div>
+
+  <div class="vw" id="v-unicommerce">
+    <div class="placeholder-view">
+      <div class="icon">&#128295;</div>
+      <h2>Unicommerce (OMS)</h2>
+      <p>Tabs: Orders &middot; Inventory &middot; Sync. UC is the inventory + order source of truth across channels.</p>
+      <div class="phase">Phase 2</div>
+    </div>
+  </div>
+
+  <!-- ===== BRAND PROFILE ===== -->
+  <div class="vw" id="v-brandprofile">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#129504;</div>
+      <div>
+        <h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0" id="bp-name">Brand Profile</h2>
+        <p style="font-size:13px;color:var(--t2);margin:0" id="bp-subtitle">Brand card &middot; channels &middot; archetypes</p>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Currency</div><div class="kv" id="bp-currency" style="font-size:18px">--</div></div>
+      <div class="cd"><div class="kl">GST Number</div><div class="kv" id="bp-gst" style="font-size:14px;font-family:var(--mono)">--</div></div>
+      <div class="cd"><div class="kl">Registered State</div><div class="kv" id="bp-state" style="font-size:18px">--</div></div>
+      <div class="cd"><div class="kl">Active Channels</div><div class="kv" id="bp-channels" style="font-size:18px">--</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Brand Card</h3></div>
+      <div class="cd" id="bp-card-body" style="padding:24px 28px;font-size:13.5px;line-height:1.65;color:var(--t2);max-width:920px">
+        <div class="loading">Loading brand card...</div>
+      </div>
+    </div>
   </div>
 
   <!-- ===== D2C FUNNEL ===== -->
@@ -251,24 +572,6 @@ body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;o
       <div class="sec-h"><h3>Traffic Sources</h3></div>
       <div id="trafficTable" class="loading">Loading...</div>
     </div>
-  </div>
-
-  <!-- ===== SUPPLY AGENT ===== -->
-  <div class="vw" id="v-supply">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-      <div style="width:40px;height:40px;border-radius:10px;background:var(--a);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#128230;</div>
-      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Supply Agent</h2><p style="font-size:13px;color:var(--t2);margin:0">Inventory health, FC utilization, restock pipeline</p></div>
-    </div>
-    <div class="briefing-empty">Supply Agent will be available once inventory data pipelines are connected.</div>
-  </div>
-
-  <!-- ===== CATEGORY AGENT ===== -->
-  <div class="vw" id="v-category">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
-      <div style="width:40px;height:40px;border-radius:10px;background:var(--b);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">&#127991;</div>
-      <div><h2 style="font-family:var(--serif);font-size:20px;font-weight:600;margin:0">Category Agent</h2><p style="font-size:13px;color:var(--t2);margin:0">Competitive pricing, assortment, BSR tracking</p></div>
-    </div>
-    <div class="briefing-empty">Category Agent will be available once competitive data is connected.</div>
   </div>
 
   <!-- ===== DATA COVERAGE ===== -->
@@ -408,12 +711,32 @@ function chg(v){if(v==null)return'';const s=v>0?'u':v<0?'d':'n';const a=v>0?'\u2
 function shortD(d){const p=d.split('-');return p[2]+' '+['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]]}
 
 /* ========== VIEW SWITCHING ========== */
-const viewTitles={overview:'&#127968; Brand Overview',skucatalog:'&#128230; SKU Catalog',growth:'&#128200; Growth Agent',funnel:'&#128200; D2C Funnel',supply:'&#128230; Supply Agent',category:'&#127991; Category Agent',data:'&#128451; Data Coverage',settings:'&#9881; Policies & Rules'};
+const viewTitles={
+  overview:    '&#127968; Brand Overview',
+  inbox:       '&#128238; Inbox / Briefing',
+  chat:        '&#128172; Chat',
+  marketing:   '&#128200; Marketing',
+  catpricing:  '&#127991; Category &amp; Pricing',
+  channelsdom: '&#128722; Channels',
+  ops:         '&#128230; Operations',
+  finance:     '&#128176; Finance &amp; P&amp;L',
+  amazon:      '&#127344; Amazon',
+  shopify:     '&#128717; Shopify D2C',
+  funnel:      '&#128200; D2C Funnel',
+  flipkart:    '&#128230; Flipkart',
+  unicommerce: '&#128295; Unicommerce',
+  skucatalog:  '&#128230; SKU Catalog',
+  brandprofile:'&#129504; Brand Profile',
+  data:        '&#128451; Data Coverage',
+  settings:    '&#9881; Policies &amp; Directives',
+};
 let currentView='overview';
 
 function sw(id,el){
+  const target=document.getElementById('v-'+id);
+  if(!target){console.warn('view not found:',id);return;}
   document.querySelectorAll('.vw').forEach(v=>v.classList.remove('act'));
-  document.getElementById('v-'+id).classList.add('act');
+  target.classList.add('act');
   document.querySelectorAll('.si').forEach(s=>s.classList.remove('act'));
   if(el) el.classList.add('act');
   document.getElementById('viewTitle').innerHTML=viewTitles[id]||id;
@@ -426,6 +749,281 @@ function sw(id,el){
   if(id==='skucatalog') loadSKUCatalog(skuDays);
   if(id==='funnel') loadFunnel(funnelDays);
   if(id==='data') loadDataCoverage();
+  if(id==='ops') loadOps();
+  if(id==='marketing') loadMarketing(mktDays);
+  if(id==='catpricing') loadCategory(catDays);
+  if(id==='brandprofile') loadBrandProfile();
+}
+
+/* ========== OPERATIONS ========== */
+async function loadOps(){
+  try{
+    const [summary, reorder, returns]=await Promise.all([
+      api('/v1/operations/summary?days=30'),
+      api('/v1/operations/reorder?limit=20&cover_threshold=14'),
+      api('/v1/operations/returns?days=30'),
+    ]);
+    renderOpsSummary(summary);
+    renderOpsReorder(reorder);
+    renderOpsReturns(returns);
+  }catch(e){
+    document.getElementById('opReorderTable').innerHTML='<div class="error">'+e.message+'</div>';
+  }
+}
+
+function renderOpsSummary(s){
+  const inv=s.inventory||{};
+  document.getElementById('op-listings').textContent=fmt(inv.listings);
+  document.getElementById('op-oos').textContent=fmt(inv.oos);
+  document.getElementById('op-low').textContent=fmt(inv.low_stock);
+  document.getElementById('op-cover').textContent=inv.avg_cover_days!=null?inv.avg_cover_days+'d':'--';
+  document.getElementById('op-as-of').textContent='as of '+(inv.as_of||'--');
+  // OOS / low % subtexts
+  const oosPct=inv.listings?(inv.oos/inv.listings*100).toFixed(1)+'%':'--';
+  const lowPct=inv.listings?(inv.low_stock/inv.listings*100).toFixed(1)+'%':'--';
+  document.getElementById('op-oos-d').textContent=oosPct+' of listings';
+  document.getElementById('op-low-d').textContent=lowPct+' of listings';
+  document.getElementById('op-listings-d').textContent=(inv.channels_covered||0)+' channel(s) covered';
+  // Show "Shopify only" badge if scope is restricted
+  if(s.inventory_scope==='shopify_only'){
+    document.getElementById('opsScopeBadge').style.display='inline-block';
+  }
+}
+
+function renderOpsReorder(r){
+  const el=document.getElementById('opReorderTable');
+  if(!r.data||!r.data.length){el.innerHTML='<div class="loading">No reorder priorities &mdash; everything covered.</div>';return;}
+  el.innerHTML=`<table class="tbl"><thead><tr>
+    <th>Channel</th><th>Product</th><th>Brand / Model</th>
+    <th class="r">Stock</th><th class="r">Cover</th><th class="r">Velocity (14d avg)</th><th>Status</th>
+  </tr></thead><tbody>${r.data.map(it=>{
+    const status=it.is_oos?'<span class="rf-sev CRITICAL">OOS</span>':it.is_low_stock?'<span class="rf-sev HIGH">LOW</span>':'<span class="rf-sev MEDIUM">WATCH</span>';
+    return `<tr>
+      <td>${it.channel_name}</td>
+      <td class="hi" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${it.product_name||''}">${it.product_name||''}</td>
+      <td>${(it.target_brand||'')+' '+(it.target_model||'')}</td>
+      <td class="mn2 r">${fmt(it.fulfillable_qty)}</td>
+      <td class="mn2 r">${it.cover_days.toFixed(0)}d</td>
+      <td class="mn2 r">${it.avg_units_sold_14d.toFixed(1)} u/day</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function renderOpsReturns(r){
+  const chEl=document.getElementById('opReturnsByChannel');
+  const rsEl=document.getElementById('opReturnsByReason');
+  if(!r.by_channel||!r.by_channel.length){chEl.innerHTML='<div class="loading">No returns</div>';}
+  else{
+    const totalRefund=r.by_channel.reduce((a,c)=>a+(c.refund_total||0),0);
+    chEl.innerHTML=`<table class="tbl"><thead><tr>
+      <th>Channel</th><th class="r">Returns</th><th class="r">Units</th><th class="r">Refund</th><th class="r">Share</th>
+    </tr></thead><tbody>${r.by_channel.map(c=>`<tr>
+      <td class="hi">${c.name}</td>
+      <td class="mn2 r">${fmt(c.return_count)}</td>
+      <td class="mn2 r">${fmt(c.units)}</td>
+      <td class="mn2 r">${cur(c.refund_total)}</td>
+      <td class="mn2 r">${totalRefund?(c.refund_total/totalRefund*100).toFixed(0):0}%</td>
+    </tr>`).join('')}</tbody></table>`;
+  }
+  if(!r.by_reason||!r.by_reason.length){rsEl.innerHTML='<div class="loading">No reasons captured</div>';}
+  else{
+    rsEl.innerHTML=`<table class="tbl"><thead><tr>
+      <th>Reason</th><th class="r">Returns</th><th class="r">Units</th><th class="r">Refund</th>
+    </tr></thead><tbody>${r.by_reason.map(c=>`<tr>
+      <td class="hi">${c.reason}</td>
+      <td class="mn2 r">${fmt(c.return_count)}</td>
+      <td class="mn2 r">${fmt(c.units)}</td>
+      <td class="mn2 r">${cur(c.refund_total)}</td>
+    </tr>`).join('')}</tbody></table>`;
+  }
+}
+
+/* ========== MARKETING ========== */
+let mktDays=7;
+async function loadMarketing(days){
+  mktDays=days;
+  document.querySelectorAll('#mktPills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
+  try{
+    const [blended, byPlat]=await Promise.all([
+      api('/v1/marketing/blended?days='+days),
+      api('/v1/marketing/by-platform?days='+days),
+    ]);
+    renderMktKPIs(blended);
+    renderMktPlatformMix(blended);
+    renderMktByPlatform(byPlat);
+  }catch(e){
+    document.getElementById('mkByPlatform').innerHTML='<div class="error">'+e.message+'</div>';
+  }
+}
+
+function renderMktKPIs(b){
+  document.getElementById('mk-spend').textContent=cur(b.total_spend);
+  document.getElementById('mk-rev').textContent=cur(b.total_revenue);
+  document.getElementById('mk-roas').textContent=b.blended_roas!=null?(b.blended_roas.toFixed(2)+'x'):'--';
+  document.getElementById('mk-tacos').textContent=b.tacos_pct!=null?(b.tacos_pct.toFixed(2)+'%'):'--';
+  document.getElementById('mk-spend-d').textContent='last '+mktDays+' days';
+}
+
+function renderMktPlatformMix(b){
+  const el=document.getElementById('mkPlatformMix');
+  if(!b.platform_mix||!b.platform_mix.length){el.innerHTML='<div class="loading">No spend</div>';return;}
+  el.innerHTML=`<table class="tbl"><thead><tr>
+    <th>Platform</th><th class="r">Spend</th><th class="r">Share</th><th class="r">Clicks</th><th class="r">Impressions</th><th class="r">Attributed Sales (7d)</th>
+  </tr></thead><tbody>${b.platform_mix.map(p=>`<tr>
+    <td class="hi">${p.name}</td>
+    <td class="mn2 r">${cur(p.spend)}</td>
+    <td class="mn2 r">${p.share_pct.toFixed(1)}%</td>
+    <td class="mn2 r">${fmt(p.clicks)}</td>
+    <td class="mn2 r">${fmt(p.impressions)}</td>
+    <td class="mn2 r">${cur(p.attributed_sales_7d)}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function renderMktByPlatform(p){
+  const el=document.getElementById('mkByPlatform');
+  if(!p.data||!p.data.length){el.innerHTML='<div class="loading">No campaign data</div>';return;}
+  el.innerHTML=`<table class="tbl"><thead><tr>
+    <th>Platform</th><th>Ad Type</th><th class="r">Spend</th><th class="r">Clicks</th><th class="r">CTR</th><th class="r">CPC</th><th class="r">Sales (7d)</th><th class="r">ROAS</th>
+  </tr></thead><tbody>${p.data.map(r=>`<tr>
+    <td class="hi">${r.name}</td>
+    <td>${r.ad_type||'--'}</td>
+    <td class="mn2 r">${cur(r.spend)}</td>
+    <td class="mn2 r">${fmt(r.clicks)}</td>
+    <td class="mn2 r">${r.ctr_pct!=null?r.ctr_pct.toFixed(2)+'%':'--'}</td>
+    <td class="mn2 r">${r.cpc!=null?'\u20B9'+r.cpc.toFixed(2):'--'}</td>
+    <td class="mn2 r">${cur(r.attributed_sales_7d)}</td>
+    <td class="mn2 r">${r.roas!=null?r.roas.toFixed(2)+'x':'--'}</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+/* ========== CATEGORY & PRICING ========== */
+let catDays=30;
+async function loadCategory(days){
+  catDays=days;
+  document.querySelectorAll('#catPills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
+  try{
+    const groups=await api('/v1/category/msku-groups?days='+days+'&limit=50');
+    renderCatKPIs(groups);
+    renderCatArchetype(groups);
+    renderCatTable(groups);
+  }catch(e){
+    document.getElementById('ctMskuTable').innerHTML='<div class="error">'+e.message+'</div>';
+  }
+}
+
+function renderCatKPIs(g){
+  const data=g.data||[];
+  document.getElementById('ct-groups').textContent=fmt(g.count);
+  document.getElementById('ct-rev').textContent=cur(g.total_revenue);
+  // Top-20 share
+  const top20=data.slice(0,20).reduce((a,r)=>a+(r.revenue||0),0);
+  const top20Pct=g.total_revenue>0?(top20/g.total_revenue*100):0;
+  document.getElementById('ct-top20').textContent=top20Pct.toFixed(0)+'%';
+  // Weighted ASP across all
+  const totalUnits=data.reduce((a,r)=>a+(r.units||0),0);
+  const weightedASP=totalUnits>0?(g.total_revenue/totalUnits):0;
+  document.getElementById('ct-asp').textContent=cur(weightedASP);
+}
+
+function renderCatArchetype(g){
+  const el=document.getElementById('ctArchetype');
+  const data=g.data||[];
+  if(!data.length){el.innerHTML='<div class="loading">No data</div>';return;}
+  // Group by archetype
+  const arch={};
+  for(const r of data){
+    const a=r.archetype||'unspecified';
+    if(!arch[a]) arch[a]={groups:0,revenue:0,units:0};
+    arch[a].groups++;
+    arch[a].revenue+=(r.revenue||0);
+    arch[a].units+=(r.units||0);
+  }
+  const rows=Object.entries(arch).sort((a,b)=>b[1].revenue-a[1].revenue);
+  el.innerHTML=`<table class="tbl"><thead><tr>
+    <th>Archetype</th><th class="r">MSKU Groups</th><th class="r">Units</th><th class="r">Revenue</th><th class="r">Share</th>
+  </tr></thead><tbody>${rows.map(([a,d])=>`<tr>
+    <td class="hi">${a}</td>
+    <td class="mn2 r">${fmt(d.groups)}</td>
+    <td class="mn2 r">${fmt(d.units)}</td>
+    <td class="mn2 r">${cur(d.revenue)}</td>
+    <td class="mn2 r">${(d.revenue/g.total_revenue*100).toFixed(1)}%</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+function renderCatTable(g){
+  const el=document.getElementById('ctMskuTable');
+  const data=g.data||[];
+  if(!data.length){el.innerHTML='<div class="loading">No MSKU data</div>';return;}
+  el.innerHTML=`<table class="tbl"><thead><tr>
+    <th>#</th><th>MSKU Group</th><th>Brand / Model</th><th>Category</th><th>Archetype</th>
+    <th class="r">Channels</th><th class="r">Units</th><th class="r">Revenue</th><th class="r">ASP</th><th class="r">Share</th>
+  </tr></thead><tbody>${data.map((r,i)=>`<tr>
+    <td class="mn2" style="color:var(--t3)">${i+1}</td>
+    <td class="hi" title="${r.msku_group}" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(r.target_brand||'')+' '+(r.target_model||'')}</td>
+    <td>${r.category||'--'}</td>
+    <td><span style="font-size:10px;color:var(--t3)">${r.msku_group||''}</span></td>
+    <td>${r.archetype||'--'}</td>
+    <td class="mn2 r">${r.channel_count}</td>
+    <td class="mn2 r">${fmt(r.units)}</td>
+    <td class="mn2 r">${cur(r.revenue)}</td>
+    <td class="mn2 r">${cur(r.asp)}</td>
+    <td class="mn2 r">${r.revenue_share_pct.toFixed(1)}%</td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+/* ========== BRAND PROFILE ========== */
+async function loadBrandProfile(){
+  try{
+    const p=await api('/v1/brand/profile');
+    document.getElementById('bp-name').textContent='Brand Profile &mdash; '+(p.brand_name||'--');
+    document.getElementById('bp-name').innerHTML='Brand Profile &mdash; '+(p.brand_name||'--');
+    document.getElementById('bp-currency').textContent=p.default_currency||'--';
+    document.getElementById('bp-gst').textContent=p.gst_number||'--';
+    document.getElementById('bp-state').textContent=p.registered_state||'--';
+    const channels=p.active_channels||{};
+    const activeCount=Object.values(channels).filter(v=>v).length;
+    document.getElementById('bp-channels').textContent=activeCount+' active';
+    // Render markdown
+    const body=document.getElementById('bp-card-body');
+    if(p.brand_card_md){
+      body.innerHTML=mdToHtml(p.brand_card_md);
+    }else{
+      body.innerHTML='<div class="loading">No brand card found at knowledge/brand_cards/&lt;brand&gt;.md</div>';
+    }
+  }catch(e){
+    document.getElementById('bp-card-body').innerHTML='<div class="error">'+e.message+'</div>';
+  }
+}
+
+/* Tiny markdown→HTML — handles headings, bold, lists, tables, hr, blockquotes.
+   Not a full parser; intentionally minimal for trusted brand-card markdown. */
+function mdToHtml(md){
+  const esc=(s)=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let html='', inList=false, inTable=false, tableHeader=false;
+  const lines=md.split(/\r?\n/);
+  for(let i=0;i<lines.length;i++){
+    let line=lines[i];
+    if(/^---$/.test(line)){ if(inList){html+='</ul>';inList=false;} html+='<hr style="border:none;border-top:1px solid var(--border);margin:14px 0">'; continue; }
+    if(/^\|/.test(line)){
+      if(/^\|[\s|:-]+\|$/.test(line)){tableHeader=true;continue;}
+      const cells=line.split('|').slice(1,-1).map(c=>c.trim());
+      if(!inTable){html+='<table class="tbl" style="margin:8px 0"><thead><tr>'+cells.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>';inTable=true;continue;}
+      html+='<tr>'+cells.map(c=>'<td>'+esc(c).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</td>').join('')+'</tr>';
+      continue;
+    }else if(inTable){html+='</tbody></table>';inTable=false;tableHeader=false;}
+    if(/^# /.test(line)){html+='<h2 style="font-family:var(--serif);font-size:18px;margin:16px 0 8px;color:var(--t1)">'+esc(line.slice(2))+'</h2>';continue;}
+    if(/^## /.test(line)){html+='<h3 style="font-family:var(--serif);font-size:15px;margin:14px 0 6px;color:var(--t1)">'+esc(line.slice(3))+'</h3>';continue;}
+    if(/^### /.test(line)){html+='<h4 style="font-size:13px;margin:10px 0 4px;color:var(--t1)">'+esc(line.slice(4))+'</h4>';continue;}
+    if(/^> /.test(line)){html+='<blockquote style="border-left:3px solid var(--acc);padding:6px 12px;margin:8px 0;color:var(--t3);font-style:italic">'+esc(line.slice(2))+'</blockquote>';continue;}
+    if(/^- /.test(line)){if(!inList){html+='<ul style="margin:6px 0 6px 22px">';inList=true;} html+='<li>'+esc(line.slice(2)).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</li>';continue;}
+    if(inList){html+='</ul>';inList=false;}
+    if(line.trim()===''){html+='<div style="height:6px"></div>';continue;}
+    html+='<p style="margin:4px 0">'+esc(line).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')+'</p>';
+  }
+  if(inList) html+='</ul>';
+  if(inTable) html+='</tbody></table>';
+  return html;
 }
 
 /* ========== CHARTS ========== */
@@ -438,21 +1036,106 @@ let overviewDays=7;
 
 let currentGran='daily';
 
-async function loadOverview(days){
+function loadOverview(days){
+  // Progressive render: fire every endpoint independently and paint each
+  // section as soon as its data arrives. The user sees the page fill in
+  // piece by piece (~50-200ms per section) instead of staring at a single
+  // spinner until the slowest query finishes.
   overviewDays=days;
   document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
-  try{
-    const [daily,monthly,chSummary]=await Promise.all([
-      api('/v1/overview/daily?days='+days),
-      api('/v1/overview/monthly?months=6'),
-      api('/v1/channels/summary?days='+days),
-    ]);
-    renderOverviewKPIs(daily.data);
-    renderChannelCards(chSummary.data);
-    renderDailyTable(daily.data);
-    renderMonthlyTable(monthly.data);
-    loadChannelSales(currentGran);
-  }catch(e){document.getElementById('overviewKPIs').innerHTML='<div class="error">'+e.message+'</div>'}
+
+  // Each line is fire-and-paint. Errors on one section don't block the rest.
+  api('/v1/overview/daily?days='+days).then(d=>{renderOverviewKPIs(d.data); renderDailyTable(d.data);}).catch(showErr('overviewKPIs'));
+  api('/v1/overview/pacing').then(renderMTDStrip).catch(showErr('mtd-rev'));
+  api('/v1/marketing/blended?days=7').then(renderBlendedKPIs).catch(showErr('bl-spend'));
+  api('/v1/channels/summary?days='+days).then(r=>renderChannelCards(r.data)).catch(showErr('channelCards'));
+  api('/v1/overview/monthly?months=6').then(r=>renderMonthlyTable(r.data)).catch(showErr('monthlyTable'));
+  api('/v1/category/top-movers?days=7&limit=5').then(renderTopMovers).catch(showErr('topMoversUp'));
+  api('/v1/overview/red-flags?days=7&limit=10').then(renderRedFlags).catch(showErr('redFlagsList'));
+  loadChannelSales(currentGran);  // This one already independent via its own async
+}
+
+function showErr(elId){
+  return (e)=>{
+    const el=document.getElementById(elId);
+    if(el) el.innerHTML='<div class="error">'+(e.message||e)+'</div>';
+  };
+}
+
+function renderMTDStrip(p){
+  if(!p||!p.mtd){return;}
+  document.getElementById('mtd-rev').textContent=cur(p.mtd.revenue);
+  document.getElementById('mtd-units').textContent=fmt(p.mtd.units);
+  const d=document.getElementById('mtd-rev-d');
+  if(p.delta_pct!=null){
+    const cls=p.delta_pct>=0?'u':'d';
+    const arrow=p.delta_pct>=0?'\u2191':'\u2193';
+    d.className='kd '+cls;
+    d.innerHTML=arrow+' '+Math.abs(p.delta_pct).toFixed(1)+'% vs prior MTD ('+cur(p.prior_mtd.revenue)+')';
+  }else{
+    d.className='kd n';
+    d.textContent='vs prior month MTD';
+  }
+}
+
+function renderBlendedKPIs(b){
+  if(!b)return;
+  document.getElementById('bl-spend').textContent=cur(b.total_spend);
+  document.getElementById('bl-roas').textContent=b.blended_roas!=null?(b.blended_roas.toFixed(2)+'x'):'--';
+  document.getElementById('bl-tacos').textContent=b.tacos_pct!=null?(b.tacos_pct.toFixed(1)+'%'):'--';
+  // Spend mix line under spend KPI
+  const mix=(b.platform_mix||[]).map(p=>p.name+' '+p.share_pct.toFixed(0)+'%').join(' &middot; ');
+  const d=document.getElementById('bl-spend-d');
+  d.className='kd n';
+  d.innerHTML=mix||'&nbsp;';
+}
+
+function renderTopMovers(m){
+  const upEl=document.getElementById('topMoversUp');
+  const dnEl=document.getElementById('topMoversDown');
+  if(!m){upEl.innerHTML=dnEl.innerHTML='<div class="loading">No data</div>';return;}
+  function row(item,direction){
+    const cls=direction==='up'?'up':'dn';
+    const arrow=direction==='up'?'\u2191':'\u2193';
+    const label=(item.target_brand||'')+' '+(item.target_model||'')+' '+(item.category||'');
+    const pctStr=item.revenue_delta_pct!=null?(arrow+Math.abs(item.revenue_delta_pct).toFixed(0)+'%'):'';
+    return `<div class="tm-item">
+      <div class="name" title="${item.msku_group}">${label.trim()||item.msku_group}</div>
+      <div class="delta ${cls}">${cur(item.revenue_delta)}</div>
+      <div class="pct">${pctStr}</div>
+    </div>`;
+  }
+  upEl.innerHTML=(m.accelerating||[]).length?m.accelerating.map(i=>row(i,'up')).join(''):'<div class="loading">No movers</div>';
+  dnEl.innerHTML=(m.declining||[]).length?m.declining.map(i=>row(i,'dn')).join(''):'<div class="loading">No movers</div>';
+}
+
+const OWNER_LABEL={marketing:'Marketing',operations:'Operations',category:'Category',channels:'Channels',finance:'Finance',brand_head:'Brand'};
+
+function renderRedFlags(rf){
+  const el=document.getElementById('redFlagsList');
+  const sub=document.getElementById('redFlagsSubtitle');
+  if(!rf||!rf.data||!rf.data.length){
+    el.innerHTML='<div class="loading">No red flags in last 7 days &mdash; everything looks healthy.</div>';
+    sub.textContent='';
+    return;
+  }
+  // Subtitle: counts per owner
+  const counts=rf.owner_counts||{};
+  const parts=Object.keys(counts).map(k=>(OWNER_LABEL[k]||k)+': '+counts[k]);
+  sub.innerHTML='last 7 days &middot; '+parts.join(' &middot; ');
+  // Rows
+  el.innerHTML=rf.data.map(f=>{
+    const sev=f.criticality||f.severity||'LOW';
+    const dirArrow=f.direction==='spike'||f.direction==='up'?'\u2191':'\u2193';
+    const z=f.z_score!=null?(' z='+f.z_score.toFixed(1)):'';
+    const impact=f.revenue_impact_est!=null?(' &middot; '+cur(f.revenue_impact_est)+'/day'):'';
+    const oneLine=f.one_line||(f.metric_name+' '+dirArrow+' '+(f.value!=null?Number(f.value).toLocaleString('en-IN'):''));
+    return `<div class="rf-item">
+      <span class="rf-sev ${sev}">${sev}</span>
+      <div class="rf-body"><span class="name">${f.metric_name||''}</span>${z}${impact}<br>${oneLine} <span style="color:var(--t3)">&middot; ${f.date}</span></div>
+      <span class="rf-owner">${OWNER_LABEL[f.owner]||f.owner}</span>
+    </div>`;
+  }).join('');
 }
 
 async function loadChannelSales(gran){
@@ -976,6 +1659,8 @@ document.querySelectorAll('#rangePills button').forEach(b=>b.addEventListener('c
 document.querySelectorAll('#funnelPills button').forEach(b=>b.addEventListener('click',()=>loadFunnel(+b.dataset.days)));
 document.querySelectorAll('#granPills button').forEach(b=>b.addEventListener('click',()=>loadChannelSales(b.dataset.gran)));
 document.querySelectorAll('#skuPills button').forEach(b=>b.addEventListener('click',()=>loadSKUCatalog(+b.dataset.days)));
+document.querySelectorAll('#mktPills button').forEach(b=>b.addEventListener('click',()=>loadMarketing(+b.dataset.days)));
+document.querySelectorAll('#catPills button').forEach(b=>b.addEventListener('click',()=>loadCategory(+b.dataset.days)));
 document.getElementById('skuSearch').addEventListener('keydown',e=>{if(e.key==='Enter')loadSKUCatalog(skuDays);});
 
 /* ========== INIT ========== */
