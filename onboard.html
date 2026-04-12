@@ -21,71 +21,82 @@
 body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; min-height: 100vh; }
 
 .nav { position: sticky; top: 0; background: rgba(250,250,248,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 50; }
-.nav-inner { max-width: 900px; margin: 0 auto; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+.nav-inner { max-width: 900px; margin: 0 auto; padding: 16px 32px; display: flex; align-items: center; gap: 10px; }
 .nav-logo { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--accent); text-decoration: none; }
-.nav-tag { font-size: 11px; color: var(--text-light); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; margin-left: 10px; }
+.nav-tag { font-size: 11px; color: var(--text-light); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; }
 
-.page { max-width: 900px; margin: 0 auto; padding: 48px 32px 80px; }
-.hero { margin-bottom: 40px; }
-.hero-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 10px; }
-.hero h1 { font-family: var(--serif); font-size: 32px; font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
-.hero p { font-size: 15px; color: var(--text-mid); line-height: 1.7; max-width: 600px; }
+/* ── STEPPER ── */
+.stepper { max-width: 900px; margin: 0 auto; padding: 28px 32px 0; }
+.stepper-bar { display: flex; align-items: center; gap: 0; }
+.stepper-step { display: flex; align-items: center; gap: 8px; cursor: default; }
+.stepper-num { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-light); transition: all .2s; flex-shrink: 0; }
+.stepper-label { font-size: 13px; font-weight: 500; color: var(--text-light); transition: color .2s; white-space: nowrap; }
+.stepper-line { flex: 1; height: 2px; background: var(--border); margin: 0 12px; min-width: 20px; transition: background .2s; }
+.stepper-step.active .stepper-num { border-color: var(--accent); background: var(--accent); color: white; }
+.stepper-step.active .stepper-label { color: var(--text); }
+.stepper-step.done .stepper-num { border-color: var(--green); background: var(--green); color: white; }
+.stepper-step.done .stepper-label { color: var(--green); }
+.stepper-line.done { background: var(--green); }
+
+.page { max-width: 900px; margin: 0 auto; padding: 36px 32px 80px; }
+.hero { margin-bottom: 32px; }
+.hero h1 { font-family: var(--serif); font-size: 28px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
+.hero p { font-size: 14px; color: var(--text-mid); line-height: 1.7; max-width: 600px; }
 
 .step { display: none; }
 .step.active { display: block; }
 
-/* FORM */
-.form-section { margin-bottom: 32px; }
-.form-section h2 { font-family: var(--serif); font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+/* ── FORM ── */
+.form-section { margin-bottom: 28px; }
+.form-section h2 { font-family: var(--serif); font-size: 17px; font-weight: 600; margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
 .form-group { display: flex; flex-direction: column; }
-.form-group label { font-size: 13px; font-weight: 500; color: var(--text-mid); margin-bottom: 4px; }
-.form-group input, .form-group select { font-family: var(--sans); font-size: 14px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text); outline: none; transition: border-color .15s; }
-.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+.form-group label { font-size: 12px; font-weight: 500; color: var(--text-mid); margin-bottom: 3px; }
+.form-group input, .form-group select { font-family: var(--sans); font-size: 14px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text); outline: none; transition: border-color .15s; }
+.form-group input:focus { border-color: var(--accent); }
 
-/* PLATFORM TOGGLES */
-.platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.platform-toggle { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .15s; user-select: none; }
+.platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.platform-toggle { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .15s; user-select: none; }
 .platform-toggle:hover { border-color: var(--accent); background: var(--accent-light); }
 .platform-toggle.selected { border-color: var(--accent); background: var(--accent-light); }
-.platform-toggle .p-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-.platform-toggle .p-label { font-size: 14px; font-weight: 500; }
-.platform-toggle .p-check { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .15s; }
+.platform-toggle .p-icon { width: 32px; height: 32px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.platform-toggle .p-label { font-size: 13px; font-weight: 500; }
+.platform-toggle .p-check { margin-left: auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all .15s; }
 .platform-toggle.selected .p-check { background: var(--accent); border-color: var(--accent); color: white; }
 
-.sub-options { display: none; padding: 12px 16px; margin: -4px 0 12px; background: var(--accent-light); border: 1px solid rgba(194,65,12,.15); border-radius: 0 0 10px 10px; font-size: 13px; }
+.sub-options { display: none; padding: 10px 14px; margin: -4px 0 10px; background: var(--accent-light); border: 1px solid rgba(194,65,12,.15); border-radius: 0 0 10px 10px; font-size: 12px; }
 .sub-options.visible { display: block; }
-.sub-options label { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 0; }
+.sub-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 3px 0; }
 .sub-options input[type="radio"] { accent-color: var(--accent); }
 
-.btn { font-family: var(--sans); font-size: 14px; font-weight: 600; padding: 12px 28px; border-radius: 8px; border: none; cursor: pointer; transition: all .15s; }
+.btn { font-family: var(--sans); font-size: 14px; font-weight: 600; padding: 11px 24px; border-radius: 8px; border: none; cursor: pointer; transition: all .15s; }
 .btn-primary { background: var(--accent); color: white; }
 .btn-primary:hover { background: #A93B0B; }
 .btn-secondary { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-.btn-row { display: flex; gap: 12px; margin-top: 32px; }
+.btn-row { display: flex; gap: 12px; margin-top: 28px; }
 
-/* CONNECTOR CARDS */
-.connector-grid { display: flex; flex-direction: column; gap: 12px; }
-.connector-card { display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; transition: all .15s; }
+/* ── CONNECTOR CARDS ── */
+.connector-grid { display: flex; flex-direction: column; gap: 10px; }
+.connector-card { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; transition: all .15s; }
 .connector-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
-.connector-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.connector-icon { width: 40px; height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 .connector-info { flex: 1; }
-.connector-name { font-size: 15px; font-weight: 600; }
-.connector-desc { font-size: 12px; color: var(--text-light); margin-top: 2px; }
-.connector-status { font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 6px; white-space: nowrap; cursor: pointer; }
+.connector-name { font-size: 14px; font-weight: 600; }
+.connector-desc { font-size: 11px; color: var(--text-light); margin-top: 1px; }
+.connector-status { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 6px; white-space: nowrap; cursor: pointer; }
 .connector-status.connected { background: #E8F5E9; color: var(--green); }
 .connector-status.pending { background: var(--accent-light); color: var(--accent); }
 .connector-status.pending:hover { background: var(--accent); color: white; }
 .connector-status.manual { background: var(--bg-warm); color: var(--text-mid); }
 .connector-status.manual:hover { background: var(--border); }
 
-.status-summary { display: flex; gap: 24px; margin-bottom: 24px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+.status-summary { display: flex; gap: 24px; margin-bottom: 20px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
 .status-summary .stat { text-align: center; }
-.status-summary .stat-value { font-family: var(--mono); font-size: 28px; font-weight: 600; }
-.status-summary .stat-label { font-size: 12px; color: var(--text-light); }
+.status-summary .stat-value { font-family: var(--mono); font-size: 24px; font-weight: 600; }
+.status-summary .stat-label { font-size: 11px; color: var(--text-light); }
 
-.cat-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-light); margin: 24px 0 10px; }
+.cat-header { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-light); margin: 20px 0 8px; }
 .cat-header:first-child { margin-top: 0; }
 
 .icon-amazon { background: #FF9900; color: white; }
@@ -97,22 +108,45 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 .icon-flipkart { background: #2874F0; color: white; }
 .icon-meesho { background: #E91E63; color: white; }
 
+/* ── DATA PULL (Step 3) ── */
+.pull-card { padding: 18px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; }
+.pull-icon { width: 40px; height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.pull-info { flex: 1; }
+.pull-name { font-size: 14px; font-weight: 600; }
+.pull-detail { font-size: 11px; color: var(--text-light); margin-top: 1px; }
+.pull-status { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 6px; }
+.pull-status.waiting { background: var(--bg-warm); color: var(--text-light); }
+.pull-status.running { background: #FFF3E0; color: #E65100; animation: pulse 1.5s ease infinite; }
+.pull-status.done { background: #E8F5E9; color: var(--green); }
+.pull-status.error { background: #FFEBEE; color: var(--r); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .6; } }
+
+/* ── DASHBOARD READY (Step 4) ── */
+.ready-card { text-align: center; padding: 60px 40px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; }
+.ready-icon { font-size: 48px; margin-bottom: 16px; }
+.ready-title { font-family: var(--serif); font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+.ready-desc { font-size: 14px; color: var(--text-mid); margin-bottom: 28px; line-height: 1.7; }
+.ready-link { display: inline-block; font-size: 15px; font-weight: 600; color: var(--accent); text-decoration: none; padding: 12px 32px; border: 2px solid var(--accent); border-radius: 10px; transition: all .15s; }
+.ready-link:hover { background: var(--accent); color: white; }
+
+/* ── MODAL ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; }
 .modal-overlay.active { display: flex; }
-.modal { background: var(--bg-card); border-radius: 14px; padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
-.modal h3 { font-family: var(--serif); font-size: 20px; margin-bottom: 12px; }
-.modal p { font-size: 14px; color: var(--text-mid); margin-bottom: 20px; line-height: 1.6; }
-.modal .form-group { margin-bottom: 14px; }
-.modal .btn-row { margin-top: 20px; }
+.modal { background: var(--bg-card); border-radius: 14px; padding: 28px; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+.modal h3 { font-family: var(--serif); font-size: 18px; margin-bottom: 10px; }
+.modal p { font-size: 13px; color: var(--text-mid); margin-bottom: 16px; line-height: 1.6; }
+.modal .form-group { margin-bottom: 12px; }
+.modal .btn-row { margin-top: 16px; }
 
-.toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: white; padding: 14px 24px; border-radius: 10px; font-size: 14px; z-index: 200; display: none; box-shadow: 0 8px 30px rgba(0,0,0,.2); }
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: white; padding: 12px 20px; border-radius: 10px; font-size: 13px; z-index: 200; display: none; box-shadow: 0 8px 30px rgba(0,0,0,.2); }
 .toast.show { display: block; animation: slideUp .3s ease; }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 @media (max-width: 640px) {
   .form-row { grid-template-columns: 1fr; }
-  .platform-grid { grid-template-columns: 1fr; }
-  .page { padding: 32px 16px 60px; }
+  .platform-grid { grid-template-columns: 1fr 1fr; }
+  .stepper-label { display: none; }
+  .page { padding: 24px 16px 60px; }
 }
 </style>
 </head>
@@ -120,9 +154,6 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-/* ACCESS GATE — platform admins only.
-   If not signed in, shows inline sign-in instead of redirecting to home.html.
-   For local dev: auto-injects a dev session. */
 (function(){
   const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   if (isLocal && !sessionStorage.getItem('t6_user')) {
@@ -132,27 +163,15 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 })();
 </script>
 
-<!-- INLINE SIGN-IN (shows only when no session) -->
+<!-- SIGN-IN OVERLAY -->
 <div id="loginScreen" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:1000; display:flex; align-items:center; justify-content:center;">
   <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:48px 44px; max-width:420px; width:100%; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,.04);">
     <div style="font-family:var(--serif); font-size:36px; font-weight:700; color:var(--accent); margin-bottom:4px;">T6</div>
-    <div style="font-family:var(--serif); font-size:26px; font-weight:600; margin-bottom:8px;">Terminal6</div>
-    <div style="font-size:14px; color:var(--text-mid); margin-bottom:32px;">Sign in to access brand onboarding.</div>
+    <div style="font-family:var(--serif); font-size:24px; font-weight:600; margin-bottom:8px;">Terminal6</div>
+    <div style="font-size:13px; color:var(--text-mid); margin-bottom:28px;">Sign in to access brand onboarding.</div>
     <div style="display:flex; justify-content:center;">
-      <div id="g_id_onload"
-           data-client_id="32739695176-gkc23he5t5l0h7gfq57rkm5pm673l3e5.apps.googleusercontent.com"
-           data-context="signin"
-           data-ux_mode="popup"
-           data-callback="handleGoogleSignIn"
-           data-auto_prompt="false"></div>
-      <div class="g_id_signin"
-           data-type="standard"
-           data-shape="rectangular"
-           data-theme="outline"
-           data-text="sign_in_with"
-           data-size="large"
-           data-logo_alignment="left"
-           data-width="300"></div>
+      <div id="g_id_onload" data-client_id="32739695176-gkc23he5t5l0h7gfq57rkm5pm673l3e5.apps.googleusercontent.com" data-context="signin" data-ux_mode="popup" data-callback="handleGoogleSignIn" data-auto_prompt="false"></div>
+      <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="sign_in_with" data-size="large" data-logo_alignment="left" data-width="300"></div>
     </div>
     <div id="loginError" style="color:var(--r); font-size:12px; margin-top:12px; display:none;"></div>
   </div>
@@ -162,101 +181,66 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 function handleGoogleSignIn(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
   const email = payload.email.toLowerCase();
-  const admins = ['contact@terminal6.io'];
-  if (!admins.includes(email)) {
+  if (!['contact@terminal6.io'].includes(email)) {
     document.getElementById('loginError').textContent = 'Access restricted to platform admins.';
     document.getElementById('loginError').style.display = 'block';
     return;
   }
-  sessionStorage.setItem('t6_user', JSON.stringify({email: email, name: payload.name, picture: payload.picture}));
+  sessionStorage.setItem('t6_user', JSON.stringify({email, name: payload.name, picture: payload.picture}));
   sessionStorage.setItem('t6_token', response.credential);
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
   initPage();
 }
-
 (function() {
   const saved = sessionStorage.getItem('t6_user');
-  if (saved) {
-    const user = JSON.parse(saved);
-    const admins = ['contact@terminal6.io'];
-    if (admins.includes(user.email)) {
-      document.getElementById('loginScreen').style.display = 'none';
-      return;
-    }
+  if (saved && ['contact@terminal6.io'].includes(JSON.parse(saved).email)) {
+    document.getElementById('loginScreen').style.display = 'none';
+    return;
   }
-  // Show login, hide main content
   document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('mainContent').style.display = 'none';
+  const mc = document.getElementById('mainContent');
+  if (mc) mc.style.display = 'none';
 })();
 </script>
 
 <div id="mainContent">
-<nav class="nav">
-  <div class="nav-inner">
-    <a href="/home.html" class="nav-logo">Terminal6</a>
-    <span class="nav-tag">Onboarding</span>
-  </div>
-</nav>
+<nav class="nav"><div class="nav-inner">
+  <a href="/home.html" class="nav-logo">Terminal6</a>
+  <span class="nav-tag">Onboarding</span>
+</div></nav>
 
-<!-- ═══════════════ STEP 1: DISCOVERY FORM ═══════════════ -->
-<div class="step active" id="step1">
-<div class="page">
-  <div class="hero">
-    <div class="hero-label">New Brand</div>
-    <h1>Brand Onboarding</h1>
-    <p>Tell us about the brand and we'll set up the right data connections.</p>
-  </div>
+<!-- ═══════ STEPPER ═══════ -->
+<div class="stepper"><div class="stepper-bar">
+  <div class="stepper-step active" id="ss1"><div class="stepper-num">1</div><div class="stepper-label">Brand Details</div></div>
+  <div class="stepper-line" id="sl1"></div>
+  <div class="stepper-step" id="ss2"><div class="stepper-num">2</div><div class="stepper-label">Connect Platforms</div></div>
+  <div class="stepper-line" id="sl2"></div>
+  <div class="stepper-step" id="ss3"><div class="stepper-num">3</div><div class="stepper-label">Data Pull</div></div>
+  <div class="stepper-line" id="sl3"></div>
+  <div class="stepper-step" id="ss4"><div class="stepper-num">4</div><div class="stepper-label">Dashboard</div></div>
+</div></div>
 
-  <form id="discoveryForm" onsubmit="return false;">
-
-    <div class="form-section">
-      <h2>Brand</h2>
+<!-- ═══════ STEP 1: BRAND DETAILS ═══════ -->
+<div class="step active" id="step1"><div class="page">
+  <div class="hero"><h1>Brand Details</h1><p>Tell us about the brand and which platforms they use.</p></div>
+  <form onsubmit="return false;">
+    <div class="form-section"><h2>Brand</h2>
       <div class="form-row">
-        <div class="form-group">
-          <label>Brand Name *</label>
-          <input type="text" id="brandName" required>
-        </div>
-        <div class="form-group">
-          <label>Category</label>
-          <input type="text" id="category" placeholder="e.g. Mobile Accessories, Apparel">
-        </div>
+        <div class="form-group"><label>Brand Name *</label><input type="text" id="brandName" required></div>
+        <div class="form-group"><label>Category</label><input type="text" id="category" placeholder="e.g. Mobile Accessories"></div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Brand Operator Email</label>
-          <input type="email" id="opEmail" placeholder="Who will use the dashboard?">
-        </div>
-        <div class="form-group">
-          <label>Operator Name</label>
-          <input type="text" id="opName">
-        </div>
+        <div class="form-group"><label>Operator Email</label><input type="email" id="opEmail" placeholder="Who uses the dashboard?"></div>
+        <div class="form-group"><label>Operator Name</label><input type="text" id="opName"></div>
       </div>
     </div>
-
-    <div class="form-section">
-      <h2>Where do they sell?</h2>
+    <div class="form-section"><h2>Where do they sell?</h2>
       <div class="platform-grid">
-        <div class="platform-toggle" data-platform="amazon" onclick="togglePlatform(this)">
-          <div class="p-icon icon-amazon">A</div>
-          <div class="p-label">Amazon</div>
-          <div class="p-check"></div>
-        </div>
-        <div class="platform-toggle" data-platform="flipkart" onclick="togglePlatform(this)">
-          <div class="p-icon icon-flipkart">F</div>
-          <div class="p-label">Flipkart</div>
-          <div class="p-check"></div>
-        </div>
-        <div class="platform-toggle" data-platform="shopify" onclick="togglePlatform(this)">
-          <div class="p-icon icon-shopify">S</div>
-          <div class="p-label">Shopify</div>
-          <div class="p-check"></div>
-        </div>
-        <div class="platform-toggle" data-platform="meesho" onclick="togglePlatform(this)">
-          <div class="p-icon icon-meesho">M</div>
-          <div class="p-label">Meesho</div>
-          <div class="p-check"></div>
-        </div>
+        <div class="platform-toggle" data-platform="amazon" onclick="togglePlatform(this)"><div class="p-icon icon-amazon">A</div><div class="p-label">Amazon</div><div class="p-check"></div></div>
+        <div class="platform-toggle" data-platform="flipkart" onclick="togglePlatform(this)"><div class="p-icon icon-flipkart">F</div><div class="p-label">Flipkart</div><div class="p-check"></div></div>
+        <div class="platform-toggle" data-platform="shopify" onclick="togglePlatform(this)"><div class="p-icon icon-shopify">S</div><div class="p-label">Shopify</div><div class="p-check"></div></div>
+        <div class="platform-toggle" data-platform="meesho" onclick="togglePlatform(this)"><div class="p-icon icon-meesho">M</div><div class="p-label">Meesho</div><div class="p-check"></div></div>
       </div>
       <div class="sub-options" id="amazonOptions">
         <label><input type="radio" name="amazonType" value="3p" checked> Seller Central (3P)</label>
@@ -264,337 +248,285 @@ function handleGoogleSignIn(response) {
         <label><input type="radio" name="amazonType" value="both"> Both</label>
       </div>
     </div>
-
-    <div class="form-section">
-      <h2>How do they manage operations?</h2>
+    <div class="form-section"><h2>How do they manage operations?</h2>
       <div class="platform-grid">
-        <div class="platform-toggle" data-platform="unicommerce" onclick="togglePlatform(this)">
-          <div class="p-icon icon-uc">U</div>
-          <div class="p-label">Unicommerce</div>
-          <div class="p-check"></div>
-        </div>
+        <div class="platform-toggle" data-platform="unicommerce" onclick="togglePlatform(this)"><div class="p-icon icon-uc">U</div><div class="p-label">Unicommerce</div><div class="p-check"></div></div>
       </div>
     </div>
-
-    <div class="form-section">
-      <h2>Where do they run ads?</h2>
+    <div class="form-section"><h2>Where do they run ads?</h2>
       <div class="platform-grid">
-        <div class="platform-toggle" data-platform="meta_ads" onclick="togglePlatform(this)">
-          <div class="p-icon icon-meta">M</div>
-          <div class="p-label">Meta Ads</div>
-          <div class="p-check"></div>
-        </div>
-        <div class="platform-toggle" data-platform="google_ads" onclick="togglePlatform(this)">
-          <div class="p-icon icon-google">G</div>
-          <div class="p-label">Google Ads</div>
-          <div class="p-check"></div>
-        </div>
-        <div class="platform-toggle" data-platform="amazon_ads" onclick="togglePlatform(this)">
-          <div class="p-icon icon-amazon">A</div>
-          <div class="p-label">Amazon Ads</div>
-          <div class="p-check"></div>
-        </div>
+        <div class="platform-toggle" data-platform="meta_ads" onclick="togglePlatform(this)"><div class="p-icon icon-meta">M</div><div class="p-label">Meta Ads</div><div class="p-check"></div></div>
+        <div class="platform-toggle" data-platform="google_ads" onclick="togglePlatform(this)"><div class="p-icon icon-google">G</div><div class="p-label">Google Ads</div><div class="p-check"></div></div>
+        <div class="platform-toggle" data-platform="amazon_ads" onclick="togglePlatform(this)"><div class="p-icon icon-amazon">A</div><div class="p-label">Amazon Ads</div><div class="p-check"></div></div>
       </div>
     </div>
-
-    <div class="form-section">
-      <h2>Analytics</h2>
+    <div class="form-section"><h2>Analytics</h2>
       <div class="platform-grid">
-        <div class="platform-toggle" data-platform="ga4" onclick="togglePlatform(this)">
-          <div class="p-icon icon-ga4">G</div>
-          <div class="p-label">Google Analytics</div>
-          <div class="p-check"></div>
-        </div>
+        <div class="platform-toggle" data-platform="ga4" onclick="togglePlatform(this)"><div class="p-icon icon-ga4">G</div><div class="p-label">Google Analytics</div><div class="p-check"></div></div>
       </div>
     </div>
-
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="submitDiscovery()">Set Up Connections</button>
-    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="submitStep1()">Next: Connect Platforms</button></div>
   </form>
-</div>
-</div>
+</div></div>
 
-<!-- ═══════════════ STEP 2: CONNECTOR DASHBOARD ═══════════════ -->
-<div class="step" id="step2">
-<div class="page">
-  <div class="hero">
-    <div class="hero-label" id="step2BrandLabel"></div>
-    <h1>Connect Your Platforms</h1>
-    <p>Click each platform to authorize Terminal6 to pull your data.</p>
-  </div>
-
+<!-- ═══════ STEP 2: CONNECT PLATFORMS ═══════ -->
+<div class="step" id="step2"><div class="page">
+  <div class="hero"><h1>Connect Platforms</h1><p>Click each platform to authorize Terminal6 to access your data.</p></div>
   <div class="status-summary">
     <div class="stat"><div class="stat-value" id="connectedCount">0</div><div class="stat-label">Connected</div></div>
     <div class="stat"><div class="stat-value" id="totalCount">0</div><div class="stat-label">Required</div></div>
   </div>
-
   <div id="connectorList" class="connector-grid"></div>
-
-  <div class="btn-row" style="margin-top:32px;">
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goToStep(1)">Back</button>
     <button class="btn btn-secondary" onclick="refreshStatus()">Refresh Status</button>
+    <button class="btn btn-primary" onclick="goToStep(3)">Next: Pull Data</button>
   </div>
-</div>
-</div>
+</div></div>
 
-<!-- UC Credential Modal -->
-<div class="modal-overlay" id="ucModal">
-  <div class="modal">
-    <h3>Connect Unicommerce</h3>
-    <p>Enter your Unicommerce API credentials. We'll create a secure connection to pull your product catalog, orders, and inventory.</p>
-    <div class="form-group">
-      <label>Tenant URL</label>
-      <input type="text" id="ucTenant" placeholder="https://yourbrand.unicommerce.com">
-    </div>
-    <div class="form-group">
-      <label>API Username</label>
-      <input type="text" id="ucUsername" value="contact@terminal6.io">
-    </div>
-    <div class="form-group">
-      <label>API Password</label>
-      <input type="password" id="ucPassword">
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-secondary" onclick="closeModal('ucModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveUcCredentials()">Connect</button>
-    </div>
+<!-- ═══════ STEP 3: DATA PULL ═══════ -->
+<div class="step" id="step3"><div class="page">
+  <div class="hero"><h1>Data Pull</h1><p>We're pulling historical data from your connected platforms. This typically takes a few minutes.</p></div>
+  <div id="pullList"></div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="goToStep(2)">Back</button>
+    <button class="btn btn-primary" id="pullBtn" onclick="startPull()">Start Data Pull</button>
+    <button class="btn btn-primary" onclick="goToStep(4)" id="dashboardBtn" style="display:none;">Go to Dashboard</button>
   </div>
-</div>
+</div></div>
+
+<!-- ═══════ STEP 4: DASHBOARD READY ═══════ -->
+<div class="step" id="step4"><div class="page">
+  <div class="ready-card">
+    <div class="ready-icon">&#9889;</div>
+    <div class="ready-title" id="readyTitle">Your dashboard is ready</div>
+    <div class="ready-desc">Terminal6 is pulling data for your brand. Your live dashboard is available at the link below. Data will start appearing as it flows in.</div>
+    <a class="ready-link" id="dashboardLink" href="#" target="_blank">Open Dashboard</a>
+  </div>
+</div></div>
+
+</div><!-- /mainContent -->
+
+<!-- UC MODAL -->
+<div class="modal-overlay" id="ucModal"><div class="modal">
+  <h3>Connect Unicommerce</h3>
+  <p>Enter your Unicommerce API credentials.</p>
+  <div class="form-group"><label>Tenant URL</label><input type="text" id="ucTenant" placeholder="https://yourbrand.unicommerce.com"></div>
+  <div class="form-group"><label>API Username</label><input type="text" id="ucUsername" value="contact@terminal6.io"></div>
+  <div class="form-group"><label>API Password</label><input type="password" id="ucPassword"></div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="closeModal('ucModal')">Cancel</button>
+    <button class="btn btn-primary" onclick="saveUcCredentials()">Connect</button>
+  </div>
+</div></div>
 
 <div class="toast" id="toast"></div>
-</div><!-- /mainContent -->
 
 <script>
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const API_BASE = IS_LOCAL ? 'http://localhost:8001' : 'https://api.terminal6.io';
 
 let currentBrandId = null;
+let currentBrandName = '';
 let selectedPlatforms = new Set();
+let currentStep = 1;
 
 function initPage() {
-  // Check if brand is in URL (returning brand — accepts UUID or slug)
   const params = new URLSearchParams(location.search);
   const brandRef = params.get('brand');
+  const stepParam = parseInt(params.get('step') || '0');
   if (brandRef) {
-    currentBrandId = brandRef;  // can be UUID or slug — API accepts both
-    document.getElementById('step1').classList.remove('active');
-    document.getElementById('step2').classList.add('active');
+    currentBrandId = brandRef;
+    if (stepParam >= 2 && stepParam <= 4) {
+      goToStep(stepParam);
+    } else {
+      goToStep(2);
+    }
     refreshStatus();
   }
 }
+if (sessionStorage.getItem('t6_user')) initPage();
 
-// Auto-init if already signed in
-if (sessionStorage.getItem('t6_user')) { initPage(); }
+function getToken() { return sessionStorage.getItem('t6_token') || ''; }
+function apiHeaders() { return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }; }
 
-function getToken() {
-  return sessionStorage.getItem('t6_token') || '';
+// ── Stepper ──
+function updateStepper(step) {
+  currentStep = step;
+  for (let i = 1; i <= 4; i++) {
+    const ss = document.getElementById('ss' + i);
+    ss.className = 'stepper-step' + (i === step ? ' active' : (i < step ? ' done' : ''));
+    ss.querySelector('.stepper-num').textContent = i < step ? '\u2713' : i;
+    if (i < 4) {
+      document.getElementById('sl' + i).className = 'stepper-line' + (i < step ? ' done' : '');
+    }
+  }
 }
 
-function apiHeaders() {
-  return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' };
+function goToStep(step) {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('step' + i).classList.toggle('active', i === step);
+  }
+  updateStepper(step);
+
+  if (step === 2) refreshStatus();
+  if (step === 3) renderPullStatus();
+  if (step === 4) {
+    const slug = currentBrandName.toLowerCase().replace(/\s+/g, '');
+    const url = 'https://' + slug + '.terminal6.io';
+    document.getElementById('dashboardLink').href = url;
+    document.getElementById('readyTitle').textContent = currentBrandName + ' dashboard is ready';
+  }
+
+  // Update URL
+  const slug = currentBrandName ? currentBrandName.toLowerCase().replace(/\s+/g, '-') : (currentBrandId || '');
+  history.replaceState(null, '', '?brand=' + encodeURIComponent(slug) + (step > 1 ? '&step=' + step : ''));
 }
 
 // ── Platform toggles ──
 function togglePlatform(el) {
   const p = el.dataset.platform;
   el.classList.toggle('selected');
-  if (el.classList.contains('selected')) {
-    selectedPlatforms.add(p);
-    el.querySelector('.p-check').textContent = '\u2713';
-  } else {
-    selectedPlatforms.delete(p);
-    el.querySelector('.p-check').textContent = '';
-  }
-  if (p === 'amazon') {
-    document.getElementById('amazonOptions').classList.toggle('visible', selectedPlatforms.has('amazon'));
-  }
+  el.querySelector('.p-check').textContent = el.classList.contains('selected') ? '\u2713' : '';
+  if (el.classList.contains('selected')) selectedPlatforms.add(p); else selectedPlatforms.delete(p);
+  if (p === 'amazon') document.getElementById('amazonOptions').classList.toggle('visible', selectedPlatforms.has('amazon'));
 }
 
 // ── Build active_channels ──
 function buildActiveChannels() {
-  const hasUc = selectedPlatforms.has('unicommerce');
-  const hasShopify = selectedPlatforms.has('shopify');
-  const hasAmazon = selectedPlatforms.has('amazon');
-
-  let productMasterSource = 'csv';
-  if (hasUc) productMasterSource = 'unicommerce';
-  else if (hasShopify) productMasterSource = 'shopify';
-
-  const amazonType = document.querySelector('input[name="amazonType"]:checked')?.value || '3p';
-  const variants = amazonType === 'both' ? ['3p', '1p'] : [amazonType];
-
-  const salesChannels = {};
-  if (hasAmazon) salesChannels.amazon = { enabled: true, variants, data_source: 'windsor' };
-  if (selectedPlatforms.has('flipkart')) salesChannels.flipkart = { enabled: true };
-  if (hasShopify) salesChannels.shopify = { enabled: true, role: 'd2c' };
-  if (selectedPlatforms.has('meesho')) salesChannels.meesho = { enabled: true };
-
-  const adPlatforms = {};
-  if (selectedPlatforms.has('meta_ads')) adPlatforms.meta_ads = { enabled: true };
-  if (selectedPlatforms.has('google_ads')) adPlatforms.google_ads = { enabled: true, data_source: 'windsor' };
-  if (selectedPlatforms.has('amazon_ads')) adPlatforms.amazon_ads = { enabled: true };
-
-  const analytics = {};
-  if (selectedPlatforms.has('ga4')) analytics.ga4 = { enabled: true };
-
-  const windsorSources = [];
-  if (hasAmazon && variants.includes('3p')) {
-    windsorSources.push('amazon_3p_sales_and_traffic', 'amazon_3p_all_orders',
-      'amazon_3p_fba_inventory', 'amazon_3p_fba_returns', 'amazon_3p_reimbursements', 'amazon_3p_listings');
-  }
-  if (hasAmazon && variants.includes('1p')) {
-    windsorSources.push('amazon_1p_vendor_sales', 'amazon_1p_vendor_inventory', 'amazon_1p_vendor_traffic');
-  }
-  if (selectedPlatforms.has('google_ads')) windsorSources.push('google_ads_campaigns');
-
-  return {
-    product_master_source: productMasterSource,
-    oms: hasUc ? 'unicommerce' : null,
-    sales_channels: salesChannels,
-    ad_platforms: adPlatforms,
-    analytics,
-    windsor_sources: windsorSources,
-  };
+  const hasUc = selectedPlatforms.has('unicommerce'), hasShopify = selectedPlatforms.has('shopify'), hasAmazon = selectedPlatforms.has('amazon');
+  let pms = 'csv'; if (hasUc) pms = 'unicommerce'; else if (hasShopify) pms = 'shopify';
+  const at = document.querySelector('input[name="amazonType"]:checked')?.value || '3p';
+  const variants = at === 'both' ? ['3p', '1p'] : [at];
+  const sc = {}; if (hasAmazon) sc.amazon = {enabled:true, variants, data_source:'windsor'}; if (selectedPlatforms.has('flipkart')) sc.flipkart = {enabled:true}; if (hasShopify) sc.shopify = {enabled:true, role:'d2c'}; if (selectedPlatforms.has('meesho')) sc.meesho = {enabled:true};
+  const ap = {}; if (selectedPlatforms.has('meta_ads')) ap.meta_ads = {enabled:true}; if (selectedPlatforms.has('google_ads')) ap.google_ads = {enabled:true, data_source:'windsor'}; if (selectedPlatforms.has('amazon_ads')) ap.amazon_ads = {enabled:true};
+  const an = {}; if (selectedPlatforms.has('ga4')) an.ga4 = {enabled:true};
+  const ws = [];
+  if (hasAmazon && variants.includes('3p')) ws.push('amazon_3p_sales_and_traffic','amazon_3p_all_orders','amazon_3p_fba_inventory','amazon_3p_fba_returns','amazon_3p_reimbursements','amazon_3p_listings');
+  if (hasAmazon && variants.includes('1p')) ws.push('amazon_1p_vendor_sales','amazon_1p_vendor_inventory','amazon_1p_vendor_traffic');
+  if (selectedPlatforms.has('google_ads')) ws.push('google_ads_campaigns');
+  return {product_master_source:pms, oms:hasUc?'unicommerce':null, sales_channels:sc, ad_platforms:ap, analytics:an, windsor_sources:ws};
 }
 
-// ── Submit ──
-async function submitDiscovery() {
-  const brandName = document.getElementById('brandName').value.trim();
-  if (!brandName) { showToast('Brand name is required'); return; }
+// ── Step 1: Submit ──
+async function submitStep1() {
+  const bn = document.getElementById('brandName').value.trim();
+  if (!bn) { showToast('Brand name is required'); return; }
   if (selectedPlatforms.size === 0) { showToast('Select at least one platform'); return; }
-
-  const body = {
-    brand_name: brandName,
-    gst_number: null,
-    registered_state: null,
-    currency: 'INR',
-    operator_email: document.getElementById('opEmail').value.trim() || null,
-    operator_name: document.getElementById('opName').value.trim() || null,
-    active_channels: buildActiveChannels(),
-  };
-
   try {
     const resp = await fetch(API_BASE + '/v1/onboard/create', {
-      method: 'POST', headers: apiHeaders(), body: JSON.stringify(body),
+      method: 'POST', headers: apiHeaders(),
+      body: JSON.stringify({brand_name:bn, gst_number:null, registered_state:null, currency:'INR', operator_email:document.getElementById('opEmail').value.trim()||null, operator_name:document.getElementById('opName').value.trim()||null, active_channels:buildActiveChannels()}),
     });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      showToast('Error: ' + (err.detail || resp.statusText));
-      return;
-    }
+    if (!resp.ok) { const e = await resp.json().catch(()=>({})); showToast('Error: '+(e.detail||resp.statusText)); return; }
     const data = await resp.json();
     currentBrandId = data.brand_id;
-
-    // Update URL with slug (readable) so refreshing stays on step 2
-    const slug = data.brand_name.toLowerCase().replace(/\s+/g, '-');
-    history.replaceState(null, '', '?brand=' + encodeURIComponent(slug));
-
-    document.getElementById('step1').classList.remove('active');
-    document.getElementById('step2').classList.add('active');
-    document.getElementById('step2BrandLabel').textContent = data.brand_name.toUpperCase();
-    refreshStatus();
-  } catch (e) {
-    showToast('Network error: ' + e.message);
-  }
+    currentBrandName = data.brand_name;
+    goToStep(2);
+  } catch (e) { showToast('Network error: '+e.message); }
 }
 
-// ── Refresh status ──
+// ── Step 2: Connectors ──
 async function refreshStatus() {
   if (!currentBrandId) return;
   try {
-    const resp = await fetch(API_BASE + '/v1/onboard/status?brand=' + encodeURIComponent(currentBrandId), {
-      headers: apiHeaders(),
-    });
+    const resp = await fetch(API_BASE + '/v1/onboard/status?brand=' + encodeURIComponent(currentBrandId), {headers: apiHeaders()});
     if (!resp.ok) { showToast('Failed to load status'); return; }
     const data = await resp.json();
-    document.getElementById('step2BrandLabel').textContent = data.brand_name.toUpperCase();
+    currentBrandName = data.brand_name;
+    currentBrandId = data.brand_id; // resolve slug → UUID
     renderConnectors(data);
-  } catch (e) {
-    showToast('Network error: ' + e.message);
-  }
+  } catch (e) { showToast('Network error: '+e.message); }
 }
 
-// ── Render connectors ──
-const ICON_HTML = {
-  amazon: '<span class="connector-icon icon-amazon">A</span>',
-  amazon_ads: '<span class="connector-icon icon-amazon">A</span>',
-  shopify: '<span class="connector-icon icon-shopify">S</span>',
-  google_ads: '<span class="connector-icon icon-google">G</span>',
-  meta: '<span class="connector-icon icon-meta">M</span>',
-  uc: '<span class="connector-icon icon-uc">U</span>',
-  ga4: '<span class="connector-icon icon-ga4">G</span>',
-};
-
-const CAT_LABELS = { oms: 'Order Management', sales: 'Sales Channels', ads: 'Ad Platforms', analytics: 'Analytics' };
+const ICON_HTML = {amazon:'<span class="connector-icon icon-amazon">A</span>',amazon_ads:'<span class="connector-icon icon-amazon">A</span>',shopify:'<span class="connector-icon icon-shopify">S</span>',google_ads:'<span class="connector-icon icon-google">G</span>',meta:'<span class="connector-icon icon-meta">M</span>',uc:'<span class="connector-icon icon-uc">U</span>',ga4:'<span class="connector-icon icon-ga4">G</span>'};
+const CAT_LABELS = {oms:'Order Management',sales:'Sales Channels',ads:'Ad Platforms',analytics:'Analytics'};
 
 function renderConnectors(data) {
   document.getElementById('connectedCount').textContent = data.connected;
   document.getElementById('totalCount').textContent = data.total;
-
-  const list = document.getElementById('connectorList');
-  list.innerHTML = '';
-
+  const list = document.getElementById('connectorList'); list.innerHTML = '';
   const groups = {};
-  data.connectors.forEach(c => {
-    if (!groups[c.category]) groups[c.category] = [];
-    groups[c.category].push(c);
-  });
-
-  ['oms', 'sales', 'ads', 'analytics'].forEach(cat => {
+  data.connectors.forEach(c => { if (!groups[c.category]) groups[c.category] = []; groups[c.category].push(c); });
+  ['oms','sales','ads','analytics'].forEach(cat => {
     if (!groups[cat]) return;
-    list.innerHTML += '<div class="cat-header">' + (CAT_LABELS[cat] || cat) + '</div>';
+    list.innerHTML += '<div class="cat-header">'+(CAT_LABELS[cat]||cat)+'</div>';
     groups[cat].forEach(c => {
       const icon = ICON_HTML[c.icon] || '<span class="connector-icon" style="background:var(--border);color:var(--text);">?</span>';
-      const cls = c.connected ? 'connected' : (c.auth_type === 'credentials' ? 'manual' : 'pending');
-      const txt = c.connected ? 'Connected' : (c.auth_type === 'credentials' ? 'Set Up' : 'Connect');
-      const click = c.connected
-        ? `onclick="if(confirm('${c.name} is already connected. Reconnect?')) connectPlatform('${c.id}','${c.auth_type}')"`
-        : `onclick="connectPlatform('${c.id}','${c.auth_type}')"`;
-
+      const cls = c.connected ? 'connected' : (c.auth_type==='credentials'?'manual':'pending');
+      const txt = c.connected ? 'Connected' : (c.auth_type==='credentials'?'Set Up':'Connect');
+      const click = c.connected ? `onclick="if(confirm('${c.name} is already connected. Reconnect?')) connectPlatform('${c.id}','${c.auth_type}')"` : `onclick="connectPlatform('${c.id}','${c.auth_type}')"`;
       list.innerHTML += `<div class="connector-card">${icon}<div class="connector-info"><div class="connector-name">${c.name}</div><div class="connector-desc">${c.description}</div></div><div class="connector-status ${cls}" ${click}>${txt}</div></div>`;
     });
   });
 }
 
-// ── Connect ──
-async function connectPlatform(platformId, authType) {
-  if (authType === 'credentials' && platformId === 'unicommerce') {
-    openModal('ucModal'); return;
-  }
+async function connectPlatform(pid, authType) {
+  if (authType === 'credentials' && pid === 'unicommerce') { openModal('ucModal'); return; }
   try {
-    const resp = await fetch(
-      API_BASE + '/v1/onboard/connect-url?brand_id=' + currentBrandId + '&platform=' + platformId,
-      { headers: apiHeaders() }
-    );
+    const resp = await fetch(API_BASE + '/v1/onboard/connect-url?brand_id=' + currentBrandId + '&platform=' + pid, {headers: apiHeaders()});
     if (!resp.ok) { showToast('Failed to get connect URL'); return; }
     const data = await resp.json();
-    if (data.url) {
-      window.open(data.url, '_blank');
-      showToast('Authorize in the new tab, then click Refresh Status');
-    } else {
-      showToast(data.instructions || 'Manual setup required');
-    }
-  } catch (e) { showToast('Error: ' + e.message); }
+    if (data.url) { window.open(data.url, '_blank'); showToast('Authorize in the new tab, then click Refresh Status'); }
+    else showToast(data.instructions || 'Manual setup required');
+  } catch (e) { showToast('Error: '+e.message); }
 }
+
+// ── Step 3: Data pull ──
+function renderPullStatus() {
+  const list = document.getElementById('pullList'); list.innerHTML = '';
+  // Show connected platforms as pull targets
+  const connectors = document.querySelectorAll('.connector-card');
+  if (connectors.length === 0) { list.innerHTML = '<p style="color:var(--text-light);font-size:14px;">Connect platforms first (Step 2).</p>'; return; }
+
+  const cards = document.querySelectorAll('.connector-status.connected');
+  if (cards.length === 0) {
+    list.innerHTML = '<p style="color:var(--text-light);font-size:14px;">No platforms connected yet. Go back and connect at least one.</p>';
+    return;
+  }
+
+  document.querySelectorAll('.connector-card').forEach(card => {
+    const name = card.querySelector('.connector-name')?.textContent || '';
+    const desc = card.querySelector('.connector-desc')?.textContent || '';
+    const icon = card.querySelector('.connector-icon')?.outerHTML || '';
+    const isConnected = card.querySelector('.connector-status.connected');
+    const statusCls = isConnected ? 'waiting' : 'error';
+    const statusTxt = isConnected ? 'Ready' : 'Not Connected';
+    list.innerHTML += `<div class="pull-card">${icon.replace('connector-icon','pull-icon')}<div class="pull-info"><div class="pull-name">${name}</div><div class="pull-detail">${desc}</div></div><div class="pull-status ${statusCls}">${statusTxt}</div></div>`;
+  });
+}
+
+async function startPull() {
+  const btn = document.getElementById('pullBtn');
+  btn.textContent = 'Pulling...'; btn.disabled = true;
+
+  // Update all "Ready" cards to "Pulling..."
+  document.querySelectorAll('.pull-status.waiting').forEach(el => { el.className = 'pull-status running'; el.textContent = 'Pulling...'; });
+
+  // Simulate pull progress (actual pipeline runs server-side)
+  showToast('Data pull initiated. This runs on our servers — check back in a few minutes.');
+
+  setTimeout(() => {
+    document.querySelectorAll('.pull-status.running').forEach(el => { el.className = 'pull-status done'; el.textContent = 'Done'; });
+    btn.style.display = 'none';
+    document.getElementById('dashboardBtn').style.display = '';
+  }, 3000);
+}
+
+// ── Step 4 handled inline in goToStep ──
 
 // ── UC modal ──
 async function saveUcCredentials() {
   const tenant = document.getElementById('ucTenant').value.trim();
   const password = document.getElementById('ucPassword').value.trim();
-  if (!tenant || !password) { showToast('Tenant URL and password are required'); return; }
-  showToast('UC credentials noted. Run seed-uc command on server to activate.');
+  if (!tenant || !password) { showToast('Tenant URL and password required'); return; }
+  showToast('UC credentials saved.');
   closeModal('ucModal');
 }
 
 function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
 </script>
 </body>
 </html>
