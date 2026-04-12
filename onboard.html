@@ -402,7 +402,7 @@ function buildActiveChannels() {
   const ap = {}; if (selectedPlatforms.has('meta_ads')) ap.meta_ads = {enabled:true}; if (selectedPlatforms.has('google_ads')) ap.google_ads = {enabled:true, data_source:'windsor'}; if (selectedPlatforms.has('amazon_ads')) ap.amazon_ads = {enabled:true};
   const an = {}; if (selectedPlatforms.has('ga4')) an.ga4 = {enabled:true};
   const ws = [];
-  if (hasAmazon && variants.includes('3p')) ws.push('amazon_3p_sales_and_traffic','amazon_3p_all_orders','amazon_3p_fba_inventory','amazon_3p_fba_returns','amazon_3p_reimbursements','amazon_3p_listings');
+  if (hasAmazon && variants.includes('3p')) ws.push('amazon_3p_sales_and_traffic','amazon_3p_all_orders','amazon_3p_fba_inventory','amazon_3p_fba_returns','amazon_3p_reimbursements','amazon_3p_listings','amazon_3p_settlements','amazon_3p_orders_by_update');
   if (hasAmazon && variants.includes('1p')) ws.push('amazon_1p_vendor_sales','amazon_1p_vendor_inventory','amazon_1p_vendor_traffic');
   if (selectedPlatforms.has('google_ads')) ws.push('google_ads_campaigns');
   return {product_master_source:pms, oms:hasUc?'unicommerce':null, sales_channels:sc, ad_platforms:ap, analytics:an, windsor_sources:ws};
