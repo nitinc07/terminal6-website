@@ -499,10 +499,14 @@ function renderPullCards(data) {
   if (sources.length > 0) {
     list.innerHTML += '<div class="cat-header">Raw Data (Layer A)</div>';
     sources.forEach(s => {
-      const cls = s.rows > 0 ? 'done' : (isRunning ? 'running' : 'waiting');
-      const txt = s.rows > 0 ? (s.rows.toLocaleString() + ' rows') : (isRunning ? 'Pulling...' : 'Pending');
-      const dateRange = s.first_date && s.last_date ? s.first_date + ' to ' + s.last_date : '';
-      list.innerHTML += `<div class="pull-card"><div class="pull-icon icon-amazon" style="font-size:14px;">A</div><div class="pull-info"><div class="pull-name">${s.endpoint}</div><div class="pull-detail">${s.channel}${dateRange ? ' | ' + dateRange : ''}</div></div><div class="pull-status ${cls}">${txt}</div></div>`;
+      const days = s.days_pulled || 0;
+      const cls = days > 0 ? 'done' : (isRunning ? 'running' : 'waiting');
+      const txt = days > 0 ? (days + ' days') : (isRunning ? 'Pulling...' : 'Pending');
+      const dateRange = s.first_date && s.last_date ? s.first_date + ' \u2192 ' + s.last_date : '';
+      const detail = [s.channel, dateRange, days > 0 ? s.rows.toLocaleString() + ' rows' : ''].filter(Boolean).join(' | ');
+      // Friendly name
+      const name = s.endpoint.replace('amazon_3p_', '').replace('amazon_1p_', '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      list.innerHTML += `<div class="pull-card"><div class="pull-icon icon-amazon" style="font-size:14px;">A</div><div class="pull-info"><div class="pull-name">${name}</div><div class="pull-detail">${detail}</div></div><div class="pull-status ${cls}">${txt}</div></div>`;
     });
   }
 
