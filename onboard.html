@@ -473,44 +473,93 @@ async function connectPlatform(pid, authType) {
 }
 
 // ── Step 3: Data pull ──
-function renderPullStatus() {
-  const list = document.getElementById('pullList'); list.innerHTML = '';
-  // Show connected platforms as pull targets
-  const connectors = document.querySelectorAll('.connector-card');
-  if (connectors.length === 0) { list.innerHTML = '<p style="color:var(--text-light);font-size:14px;">Connect platforms first (Step 2).</p>'; return; }
+let pullPolling = null;
 
-  const cards = document.querySelectorAll('.connector-status.connected');
-  if (cards.length === 0) {
-    list.innerHTML = '<p style="color:var(--text-light);font-size:14px;">No platforms connected yet. Go back and connect at least one.</p>';
-    return;
+async function renderPullStatus() {
+  if (!currentBrandId) return;
+  try {
+    const resp = await fetch(API_BASE + '/v1/onboard/pull-status?brand=' + encodeURIComponent(currentBrandId), {headers: apiHeaders()});
+    if (!resp.ok) { showToast('Failed to load pull status'); return; }
+    const data = await resp.json();
+    renderPullCards(data);
+  } catch (e) { showToast('Network error: ' + e.message); }
+}
+
+function renderPullCards(data) {
+  const list = document.getElementById('pullList'); list.innerHTML = '';
+  const btn = document.getElementById('pullBtn');
+  const dashBtn = document.getElementById('dashboardBtn');
+
+  const layerA = data.layer_a || {};
+  const layerB = data.layer_b || {};
+  const sources = layerA.sources || [];
+  const isRunning = data.pull_running;
+
+  // Show Layer A sources
+  if (sources.length > 0) {
+    list.innerHTML += '<div class="cat-header">Raw Data (Layer A)</div>';
+    sources.forEach(s => {
+      const cls = s.rows > 0 ? 'done' : (isRunning ? 'running' : 'waiting');
+      const txt = s.rows > 0 ? (s.rows.toLocaleString() + ' rows') : (isRunning ? 'Pulling...' : 'Pending');
+      const dateRange = s.first_date && s.last_date ? s.first_date + ' to ' + s.last_date : '';
+      list.innerHTML += `<div class="pull-card"><div class="pull-icon icon-amazon" style="font-size:14px;">A</div><div class="pull-info"><div class="pull-name">${s.endpoint}</div><div class="pull-detail">${s.channel}${dateRange ? ' | ' + dateRange : ''}</div></div><div class="pull-status ${cls}">${txt}</div></div>`;
+    });
   }
 
-  document.querySelectorAll('.connector-card').forEach(card => {
-    const name = card.querySelector('.connector-name')?.textContent || '';
-    const desc = card.querySelector('.connector-desc')?.textContent || '';
-    const icon = card.querySelector('.connector-icon')?.outerHTML || '';
-    const isConnected = card.querySelector('.connector-status.connected');
-    const statusCls = isConnected ? 'waiting' : 'error';
-    const statusTxt = isConnected ? 'Ready' : 'Not Connected';
-    list.innerHTML += `<div class="pull-card">${icon.replace('connector-icon','pull-icon')}<div class="pull-info"><div class="pull-name">${name}</div><div class="pull-detail">${desc}</div></div><div class="pull-status ${statusCls}">${statusTxt}</div></div>`;
+  // Show Layer B tables
+  const b = layerB;
+  const bTables = [
+    {name: 'Product Catalog', key: 'master_skus', icon: 'uc'},
+    {name: 'Channel Listings', key: 'channel_listings', icon: 'uc'},
+    {name: 'Daily Sales', key: 'daily_item_sales', icon: 'amazon'},
+    {name: 'Daily Inventory', key: 'daily_product_inventory', icon: 'amazon'},
+    {name: 'Daily Traffic', key: 'daily_product_page_views', icon: 'google'},
+    {name: 'Returns', key: 'returns', icon: 'amazon'},
+    {name: 'Campaign Metrics', key: 'campaign_daily_metrics', icon: 'meta'},
+  ];
+
+  list.innerHTML += '<div class="cat-header">Canonical Tables (Layer B)</div>';
+  bTables.forEach(t => {
+    const count = b[t.key] || 0;
+    const cls = count > 0 ? 'done' : (isRunning ? 'running' : 'waiting');
+    const txt = count > 0 ? count.toLocaleString() + ' rows' : (isRunning ? 'Processing...' : 'Pending');
+    list.innerHTML += `<div class="pull-card"><div class="pull-icon icon-${t.icon}" style="font-size:14px;">${t.name[0]}</div><div class="pull-info"><div class="pull-name">${t.name}</div></div><div class="pull-status ${cls}">${txt}</div></div>`;
   });
+
+  // Button state
+  if (isRunning) {
+    btn.textContent = 'Pull in progress...';
+    btn.disabled = true;
+    // Poll every 10 seconds
+    if (!pullPolling) {
+      pullPolling = setInterval(renderPullStatus, 10000);
+    }
+  } else if (data.has_data) {
+    btn.style.display = 'none';
+    dashBtn.style.display = '';
+    if (pullPolling) { clearInterval(pullPolling); pullPolling = null; }
+  } else {
+    btn.textContent = 'Start Data Pull';
+    btn.disabled = false;
+  }
 }
 
 async function startPull() {
   const btn = document.getElementById('pullBtn');
-  btn.textContent = 'Pulling...'; btn.disabled = true;
+  btn.textContent = 'Starting...'; btn.disabled = true;
 
-  // Update all "Ready" cards to "Pulling..."
-  document.querySelectorAll('.pull-status.waiting').forEach(el => { el.className = 'pull-status running'; el.textContent = 'Pulling...'; });
-
-  // Simulate pull progress (actual pipeline runs server-side)
-  showToast('Data pull initiated. This runs on our servers — check back in a few minutes.');
-
-  setTimeout(() => {
-    document.querySelectorAll('.pull-status.running').forEach(el => { el.className = 'pull-status done'; el.textContent = 'Done'; });
-    btn.style.display = 'none';
-    document.getElementById('dashboardBtn').style.display = '';
-  }, 3000);
+  try {
+    const resp = await fetch(API_BASE + '/v1/onboard/pull?brand=' + encodeURIComponent(currentBrandId), {
+      method: 'POST', headers: apiHeaders(),
+    });
+    if (!resp.ok) { const e = await resp.json().catch(()=>({})); showToast('Error: '+(e.detail||resp.statusText)); btn.textContent = 'Start Data Pull'; btn.disabled = false; return; }
+    const data = await resp.json();
+    showToast(data.message || 'Data pull started');
+    btn.textContent = 'Pull in progress...';
+    // Start polling
+    pullPolling = setInterval(renderPullStatus, 10000);
+    setTimeout(renderPullStatus, 2000); // first check after 2s
+  } catch (e) { showToast('Error: '+e.message); btn.textContent = 'Start Data Pull'; btn.disabled = false; }
 }
 
 // ── Step 4 handled inline in goToStep ──
