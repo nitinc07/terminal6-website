@@ -659,7 +659,7 @@ footer a:hover { color: var(--text); }
         </div>
         <div class="form-row">
           <label for="email">Email *</label>
-          <input type="email" name="email" id="email" required placeholder="you@company.com">
+          <input type="email" name="email" id="email" required placeholder="you@company.com" pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}" title="Please enter a valid email address">
         </div>
       </div>
       <div class="form-row">
@@ -685,7 +685,7 @@ footer a:hover { color: var(--text); }
         </div>
       </div>
       <div class="form-row">
-        <label for="country">Country of Operations</label>
+        <label for="country">Country of Operations (optional)</label>
         <select name="country" id="country">
           <option value="" disabled selected>Select country</option>
           <option value="US">United States</option>
@@ -699,7 +699,7 @@ footer a:hover { color: var(--text); }
         </select>
       </div>
       <div class="form-row">
-        <label for="message">What's the biggest operational problem you face today?</label>
+        <label for="message">What's the biggest operational problem you face today? (optional)</label>
         <textarea name="message" id="message" placeholder="e.g. We can't connect our ad spend data with inventory levels across channels..."></textarea>
       </div>
       <button type="submit" class="form-submit">Get in touch</button>
