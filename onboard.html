@@ -118,28 +118,80 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 </head>
 <body>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 /* ACCESS GATE — platform admins only.
-   For local dev: inject a dev session so the page loads without Google sign-in. */
+   If not signed in, shows inline sign-in instead of redirecting to home.html.
+   For local dev: auto-injects a dev session. */
 (function(){
   const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  const saved = sessionStorage.getItem('t6_user');
-  if (!saved) {
-    if (isLocal) {
-      sessionStorage.setItem('t6_user', JSON.stringify({email: 'contact@terminal6.io', name: 'Dev Mode'}));
-      sessionStorage.setItem('t6_token', 'dev-token');
-    } else {
-      location.replace('/home.html'); document.documentElement.style.display='none'; return;
-    }
-  }
-  const user = JSON.parse(sessionStorage.getItem('t6_user'));
-  const admins = ['contact@terminal6.io'];
-  if (!admins.includes(user.email) && !isLocal) {
-    location.replace('/home.html'); document.documentElement.style.display='none';
+  if (isLocal && !sessionStorage.getItem('t6_user')) {
+    sessionStorage.setItem('t6_user', JSON.stringify({email: 'contact@terminal6.io', name: 'Dev Mode'}));
+    sessionStorage.setItem('t6_token', 'dev-token');
   }
 })();
 </script>
 
+<!-- INLINE SIGN-IN (shows only when no session) -->
+<div id="loginScreen" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:1000; display:flex; align-items:center; justify-content:center;">
+  <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:48px 44px; max-width:420px; width:100%; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,.04);">
+    <div style="font-family:var(--serif); font-size:36px; font-weight:700; color:var(--accent); margin-bottom:4px;">T6</div>
+    <div style="font-family:var(--serif); font-size:26px; font-weight:600; margin-bottom:8px;">Terminal6</div>
+    <div style="font-size:14px; color:var(--text-mid); margin-bottom:32px;">Sign in to access brand onboarding.</div>
+    <div style="display:flex; justify-content:center;">
+      <div id="g_id_onload"
+           data-client_id="32739695176-gkc23he5t5l0h7gfq57rkm5pm673l3e5.apps.googleusercontent.com"
+           data-context="signin"
+           data-ux_mode="popup"
+           data-callback="handleGoogleSignIn"
+           data-auto_prompt="false"></div>
+      <div class="g_id_signin"
+           data-type="standard"
+           data-shape="rectangular"
+           data-theme="outline"
+           data-text="sign_in_with"
+           data-size="large"
+           data-logo_alignment="left"
+           data-width="300"></div>
+    </div>
+    <div id="loginError" style="color:var(--r); font-size:12px; margin-top:12px; display:none;"></div>
+  </div>
+</div>
+
+<script>
+function handleGoogleSignIn(response) {
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  const email = payload.email.toLowerCase();
+  const admins = ['contact@terminal6.io'];
+  if (!admins.includes(email)) {
+    document.getElementById('loginError').textContent = 'Access restricted to platform admins.';
+    document.getElementById('loginError').style.display = 'block';
+    return;
+  }
+  sessionStorage.setItem('t6_user', JSON.stringify({email: email, name: payload.name, picture: payload.picture}));
+  sessionStorage.setItem('t6_token', response.credential);
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  initPage();
+}
+
+(function() {
+  const saved = sessionStorage.getItem('t6_user');
+  if (saved) {
+    const user = JSON.parse(saved);
+    const admins = ['contact@terminal6.io'];
+    if (admins.includes(user.email)) {
+      document.getElementById('loginScreen').style.display = 'none';
+      return;
+    }
+  }
+  // Show login, hide main content
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainContent').style.display = 'none';
+})();
+</script>
+
+<div id="mainContent">
 <nav class="nav">
   <div class="nav-inner">
     <a href="/home.html" class="nav-logo">Terminal6</a>
@@ -310,6 +362,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 </div>
 
 <div class="toast" id="toast"></div>
+</div><!-- /mainContent -->
 
 <script>
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
@@ -318,18 +371,20 @@ const API_BASE = IS_LOCAL ? 'http://localhost:8001' : 'https://api.terminal6.io'
 let currentBrandId = null;
 let selectedPlatforms = new Set();
 
-// ── Check if brand_id is in URL (returning brand) ──
-(function init() {
+function initPage() {
+  // Check if brand_id is in URL (returning brand)
   const params = new URLSearchParams(location.search);
   const brandId = params.get('brand');
   if (brandId) {
     currentBrandId = brandId;
-    // Skip discovery, go straight to connector dashboard
     document.getElementById('step1').classList.remove('active');
     document.getElementById('step2').classList.add('active');
     refreshStatus();
   }
-})();
+}
+
+// Auto-init if already signed in
+if (sessionStorage.getItem('t6_user')) { initPage(); }
 
 function getToken() {
   return sessionStorage.getItem('t6_token') || '';
