@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Terminal6 — Brand Onboarding</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFAF8; --bg-card: #FFF; --bg-warm: #F5F0EB;
+  --text: #1C1917; --text-mid: #57534E; --text-light: #A8A29E;
+  --accent: #C2410C; --accent-light: #FFF7ED; --accent-bg: rgba(194,65,12,.06);
+  --teal: #0F766E; --blue: #1565C0; --green: #2E7D32;
+  --border: #E7E5E4; --r: #B91C1C;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; min-height: 100vh; }
+
+.nav { position: sticky; top: 0; background: rgba(250,250,248,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 50; }
+.nav-inner { max-width: 900px; margin: 0 auto; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.nav-tag { font-size: 11px; color: var(--text-light); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; margin-left: 10px; }
+
+.page { max-width: 900px; margin: 0 auto; padding: 48px 32px 80px; }
+.hero { margin-bottom: 40px; }
+.hero-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 10px; }
+.hero h1 { font-family: var(--serif); font-size: 32px; font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
+.hero p { font-size: 15px; color: var(--text-mid); line-height: 1.7; max-width: 600px; }
+
+.step { display: none; }
+.step.active { display: block; }
+
+/* FORM */
+.form-section { margin-bottom: 32px; }
+.form-section h2 { font-family: var(--serif); font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-group { display: flex; flex-direction: column; }
+.form-group label { font-size: 13px; font-weight: 500; color: var(--text-mid); margin-bottom: 4px; }
+.form-group input, .form-group select { font-family: var(--sans); font-size: 14px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text); outline: none; transition: border-color .15s; }
+.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+/* PLATFORM TOGGLES */
+.platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.platform-toggle { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg-card); border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .15s; user-select: none; }
+.platform-toggle:hover { border-color: var(--accent); background: var(--accent-light); }
+.platform-toggle.selected { border-color: var(--accent); background: var(--accent-light); }
+.platform-toggle .p-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.platform-toggle .p-label { font-size: 14px; font-weight: 500; }
+.platform-toggle .p-check { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .15s; }
+.platform-toggle.selected .p-check { background: var(--accent); border-color: var(--accent); color: white; }
+
+.sub-options { display: none; padding: 12px 16px; margin: -4px 0 12px; background: var(--accent-light); border: 1px solid rgba(194,65,12,.15); border-radius: 0 0 10px 10px; font-size: 13px; }
+.sub-options.visible { display: block; }
+.sub-options label { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 0; }
+.sub-options input[type="radio"] { accent-color: var(--accent); }
+
+.btn { font-family: var(--sans); font-size: 14px; font-weight: 600; padding: 12px 28px; border-radius: 8px; border: none; cursor: pointer; transition: all .15s; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: #A93B0B; }
+.btn-secondary { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-row { display: flex; gap: 12px; margin-top: 32px; }
+
+/* CONNECTOR CARDS */
+.connector-grid { display: flex; flex-direction: column; gap: 12px; }
+.connector-card { display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; transition: all .15s; }
+.connector-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+.connector-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.connector-info { flex: 1; }
+.connector-name { font-size: 15px; font-weight: 600; }
+.connector-desc { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+.connector-status { font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 6px; white-space: nowrap; cursor: pointer; }
+.connector-status.connected { background: #E8F5E9; color: var(--green); }
+.connector-status.pending { background: var(--accent-light); color: var(--accent); }
+.connector-status.pending:hover { background: var(--accent); color: white; }
+.connector-status.manual { background: var(--bg-warm); color: var(--text-mid); }
+.connector-status.manual:hover { background: var(--border); }
+
+.status-summary { display: flex; gap: 24px; margin-bottom: 24px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+.status-summary .stat { text-align: center; }
+.status-summary .stat-value { font-family: var(--mono); font-size: 28px; font-weight: 600; }
+.status-summary .stat-label { font-size: 12px; color: var(--text-light); }
+
+.cat-header { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-light); margin: 24px 0 10px; }
+.cat-header:first-child { margin-top: 0; }
+
+.icon-amazon { background: #FF9900; color: white; }
+.icon-shopify { background: #96BF48; color: white; }
+.icon-google { background: #4285F4; color: white; }
+.icon-meta { background: #1877F2; color: white; }
+.icon-uc { background: #6C3FC5; color: white; }
+.icon-ga4 { background: #E37400; color: white; }
+.icon-flipkart { background: #2874F0; color: white; }
+.icon-meesho { background: #E91E63; color: white; }
+
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; }
+.modal-overlay.active { display: flex; }
+.modal { background: var(--bg-card); border-radius: 14px; padding: 32px; max-width: 480px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+.modal h3 { font-family: var(--serif); font-size: 20px; margin-bottom: 12px; }
+.modal p { font-size: 14px; color: var(--text-mid); margin-bottom: 20px; line-height: 1.6; }
+.modal .form-group { margin-bottom: 14px; }
+.modal .btn-row { margin-top: 20px; }
+
+.toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: white; padding: 14px 24px; border-radius: 10px; font-size: 14px; z-index: 200; display: none; box-shadow: 0 8px 30px rgba(0,0,0,.2); }
+.toast.show { display: block; animation: slideUp .3s ease; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
+  .platform-grid { grid-template-columns: 1fr; }
+  .page { padding: 32px 16px 60px; }
+}
+</style>
+</head>
+<body>
+
+<script>
+/* ACCESS GATE — platform admins only.
+   For local dev: inject a dev session so the page loads without Google sign-in. */
+(function(){
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const saved = sessionStorage.getItem('t6_user');
+  if (!saved) {
+    if (isLocal) {
+      sessionStorage.setItem('t6_user', JSON.stringify({email: 'contact@terminal6.io', name: 'Dev Mode'}));
+      sessionStorage.setItem('t6_token', 'dev-token');
+    } else {
+      location.replace('/home.html'); document.documentElement.style.display='none'; return;
+    }
+  }
+  const user = JSON.parse(sessionStorage.getItem('t6_user'));
+  const admins = ['contact@terminal6.io'];
+  if (!admins.includes(user.email) && !isLocal) {
+    location.replace('/home.html'); document.documentElement.style.display='none';
+  }
+})();
+</script>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/home.html" class="nav-logo">Terminal6</a>
+    <span class="nav-tag">Onboarding</span>
+  </div>
+</nav>
+
+<!-- ═══════════════ STEP 1: DISCOVERY FORM ═══════════════ -->
+<div class="step active" id="step1">
+<div class="page">
+  <div class="hero">
+    <div class="hero-label">New Brand</div>
+    <h1>Brand Onboarding</h1>
+    <p>Tell us about the brand and we'll set up the right data connections.</p>
+  </div>
+
+  <form id="discoveryForm" onsubmit="return false;">
+
+    <div class="form-section">
+      <h2>Brand</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Brand Name *</label>
+          <input type="text" id="brandName" required>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" id="category" placeholder="e.g. Mobile Accessories, Apparel">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Brand Operator Email</label>
+          <input type="email" id="opEmail" placeholder="Who will use the dashboard?">
+        </div>
+        <div class="form-group">
+          <label>Operator Name</label>
+          <input type="text" id="opName">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>Where do they sell?</h2>
+      <div class="platform-grid">
+        <div class="platform-toggle" data-platform="amazon" onclick="togglePlatform(this)">
+          <div class="p-icon icon-amazon">A</div>
+          <div class="p-label">Amazon</div>
+          <div class="p-check"></div>
+        </div>
+        <div class="platform-toggle" data-platform="flipkart" onclick="togglePlatform(this)">
+          <div class="p-icon icon-flipkart">F</div>
+          <div class="p-label">Flipkart</div>
+          <div class="p-check"></div>
+        </div>
+        <div class="platform-toggle" data-platform="shopify" onclick="togglePlatform(this)">
+          <div class="p-icon icon-shopify">S</div>
+          <div class="p-label">Shopify</div>
+          <div class="p-check"></div>
+        </div>
+        <div class="platform-toggle" data-platform="meesho" onclick="togglePlatform(this)">
+          <div class="p-icon icon-meesho">M</div>
+          <div class="p-label">Meesho</div>
+          <div class="p-check"></div>
+        </div>
+      </div>
+      <div class="sub-options" id="amazonOptions">
+        <label><input type="radio" name="amazonType" value="3p" checked> Seller Central (3P)</label>
+        <label><input type="radio" name="amazonType" value="1p"> Vendor Central (1P)</label>
+        <label><input type="radio" name="amazonType" value="both"> Both</label>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>How do they manage operations?</h2>
+      <div class="platform-grid">
+        <div class="platform-toggle" data-platform="unicommerce" onclick="togglePlatform(this)">
+          <div class="p-icon icon-uc">U</div>
+          <div class="p-label">Unicommerce</div>
+          <div class="p-check"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>Where do they run ads?</h2>
+      <div class="platform-grid">
+        <div class="platform-toggle" data-platform="meta_ads" onclick="togglePlatform(this)">
+          <div class="p-icon icon-meta">M</div>
+          <div class="p-label">Meta Ads</div>
+          <div class="p-check"></div>
+        </div>
+        <div class="platform-toggle" data-platform="google_ads" onclick="togglePlatform(this)">
+          <div class="p-icon icon-google">G</div>
+          <div class="p-label">Google Ads</div>
+          <div class="p-check"></div>
+        </div>
+        <div class="platform-toggle" data-platform="amazon_ads" onclick="togglePlatform(this)">
+          <div class="p-icon icon-amazon">A</div>
+          <div class="p-label">Amazon Ads</div>
+          <div class="p-check"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h2>Analytics</h2>
+      <div class="platform-grid">
+        <div class="platform-toggle" data-platform="ga4" onclick="togglePlatform(this)">
+          <div class="p-icon icon-ga4">G</div>
+          <div class="p-label">Google Analytics</div>
+          <div class="p-check"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="submitDiscovery()">Set Up Connections</button>
+    </div>
+  </form>
+</div>
+</div>
+
+<!-- ═══════════════ STEP 2: CONNECTOR DASHBOARD ═══════════════ -->
+<div class="step" id="step2">
+<div class="page">
+  <div class="hero">
+    <div class="hero-label" id="step2BrandLabel"></div>
+    <h1>Connect Your Platforms</h1>
+    <p>Click each platform to authorize Terminal6 to pull your data.</p>
+  </div>
+
+  <div class="status-summary">
+    <div class="stat"><div class="stat-value" id="connectedCount">0</div><div class="stat-label">Connected</div></div>
+    <div class="stat"><div class="stat-value" id="totalCount">0</div><div class="stat-label">Required</div></div>
+  </div>
+
+  <div id="connectorList" class="connector-grid"></div>
+
+  <div class="btn-row" style="margin-top:32px;">
+    <button class="btn btn-secondary" onclick="refreshStatus()">Refresh Status</button>
+  </div>
+</div>
+</div>
+
+<!-- UC Credential Modal -->
+<div class="modal-overlay" id="ucModal">
+  <div class="modal">
+    <h3>Connect Unicommerce</h3>
+    <p>Enter your Unicommerce API credentials. We'll create a secure connection to pull your product catalog, orders, and inventory.</p>
+    <div class="form-group">
+      <label>Tenant URL</label>
+      <input type="text" id="ucTenant" placeholder="https://yourbrand.unicommerce.com">
+    </div>
+    <div class="form-group">
+      <label>API Username</label>
+      <input type="text" id="ucUsername" value="contact@terminal6.io">
+    </div>
+    <div class="form-group">
+      <label>API Password</label>
+      <input type="password" id="ucPassword">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeModal('ucModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUcCredentials()">Connect</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const API_BASE = IS_LOCAL ? 'http://localhost:8001' : 'https://api.terminal6.io';
+
+let currentBrandId = null;
+let selectedPlatforms = new Set();
+
+// ── Check if brand_id is in URL (returning brand) ──
+(function init() {
+  const params = new URLSearchParams(location.search);
+  const brandId = params.get('brand');
+  if (brandId) {
+    currentBrandId = brandId;
+    // Skip discovery, go straight to connector dashboard
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    refreshStatus();
+  }
+})();
+
+function getToken() {
+  return sessionStorage.getItem('t6_token') || '';
+}
+
+function apiHeaders() {
+  return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' };
+}
+
+// ── Platform toggles ──
+function togglePlatform(el) {
+  const p = el.dataset.platform;
+  el.classList.toggle('selected');
+  if (el.classList.contains('selected')) {
+    selectedPlatforms.add(p);
+    el.querySelector('.p-check').textContent = '\u2713';
+  } else {
+    selectedPlatforms.delete(p);
+    el.querySelector('.p-check').textContent = '';
+  }
+  if (p === 'amazon') {
+    document.getElementById('amazonOptions').classList.toggle('visible', selectedPlatforms.has('amazon'));
+  }
+}
+
+// ── Build active_channels ──
+function buildActiveChannels() {
+  const hasUc = selectedPlatforms.has('unicommerce');
+  const hasShopify = selectedPlatforms.has('shopify');
+  const hasAmazon = selectedPlatforms.has('amazon');
+
+  let productMasterSource = 'csv';
+  if (hasUc) productMasterSource = 'unicommerce';
+  else if (hasShopify) productMasterSource = 'shopify';
+
+  const amazonType = document.querySelector('input[name="amazonType"]:checked')?.value || '3p';
+  const variants = amazonType === 'both' ? ['3p', '1p'] : [amazonType];
+
+  const salesChannels = {};
+  if (hasAmazon) salesChannels.amazon = { enabled: true, variants, data_source: 'windsor' };
+  if (selectedPlatforms.has('flipkart')) salesChannels.flipkart = { enabled: true };
+  if (hasShopify) salesChannels.shopify = { enabled: true, role: 'd2c' };
+  if (selectedPlatforms.has('meesho')) salesChannels.meesho = { enabled: true };
+
+  const adPlatforms = {};
+  if (selectedPlatforms.has('meta_ads')) adPlatforms.meta_ads = { enabled: true };
+  if (selectedPlatforms.has('google_ads')) adPlatforms.google_ads = { enabled: true, data_source: 'windsor' };
+  if (selectedPlatforms.has('amazon_ads')) adPlatforms.amazon_ads = { enabled: true };
+
+  const analytics = {};
+  if (selectedPlatforms.has('ga4')) analytics.ga4 = { enabled: true };
+
+  const windsorSources = [];
+  if (hasAmazon && variants.includes('3p')) {
+    windsorSources.push('amazon_3p_sales_and_traffic', 'amazon_3p_all_orders',
+      'amazon_3p_fba_inventory', 'amazon_3p_fba_returns', 'amazon_3p_reimbursements', 'amazon_3p_listings');
+  }
+  if (hasAmazon && variants.includes('1p')) {
+    windsorSources.push('amazon_1p_vendor_sales', 'amazon_1p_vendor_inventory', 'amazon_1p_vendor_traffic');
+  }
+  if (selectedPlatforms.has('google_ads')) windsorSources.push('google_ads_campaigns');
+
+  return {
+    product_master_source: productMasterSource,
+    oms: hasUc ? 'unicommerce' : null,
+    sales_channels: salesChannels,
+    ad_platforms: adPlatforms,
+    analytics,
+    windsor_sources: windsorSources,
+  };
+}
+
+// ── Submit ──
+async function submitDiscovery() {
+  const brandName = document.getElementById('brandName').value.trim();
+  if (!brandName) { showToast('Brand name is required'); return; }
+  if (selectedPlatforms.size === 0) { showToast('Select at least one platform'); return; }
+
+  const body = {
+    brand_name: brandName,
+    gst_number: null,
+    registered_state: null,
+    currency: 'INR',
+    operator_email: document.getElementById('opEmail').value.trim() || null,
+    operator_name: document.getElementById('opName').value.trim() || null,
+    active_channels: buildActiveChannels(),
+  };
+
+  try {
+    const resp = await fetch(API_BASE + '/v1/onboard/create', {
+      method: 'POST', headers: apiHeaders(), body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      showToast('Error: ' + (err.detail || resp.statusText));
+      return;
+    }
+    const data = await resp.json();
+    currentBrandId = data.brand_id;
+
+    // Update URL so refreshing stays on step 2
+    history.replaceState(null, '', '?brand=' + data.brand_id);
+
+    document.getElementById('step1').classList.remove('active');
+    document.getElementById('step2').classList.add('active');
+    document.getElementById('step2BrandLabel').textContent = data.brand_name.toUpperCase();
+    refreshStatus();
+  } catch (e) {
+    showToast('Network error: ' + e.message);
+  }
+}
+
+// ── Refresh status ──
+async function refreshStatus() {
+  if (!currentBrandId) return;
+  try {
+    const resp = await fetch(API_BASE + '/v1/onboard/status?brand_id=' + currentBrandId, {
+      headers: apiHeaders(),
+    });
+    if (!resp.ok) { showToast('Failed to load status'); return; }
+    const data = await resp.json();
+    document.getElementById('step2BrandLabel').textContent = data.brand_name.toUpperCase();
+    renderConnectors(data);
+  } catch (e) {
+    showToast('Network error: ' + e.message);
+  }
+}
+
+// ── Render connectors ──
+const ICON_HTML = {
+  amazon: '<span class="connector-icon icon-amazon">A</span>',
+  amazon_ads: '<span class="connector-icon icon-amazon">A</span>',
+  shopify: '<span class="connector-icon icon-shopify">S</span>',
+  google_ads: '<span class="connector-icon icon-google">G</span>',
+  meta: '<span class="connector-icon icon-meta">M</span>',
+  uc: '<span class="connector-icon icon-uc">U</span>',
+  ga4: '<span class="connector-icon icon-ga4">G</span>',
+};
+
+const CAT_LABELS = { oms: 'Order Management', sales: 'Sales Channels', ads: 'Ad Platforms', analytics: 'Analytics' };
+
+function renderConnectors(data) {
+  document.getElementById('connectedCount').textContent = data.connected;
+  document.getElementById('totalCount').textContent = data.total;
+
+  const list = document.getElementById('connectorList');
+  list.innerHTML = '';
+
+  const groups = {};
+  data.connectors.forEach(c => {
+    if (!groups[c.category]) groups[c.category] = [];
+    groups[c.category].push(c);
+  });
+
+  ['oms', 'sales', 'ads', 'analytics'].forEach(cat => {
+    if (!groups[cat]) return;
+    list.innerHTML += '<div class="cat-header">' + (CAT_LABELS[cat] || cat) + '</div>';
+    groups[cat].forEach(c => {
+      const icon = ICON_HTML[c.icon] || '<span class="connector-icon" style="background:var(--border);color:var(--text);">?</span>';
+      const cls = c.connected ? 'connected' : (c.auth_type === 'credentials' ? 'manual' : 'pending');
+      const txt = c.connected ? 'Connected' : (c.auth_type === 'credentials' ? 'Set Up' : 'Connect');
+      const click = c.connected
+        ? `onclick="if(confirm('${c.name} is already connected. Reconnect?')) connectPlatform('${c.id}','${c.auth_type}')"`
+        : `onclick="connectPlatform('${c.id}','${c.auth_type}')"`;
+
+      list.innerHTML += `<div class="connector-card">${icon}<div class="connector-info"><div class="connector-name">${c.name}</div><div class="connector-desc">${c.description}</div></div><div class="connector-status ${cls}" ${click}>${txt}</div></div>`;
+    });
+  });
+}
+
+// ── Connect ──
+async function connectPlatform(platformId, authType) {
+  if (authType === 'credentials' && platformId === 'unicommerce') {
+    openModal('ucModal'); return;
+  }
+  try {
+    const resp = await fetch(
+      API_BASE + '/v1/onboard/connect-url?brand_id=' + currentBrandId + '&platform=' + platformId,
+      { headers: apiHeaders() }
+    );
+    if (!resp.ok) { showToast('Failed to get connect URL'); return; }
+    const data = await resp.json();
+    if (data.url) {
+      window.open(data.url, '_blank');
+      showToast('Authorize in the new tab, then click Refresh Status');
+    } else {
+      showToast(data.instructions || 'Manual setup required');
+    }
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+// ── UC modal ──
+async function saveUcCredentials() {
+  const tenant = document.getElementById('ucTenant').value.trim();
+  const password = document.getElementById('ucPassword').value.trim();
+  if (!tenant || !password) { showToast('Tenant URL and password are required'); return; }
+  showToast('UC credentials noted. Run seed-uc command on server to activate.');
+  closeModal('ucModal');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
