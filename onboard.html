@@ -463,14 +463,60 @@ function renderConnectors(data) {
 
 async function connectPlatform(pid, authType) {
   if (authType === 'credentials' && pid === 'unicommerce') { openModal('ucModal'); return; }
+  if (pid === 'shopify') {
+    // Prompt for shop name before calling connect-url
+    const shop = prompt('Enter the Shopify store name (the part before .myshopify.com):');
+    if (!shop) return;
+    const url = API_BASE + '/v1/onboard/connect-url?brand_id=' + currentBrandId + '&platform=shopify&shop=' + encodeURIComponent(shop.trim());
+    try {
+      const resp = await fetch(url, {headers: apiHeaders()});
+      if (!resp.ok) { showToast('Failed to get Shopify connect URL'); return; }
+      const data = await resp.json();
+      const openUrl = data.url || data.redirect_url;
+      if (openUrl) { window.open(openUrl, '_blank'); showToast('Authorize Shopify in the new tab, then click Refresh Status'); }
+      else showToast(data.instructions || data.instruction || 'Manual setup required');
+    } catch (e) { showToast('Error: '+e.message); }
+    return;
+  }
   try {
     const resp = await fetch(API_BASE + '/v1/onboard/connect-url?brand_id=' + currentBrandId + '&platform=' + pid, {headers: apiHeaders()});
     if (!resp.ok) { showToast('Failed to get connect URL'); return; }
     const data = await resp.json();
-    if (data.url) { window.open(data.url, '_blank'); showToast('Authorize in the new tab, then click Refresh Status'); }
-    else showToast(data.instructions || 'Manual setup required');
+    const openUrl = data.url || data.redirect_url;
+    if (openUrl) { window.open(openUrl, '_blank'); showToast('Authorize in the new tab, then click Refresh Status'); }
+    else showToast(data.instructions || data.instruction || 'Manual setup required');
   } catch (e) { showToast('Error: '+e.message); }
 }
+
+// GA4 property picker — shown after ?ga4=success redirect
+async function checkGa4Callback() {
+  const p = new URLSearchParams(location.search);
+  if (p.get('ga4') !== 'success') return;
+  const bid = p.get('brand') || currentBrandId;
+  if (!bid) return;
+  try {
+    const resp = await fetch(API_BASE + '/auth/ga4/properties?brand_id=' + bid);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const props = data.properties || [];
+    if (!props.length) { showToast('GA4 connected but no properties found'); return; }
+    // Build picker
+    const choices = props.map((p,i)=>`${i+1}. ${p.display_name} (${p.property_id}) — ${p.account_name}`).join('\n');
+    const pick = prompt(`GA4 connected — pick a property by number:\n\n${choices}`, '1');
+    if (!pick) return;
+    const idx = parseInt(pick, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= props.length) { showToast('Invalid choice'); return; }
+    const chosen = props[idx];
+    const pr = await fetch(API_BASE + '/auth/ga4/select-property', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({brand_id: bid, property_id: chosen.property_id}),
+    });
+    if (pr.ok) { showToast(`GA4 property ${chosen.property_id} saved`); renderConnectorStatus(); }
+    else showToast('Failed to save property');
+  } catch (e) { showToast('Error: '+e.message); }
+}
+window.addEventListener('DOMContentLoaded', () => setTimeout(checkGa4Callback, 500));
 
 // ── Step 3: Data pull ──
 let pullPolling = null;
