@@ -495,17 +495,72 @@ function renderPullCards(data) {
   const sources = layerA.sources || [];
   const isRunning = data.pull_running;
 
-  // Show data sources (Layer A only — canonical tables hidden from customer)
+  // Group sources by platform + report category
+  function classifySource(endpoint) {
+    if (endpoint.startsWith('amazon_3p_') || endpoint.startsWith('amazon_1p_')) {
+      if (endpoint.includes('vendor')) return {group: 'Amazon Vendor Central', icon: 'amazon'};
+      if (endpoint.includes('fba')) return {group: 'Amazon Business Reports', icon: 'amazon'};
+      if (endpoint.includes('settlement') || endpoint.includes('reimbursement')) return {group: 'Amazon Financial Reports', icon: 'amazon'};
+      if (endpoint.includes('sales_and_traffic') || endpoint.includes('orders') || endpoint.includes('listings')) return {group: 'Amazon Business Reports', icon: 'amazon'};
+      return {group: 'Amazon Business Reports', icon: 'amazon'};
+    }
+    if (endpoint.startsWith('amazon_ads_') || endpoint === 'amazon_ads') return {group: 'Amazon Ads Reports', icon: 'amazon'};
+    if (endpoint.startsWith('google_ads_')) return {group: 'Google Ads Reports', icon: 'google'};
+    if (endpoint.startsWith('meta_') || endpoint.startsWith('facebook_')) return {group: 'Meta Ads Reports', icon: 'meta'};
+    if (endpoint.startsWith('shopify_')) return {group: 'Shopify Reports', icon: 'shopify'};
+    if (endpoint.startsWith('ga4_') || endpoint.startsWith('analytics_')) return {group: 'Google Analytics', icon: 'ga4'};
+    if (endpoint.startsWith('unicommerce_') || endpoint.startsWith('uc_')) return {group: 'Unicommerce', icon: 'uc'};
+    if (endpoint.startsWith('flipkart_')) return {group: 'Flipkart Reports', icon: 'flipkart'};
+    return {group: 'Other', icon: 'amazon'};
+  }
+
+  // Source display name cleanup
+  function sourceLabel(endpoint) {
+    return endpoint
+      .replace('amazon_3p_', '')
+      .replace('amazon_1p_vendor_', '')
+      .replace('amazon_1p_', '')
+      .replace('amazon_ads_', '')
+      .replace('google_ads_', '')
+      .replace('meta_ads_', '')
+      .replace('shopify_', '')
+      .replace('ga4_', '')
+      .replace('unicommerce_', '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+  }
+
   if (sources.length > 0) {
+    const grouped = {};
+    const groupIcons = {};
+    const groupOrder = [];
     sources.forEach(s => {
-      const days = s.days_pulled || 0;
-      const cls = days > 0 ? 'done' : (isRunning ? 'running' : 'waiting');
-      const txt = days > 0 ? (days + ' days') : (isRunning ? 'Pulling...' : 'Pending');
-      const dateRange = s.first_date && s.last_date ? s.first_date + ' \u2192 ' + s.last_date : '';
-      const detail = [dateRange, days > 0 ? s.rows.toLocaleString() + ' rows' : ''].filter(Boolean).join(' | ');
-      // Friendly name
-      const name = s.endpoint.replace('amazon_3p_', '').replace('amazon_1p_', '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      list.innerHTML += `<div class="pull-card"><div class="pull-icon icon-amazon" style="font-size:14px;">A</div><div class="pull-info"><div class="pull-name">${name}</div><div class="pull-detail">${detail}</div></div><div class="pull-status ${cls}">${txt}</div></div>`;
+      const {group, icon} = classifySource(s.endpoint);
+      if (!grouped[group]) { grouped[group] = []; groupOrder.push(group); }
+      grouped[group].push(s);
+      groupIcons[group] = icon;
+    });
+
+    // Preferred order
+    const preferredOrder = [
+      'Amazon Business Reports', 'Amazon Vendor Central', 'Amazon Financial Reports', 'Amazon Ads Reports',
+      'Shopify Reports', 'Unicommerce', 'Flipkart Reports',
+      'Meta Ads Reports', 'Google Ads Reports', 'Google Analytics', 'Other',
+    ];
+    const ordered = preferredOrder.filter(g => grouped[g]).concat(groupOrder.filter(g => !preferredOrder.includes(g)));
+
+    ordered.forEach(group => {
+      list.innerHTML += '<div class="cat-header">' + group + '</div>';
+      grouped[group].forEach(s => {
+        const days = s.days_pulled || 0;
+        const cls = days > 0 ? 'done' : (isRunning ? 'running' : 'waiting');
+        const txt = days > 0 ? (days + ' days') : (isRunning ? 'Pulling...' : 'Pending');
+        const dateRange = s.first_date && s.last_date ? s.first_date + ' \u2192 ' + s.last_date : '';
+        const detail = [dateRange, days > 0 ? s.rows.toLocaleString() + ' rows' : ''].filter(Boolean).join(' | ');
+        const name = sourceLabel(s.endpoint);
+        const iconHtml = `<div class="pull-icon icon-${groupIcons[group]}" style="font-size:14px;">${group[0]}</div>`;
+        list.innerHTML += `<div class="pull-card">${iconHtml}<div class="pull-info"><div class="pull-name">${name}</div><div class="pull-detail">${detail}</div></div><div class="pull-status ${cls}">${txt}</div></div>`;
+      });
     });
   }
 
