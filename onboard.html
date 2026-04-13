@@ -495,40 +495,19 @@ function renderPullCards(data) {
   const sources = layerA.sources || [];
   const isRunning = data.pull_running;
 
-  // Show Layer A sources
+  // Show data sources (Layer A only — canonical tables hidden from customer)
   if (sources.length > 0) {
-    list.innerHTML += '<div class="cat-header">Raw Data (Layer A)</div>';
     sources.forEach(s => {
       const days = s.days_pulled || 0;
       const cls = days > 0 ? 'done' : (isRunning ? 'running' : 'waiting');
       const txt = days > 0 ? (days + ' days') : (isRunning ? 'Pulling...' : 'Pending');
       const dateRange = s.first_date && s.last_date ? s.first_date + ' \u2192 ' + s.last_date : '';
-      const detail = [s.channel, dateRange, days > 0 ? s.rows.toLocaleString() + ' rows' : ''].filter(Boolean).join(' | ');
+      const detail = [dateRange, days > 0 ? s.rows.toLocaleString() + ' rows' : ''].filter(Boolean).join(' | ');
       // Friendly name
       const name = s.endpoint.replace('amazon_3p_', '').replace('amazon_1p_', '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       list.innerHTML += `<div class="pull-card"><div class="pull-icon icon-amazon" style="font-size:14px;">A</div><div class="pull-info"><div class="pull-name">${name}</div><div class="pull-detail">${detail}</div></div><div class="pull-status ${cls}">${txt}</div></div>`;
     });
   }
-
-  // Show Layer B tables
-  const b = layerB;
-  const bTables = [
-    {name: 'Product Catalog', key: 'master_skus', icon: 'uc'},
-    {name: 'Channel Listings', key: 'channel_listings', icon: 'uc'},
-    {name: 'Daily Sales', key: 'daily_item_sales', icon: 'amazon'},
-    {name: 'Daily Inventory', key: 'daily_product_inventory', icon: 'amazon'},
-    {name: 'Daily Traffic', key: 'daily_product_page_views', icon: 'google'},
-    {name: 'Returns', key: 'returns', icon: 'amazon'},
-    {name: 'Campaign Metrics', key: 'campaign_daily_metrics', icon: 'meta'},
-  ];
-
-  list.innerHTML += '<div class="cat-header">Canonical Tables (Layer B)</div>';
-  bTables.forEach(t => {
-    const count = b[t.key] || 0;
-    const cls = count > 0 ? 'done' : (isRunning ? 'running' : 'waiting');
-    const txt = count > 0 ? count.toLocaleString() + ' rows' : (isRunning ? 'Processing...' : 'Pending');
-    list.innerHTML += `<div class="pull-card"><div class="pull-icon icon-${t.icon}" style="font-size:14px;">${t.name[0]}</div><div class="pull-info"><div class="pull-name">${t.name}</div></div><div class="pull-status ${cls}">${txt}</div></div>`;
-  });
 
   // Button state
   if (isRunning) {
