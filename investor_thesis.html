@@ -115,6 +115,21 @@ em { font-style: italic; color: var(--text-mid); }
 @media (max-width: 900px) { .agent-tier.l1 { flex-wrap: wrap; } .ag { min-width: 45%; } }
 @media (max-width: 720px) { .agent-tier { flex-direction: column; align-items: center; } .ag { min-width: 100%; } }
 
+/* ARCHITECTURE LAYERS */
+.arch-layers { margin: 28px 0; display: flex; flex-direction: column; gap: 0; }
+.arch-layer { border: 1px solid var(--border); padding: 18px 24px; display: grid; grid-template-columns: 160px 1fr; gap: 16px; align-items: center; }
+.arch-layer:first-child { border-radius: 8px 8px 0 0; }
+.arch-layer:last-child { border-radius: 0 0 8px 8px; }
+.arch-layer + .arch-layer { border-top: none; }
+.arch-layer .al-name { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--text); }
+.arch-layer .al-desc { font-size: 12.5px; color: var(--text-mid); line-height: 1.5; }
+.arch-layer.human { background: linear-gradient(90deg, var(--green-bg) 0%, var(--bg-card) 100%); border-left: 3px solid var(--green); }
+.arch-layer.agents { background: linear-gradient(90deg, var(--accent-bg) 0%, var(--bg-card) 100%); border-left: 3px solid var(--accent); }
+.arch-layer.context { background: linear-gradient(90deg, var(--blue-bg) 0%, var(--bg-card) 100%); border-left: 3px solid var(--blue); }
+.arch-layer.integrations { background: linear-gradient(90deg, var(--teal-bg) 0%, var(--bg-card) 100%); border-left: 3px solid var(--teal); }
+.arch-arrow { text-align: center; font-size: 16px; color: var(--text-light); padding: 4px 0; }
+@media (max-width: 720px) { .arch-layer { grid-template-columns: 1fr; gap: 4px; } }
+
 /* AGENT FLOW EXAMPLE */
 .agent-flow { margin: 32px 0 0; background: var(--bg-warm); border-radius: 8px; padding: 24px 28px; }
 .agent-flow h3 { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--text-mid); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 18px; }
@@ -333,15 +348,16 @@ footer p { margin-bottom: 4px; }
     <li><a href="#problem">01 · The Problem</a></li>
     <li><a href="#solution">02 · The Solution</a></li>
     <li><a href="#agents">03 · The Agents</a></li>
-    <li><a href="#incumbents">04 · Why Incumbents Can't</a></li>
-    <li><a href="#moat">05 · The Moat</a></li>
-    <li><a href="#icp">06 · ICP</a></li>
-    <li><a href="#value">07 · The $10M Brand</a></li>
-    <li><a href="#pricing">08 · What T6 Replaces</a></li>
-    <li><a href="#unit-economics">09 · Cost to Serve</a></li>
-    <li><a href="#nervous-system">10 · Nervous System</a></li>
-    <li><a href="#phased-scale">11 · How We Scale</a></li>
-    <li><a href="#founder">12 · Founder</a></li>
+    <li><a href="#how-it-works">04 · How It Works</a></li>
+    <li><a href="#incumbents">05 · Why Incumbents Can't</a></li>
+    <li><a href="#moat">06 · The Moat</a></li>
+    <li><a href="#icp">07 · ICP</a></li>
+    <li><a href="#value">08 · The $10M Brand</a></li>
+    <li><a href="#pricing">09 · What T6 Replaces</a></li>
+    <li><a href="#unit-economics">10 · Cost to Serve</a></li>
+    <li><a href="#nervous-system">11 · Nervous System</a></li>
+    <li><a href="#phased-scale">12 · How We Scale</a></li>
+    <li><a href="#founder">13 · Founder</a></li>
   </ol>
 </aside>
 
@@ -432,15 +448,6 @@ footer p { margin-bottom: 4px; }
     </div>
   </div>
 
-  <h3>Under the hood</h3>
-  <div class="stack">
-    <div class="stack-row ui"><div class="lnum">L6</div><div class="lname">Workspace</div><div class="ldesc">Morning briefing, approval queue, decision feed, agent chat <span class="tag ui" style="margin-left:8px">Human in loop</span></div></div>
-    <div class="stack-row act"><div class="lnum">L5</div><div class="lname">Execution</div><div class="ldesc">API executors, retry, rollback, audit log <span class="tag act" style="margin-left:8px">Act</span></div></div>
-    <div class="stack-row act"><div class="lnum">L4</div><div class="lname">Policy &amp; Governance</div><div class="ldesc">Margin floors, spend caps, approval routing, kill switches <span class="tag act" style="margin-left:8px">Act</span></div></div>
-    <div class="stack-row decide"><div class="lnum">L3</div><div class="lname">Agent Runtime</div><div class="ldesc">Hierarchical agent team: Chief of Staff &rarr; 5 senior managers &rarr; channel specialists <span class="tag decide" style="margin-left:8px">Decide</span></div></div>
-    <div class="stack-row observe"><div class="lnum">L2</div><div class="lname">Unified Data &amp; Context</div><div class="ldesc">Cross-channel data + brand decisions + operator expertise <span class="tag observe" style="margin-left:8px">Observe</span></div></div>
-    <div class="stack-row observe"><div class="lnum">L1</div><div class="lname">Integration</div><div class="ldesc">Amazon · Shopify · Flipkart · Ads · OMS · Analytics <span class="tag observe" style="margin-left:8px">Observe</span></div></div>
-  </div>
 
 </section>
 
@@ -545,9 +552,39 @@ footer p { margin-bottom: 4px; }
 
 <hr class="divider">
 
+<!-- HOW IT WORKS -->
+<section id="how-it-works">
+  <div class="sec-num">04 · How It Works</div>
+  <h2>Four layers. Humans on top, tools at the bottom.</h2>
+  <p class="takeaway">T6 sits between the operator and their existing tools. Agents share one context layer — that's how the PPC agent knows about inventory, and the ops agent knows about ad spend.</p>
+
+  <div class="arch-layers">
+    <div class="arch-layer human">
+      <div class="al-name">Operator</div>
+      <div class="al-desc"><strong>Morning briefing · Approval queue · Directives.</strong> Operator sees what agents did overnight, approves actions, captures decisions. Every override becomes context for next time.</div>
+    </div>
+    <div class="arch-layer agents">
+      <div class="al-name">Agents</div>
+      <div class="al-desc"><strong>Marketing · Channel · Category · Operations · Finance.</strong> All agents read from and write to the same shared context. Each agent reasons within its domain but sees the full picture.</div>
+    </div>
+    <div class="arch-layer context">
+      <div class="al-name">Shared Context</div>
+      <div class="al-desc"><strong>Cross-channel data + brand decisions + operator expertise + decision history.</strong> This is the layer that makes it agentic, not rule-based. It grows with every brand interaction — the system gets smarter over time.</div>
+    </div>
+    <div class="arch-layer integrations">
+      <div class="al-name">Integrations</div>
+      <div class="al-desc"><strong>Amazon · Shopify · Flipkart · Meta Ads · Google Ads · OMS · GA4.</strong> T6 plugs into existing tools via API. Brands keep their current stack — T6 is the intelligence layer on top.</div>
+    </div>
+  </div>
+
+  <p style="font-size:12px; color:var(--text-light); text-align:center; margin-top:12px; font-style:italic;">Data flows up. Actions flow down. Context is shared across every agent. The operator stays in control.</p>
+</section>
+
+<hr class="divider">
+
 <!-- INCUMBENTS -->
 <section id="incumbents">
-  <div class="sec-num">04 · Why Incumbents Can't</div>
+  <div class="sec-num">05 · Why Incumbents Can't</div>
   <h2>Each fixes one slice. Nobody converges.</h2>
 
   <table>
@@ -568,7 +605,7 @@ footer p { margin-bottom: 4px; }
 
 <!-- MOAT -->
 <section id="moat">
-  <div class="sec-num">05 · The Moat</div>
+  <div class="sec-num">06 · The Moat</div>
   <h2>The moat compounds on three layers.</h2>
   <p class="takeaway">Connectors get commoditised. The moat is what lives on top — context, expertise, and agentic reasoning that get better with every brand.</p>
 
@@ -597,7 +634,7 @@ footer p { margin-bottom: 4px; }
 
 <!-- ICP -->
 <section id="icp">
-  <div class="sec-num">06 · ICP</div>
+  <div class="sec-num">07 · ICP</div>
   <h2>$5–50M DTC brands. Shopify + Amazon as core channels.</h2>
 
   <div class="three-up">
@@ -623,7 +660,7 @@ footer p { margin-bottom: 4px; }
 
 <!-- VALUE -->
 <section id="value">
-  <div class="sec-num">07 · The $10M Brand Today</div>
+  <div class="sec-num">08 · The $10M Brand Today</div>
   <h2>Where the money goes.</h2>
   <p class="takeaway">A typical $10M multi-channel DTC brand's cost structure. The highlighted slice is what Terminal6 addresses.</p>
 
@@ -665,7 +702,7 @@ footer p { margin-bottom: 4px; }
 
 <!-- PRICING -->
 <section id="pricing">
-  <div class="sec-num">08 · What T6 Replaces</div>
+  <div class="sec-num">09 · What T6 Replaces</div>
   <h2>One crew of agents instead of a fragmented stack.</h2>
 
   <div class="vs-compare">
@@ -715,7 +752,7 @@ footer p { margin-bottom: 4px; }
 
 <!-- UNIT ECONOMICS -->
 <section id="unit-economics">
-  <div class="sec-num">09 · Cost to Serve</div>
+  <div class="sec-num">10 · Cost to Serve</div>
   <h2>Cost scales with usage, not brand size.</h2>
   <p class="takeaway">Smaller brands use fewer agents. Larger brands use the full crew. Cost tracks actual agent usage — LLM calls, data ingestion, monitoring frequency.</p>
 
@@ -737,7 +774,7 @@ footer p { margin-bottom: 4px; }
 
 <!-- NERVOUS SYSTEM PATH -->
 <section id="nervous-system">
-  <div class="sec-num">10 · The Nervous System Path</div>
+  <div class="sec-num">11 · The Nervous System Path</div>
   <h2>Day 1: we plug in. Over time: we absorb the stack.</h2>
   <p class="takeaway">The Day-1 ACV is the entry point, not the ceiling. As agents take over each tool's job, we absorb its price.</p>
 
@@ -797,7 +834,7 @@ footer p { margin-bottom: 4px; }
 
 <!-- PHASED SCALE -->
 <section id="phased-scale">
-  <div class="sec-num">11 · How We Scale</div>
+  <div class="sec-num">12 · How We Scale</div>
   <h2>Build with a few. Prove it works. Then scale.</h2>
 
   <div class="three-up">
@@ -828,7 +865,7 @@ footer p { margin-bottom: 4px; }
 
 <!-- FOUNDER -->
 <section id="founder">
-  <div class="sec-num">12 · Founder</div>
+  <div class="sec-num">13 · Founder</div>
   <p class="founder-head">Nitin Chaudhary · 17 years across e-commerce, fintech, and technology</p>
   <h2>The thesis came from building the pieces separately.</h2>
   <p>At <strong>Opptra</strong> (Binny Bansal's venture), launched a multi-marketplace fashion business across Amazon AE, Noon, Namshi — scaled three brands to $3M ARR in six months at +15% CM. Built two AI products in production: a bid-optimisation engine and an inventory replenishment engine. <strong>Both worked. Neither could talk to the other.</strong> The bid engine didn't know inventory was running low. The reorder engine didn't know ad spend had spiked. That gap — intelligence fragmented across functions — is exactly what Terminal6 closes.</p>
