@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Terminal6 — Basil</title>
+<script>
+/* ACCESS GATE — checks sessionStorage for signed-in user.
+   Actual brand access is verified server-side by the API (brand_users table). */
+(function(){
+  const saved=sessionStorage.getItem('t6_user');
+  if(!saved){location.replace('/home.html');document.documentElement.style.display='none';}
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared.css">
+<style>
+/* Basil-specific styles only. Design tokens, layout, sidebar, cards, tables,
+   pills, loading/error/empty states, delta pill, section header, placeholder
+   view all live in shared.css. */
+
+/* SERP RANK BADGE — Basil-specific (SERP tab) */
+.rk{display:inline-block;min-width:28px;text-align:center;padding:3px 8px;border-radius:6px;font-family:var(--mono);font-size:11px;font-weight:600}
+.rk.top{background:var(--gl);color:var(--g)}
+.rk.ok{background:#FFF8E1;color:#B8860B}
+.rk.low{background:var(--al);color:var(--a)}
+.rk.none{background:var(--bg-cream);color:var(--t3);font-weight:400}
+
+/* PHASE-2 CALLOUT — Basil's "coming next" blocks on Agents/Shopify/Other tabs */
+.ph2{background:var(--bg-white);border:1px dashed var(--border);border-left:3px solid var(--tm);border-radius:var(--rs);padding:16px 18px;margin-top:10px;font-size:13px;color:var(--t2);line-height:1.5}
+.ph2 strong{color:var(--t1)}
+</style>
+<script>window.T6_BRAND_SLUG = 'basil';</script>
+<script src="/shared.js"></script>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-brand">
+    <h1><span class="lm">T6</span>Terminal6</h1>
+    <div class="bs"><span style="display:flex;align-items:center;gap:7px"><span class="bd"></span>Basil</span><span style="font-size:11px;color:var(--tm)">V1</span></div>
+  </div>
+  <div class="ss">
+    <div class="sl">Amazon IN</div>
+    <div class="si act" onclick="sw('overview',this)"><div class="ic">&#127968;</div><span>Overview</span></div>
+    <div class="si" onclick="sw('revenue',this)"><div class="ic">&#128202;</div><span>Revenue &amp; Traffic</span></div>
+    <div class="si" onclick="sw('amzads',this)"><div class="ic">&#127344;</div><span>Amazon Ads</span></div>
+    <div class="si" onclick="sw('gads',this)"><div class="ic">&#128269;</div><span>Google Ads</span></div>
+    <div class="si" onclick="sw('serp',this)"><div class="ic">&#128208;</div><span>SERP Rank</span></div>
+    <div class="si" onclick="sw('catalog',this)"><div class="ic">&#128230;</div><span>Catalogue</span></div>
+  </div>
+  <div class="ss">
+    <div class="sl">Coming Next</div>
+    <div class="si" onclick="sw('agents',this)"><div class="ic">&#129302;</div><span>Growth Agents</span><span class="soon">Phase 2</span></div>
+    <div class="si" onclick="sw('shopify',this)"><div class="ic">&#128717;</div><span>Shopify D2C</span><span class="soon">soon</span></div>
+    <div class="si" onclick="sw('otherch',this)"><div class="ic">&#128722;</div><span>Other channels</span><span class="soon">soon</span></div>
+  </div>
+  <div class="sb-b">
+    <a href="/home.html" style="display:block;font-size:11px;color:var(--tm);text-decoration:none;padding:6px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:8px">&larr; Workspace</a>
+    <div class="ui">
+      <div class="ua" id="sidebarAvatar">BR</div>
+      <div><div style="font-size:13px;font-weight:500" id="sidebarName">Operator</div><div style="font-size:11px;color:var(--tm)">Brand Operator</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="mn">
+  <div class="tb">
+    <div class="tb-t" id="viewTitle">&#127968; <span>Overview</span></div>
+    <div class="pills" id="rangePills">
+      <button data-days="7">7D</button>
+      <button data-days="30" class="a">30D</button>
+      <button data-days="90">90D</button>
+    </div>
+    <div class="tb-note" id="dataFreshness"></div>
+  </div>
+
+  <!-- ========== OVERVIEW ========== -->
+  <div class="vw act" id="v-overview">
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">MTD Revenue (Amazon IN)</div><div class="kv" id="ov-mtd-rev">--</div><div class="kd n" id="ov-mtd-rev-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">MTD Units</div><div class="kv" id="ov-mtd-units">--</div><div class="kd n" id="ov-mtd-units-d">vs prior MTD</div></div>
+      <div class="cd"><div class="kl">Ad Spend (7d)</div><div class="kv" id="ov-7d-spend">--</div><div class="kd n" id="ov-7d-spend-mix">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Blended ROAS (7d)</div><div class="kv" id="ov-7d-roas">--</div><div class="kd n" id="ov-7d-tacos">TACoS <span id="ov-7d-tacos-val">--</span></div></div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Tracked Keywords</div><div class="kv" id="ov-kw">--</div><div class="kd n" id="ov-kw-sub">ranking on SERP</div></div>
+      <div class="cd"><div class="kl">Amazon Listings</div><div class="kv" id="ov-listings">--</div><div class="kd n">active ChannelListings</div></div>
+      <div class="cd"><div class="kl">ASINs w/ Ad Spend, No Sales</div><div class="kv" id="ov-gap">--</div><div class="kd n" id="ov-gap-sub">last 30d</div></div>
+      <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="ov-bb">--</div><div class="kd n">weighted 7d avg</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Daily Revenue &middot; Amazon IN <span class="note" id="ov-rev-range"></span></h3></div>
+      <div id="ov-revTable" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Ad Platform Mix <span class="note">last 7 days</span></h3></div>
+      <div id="ov-adMix" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ========== REVENUE & TRAFFIC ========== -->
+  <div class="vw" id="v-revenue">
+    <div class="head">
+      <div class="icon">&#128202;</div>
+      <div><h2>Revenue &amp; Traffic</h2><p class="sub">Daily Amazon IN revenue + traffic + conversion. Sourced from daily_item_sales + daily_product_page_views.</p></div>
+    </div>
+
+    <div class="g5" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Revenue (selected window)</div><div class="kv" id="rv-tot">--</div><div class="kd n" id="rv-tot-sub">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Units</div><div class="kv" id="rv-units">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Orders</div><div class="kv" id="rv-orders">--</div><div class="kd n">3P only</div></div>
+      <div class="cd"><div class="kl">ASP</div><div class="kv" id="rv-asp">--</div><div class="kd n">revenue / units</div></div>
+      <div class="cd"><div class="kl">Conv. Rate (7d)</div><div class="kv" id="rv-conv">--</div><div class="kd n">units / sessions</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Daily Revenue <span class="note">with DoD &middot; WoW &middot; MoM &middot; YoY deltas</span></h3></div>
+      <div id="rv-revTable" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Daily Traffic &amp; Conversion</h3></div>
+      <div id="rv-trafficTable" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ========== AMAZON ADS ========== -->
+  <div class="vw" id="v-amzads">
+    <div class="head">
+      <div class="icon" style="background:#FF9900">&#127344;</div>
+      <div><h2>Amazon Ads &middot; IN</h2><p class="sub">Sponsored Products / Brands / Display &mdash; spend, impressions, CTR, ACoS, ROAS.</p></div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Total Spend</div><div class="kv" id="az-spend">--</div><div class="kd n" id="az-spend-sub">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Attributed Sales (7d)</div><div class="kv" id="az-sales">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Blended ACoS</div><div class="kv" id="az-acos">--</div><div class="kd n">spend / attributed sales</div></div>
+      <div class="cd"><div class="kl">Blended ROAS</div><div class="kv" id="az-roas">--</div><div class="kd n">attributed / spend</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>By Ad Type</h3></div>
+      <div id="az-byType" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Daily Totals</h3></div>
+      <div id="az-daily" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ========== GOOGLE ADS ========== -->
+  <div class="vw" id="v-gads">
+    <div class="head">
+      <div class="icon" style="background:#4285F4">&#128269;</div>
+      <div><h2>Google Ads &middot; IN</h2><p class="sub">Pmax / Shopping / Search &mdash; single account. Driving Shopify D2C + Amazon traffic.</p></div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Total Spend</div><div class="kv" id="gd-spend">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Clicks</div><div class="kv" id="gd-clicks">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">CTR</div><div class="kv" id="gd-ctr">--</div><div class="kd n">blended</div></div>
+      <div class="cd"><div class="kl">CPC</div><div class="kv" id="gd-cpc">--</div><div class="kd n">spend / clicks</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>By Campaign Type</h3></div>
+      <div id="gd-byType" class="loading">Loading...</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Daily Totals</h3></div>
+      <div id="gd-daily" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ========== SERP RANK ========== -->
+  <div class="vw" id="v-serp">
+    <div class="head">
+      <div class="icon" style="background:var(--b)">&#128208;</div>
+      <div><h2>SERP Rank &middot; Amazon IN</h2><p class="sub" id="serp-sub">Tracked keywords &middot; organic + sponsored rank. DataForSEO Amazon SERP, 100 kw/day.</p></div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Keywords Tracked</div><div class="kv" id="sp-total">--</div><div class="kd n">active</div></div>
+      <div class="cd"><div class="kl">Ranking Organic</div><div class="kv" id="sp-ranking">--</div><div class="kd n" id="sp-ranking-sub">of tracked</div></div>
+      <div class="cd"><div class="kl">Top-3 Organic</div><div class="kv" id="sp-top3">--</div><div class="kd n">best visibility</div></div>
+      <div class="cd"><div class="kl">Latest Crawl</div><div class="kv" id="sp-date" style="font-size:14px">--</div><div class="kd n">&nbsp;</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Keyword Rank Table <span class="note">organic rank = best (lowest) position where we appear</span></h3></div>
+      <div id="sp-table" class="loading">Loading...</div>
+    </div>
+
+    <div class="ph2"><strong>Next:</strong> rank trend over time (need multi-day history &mdash; DataForSEO crawl schedule kicking in), competitor ownership per keyword, share-of-voice.</div>
+  </div>
+
+  <!-- ========== CATALOGUE ========== -->
+  <div class="vw" id="v-catalog">
+    <div class="head">
+      <div class="icon" style="background:var(--t1)">&#128230;</div>
+      <div><h2>Catalogue &middot; Amazon IN</h2><p class="sub">ASIN-level catalogue with per-ASIN revenue + ad spend + ACoS / TACoS.</p></div>
+      <div class="pills" id="catPills">
+        <button data-days="7">7D</button>
+        <button data-days="30" class="a">30D</button>
+        <button data-days="90">90D</button>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Active Listings</div><div class="kv" id="ct-listings">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">ASINs with Sales</div><div class="kv" id="ct-selling">--</div><div class="kd n" id="ct-selling-sub">selected window</div></div>
+      <div class="cd"><div class="kl">Ad Spend, No Sales</div><div class="kv" id="ct-noSales">--</div><div class="kd n">ASINs</div></div>
+      <div class="cd"><div class="kl">Top-10 Revenue Share</div><div class="kv" id="ct-top10">--</div><div class="kd n">concentration</div></div>
+    </div>
+
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <input type="text" id="ctSearch" placeholder="Search by ASIN or product name..." style="flex:1;padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--sans);font-size:12.5px;background:var(--bg-white);outline:none" />
+      <button onclick="loadCatalog()" style="padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg-white);font-family:var(--sans);font-size:12px;cursor:pointer">Search</button>
+      <span id="ctCount" style="font-size:11px;color:var(--t3);white-space:nowrap"></span>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Top Variants</h3></div>
+      <div id="ct-table" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ========== PLACEHOLDERS ========== -->
+  <div class="vw" id="v-agents">
+    <div class="head">
+      <div class="icon" style="background:var(--tm)">&#129302;</div>
+      <div><h2>Growth Agents</h2><p class="sub">Phase 2 &middot; agents layered on top of this metrics dashboard.</p></div>
+    </div>
+    <div class="ph2">
+      Phase 1 (this dashboard) delivers clean Amazon metrics operators can trust. Phase 2 lights up the growth-agent surface:
+      <ul style="margin:10px 0 0 20px;color:var(--t2);line-height:1.7">
+        <li><strong>sr_marketing / investigate</strong> &mdash; diagnose revenue / ROAS swings across Amazon Ads + Google Ads + SERP rank</li>
+        <li><strong>amazon/ppc</strong> &mdash; campaign efficiency, spend waste, bid recommendations</li>
+        <li><strong>amazon/listings</strong> &mdash; catalogue health + SERP rank consumption</li>
+        <li><strong>Recommendations feed</strong> with human-in-loop approve / reject + reasoning trace</li>
+      </ul>
+      <p style="margin-top:12px;font-size:12px;color:var(--t3)">Order decided 14 Apr: operators must trust the underlying data before they trust any agent on top of it.</p>
+    </div>
+  </div>
+
+  <div class="vw" id="v-shopify">
+    <div class="head"><div class="icon" style="background:#96BF48">&#128717;</div><div><h2>Shopify D2C</h2><p class="sub">shareyourbasil.myshopify.com</p></div></div>
+    <div class="ph2"><strong>Pending:</strong> Shopify custom-app token install. Once connected, this tab picks up Shopify orders, sessions (GA4), and blended cross-channel revenue.</div>
+  </div>
+
+  <div class="vw" id="v-otherch">
+    <div class="head"><div class="icon" style="background:var(--tm)">&#128722;</div><div><h2>Other Channels</h2><p class="sub">Flipkart &middot; Myntra &middot; Amazon UAE (not active)</p></div></div>
+    <div class="ph2">Flipkart (57 listings) and Myntra (58 listings) are catalogued but sales / ads ingestion isn't live yet. Amazon UAE profile exists but unused &mdash; confirmed inactive 14 Apr.</div>
+  </div>
+
+</main>
+</div>
+
+<script>
+/* Shared runtime (T6 namespace, api, fmt, cur, pct, shortD, dp, showErr) comes
+ * from /shared.js — already loaded in <head>. window.T6_BRAND_SLUG is set there.
+ * Only Basil-specific helpers + tab logic live in this script block. */
+
+/* ========== BASIL-SPECIFIC FORMATTERS ========== */
+function rkBadge(r){
+  if(r==null) return '<span class="rk none">not ranked</span>';
+  if(r<=3)  return `<span class="rk top">#${r}</span>`;
+  if(r<=10) return `<span class="rk ok">#${r}</span>`;
+  return `<span class="rk low">#${r}</span>`;
+}
+
+/* ========== STATE ========== */
+let range={days:30};
+let catDays=30;
+
+/* ========== VIEW SWITCHING ========== */
+const viewTitles={
+  overview:'&#127968; Overview',
+  revenue:'&#128202; Revenue &amp; Traffic',
+  amzads:'&#127344; Amazon Ads',
+  gads:'&#128269; Google Ads',
+  serp:'&#128208; SERP Rank',
+  catalog:'&#128230; Catalogue',
+  agents:'&#129302; Growth Agents',
+  shopify:'&#128717; Shopify D2C',
+  otherch:'&#128722; Other Channels',
+};
+let currentView='overview';
+function sw(id,el){
+  const target=document.getElementById('v-'+id);
+  if(!target) return;
+  document.querySelectorAll('.vw').forEach(v=>v.classList.remove('act'));
+  target.classList.add('act');
+  document.querySelectorAll('.si').forEach(s=>s.classList.remove('act'));
+  if(el) el.classList.add('act');
+  document.getElementById('viewTitle').innerHTML=viewTitles[id]||id;
+  currentView=id;
+  // Range pills visibility
+  const showPills=['overview','revenue','amzads','gads'].includes(id);
+  document.getElementById('rangePills').style.display=showPills?'flex':'none';
+
+  if(id==='overview') loadOverview();
+  if(id==='revenue') loadRevenue();
+  if(id==='amzads') loadAds('amazon');
+  if(id==='gads') loadAds('google');
+  if(id==='serp') loadSERP();
+  if(id==='catalog') loadCatalog();
+}
+
+/* ========== OVERVIEW ========== */
+function loadOverview(){
+  document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
+  api('/v1/overview/pacing').then(renderMTD).catch(showErr('ov-mtd-rev'));
+  api('/v1/marketing/blended?days=7').then(renderBlended).catch(showErr('ov-7d-spend'));
+  api('/v1/amazon/revenue?days='+range.days).then(renderOverviewRev).catch(showErr('ov-revTable'));
+  api('/v1/amazon/traffic?days=7').then(renderOvBuyBox).catch(()=>{});
+  api('/v1/amazon/serp-overview').then(renderOvSERP).catch(()=>{});
+  api('/v1/amazon/catalogue-health?days=30').then(renderOvCatalog).catch(()=>{});
+  api('/v1/amazon/ads-summary?days=7').then(renderOvAdMix).catch(showErr('ov-adMix'));
+}
+function renderMTD(p){
+  if(!p||!p.mtd) return;
+  document.getElementById('ov-mtd-rev').textContent=cur(p.mtd.revenue);
+  document.getElementById('ov-mtd-units').textContent=fmt(p.mtd.units);
+  const d=document.getElementById('ov-mtd-rev-d');
+  if(p.delta_pct!=null){
+    const cls=p.delta_pct>=0?'u':'d';
+    const arrow=p.delta_pct>=0?'\u2191':'\u2193';
+    d.className='kd '+cls;
+    d.innerHTML=arrow+' '+Math.abs(p.delta_pct).toFixed(1)+'% vs prior MTD ('+cur(p.prior_mtd.revenue)+')';
+  } else { d.className='kd n'; d.textContent='vs prior month MTD'; }
+}
+function renderBlended(b){
+  if(!b) return;
+  document.getElementById('ov-7d-spend').textContent=cur(b.total_spend);
+  document.getElementById('ov-7d-roas').textContent=b.blended_roas!=null?(b.blended_roas.toFixed(2)+'x'):'--';
+  document.getElementById('ov-7d-tacos-val').textContent=b.tacos_pct!=null?(b.tacos_pct.toFixed(1)+'%'):'--';
+  const mix=(b.platform_mix||[]).map(p=>(p.name||p.platform)+' '+p.share_pct.toFixed(0)+'%').join(' · ');
+  document.getElementById('ov-7d-spend-mix').textContent=mix||'\xa0';
+}
+function renderOverviewRev(r){
+  document.getElementById('ov-rev-range').textContent='last '+range.days+' days';
+  const el=document.getElementById('ov-revTable');
+  if(!r.data||!r.data.length){el.innerHTML='<div class="empty">No revenue data yet</div>';return;}
+  let html='<table class="tbl"><thead><tr><th>Date</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th><th class="r">ASP</th><th class="r">DoD</th><th class="r">WoW</th><th class="r">MoM</th><th class="r">YoY</th></tr></thead><tbody>';
+  for(const row of r.data.slice().reverse()){
+    html+=`<tr>
+      <td class="hi">${shortD(row.date)}</td>
+      <td class="mn2 r">${cur(row.revenue)}</td>
+      <td class="mn2 r">${fmt(row.units)}</td>
+      <td class="mn2 r">${fmt(row.orders)}</td>
+      <td class="mn2 r">${row.asp!=null?cur(row.asp):'--'}</td>
+      <td class="r">${dp(row.dod_pct)}</td>
+      <td class="r">${dp(row.wow_pct)}</td>
+      <td class="r">${dp(row.mom_pct)}</td>
+      <td class="r">${dp(row.yoy_pct)}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+function renderOvBuyBox(t){
+  if(!t||!t.data||!t.data.length) return;
+  const vals=t.data.map(r=>r.buy_box_pct).filter(v=>v!=null);
+  const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+  document.getElementById('ov-bb').textContent=avg!=null?pct(avg,1):'--';
+}
+function renderOvSERP(s){
+  document.getElementById('ov-kw').textContent=fmt(s.keywords_tracked);
+  document.getElementById('ov-kw-sub').textContent=(s.keywords_ranking||0)+' currently ranking';
+}
+function renderOvCatalog(c){
+  document.getElementById('ov-listings').textContent=fmt(c.amazon_listings);
+  document.getElementById('ov-gap').textContent=fmt(c.asins_ad_spend_no_sales);
+}
+function renderOvAdMix(a){
+  const el=document.getElementById('ov-adMix');
+  if(!a.data||!a.data.length){el.innerHTML='<div class="empty">No ad data</div>';return;}
+  let html='<table class="tbl"><thead><tr><th>Platform</th><th>Type</th><th class="r">Spend</th><th class="r">Sales (7d)</th><th class="r">ACoS</th><th class="r">ROAS</th><th class="r">CTR</th></tr></thead><tbody>';
+  for(const r of a.data){
+    html+=`<tr>
+      <td class="hi">${r.platform==='amazon'?'Amazon':r.platform==='google'?'Google':r.platform}</td>
+      <td>${r.label}</td>
+      <td class="mn2 r">${cur(r.spend)}</td>
+      <td class="mn2 r">${cur(r.attributed_sales_7d)}</td>
+      <td class="mn2 r">${r.acos_pct!=null?pct(r.acos_pct):'--'}</td>
+      <td class="mn2 r">${r.roas!=null?r.roas.toFixed(2)+'x':'--'}</td>
+      <td class="mn2 r">${r.ctr_pct!=null?pct(r.ctr_pct):'--'}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+/* ========== REVENUE & TRAFFIC ========== */
+function loadRevenue(){
+  document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
+  api('/v1/amazon/revenue?days='+range.days).then(renderRevenueView).catch(showErr('rv-revTable'));
+  api('/v1/amazon/traffic?days='+range.days).then(renderTrafficView).catch(showErr('rv-trafficTable'));
+}
+function renderRevenueView(r){
+  if(r.totals){
+    document.getElementById('rv-tot').textContent=cur(r.totals.revenue);
+    document.getElementById('rv-units').textContent=fmt(r.totals.units);
+    document.getElementById('rv-orders').textContent=fmt(r.totals.orders);
+    document.getElementById('rv-asp').textContent=r.totals.asp!=null?cur(r.totals.asp):'--';
+  }
+  if(r.tiles){
+    const d=document.getElementById('rv-tot-sub');
+    if(r.tiles.last_7d_wow_pct!=null){
+      const cls=r.tiles.last_7d_wow_pct>=0?'u':'d';
+      d.className='kd '+cls;
+      d.innerHTML=(r.tiles.last_7d_wow_pct>=0?'\u2191':'\u2193')+' 7d '+Math.abs(r.tiles.last_7d_wow_pct).toFixed(1)+'% WoW';
+    }
+  }
+  const el=document.getElementById('rv-revTable');
+  if(!r.data||!r.data.length){el.innerHTML='<div class="empty">No data in window</div>';return;}
+  let html='<table class="tbl"><thead><tr><th>Date</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th><th class="r">ASP</th><th class="r">DoD</th><th class="r">WoW</th><th class="r">MoM</th><th class="r">YoY</th></tr></thead><tbody>';
+  for(const row of r.data.slice().reverse()){
+    html+=`<tr>
+      <td class="hi">${shortD(row.date)}</td>
+      <td class="mn2 r">${cur(row.revenue)}</td>
+      <td class="mn2 r">${fmt(row.units)}</td>
+      <td class="mn2 r">${fmt(row.orders)}</td>
+      <td class="mn2 r">${row.asp!=null?cur(row.asp):'--'}</td>
+      <td class="r">${dp(row.dod_pct)}</td>
+      <td class="r">${dp(row.wow_pct)}</td>
+      <td class="r">${dp(row.mom_pct)}</td>
+      <td class="r">${dp(row.yoy_pct)}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+function renderTrafficView(t){
+  const el=document.getElementById('rv-trafficTable');
+  if(!t.data||!t.data.length){el.innerHTML='<div class="empty">No traffic data</div>';return;}
+  // Last-7d conv rate tile
+  const last7=t.data.slice(-7);
+  const sess=last7.reduce((a,r)=>a+(r.sessions||0),0);
+  const units=last7.reduce((a,r)=>a+(r.units||0),0);
+  document.getElementById('rv-conv').textContent=sess?pct(units/sess*100):'--';
+  let html='<table class="tbl"><thead><tr><th>Date</th><th class="r">Sessions</th><th class="r">Page Views</th><th class="r">Buy Box %</th><th class="r">Units</th><th class="r">Conv %</th><th class="r">Revenue</th></tr></thead><tbody>';
+  for(const row of t.data.slice().reverse()){
+    html+=`<tr>
+      <td class="hi">${shortD(row.date)}</td>
+      <td class="mn2 r">${fmt(row.sessions)}</td>
+      <td class="mn2 r">${fmt(row.page_views)}</td>
+      <td class="mn2 r">${row.buy_box_pct!=null?pct(row.buy_box_pct,1):'--'}</td>
+      <td class="mn2 r">${fmt(row.units)}</td>
+      <td class="mn2 r">${row.conversion_rate!=null?pct(row.conversion_rate,2):'--'}</td>
+      <td class="mn2 r">${cur(row.revenue)}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+/* ========== ADS (Amazon + Google share markup) ========== */
+function loadAds(platform){
+  document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
+  api('/v1/amazon/ads-summary?days='+range.days).then(r=>renderAdsSummary(r,platform));
+  api('/v1/amazon/ads-daily?days='+range.days+'&platform='+platform).then(r=>renderAdsDaily(r,platform));
+}
+function renderAdsSummary(r,platform){
+  const filtered=(r.data||[]).filter(x=>x.platform===platform);
+  const prefix=platform==='amazon'?'az':'gd';
+  const totSpend=filtered.reduce((a,x)=>a+(x.spend||0),0);
+  const totSales=filtered.reduce((a,x)=>a+(x.attributed_sales_7d||0),0);
+  const totClicks=filtered.reduce((a,x)=>a+(x.clicks||0),0);
+  const totImpr=filtered.reduce((a,x)=>a+(x.impressions||0),0);
+  const byType=document.getElementById(prefix+'-byType');
+  if(platform==='amazon'){
+    document.getElementById('az-spend').textContent=cur(totSpend);
+    document.getElementById('az-sales').textContent=cur(totSales);
+    document.getElementById('az-acos').textContent=totSales?pct(totSpend/totSales*100):'--';
+    document.getElementById('az-roas').textContent=totSpend?((totSales/totSpend).toFixed(2)+'x'):'--';
+  } else {
+    document.getElementById('gd-spend').textContent=cur(totSpend);
+    document.getElementById('gd-clicks').textContent=fmt(totClicks);
+    document.getElementById('gd-ctr').textContent=totImpr?pct(totClicks/totImpr*100):'--';
+    document.getElementById('gd-cpc').textContent=totClicks?cur(totSpend/totClicks):'--';
+  }
+  if(!filtered.length){byType.innerHTML='<div class="empty">No '+platform+' ad data in window</div>';return;}
+  let html='<table class="tbl"><thead><tr><th>Ad Type</th><th class="r">Spend</th><th class="r">Impressions</th><th class="r">Clicks</th><th class="r">CTR</th><th class="r">CPC</th><th class="r">Sales (7d)</th><th class="r">ACoS</th><th class="r">ROAS</th></tr></thead><tbody>';
+  for(const x of filtered){
+    html+=`<tr>
+      <td class="hi">${x.label}</td>
+      <td class="mn2 r">${cur(x.spend)}</td>
+      <td class="mn2 r">${fmt(x.impressions)}</td>
+      <td class="mn2 r">${fmt(x.clicks)}</td>
+      <td class="mn2 r">${x.ctr_pct!=null?pct(x.ctr_pct):'--'}</td>
+      <td class="mn2 r">${x.cpc!=null?cur(x.cpc):'--'}</td>
+      <td class="mn2 r">${cur(x.attributed_sales_7d)}</td>
+      <td class="mn2 r">${x.acos_pct!=null?pct(x.acos_pct):'--'}</td>
+      <td class="mn2 r">${x.roas!=null?x.roas.toFixed(2)+'x':'--'}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  byType.innerHTML=html;
+}
+function renderAdsDaily(r,platform){
+  const prefix=platform==='amazon'?'az':'gd';
+  const el=document.getElementById(prefix+'-daily');
+  if(!r.data||!r.data.length){el.innerHTML='<div class="empty">No daily data</div>';return;}
+  // Group by date, summing across ad_types
+  const byDate={};
+  for(const x of r.data){
+    const d=x.date;
+    if(!byDate[d]) byDate[d]={spend:0,impressions:0,clicks:0,sales:0,orders:0};
+    byDate[d].spend+=x.spend||0;
+    byDate[d].impressions+=x.impressions||0;
+    byDate[d].clicks+=x.clicks||0;
+    byDate[d].sales+=x.attributed_sales_7d||0;
+    byDate[d].orders+=x.attributed_orders||0;
+  }
+  const dates=Object.keys(byDate).sort().reverse();
+  let html='<table class="tbl"><thead><tr><th>Date</th><th class="r">Spend</th><th class="r">Impressions</th><th class="r">Clicks</th><th class="r">CTR</th><th class="r">Sales (7d)</th><th class="r">ACoS</th></tr></thead><tbody>';
+  for(const d of dates){
+    const x=byDate[d];
+    const ctr=x.impressions?x.clicks/x.impressions*100:null;
+    const acos=x.sales?x.spend/x.sales*100:null;
+    html+=`<tr>
+      <td class="hi">${shortD(d)}</td>
+      <td class="mn2 r">${cur(x.spend)}</td>
+      <td class="mn2 r">${fmt(x.impressions)}</td>
+      <td class="mn2 r">${fmt(x.clicks)}</td>
+      <td class="mn2 r">${ctr!=null?pct(ctr):'--'}</td>
+      <td class="mn2 r">${cur(x.sales)}</td>
+      <td class="mn2 r">${acos!=null?pct(acos):'--'}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+/* ========== SERP ========== */
+function loadSERP(){
+  api('/v1/amazon/serp-overview').then(renderSERP).catch(showErr('sp-table'));
+}
+function renderSERP(s){
+  document.getElementById('sp-total').textContent=fmt(s.keywords_tracked);
+  document.getElementById('sp-ranking').textContent=fmt(s.keywords_ranking);
+  document.getElementById('sp-ranking-sub').textContent='of '+s.keywords_tracked+' tracked';
+  document.getElementById('sp-date').textContent=s.latest_date||'--';
+  const top3=(s.data||[]).filter(r=>r.our_organic_position!=null && r.our_organic_position<=3).length;
+  document.getElementById('sp-top3').textContent=fmt(top3);
+  const el=document.getElementById('sp-table');
+  if(!s.data||!s.data.length){el.innerHTML='<div class="empty">No SERP data yet</div>';return;}
+  let html='<table class="tbl"><thead><tr><th>Keyword</th><th>Marketplace</th><th class="r">Organic Rank</th><th class="r">Sponsored Rank</th><th class="r">Organic Results</th><th class="r">Sponsored Slots</th></tr></thead><tbody>';
+  for(const r of s.data){
+    html+=`<tr>
+      <td class="hi">${r.keyword}</td>
+      <td style="color:var(--t3);font-size:11px">${r.marketplace}</td>
+      <td class="r">${rkBadge(r.our_organic_position)}</td>
+      <td class="r">${rkBadge(r.our_sponsored_position)}</td>
+      <td class="mn2 r">${fmt(r.organic_results)}</td>
+      <td class="mn2 r">${fmt(r.sponsored_results)}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+/* ========== CATALOGUE ========== */
+function loadCatalog(){
+  const search=document.getElementById('ctSearch').value.trim();
+  const qs='/v1/amazon/catalogue?days='+catDays+'&limit=200'+(search?('&search='+encodeURIComponent(search)):'');
+  api(qs).then(renderCatalog).catch(showErr('ct-table'));
+  api('/v1/amazon/catalogue-health?days='+catDays).then(renderCatHealth).catch(()=>{});
+}
+function renderCatHealth(c){
+  document.getElementById('ct-listings').textContent=fmt(c.amazon_listings);
+  document.getElementById('ct-selling').textContent=fmt((c.top_variants||[]).length);
+  document.getElementById('ct-selling-sub').textContent='with sales, last '+c.days+'d';
+  document.getElementById('ct-noSales').textContent=fmt(c.asins_ad_spend_no_sales);
+  const total=(c.top_variants||[]).reduce((a,v)=>a+(v.revenue||0),0);
+  const top10=(c.top_variants||[]).slice(0,10).reduce((a,v)=>a+(v.revenue||0),0);
+  document.getElementById('ct-top10').textContent=total?pct(top10/total*100,0):'--';
+}
+function renderCatalog(c){
+  document.getElementById('ctCount').textContent=(c.count||0)+' rows';
+  const el=document.getElementById('ct-table');
+  if(!c.data||!c.data.length){el.innerHTML='<div class="empty">No ASINs match</div>';return;}
+  let html='<table class="tbl"><thead><tr><th>ASIN</th><th>Product</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th><th class="r">Ad Spend</th><th class="r">ACoS</th><th class="r">TACoS</th></tr></thead><tbody>';
+  for(const r of c.data){
+    const trimmed=(r.product_name||'').length>72?r.product_name.slice(0,72)+'...':(r.product_name||'--');
+    html+=`<tr>
+      <td class="mn2 hi">${r.asin||'--'}</td>
+      <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${trimmed}</td>
+      <td class="mn2 r">${cur(r.revenue)}</td>
+      <td class="mn2 r">${fmt(r.units)}</td>
+      <td class="mn2 r">${fmt(r.orders)}</td>
+      <td class="mn2 r">${cur(r.ad_spend)}</td>
+      <td class="mn2 r">${r.acos_pct!=null?pct(r.acos_pct):'--'}</td>
+      <td class="mn2 r">${r.tacos_pct!=null?pct(r.tacos_pct):'--'}</td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+/* ========== RANGE PILLS ========== */
+document.getElementById('rangePills').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const d=+b.dataset.days; if(!d) return;
+  range.days=d;
+  document.querySelectorAll('#rangePills button').forEach(x=>x.classList.toggle('a',x===b));
+  if(currentView==='overview') loadOverview();
+  else if(currentView==='revenue') loadRevenue();
+  else if(currentView==='amzads') loadAds('amazon');
+  else if(currentView==='gads') loadAds('google');
+});
+document.getElementById('catPills').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  catDays=+b.dataset.days;
+  document.querySelectorAll('#catPills button').forEach(x=>x.classList.toggle('a',x===b));
+  loadCatalog();
+});
+document.getElementById('ctSearch').addEventListener('keydown',e=>{ if(e.key==='Enter') loadCatalog(); });
+
+/* ========== INIT ========== */
+T6.initUserChrome();
+loadOverview();
+</script>
+</body>
+</html>

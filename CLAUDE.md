@@ -16,30 +16,56 @@ Static site served as terminal6.io. Two audiences:
 terminal6-website/
 ├── CLAUDE.md              ← YOU ARE HERE
 ├── CNAME                  — "terminal6.io" (GitHub Pages custom domain)
+├── shared.css             — Design tokens + layout + sidebar + cards + tables + pills +
+│                            loading/error/empty states + delta pill + section header +
+│                            placeholder view. Used by every <brand>.html.
+├── shared.js              — Access-gate-friendly API client (X-Brand header driven by
+│                            window.T6_BRAND_SLUG), formatters (fmt, cur, pct, shortD,
+│                            chg, dp), showErr, initUserChrome. window.T6 namespace.
 ├── index.html             — Public landing page. Sign-in button routes to /home.html.
 ├── home.html              — Sign-in + workspace hub. The ONLY entry point for gated pages.
-│                            Shows 5 cards: Sprig V1, Dashboard Prototype, Architecture,
-│                            Roadmap, Investor Thesis. Stores Google credential as
-│                            `t6_token` in sessionStorage for API auth.
-├── sprig.html             — **LIVE PRODUCT PAGE.** See SPRIG_FRONTEND.md for full context.
+│                            Stores Google credential as `t6_token` in sessionStorage.
+├── sprig.html             — **LIVE SPRIG DASHBOARD.** Reads /shared.css + /shared.js;
+│                            owns Sprig-only CSS (agentic strip, red flags, chart cards,
+│                            mini-bar) + Sprig tab renderers. See SPRIG_FRONTEND.md.
+├── basil.html             — **LIVE BASIL DASHBOARD.** Amazon-only Phase 1. Reads
+│                            /shared.css + /shared.js; owns Basil-only CSS (SERP rank
+│                            badge, Phase-2 callout) + Basil tab renderers.
 ├── funnel.html            — Standalone D2C funnel page (simpler entry point, same API).
-├── app.html               — **DESIGN PROTOTYPE** (mock data). See PROTOTYPE.md for full context.
+├── app.html               — **DESIGN PROTOTYPE** (mock data). See PROTOTYPE.md.
 ├── architecture.html      — Investor-facing product architecture doc (mirrored from
 │                            terminal6/product/terminal6-architecture.html). Access gated.
 ├── investor_thesis.html   — Pre-seed investor thesis. Access gated.
-└── todos.html             — Layered roadmap (L0–L5, ~80 tasks) with filters, color
-                             coding, and per-task copy-prompt buttons. Access gated.
+└── todos.html             — Layered roadmap with filters. Access gated.
 ```
 
-## Live vs Prototype — two separate context files
+### Shared shell pattern (for new brands)
 
-| Page | Data | Context file |
-|---|---|---|
-| `sprig.html` + `funnel.html` | **Live API** (PostgreSQL via api.terminal6.io) | **SPRIG_FRONTEND.md** — API endpoints, auth, views, chart library |
-| `app.html` | **Mock data** (hardcoded HTML) | **PROTOTYPE.md** — hierarchical agent model, view structure, design principles |
+When onboarding brand N:
 
-When iterating on the live product, read `SPRIG_FRONTEND.md`.
-When iterating on the design prototype, read `PROTOTYPE.md`.
+1. Clone `basil.html` → `<brand>.html` (the smaller template).
+2. Change `window.T6_BRAND_SLUG = '<brand>'` at top of the page.
+3. Change sidebar brand label + initials.
+4. Swap tab set + renderers to match what the brand actually has data for.
+5. Keep the `<link rel="stylesheet" href="/shared.css">` + `<script src="/shared.js">` refs — do NOT copy shared CSS/JS inline.
+
+Rule: **if a style or JS helper applies to more than one brand, it belongs in `shared.*`.** Fighting this rule causes drift; the whole point of extraction was to kill drift before it starts. If you find yourself reaching for copy-paste across brand files, extract instead.
+
+The eventual unification (one `app.html` serving every subdomain) just merges the per-brand files into a tab registry; `shared.css` / `shared.js` are already ready for that day.
+
+## Where to look for what
+
+| Question | File |
+|---|---|
+| Where does a new CSS rule / JS helper belong (shared vs brand)? | **FRONTEND.md** — the shared shell pattern + drift rule |
+| How do I add a new brand dashboard? | **FRONTEND.md** — 5-step recipe near the end |
+| Sprig-specific: Chart.js / MSKU table / brand-card markdown | **SPRIG_FRONTEND.md** |
+| Design prototype (`app.html`, mock data) | **PROTOTYPE.md** |
+| Backend endpoints the frontend calls | `terminal6/api/CLAUDE.md` (main repo) |
+
+**Default reading order for a new frontend task:** this file → `FRONTEND.md` →
+per-brand file. Read `SPRIG_FRONTEND.md` only when touching Sprig-specific
+conventions.
 
 ## Access control — Two-tier model
 

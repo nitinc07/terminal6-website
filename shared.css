@@ -1,0 +1,113 @@
+/* shared.css — Terminal6 brand dashboards
+ *
+ * Everything in this file is shared by every <brand>.html page (Sprig, Basil,
+ * future partners). Keep brand-specific sections (agentic strip, SERP rank
+ * badges, chart cards, etc.) in the per-brand file.
+ *
+ * Rule: if a style only matters to one brand, it stays in that brand's HTML.
+ * This file is deliberately the "boring shell" — tokens, layout, sidebar,
+ * cards, tables, pills, loading/error states. Change here ripples to every
+ * brand, so be conservative.
+ */
+
+:root{
+  --bg:#F5F5F0;--bg-white:#FFF;--bg-cream:#F9F8F4;--bg-warm:#EEEAE2;--bg-sidebar:#EEEBE4;--bg-hover:#E8E4DB;
+  --border:#DDD9D0;--border-s:#E8E4DC;
+  --t1:#1a1a18;--t2:#5C5B57;--t3:#9C9A93;--tm:#B1ADA1;
+  --acc:#C15F3C;--acc-h:#ae5630;--acc-l:#F0DDD4;--acc-d:rgba(193,95,60,.08);--acc-t:#B8533A;
+  --g:#2E7D32;--gl:#E8F5E9;--r:#C62828;--rl:#FFEBEE;--a:#E65100;--al:#FFF3E0;--b:#1565C0;--bl:#E3F2FD;
+  --sw:240px;
+  --serif:'Source Serif 4',ui-serif,Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  --sh:0 1px 3px rgba(0,0,0,.04);--shm:0 2px 8px rgba(0,0,0,.06);--rad:12px;--rs:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--t1);height:100vh;overflow:hidden;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:var(--sw) 1fr;height:100vh}
+
+/* SIDEBAR */
+.sb{background:var(--bg-sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-brand{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.sb-brand h1{font-family:var(--serif);font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
+.sb-brand .lm{width:28px;height:28px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.bs{margin-top:10px;background:var(--bg-white);border:1px solid var(--border);border-radius:var(--rs);padding:7px 11px;font-size:13px;width:100%;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh)}
+.bd{width:7px;height:7px;border-radius:50%;background:var(--g)}
+.ss{padding:14px 10px 4px}
+.sl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.1px;color:var(--tm);padding:0 8px 7px}
+.si{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--rs);cursor:pointer;transition:all .15s;font-size:13px;color:var(--t2)}
+.si:hover{background:var(--bg-hover);color:var(--t1)}
+.si.act{background:var(--acc-d);color:var(--acc-t);font-weight:500}
+.si .ic{width:28px;height:28px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.si.sub{padding-left:47px;font-size:12.5px}
+.si .soon{margin-left:auto;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);background:var(--bg-warm);padding:1px 6px;border-radius:8px;font-weight:600}
+.si.act .soon{background:var(--acc-l);color:var(--acc-t)}
+.sb-b{margin-top:auto;padding:10px;border-top:1px solid var(--border)}
+.sb-b .ui{display:flex;align-items:center;gap:9px;padding:6px}
+.sb-b .ua{width:30px;height:30px;border-radius:var(--rs);background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;background-size:cover;background-position:center}
+
+/* MAIN + TOP BAR */
+.mn{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.tb{padding:10px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;background:var(--bg-cream)}
+.tb-t{font-family:var(--serif);font-size:16px;font-weight:600;display:flex;align-items:center;gap:9px}
+.tb-note{font-size:11px;color:var(--t3);margin-left:auto}
+
+/* VIEWS */
+.vw{display:none;flex:1;overflow-y:auto;padding:24px}
+.vw.act{display:block}
+.vw::-webkit-scrollbar{width:5px}
+.vw::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* CARDS + GRIDS */
+.cd{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:16px;box-shadow:var(--sh)}
+.kl{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px;font-weight:500}
+.kv{font-family:var(--mono);font-size:22px;font-weight:700;margin-bottom:3px}
+.kd{font-size:12px;display:flex;align-items:center;gap:4px}
+.kd.u{color:var(--g)}.kd.d{color:var(--r)}.kd.n{color:var(--t3)}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:1100px){.g5{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(2,1fr)}}
+
+/* SECTION HEADERS + TABLES */
+.sec{margin-bottom:24px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
+.sec-h h3{font-family:var(--serif);font-size:15px;font-weight:600}
+.sec-h .note{font-size:11px;color:var(--t3);font-weight:400;margin-left:4px}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--bg-white);border-radius:var(--rad);overflow:hidden;border:1px solid var(--border-s);box-shadow:var(--sh)}
+.tbl th{text-align:left;padding:9px 12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);border-bottom:1px solid var(--border);font-weight:600;background:var(--bg-cream)}
+.tbl td{padding:8px 12px;border-bottom:1px solid var(--border-s);color:var(--t2)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg-cream)}
+.tbl .r{text-align:right}
+.mn2{font-family:var(--mono);font-size:11.5px}
+.hi{color:var(--t1);font-weight:500}
+
+/* PILLS (period selectors, granularity toggles) */
+.pills{display:flex;gap:3px;margin-left:auto}
+.pills button{padding:4px 11px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--t3);font-family:var(--sans);font-size:11px;cursor:pointer;transition:all .15s}
+.pills button:hover{background:var(--bg-white)}
+.pills button.a{background:var(--bg-white);color:var(--acc-t);border-color:var(--acc);box-shadow:var(--sh);font-weight:500}
+
+/* LOADING / ERROR / EMPTY STATES */
+.loading{text-align:center;padding:40px;color:var(--t3);font-size:13px}
+.error{text-align:center;padding:20px;color:var(--r);font-size:13px;background:var(--rl);border-radius:var(--rs)}
+.empty{text-align:center;padding:24px;color:var(--t3);font-size:13px;font-style:italic}
+
+/* DELTA PILL — inline DoD/WoW/MoM/YoY indicator for table cells */
+.dp{font-family:var(--mono);font-size:11px;font-weight:500}
+.dp.u{color:var(--g)}.dp.d{color:var(--r)}.dp.n{color:var(--t3)}
+
+/* SECTION HEADER STRIP — used on tab landing pages (icon + title + pills) */
+.head{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.head .icon{width:40px;height:40px;border-radius:10px;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+.head h2{font-family:var(--serif);font-size:20px;font-weight:600;margin:0}
+.head .sub{font-size:13px;color:var(--t2);margin:0}
+.head .pills{margin-left:auto}
+
+/* GENERIC PLACEHOLDER VIEW (stubs for "Phase 2" tabs) */
+.placeholder-view{padding:48px 24px;text-align:center}
+.placeholder-view .icon{width:56px;height:56px;border-radius:14px;background:var(--acc-d);display:inline-flex;align-items:center;justify-content:center;font-size:24px;color:var(--acc-t);margin-bottom:16px}
+.placeholder-view h2{font-family:var(--serif);font-size:22px;font-weight:600;margin-bottom:8px}
+.placeholder-view p{color:var(--t3);font-size:14px;max-width:480px;margin:0 auto 6px}
+.placeholder-view .phase{display:inline-block;margin-top:14px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--acc-t);background:var(--acc-l);padding:5px 12px;border-radius:12px;font-weight:600}
