@@ -91,20 +91,24 @@ em { font-style: italic; color: var(--text-mid); }
 /* DIVIDER */
 .divider { height: 1px; background: var(--border); margin: 64px 0; border: none; }
 
-/* AGENTS GRID */
-.agents { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 28px 0; }
-.agents .ag { background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 6px; padding: 18px 18px 16px; }
-.agents .ag.teal { border-left-color: var(--teal); }
-.agents .ag.blue { border-left-color: var(--blue); }
-.agents .ag.green { border-left-color: var(--green); }
-.agents .ag.dark { border-left-color: var(--text); }
-.agents .ag.orange { border-left-color: var(--accent); }
-.agents .ag .role { font-family: var(--mono); font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
-.agents .ag h4 { font-family: var(--serif); font-size: 17px; font-weight: 600; margin: 4px 0 10px; color: var(--text); line-height: 1.25; }
-.agents .ag p { font-size: 12.5px; color: var(--text-mid); margin-bottom: 6px; line-height: 1.5; }
-.agents .ag p:last-child { margin-bottom: 0; }
-.agents .ag p strong { color: var(--text); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; display: inline-block; margin-right: 4px; }
-@media (max-width: 720px) { .agents { grid-template-columns: 1fr; } }
+/* AGENTS HIERARCHY */
+.agents { margin: 28px 0; }
+.agent-tier { display: flex; justify-content: center; gap: 12px; margin-bottom: 12px; position: relative; }
+.agent-tier::after { content: ''; position: absolute; bottom: -12px; left: 50%; width: 1px; height: 12px; background: var(--border-dark); }
+.agent-tier:last-child::after { display: none; }
+.agent-tier.l1 { flex-wrap: wrap; }
+.agent-tier.l1::after { display: none; }
+.ag { background: var(--bg-card); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 6px; padding: 16px 18px; text-align: center; min-width: 160px; }
+.ag.teal { border-top-color: var(--teal); }
+.ag.blue { border-top-color: var(--blue); }
+.ag.green { border-top-color: var(--green); }
+.ag.dark { border-top-color: var(--text); }
+.ag.orange { border-top-color: var(--accent); }
+.ag .role { font-family: var(--mono); font-size: 9px; color: var(--text-light); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+.ag h4 { font-family: var(--serif); font-size: 16px; font-weight: 600; margin: 4px 0 6px; color: var(--text); line-height: 1.25; }
+.ag p { font-size: 11.5px; color: var(--text-mid); margin: 0; line-height: 1.45; }
+.ag.wide { min-width: 280px; }
+@media (max-width: 720px) { .agent-tier { flex-direction: column; align-items: center; } .ag { min-width: 100%; } }
 
 /* STAGES (4-up for nervous system path) */
 .stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0; }
@@ -428,66 +432,54 @@ footer p { margin-bottom: 4px; }
 <!-- AGENTS -->
 <section id="agents">
   <div class="sec-num">04 · The Agents</div>
-  <h2>A team, not a tool.</h2>
-  <p class="takeaway">Terminal6's agents mirror a real e-commerce team. The brand operator is the Brand Head — the system works for them, not around them.</p>
+  <h2>A crew, not a tool.</h2>
+  <p class="takeaway">Agents mirror a real e-commerce team. The brand operator is the Brand Head — the system works for them.</p>
 
   <div class="agents">
-    <div class="ag orange">
-      <div class="role">Chief of Staff · L0</div>
-      <h4>Triage &amp; Briefing</h4>
-      <p><strong>Monitors</strong> all signals via two-tier detection (statistical anomaly scan + LLM triage). Filters noise, connects related signals, routes to the right manager.</p>
-      <p><strong>Produces</strong> Morning briefing, follow-up tracking, escalation queue for operator</p>
+    <div class="agent-tier">
+      <div class="ag orange wide">
+        <div class="role">Brand Head</div>
+        <h4>The Operator</h4>
+        <p>Human in the loop. Sets strategy, approves actions, captures directives.</p>
+      </div>
     </div>
-    <div class="ag orange">
-      <div class="role">Senior Manager · L1</div>
-      <h4>Sr. Marketing</h4>
-      <p><strong>Diagnoses</strong> campaign performance, cross-channel budget allocation, creative fatigue</p>
-      <p><strong>Manages</strong> Amazon Ads, Google Ads, Meta Ads specialists (L2) who execute bid changes, campaign pauses, creative rotation</p>
+    <div class="agent-tier">
+      <div class="ag orange wide">
+        <div class="role">Chief of Staff</div>
+        <h4>Triage &amp; Briefing</h4>
+        <p>Monitors all signals, filters noise, routes to the right agent. Produces morning briefings.</p>
+      </div>
     </div>
-    <div class="ag blue">
-      <div class="role">Senior Manager · L1</div>
-      <h4>Sr. Category</h4>
-      <p><strong>Diagnoses</strong> pricing strategy, assortment gaps, competitive positioning, P&amp;L ownership</p>
-      <p><strong>Manages</strong> Per-category specialists (L2) who execute pricing and listing changes</p>
-    </div>
-    <div class="ag teal">
-      <div class="role">Senior Manager · L1</div>
-      <h4>Sr. Marketplace</h4>
-      <p><strong>Diagnoses</strong> cross-channel listing health, Buy Box, compliance, storefront conversion</p>
-      <p><strong>Manages</strong> Amazon, Flipkart, Shopify D2C specialists (L2) who execute listing updates and sync fixes</p>
-    </div>
-    <div class="ag green">
-      <div class="role">Senior Manager · L1</div>
-      <h4>Sr. Operations</h4>
-      <p><strong>Diagnoses</strong> inventory allocation, fulfilment speed, reorder timing, FC rebalancing</p>
-      <p><strong>Manages</strong> Inventory and Fulfillment specialists (L2) who trigger restock and delivery optimisations</p>
-    </div>
-    <div class="ag dark">
-      <div class="role">Senior Manager · L1</div>
-      <h4>Sr. Finance</h4>
-      <p><strong>Diagnoses</strong> margin erosion, settlement discrepancies, working capital, tax compliance</p>
-      <p><strong>Manages</strong> P&amp;L and Settlement specialists (L2) who reconcile and flag</p>
+    <div class="agent-tier l1">
+      <div class="ag orange">
+        <div class="role">Marketing</div>
+        <h4>Growth &amp; Ads</h4>
+        <p>Campaign performance, budget allocation, ROAS, creative fatigue</p>
+      </div>
+      <div class="ag blue">
+        <div class="role">Category</div>
+        <h4>Pricing &amp; Assortment</h4>
+        <p>Competitive pricing, product mix, P&amp;L ownership</p>
+      </div>
+      <div class="ag teal">
+        <div class="role">Marketplace</div>
+        <h4>Listings &amp; Channels</h4>
+        <p>Listing health, Buy Box, sync, storefront conversion</p>
+      </div>
+      <div class="ag green">
+        <div class="role">Operations</div>
+        <h4>Inventory &amp; Fulfilment</h4>
+        <p>Stock cover, reorder timing, delivery speed, FC rebalancing</p>
+      </div>
+      <div class="ag dark">
+        <div class="role">Finance</div>
+        <h4>Margins &amp; Settlements</h4>
+        <p>Margin erosion, fee reconciliation, working capital</p>
+      </div>
     </div>
   </div>
 
-  <h3>Why a hierarchy, not flat agents</h3>
-  <div class="three-up">
-    <div class="card">
-      <div class="num">01</div>
-      <h4>Deep expertise fits in context</h4>
-      <p>An Amazon Ads specialist only sees Amazon data — 50 pages of bid expertise fit in 20K tokens because scope is narrow. Flat agents can't go deep.</p>
-    </div>
-    <div class="card">
-      <div class="num">02</div>
-      <h4>Conflicts resolve at the right level</h4>
-      <p>Keyword choice → junior decides alone. Amazon vs Meta budget → Sr. Marketing. Spend vs stock → operator's BrandDirective. Not everything escalates to the top.</p>
-    </div>
-    <div class="card">
-      <div class="num">03</div>
-      <h4>The system earns autonomy</h4>
-      <p>Day 1: everything escalates. Day 30: 80% auto-resolves via accumulated directives. Day 90: system proposes new directives from patterns. Operator evolves from manager → strategist.</p>
-    </div>
-  </div>
+  <p style="font-size:13px; color:var(--text-mid); text-align:center; margin-top:20px;">Each agent has deep channel specialists underneath — Amazon Ads, Shopify, Flipkart, Meta, Google Ads — that activate as complexity grows.</p>
 
 </section>
 
