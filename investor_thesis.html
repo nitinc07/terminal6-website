@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <title>Terminal6 — Investor Thesis</title>
 <script>
 /* ACCESS GATE — block render until allowlisted session confirmed.
    Skipped for file:// local preview so the author can review offline. */
 (function(){
   if(location.protocol==='file:')return;
-  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com','kangkan.b14@gmail.com'];
+  const ALLOWED_EMAILS=['contact@terminal6.io','nitinc07@gmail.com'];
   const saved=sessionStorage.getItem('t6_user');
   let ok=false;
   if(saved){try{const u=JSON.parse(saved);ok=ALLOWED_EMAILS.includes((u.email||'').toLowerCase());}catch(e){}}
@@ -292,10 +291,9 @@ footer p { margin-bottom: 4px; }
     <li><a href="#unit-economics">10 · Unit Economics</a></li>
     <li><a href="#nervous-system">11 · Nervous System Path</a></li>
     <li><a href="#phased-scale">12 · Phased Scale</a></li>
-    <li><a href="#traction">13 · Traction</a></li>
-    <li><a href="#architecture">14 · Architecture</a></li>
-    <li><a href="#founder">15 · Founder</a></li>
-    <li><a href="#risks">16 · Risks</a></li>
+    <li><a href="#architecture">13 · Architecture</a></li>
+    <li><a href="#founder">14 · Founder</a></li>
+    <li><a href="#risks">15 · Risks</a></li>
   </ol>
 </aside>
 
@@ -375,6 +373,40 @@ footer p { margin-bottom: 4px; }
     </div>
   </div>
 
+  <h3>This isn't theoretical. It happens every day.</h3>
+  <div class="three-up">
+    <div class="card">
+      <div class="num">01</div>
+      <h4>Ads running on out-of-stock SKUs</h4>
+      <p>Inventory system shows 0 units. Ad platform doesn't know. ₹6,800/day burning on dead SKUs — for days — because the ad manager checks a different tool than the inventory team.</p>
+    </div>
+    <div class="card">
+      <div class="num">02</div>
+      <h4>Competitor undercuts price, nobody notices</h4>
+      <p>A competitor drops price 12% on your hero SKU. Your bids stay the same. Conversion tanks, ROAS collapses. By the time someone spots it in Seller Central, you've lost the Buy Box for a week.</p>
+    </div>
+    <div class="card">
+      <div class="num">03</div>
+      <h4>Shopify shows sold out, warehouse has stock</h4>
+      <p>Listing sync breaks silently. Shopify shows "out of stock" on 345 SKUs while the warehouse has inventory. DTC revenue drops ₹2L/week. Nobody connects the dots because OMS and storefront are different systems.</p>
+    </div>
+    <div class="card">
+      <div class="num">04</div>
+      <h4>Reorder triggered too late</h4>
+      <p>Ad velocity spiked after a campaign push. Inventory system doesn't see ad spend. By the time the ops team notices stock is at 3 days of cover, the reorder lead time is 14 days. Stockout is inevitable.</p>
+    </div>
+    <div class="card">
+      <div class="num">05</div>
+      <h4>Same SKU, different prices, no one knows</h4>
+      <p>Amazon auto-adjusts your price to win Buy Box. Flipkart price stays static. Shopify is a third number. Channel teams operate independently — margin erosion on one channel subsidises another, invisible until month-end reconciliation.</p>
+    </div>
+    <div class="card">
+      <div class="num">06</div>
+      <h4>Campaign budget sits on underperformers</h4>
+      <p>80% of ad spend is on 20% of SKUs — but not the right 20%. Low-rated products (3.2★) keep getting budget because the ad tool doesn't see product quality. Manual reviews happen weekly; the waste compounds daily.</p>
+    </div>
+  </div>
+
   <div class="matrix-note">
     <strong>The consequence →</strong> Because the loop is broken, brands throw people at it. Every new channel demands a specialist; layering functions on top creates a function × channel matrix that reaches <strong>7–10% of GMV in team cost</strong> by $10–50M scale — mostly coordination overhead, not value creation.
   </div>
@@ -392,7 +424,8 @@ footer p { margin-bottom: 4px; }
     <div class="stack-row ui"><div class="lnum">L6</div><div class="lname">Workspace</div><div class="ldesc">Morning briefing, approval queue, decision feed, agent chat <span class="tag ui" style="margin-left:8px">Human in loop</span></div></div>
     <div class="stack-row act"><div class="lnum">L5</div><div class="lname">Execution</div><div class="ldesc">API executors, retry, rollback, audit log <span class="tag act" style="margin-left:8px">Act</span></div></div>
     <div class="stack-row act"><div class="lnum">L4</div><div class="lname">Policy &amp; Governance</div><div class="ldesc">Margin floors, spend caps, approval routing, kill switches <span class="tag act" style="margin-left:8px">Act</span></div></div>
-    <div class="stack-row decide"><div class="lnum">L3</div><div class="lname">Agent Runtime</div><div class="ldesc">Growth · Supply · Category · Catalog · Finance · CX agents <span class="tag decide" style="margin-left:8px">Decide</span></div></div>
+    <div class="stack-row decide"><div class="lnum">L3</div><div class="lname">Agent Runtime</div><div class="ldesc">Hierarchical agent team: Chief of Staff &rarr; 5 senior managers &rarr; channel/category specialists <span class="tag decide" style="margin-left:8px">Decide</span></div></div>
+    <div class="stack-row observe"><div class="lnum">L2.5</div><div class="lname">Evidence &amp; Signals</div><div class="ldesc">Stock proxy, funnel signals, anomaly scores, throttle signals. Deterministic, shared. <span class="tag observe" style="margin-left:8px">Observe</span></div></div>
     <div class="stack-row observe"><div class="lnum">L2</div><div class="lname">Unified Data &amp; Context</div><div class="ldesc">Canonical 16-entity schema + <strong>BrandDirective</strong> (captures tactical calls) <span class="tag observe" style="margin-left:8px">Observe</span></div></div>
     <div class="stack-row observe"><div class="lnum">L1</div><div class="lname">Integration &amp; Ingestion</div><div class="ldesc">Channel · OMS · ads · market data · external signals <span class="tag observe" style="margin-left:8px">Observe</span></div></div>
   </div>
@@ -405,49 +438,68 @@ footer p { margin-bottom: 4px; }
 <!-- AGENTS -->
 <section id="agents">
   <div class="sec-num">04 · The Agents</div>
-  <h2>Six specialists, one shared brain.</h2>
-  <p class="takeaway">Not one mega-agent — six focused specialists, each modelled on a human role in a brand team. Each reads shared brand context, reasons through its own playbooks + category cards, and coordinates with the others through structured messages. <strong>Phase 1 brings all six online across 10 Indian brands before we scale.</strong></p>
+  <h2>A team, not a tool.</h2>
+  <p class="takeaway">Terminal6's agents mirror a real e-commerce team. The <strong>brand operator is the Brand Head</strong> — the system works for them, not around them. Below: a Chief of Staff for triage and morning briefings, five senior managers for domain diagnosis, and channel/category specialists for deep execution. Conflicts resolve at the right level. The system earns autonomy over time.</p>
 
   <div class="agents">
     <div class="ag orange">
-      <div class="role">Like a Media Buyer</div>
-      <h4>Growth Agent</h4>
-      <p><strong>Watches</strong> ROAS, CPC, CTR, TACoS, creative fatigue across Amazon, Google, Meta, Flipkart ads</p>
-      <p><strong>Acts on</strong> Bids, budget reallocation, campaign pauses, creative rotation, throttle signals</p>
-    </div>
-    <div class="ag teal">
-      <div class="role">Like an Ops Manager</div>
-      <h4>Supply Agent</h4>
-      <p><strong>Watches</strong> Inventory across FCs, PO statuses, lead times, fulfilment velocity, cover days</p>
-      <p><strong>Acts on</strong> Restock alerts, PO triggers, FC rebalancing, stockout prediction, reorder points</p>
-    </div>
-    <div class="ag blue">
-      <div class="role">Like a Category Manager</div>
-      <h4>Category Agent</h4>
-      <p><strong>Watches</strong> Competitive pricing, BSR, discount calendars, category launches, market share</p>
-      <p><strong>Acts on</strong> Pricing recommendations, discount strategy, competitive alerts, assortment calls</p>
-    </div>
-    <div class="ag green">
-      <div class="role">Like a Content Strategist</div>
-      <h4>Catalog Agent</h4>
-      <p><strong>Watches</strong> Listing quality, keyword rankings, A+ content, rating trends, content compliance</p>
-      <p><strong>Acts on</strong> Listing updates, keyword optimisation, content refresh, review response triggers</p>
-    </div>
-    <div class="ag dark">
-      <div class="role">Like an FP&amp;A Lead</div>
-      <h4>Finance Agent</h4>
-      <p><strong>Watches</strong> Settlements, fees, GST, working capital, contribution margin per SKU, cash cycle</p>
-      <p><strong>Acts on</strong> Fee reconciliation, cash forecast, P&amp;L alerts, tax compliance, SKU-level P&amp;L</p>
+      <div class="role">Chief of Staff · L0</div>
+      <h4>Triage &amp; Briefing</h4>
+      <p><strong>Monitors</strong> all signals via two-tier detection (statistical anomaly scan + LLM triage). Filters noise, connects related signals, routes to the right manager.</p>
+      <p><strong>Produces</strong> Morning briefing, follow-up tracking, escalation queue for operator</p>
     </div>
     <div class="ag orange">
-      <div class="role">Like a CX Lead</div>
-      <h4>CX Agent</h4>
-      <p><strong>Watches</strong> Review sentiment, return reasons, complaint patterns, NPS, delivery experience</p>
-      <p><strong>Acts on</strong> Review response, return root-causing, quality alerts, category team escalations</p>
+      <div class="role">Senior Manager · L1</div>
+      <h4>Sr. Marketing</h4>
+      <p><strong>Diagnoses</strong> campaign performance, cross-channel budget allocation, creative fatigue</p>
+      <p><strong>Manages</strong> Amazon Ads, Google Ads, Meta Ads specialists (L2) who execute bid changes, campaign pauses, creative rotation</p>
+    </div>
+    <div class="ag blue">
+      <div class="role">Senior Manager · L1</div>
+      <h4>Sr. Category</h4>
+      <p><strong>Diagnoses</strong> pricing strategy, assortment gaps, competitive positioning, P&amp;L ownership</p>
+      <p><strong>Manages</strong> Per-category specialists (L2) who execute pricing and listing changes</p>
+    </div>
+    <div class="ag teal">
+      <div class="role">Senior Manager · L1</div>
+      <h4>Sr. Marketplace</h4>
+      <p><strong>Diagnoses</strong> cross-channel listing health, Buy Box, compliance, storefront conversion</p>
+      <p><strong>Manages</strong> Amazon, Flipkart, Shopify D2C specialists (L2) who execute listing updates and sync fixes</p>
+    </div>
+    <div class="ag green">
+      <div class="role">Senior Manager · L1</div>
+      <h4>Sr. Operations</h4>
+      <p><strong>Diagnoses</strong> inventory allocation, fulfilment speed, reorder timing, FC rebalancing</p>
+      <p><strong>Manages</strong> Inventory and Fulfillment specialists (L2) who trigger restock and delivery optimisations</p>
+    </div>
+    <div class="ag dark">
+      <div class="role">Senior Manager · L1</div>
+      <h4>Sr. Finance</h4>
+      <p><strong>Diagnoses</strong> margin erosion, settlement discrepancies, working capital, tax compliance</p>
+      <p><strong>Manages</strong> P&amp;L and Settlement specialists (L2) who reconcile and flag</p>
     </div>
   </div>
 
-  <p style="font-size:13px; color:var(--text-mid);"><strong>All six agents are scoped in the canonical schema today.</strong> Data layer (L1 + L2) live against Sprig. Growth playbooks written (conversion_drop full, oos_response / roas_drop / low_cover / high_cover skeleton). <strong>L3 agent runtime is the core Phase 1 engineering milestone</strong> — ship all six agents with working playbooks by Month 6, stress-tested across 10 brands in production.</p>
+  <h3>Why a hierarchy, not flat agents</h3>
+  <div class="three-up">
+    <div class="card">
+      <div class="num">01</div>
+      <h4>Deep expertise fits in context</h4>
+      <p>An Amazon Ads specialist only sees Amazon data — 50 pages of bid expertise fit in 20K tokens because scope is narrow. Flat agents can't go deep.</p>
+    </div>
+    <div class="card">
+      <div class="num">02</div>
+      <h4>Conflicts resolve at the right level</h4>
+      <p>Keyword choice → junior decides alone. Amazon vs Meta budget → Sr. Marketing. Spend vs stock → operator's BrandDirective. Not everything escalates to the top.</p>
+    </div>
+    <div class="card">
+      <div class="num">03</div>
+      <h4>The system earns autonomy</h4>
+      <p>Day 1: everything escalates. Day 30: 80% auto-resolves via accumulated directives. Day 90: system proposes new directives from patterns. Operator evolves from manager → strategist.</p>
+    </div>
+  </div>
+
+  <p style="font-size:13px; color:var(--text-mid);"><strong>Phase 1 starts with senior managers only</strong> — they double as specialists until channel/category complexity justifies splitting. The hierarchy exists in the architecture from Day 1, staffed incrementally. Data layer (L1 + L2 + L2.5) live against design partner. Conversion-drop playbook validated against 91 days of real data. <strong>L3 agent runtime is the core Phase 1 engineering milestone.</strong></p>
 </section>
 
 <hr class="divider">
@@ -488,7 +540,7 @@ footer p { margin-bottom: 4px; }
     <div class="compose-out">Contextualised diagnosis — right for <em>this</em> brand, in <em>this</em> category, in <em>this</em> region</div>
   </div>
 
-  <p style="font-size:14px; color:var(--text-mid); text-align:center;"><strong>The flywheel.</strong> Every brand contributes learnings that graduate into category and region cards. The next brand in that category is smarter from Day 1 and cheaper to onboard. No ad tool, OMS, or BI product stores decisions, reasoning, or expertise as structured data — we do.</p>
+  <p style="font-size:14px; color:var(--text-mid); text-align:center;">Knowledge assembles at the <strong>senior-manager level</strong> — playbook (process) + category card (domain) + region card (market) + brand context (policies). The Chief of Staff triages without domain expertise; junior agents execute without needing the full picture. <strong>The flywheel:</strong> every brand contributes learnings that graduate into category and region cards. The next brand in that category is smarter from Day 1 and cheaper to onboard.</p>
 </section>
 
 <hr class="divider">
@@ -710,7 +762,7 @@ footer p { margin-bottom: 4px; }
     <div class="card">
       <div class="num">Phase 1 · Months 0–6</div>
       <h4>Depth in India</h4>
-      <p><strong>10 brands across 3–4 categories.</strong> Full agent suite live: growth (ads across Amazon + Flipkart + Meta + Google), supply, category, catalog, finance, CX. Objective: stress-test every agent use case in production. Sprig + Basil locked; 8 more through founder network.</p>
+      <p><strong>10 brands across 3–4 categories.</strong> Full hierarchical agent team live: Chief of Staff + 5 senior managers (marketing, category, marketplace, ops, finance), with channel specialists added as complexity grows. Objective: stress-test every agent use case in production. Basil locked; 9 more through founder network.</p>
     </div>
     <div class="card">
       <div class="num">Phase 2 · Months 6–18</div>
@@ -725,43 +777,20 @@ footer p { margin-bottom: 4px; }
   </div>
 
   <div class="callout" style="background: var(--bg-warm); border-left: 3px solid var(--accent); padding: 20px 26px; border-radius: 0 6px 6px 0; margin-top: 24px;">
-    <p style="font-size: 14px; margin-bottom: 0;"><strong>Why depth before breadth.</strong> Running 5 brands badly teaches us nothing we don't already know. Running 10 brands with all 6 agents stress-tests every failure mode — the system breaks, we fix it, ship the fix, and onboard #11 smarter. The agents learn as the brands do. Only when Phase 1 is production-grade do we spend founder time on US distribution — because we'll only get one chance to set US customer expectations, and we're not spending that chance on a half-baked product.</p>
+    <p style="font-size: 14px; margin-bottom: 0;"><strong>Why depth before breadth.</strong> Running 5 brands badly teaches us nothing we don't already know. Running 10 brands with the full agent hierarchy stress-tests every failure mode — the system breaks, we fix it, ship the fix, and onboard #11 smarter. The agents learn as the brands do. Only when Phase 1 is production-grade do we spend founder time on US distribution — because we'll only get one chance to set US customer expectations, and we're not spending that chance on a half-baked product.</p>
   </div>
 </section>
 
-<hr class="divider">
-
-<!-- TRACTION -->
-<section id="traction">
-  <div class="sec-num">13 · Traction</div>
-  <h2>Live data, validated findings, working pipeline.</h2>
-
-  <div class="tstats">
-    <div class="s"><div class="num">2</div><div class="lbl">Design partners</div></div>
-    <div class="s"><div class="num">11,281</div><div class="lbl">Sprig SKUs live</div></div>
-    <div class="s"><div class="num">88,844</div><div class="lbl">Channel listings</div></div>
-    <div class="s"><div class="num">1.08M</div><div class="lbl">Inventory units tracked</div></div>
-    <div class="s"><div class="num">19</div><div class="lbl">Tables in production</div></div>
-    <div class="s"><div class="num">5/5</div><div class="lbl">Unicommerce normalisers live</div></div>
-    <div class="s"><div class="num">90d</div><div class="lbl">GA4 data validated</div></div>
-    <div class="s"><div class="num">3</div><div class="lbl">Category insights captured</div></div>
-  </div>
-
-  <h3>Validated findings from Sprig's 90 days of data</h3>
-  <div class="finding"><strong>Phone lifecycle drives demand more than festivals.</strong><span> Sprig's Jan→Mar top losers were aging phone models (Vivo X300 Pro −60%, Samsung A35 −42%); top gainers were new launches (Samsung S26 Ultra, iPhone 17 Pro Max). Category-card insight.</span></div>
-  <div class="finding"><strong>Indian D2C follows a salary-cycle pattern.</strong><span> Conversion lands at 1.65% around the 1st and dips to 1.14% mid-month. Alerts must baseline against same-day-of-month, not trailing 7-day. Region-card insight.</span></div>
-  <div class="finding"><strong>Organic SEO lags paid by 2–4 weeks on new launches.</strong><span> Sprig's organic conversion dropped 1.84% → 1.35% while paid held stable — consistent with SEO authority lag on new phone keywords.</span></div>
-</section>
 
 <hr class="divider">
 
 <!-- ARCHITECTURE -->
 <section id="architecture">
-  <div class="sec-num">14 · Architecture</div>
+  <div class="sec-num">13 · Architecture</div>
   <h2>For the technically curious.</h2>
   <p class="takeaway">Full 6-layer OS, 16-entity canonical schema, 6 throttle signals, agent roster, policy engine — same document used with AI architecture reviewers and engineering hires.</p>
   <div class="arch-wrap">
-    <iframe src="architecture.html" title="Terminal6 Architecture" loading="lazy"></iframe>
+    <iframe src="terminal6-architecture.html" title="Terminal6 Architecture" loading="lazy"></iframe>
   </div>
 </section>
 
@@ -769,10 +798,10 @@ footer p { margin-bottom: 4px; }
 
 <!-- FOUNDER -->
 <section id="founder">
-  <div class="sec-num">15 · Founder</div>
-  <h2>Built parts of Terminal6 before it existed.</h2>
-  <p class="founder-head">Nitin Chaudhary — 17 years across e-commerce &amp; fintech, spanning category, operations, finance, and technology.</p>
-  <p>At <strong>Opptra</strong> (Binny Bansal's venture, current), launched a multi-marketplace fashion business across Amazon AE, Noon, Namshi — scaled three brands to $3M ARR in six months at +15% CM. <strong>Built two AI products in production there — a bid-optimisation engine and an inventory replenishment engine — the direct genesis of the Terminal6 thesis.</strong> At <strong>Flipkart</strong>, led planning for categories contributing $2.5Bn GMV and 45% of volumes, grew share 42% → 48% vs Amazon, ran Business Finance for Fashion ($1Bn GMV, 800bps profit), scaled BNPL to 5M MAU.</p>
+  <div class="sec-num">14 · Founder</div>
+  <h2>The thesis came from building the pieces separately.</h2>
+  <p>At <strong>Opptra</strong> (Binny Bansal's venture), launched a multi-marketplace fashion business across Amazon AE, Noon, Namshi — scaled three brands to $3M ARR in six months at +15% CM. Built two AI products in production: a bid-optimisation engine and an inventory replenishment engine. <strong>Both worked. Neither could talk to the other.</strong> The bid engine didn't know inventory was running low. The reorder engine didn't know ad spend had spiked. That gap — intelligence fragmented across functions — is exactly what Terminal6 closes.</p>
+  <p>Before that, 7 years at <strong>Flipkart</strong>: led planning for categories contributing $2.5Bn GMV and 45% of volumes, grew share 42% → 48% vs Amazon, ran Business Finance for Fashion ($1Bn GMV, 800bps profit improvement), scaled BNPL to 5M MAU. The cross-functional visibility needed to run these programmes is the same visibility Terminal6 assembles automatically.</p>
   <div class="cred-strip">
     <span class="cred"><strong>Opptra</strong> · Head of Marketplace &amp; Tech</span>
     <span class="cred"><strong>Flipkart</strong> · Director · 7 yrs</span>
@@ -782,14 +811,14 @@ footer p { margin-bottom: 4px; }
     <span class="cred"><strong>IIM Bangalore</strong> · PGP</span>
     <span class="cred"><strong>IIT Roorkee</strong> · B.Tech</span>
   </div>
-  <p style="font-size:13px; color:var(--text-mid);">Founder-led today. Design partners Sprig and Basil Home Solutions providing live data and weekly feedback. First engineering hire planned post-seed.</p>
+  <p style="font-size:13px; color:var(--text-mid);">Founder-led today. Design partner Basil Home Solutions providing live data and weekly feedback. First engineering hire planned post-seed.</p>
 </section>
 
 <hr class="divider">
 
 <!-- RISKS -->
 <section id="risks">
-  <div class="sec-num">16 · Risks</div>
+  <div class="sec-num">15 · Risks</div>
   <h2>What could kill this.</h2>
   <div class="risks">
     <div class="risk"><div class="title">Platform dependency</div><div class="mit">SP-API, Meta, Google Ads can change terms. <em>Mitigation:</em> multi-channel architecture; canonical schema insulates agent logic from connector changes.</div></div>
