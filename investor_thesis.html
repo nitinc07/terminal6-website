@@ -115,20 +115,43 @@ em { font-style: italic; color: var(--text-mid); }
 @media (max-width: 900px) { .agent-tier.l1 { flex-wrap: wrap; } .ag { min-width: 45%; } }
 @media (max-width: 720px) { .agent-tier { flex-direction: column; align-items: center; } .ag { min-width: 100%; } }
 
-/* ARCHITECTURE LAYERS */
-.arch-layers { margin: 28px 0; display: flex; flex-direction: column; gap: 0; }
-.arch-layer { border: 1px solid var(--border); padding: 18px 24px; display: grid; grid-template-columns: 160px 1fr; gap: 16px; align-items: center; }
-.arch-layer:first-child { border-radius: 8px 8px 0 0; }
-.arch-layer:last-child { border-radius: 0 0 8px 8px; }
-.arch-layer + .arch-layer { border-top: none; }
-.arch-layer .al-name { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--text); }
-.arch-layer .al-desc { font-size: 12.5px; color: var(--text-mid); line-height: 1.5; }
-.arch-layer.human { background: linear-gradient(90deg, var(--green-bg) 0%, var(--bg-card) 100%); border-left: 3px solid var(--green); }
-.arch-layer.agents { background: linear-gradient(90deg, var(--accent-bg) 0%, var(--bg-card) 100%); border-left: 3px solid var(--accent); }
-.arch-layer.context { background: linear-gradient(90deg, var(--blue-bg) 0%, var(--bg-card) 100%); border-left: 3px solid var(--blue); }
-.arch-layer.integrations { background: linear-gradient(90deg, var(--teal-bg) 0%, var(--bg-card) 100%); border-left: 3px solid var(--teal); }
-.arch-arrow { text-align: center; font-size: 16px; color: var(--text-light); padding: 4px 0; }
-@media (max-width: 720px) { .arch-layer { grid-template-columns: 1fr; gap: 4px; } }
+/* ARCHITECTURE INFOGRAPHIC */
+.arch-info { margin: 28px 0; position: relative; }
+.arch-row { display: flex; justify-content: center; gap: 10px; position: relative; }
+.arch-row + .arch-connector { display: flex; justify-content: center; padding: 6px 0; }
+.arch-connector svg { display: block; }
+.arch-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; text-align: center; position: relative; }
+.arch-box .ab-label { font-family: var(--mono); font-size: 9px; color: var(--text-light); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+.arch-box .ab-title { font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--text); margin: 3px 0 5px; }
+.arch-box .ab-desc { font-size: 11px; color: var(--text-mid); line-height: 1.45; }
+/* Operator box */
+.arch-box.op { border-top: 3px solid var(--green); min-width: 300px; }
+.arch-box.op .ab-label { color: var(--green); }
+/* Context bar */
+.arch-box.ctx { border-top: 3px solid var(--blue); width: 100%; background: linear-gradient(180deg, rgba(21,101,192,.06) 0%, var(--bg-card) 100%); }
+.arch-box.ctx .ab-label { color: var(--blue); }
+.arch-box.ctx .ab-title { font-size: 16px; }
+/* Agent boxes */
+.arch-row.agents-row { flex-wrap: nowrap; }
+.arch-row.agents-row .arch-box { flex: 1; min-width: 0; border-top: 3px solid var(--accent); }
+.arch-row.agents-row .arch-box .ab-label { color: var(--accent); }
+/* Integration boxes */
+.arch-row.int-row { flex-wrap: wrap; }
+.arch-row.int-row .arch-box { border-top: 3px solid var(--teal); padding: 10px 14px; min-width: 100px; flex: 1; }
+.arch-row.int-row .arch-box .ab-label { color: var(--teal); }
+.arch-row.int-row .arch-box .ab-title { font-size: 13px; margin: 2px 0 0; }
+/* Flow labels */
+.arch-flow-label { position: absolute; font-family: var(--mono); font-size: 9px; color: var(--text-light); text-transform: uppercase; letter-spacing: .5px; }
+/* Connector arrows */
+.arch-arrows { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 8px 0; }
+.arch-arrows .arrow-line { width: 2px; height: 20px; background: var(--border-dark); }
+.arch-arrows .arrow-text { font-family: var(--mono); font-size: 9px; color: var(--text-light); text-transform: uppercase; letter-spacing: .5px; }
+.arch-arrows .arrow-icon { font-size: 14px; color: var(--text-light); }
+/* Spread lines from agents to context */
+.arch-spread { display: flex; justify-content: center; padding: 4px 0; }
+.arch-spread svg { display: block; width: 100%; height: 24px; }
+@media (max-width: 900px) { .arch-row.agents-row { flex-wrap: wrap; } .arch-row.agents-row .arch-box { min-width: 45%; } }
+@media (max-width: 720px) { .arch-row.agents-row .arch-box { min-width: 100%; } .arch-row.int-row .arch-box { min-width: 45%; } .arch-box.op { min-width: 100%; } }
 
 /* AGENT FLOW EXAMPLE */
 .agent-flow { margin: 32px 0 0; background: var(--bg-warm); border-radius: 8px; padding: 24px 28px; }
@@ -555,29 +578,70 @@ footer p { margin-bottom: 4px; }
 <!-- HOW IT WORKS -->
 <section id="how-it-works">
   <div class="sec-num">04 · How It Works</div>
-  <h2>Four layers. Humans on top, tools at the bottom.</h2>
-  <p class="takeaway">T6 sits between the operator and their existing tools. Agents share one context layer — that's how the PPC agent knows about inventory, and the ops agent knows about ad spend.</p>
+  <h2>T6 sits between the operator and their existing tools.</h2>
+  <p class="takeaway">Agents share one context layer — that's how the PPC agent knows about inventory, and the ops agent knows about ad spend.</p>
 
-  <div class="arch-layers">
-    <div class="arch-layer human">
-      <div class="al-name">Operator</div>
-      <div class="al-desc"><strong>Morning briefing · Approval queue · Directives.</strong> Operator sees what agents did overnight, approves actions, captures decisions. Every override becomes context for next time.</div>
+  <div class="arch-info">
+
+    <!-- Operator -->
+    <div class="arch-row">
+      <div class="arch-box op">
+        <div class="ab-label">Operator</div>
+        <div class="ab-title">Brand Head</div>
+        <div class="ab-desc">Morning briefing · Approvals · Directives · Overrides</div>
+      </div>
     </div>
-    <div class="arch-layer agents">
-      <div class="al-name">Agents</div>
-      <div class="al-desc"><strong>Marketing · Channel · Category · Operations · Finance.</strong> All agents read from and write to the same shared context. Each agent reasons within its domain but sees the full picture.</div>
+
+    <!-- Arrow: Operator ↔ Agents -->
+    <div class="arch-arrows">
+      <span class="arrow-icon">↕</span>
+      <span class="arrow-text">briefings up · directives down</span>
     </div>
-    <div class="arch-layer context">
-      <div class="al-name">Shared Context</div>
-      <div class="al-desc"><strong>Cross-channel data + brand decisions + operator expertise + decision history.</strong> This is the layer that makes it agentic, not rule-based. It grows with every brand interaction — the system gets smarter over time.</div>
+
+    <!-- Agents -->
+    <div class="arch-row agents-row">
+      <div class="arch-box"><div class="ab-label">Agent</div><div class="ab-title">Marketing</div><div class="ab-desc">Ads · Budget · ROAS</div></div>
+      <div class="arch-box"><div class="ab-label">Agent</div><div class="ab-title">Channel</div><div class="ab-desc">Listings · Sync · Buy Box</div></div>
+      <div class="arch-box"><div class="ab-label">Agent</div><div class="ab-title">Category</div><div class="ab-desc">Pricing · Competition</div></div>
+      <div class="arch-box"><div class="ab-label">Agent</div><div class="ab-title">Operations</div><div class="ab-desc">Inventory · Reorder</div></div>
+      <div class="arch-box"><div class="ab-label">Agent</div><div class="ab-title">Finance</div><div class="ab-desc">Margins · Settlement</div></div>
     </div>
-    <div class="arch-layer integrations">
-      <div class="al-name">Integrations</div>
-      <div class="al-desc"><strong>Amazon · Shopify · Flipkart · Meta Ads · Google Ads · OMS · GA4.</strong> T6 plugs into existing tools via API. Brands keep their current stack — T6 is the intelligence layer on top.</div>
+
+    <!-- Arrow: Agents ↔ Context -->
+    <div class="arch-arrows">
+      <span class="arrow-icon">↕</span>
+      <span class="arrow-text">all agents read from + write to shared context</span>
     </div>
+
+    <!-- Shared Context -->
+    <div class="arch-row">
+      <div class="arch-box ctx">
+        <div class="ab-label">Shared Context Layer</div>
+        <div class="ab-title">Data + Decisions + Expertise + History</div>
+        <div class="ab-desc">Cross-channel data · Brand policies · Operator decisions · Category knowledge · Decision outcomes — grows with every interaction</div>
+      </div>
+    </div>
+
+    <!-- Arrow: Context ↔ Integrations -->
+    <div class="arch-arrows">
+      <span class="arrow-icon">↕</span>
+      <span class="arrow-text">data flows up · actions flow down</span>
+    </div>
+
+    <!-- Integrations -->
+    <div class="arch-row int-row">
+      <div class="arch-box"><div class="ab-label">Marketplace</div><div class="ab-title">Amazon</div></div>
+      <div class="arch-box"><div class="ab-label">DTC</div><div class="ab-title">Shopify</div></div>
+      <div class="arch-box"><div class="ab-label">Marketplace</div><div class="ab-title">Flipkart</div></div>
+      <div class="arch-box"><div class="ab-label">Ads</div><div class="ab-title">Meta</div></div>
+      <div class="arch-box"><div class="ab-label">Ads</div><div class="ab-title">Google</div></div>
+      <div class="arch-box"><div class="ab-label">OMS</div><div class="ab-title">Unicommerce</div></div>
+      <div class="arch-box"><div class="ab-label">Analytics</div><div class="ab-title">GA4</div></div>
+    </div>
+
   </div>
 
-  <p style="font-size:12px; color:var(--text-light); text-align:center; margin-top:12px; font-style:italic;">Data flows up. Actions flow down. Context is shared across every agent. The operator stays in control.</p>
+  <p style="font-size:12px; color:var(--text-light); text-align:center; margin-top:16px; font-style:italic;">Brands keep their existing tools. T6 is the intelligence layer that connects them.</p>
 </section>
 
 <hr class="divider">
