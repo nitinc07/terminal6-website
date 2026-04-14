@@ -115,6 +115,23 @@ em { font-style: italic; color: var(--text-mid); }
 @media (max-width: 900px) { .agent-tier.l1 { flex-wrap: wrap; } .ag { min-width: 45%; } }
 @media (max-width: 720px) { .agent-tier { flex-direction: column; align-items: center; } .ag { min-width: 100%; } }
 
+/* AGENT FLOW EXAMPLE */
+.agent-flow { margin: 32px 0 0; background: var(--bg-warm); border-radius: 8px; padding: 24px 28px; }
+.agent-flow h3 { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--text-mid); text-transform: uppercase; letter-spacing: .5px; margin: 0 0 18px; }
+.flow-steps { display: flex; flex-direction: column; gap: 0; }
+.flow-step { display: grid; grid-template-columns: 140px 1fr; gap: 16px; padding: 10px 0; align-items: baseline; }
+.flow-step .flow-agent { font-family: var(--mono); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; padding: 3px 8px; border-radius: 3px; display: inline-block; white-space: nowrap; }
+.flow-step .flow-agent.obs { background: var(--accent-bg); color: var(--accent); }
+.flow-step .flow-agent.ops { background: var(--green-bg); color: var(--green); }
+.flow-step .flow-agent.mkt { background: var(--accent-bg); color: var(--accent); }
+.flow-step .flow-agent.out { background: var(--text); color: #fff; }
+.flow-step .flow-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+.flow-arrow { padding: 2px 0 2px 60px; color: var(--text-light); font-size: 14px; }
+.flow-result { margin-top: 14px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; }
+.flow-result .flow-agent { margin-bottom: 6px; }
+.flow-result p { font-size: 13px; color: var(--text); margin: 0; line-height: 1.55; }
+@media (max-width: 720px) { .flow-step { grid-template-columns: 1fr; gap: 4px; } .flow-arrow { padding-left: 0; } }
+
 /* STAGES (4-up for nervous system path) */
 .stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0; }
 .stages .stage { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px 18px; display: flex; flex-direction: column; }
@@ -504,6 +521,24 @@ footer p { margin-bottom: 4px; }
       </div>
     </div>
   </div>
+
+  <div class="agent-flow">
+    <h3>Example — Ads burning budget on low-stock SKUs</h3>
+    <div class="flow-steps">
+      <div class="flow-step"><div><span class="flow-agent obs">Observation</span></div><div class="flow-text">Detects stock cover dropped to 2 days on 3 hero SKUs</div></div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-step"><div><span class="flow-agent ops">Operations</span></div><div class="flow-text">Confirms: 2-day cover, reorder lead time 14 days, stockout in 48 hrs</div></div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-step"><div><span class="flow-agent mkt">Marketing</span></div><div class="flow-text">Checks: ₹4,200/day active spend across 6 campaigns on these 3 SKUs</div></div>
+      <div class="flow-arrow">↓</div>
+    </div>
+    <div class="flow-result">
+      <span class="flow-agent out">Recommendation</span>
+      <p>Pause campaigns on 3 SKUs — saving ₹4,200/day. Reorder triggered, stock arrives in 14 days. Reallocate budget to 5 SKUs with 30+ days cover and strong ROAS.</p>
+    </div>
+  </div>
+
+  <p style="font-size:12px; color:var(--text-light); text-align:center; margin-top:14px; font-style:italic;">No single tool could do this — the ad platform doesn't see inventory, the OMS doesn't see ad spend.</p>
 
 </section>
 
