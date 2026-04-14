@@ -93,21 +93,26 @@ em { font-style: italic; color: var(--text-mid); }
 
 /* AGENTS HIERARCHY */
 .agents { margin: 28px 0; }
-.agent-tier { display: flex; justify-content: center; gap: 12px; margin-bottom: 12px; position: relative; }
-.agent-tier::after { content: ''; position: absolute; bottom: -12px; left: 50%; width: 1px; height: 12px; background: var(--border-dark); }
+.agent-tier { display: flex; justify-content: center; gap: 12px; margin-bottom: 16px; position: relative; }
+.agent-tier::after { content: '↓'; position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--text-light); z-index: 1; }
 .agent-tier:last-child::after { display: none; }
-.agent-tier.l1 { flex-wrap: wrap; }
+.agent-tier.l1 { flex-wrap: nowrap; }
 .agent-tier.l1::after { display: none; }
-.ag { background: var(--bg-card); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 6px; padding: 16px 18px; text-align: center; min-width: 160px; }
+.ag { background: var(--bg-card); border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: 6px; padding: 14px 16px; text-align: left; flex: 1; min-width: 0; }
 .ag.teal { border-top-color: var(--teal); }
 .ag.blue { border-top-color: var(--blue); }
 .ag.green { border-top-color: var(--green); }
 .ag.dark { border-top-color: var(--text); }
 .ag.orange { border-top-color: var(--accent); }
 .ag .role { font-family: var(--mono); font-size: 9px; color: var(--text-light); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
-.ag h4 { font-family: var(--serif); font-size: 16px; font-weight: 600; margin: 4px 0 6px; color: var(--text); line-height: 1.25; }
-.ag p { font-size: 11.5px; color: var(--text-mid); margin: 0; line-height: 1.45; }
-.ag.wide { min-width: 280px; }
+.ag h4 { font-family: var(--serif); font-size: 15px; font-weight: 600; margin: 3px 0 6px; color: var(--text); line-height: 1.25; }
+.ag .scope { font-size: 11px; color: var(--text-mid); margin: 0 0 8px; line-height: 1.4; }
+.ag .skills { font-size: 10.5px; color: var(--text-mid); margin: 0; line-height: 1.6; }
+.ag .skills .sk-label { font-family: var(--mono); font-size: 9px; color: var(--text-light); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
+.ag .skills .sk-ch { font-weight: 600; color: var(--text); font-size: 10px; }
+.ag.wide { max-width: 380px; text-align: center; }
+.ag.wide .scope { margin-bottom: 0; }
+@media (max-width: 900px) { .agent-tier.l1 { flex-wrap: wrap; } .ag { min-width: 45%; } }
 @media (max-width: 720px) { .agent-tier { flex-direction: column; align-items: center; } .ag { min-width: 100%; } }
 
 /* STAGES (4-up for nervous system path) */
@@ -433,53 +438,72 @@ footer p { margin-bottom: 4px; }
 <section id="agents">
   <div class="sec-num">04 · The Agents</div>
   <h2>A crew, not a tool.</h2>
-  <p class="takeaway">Agents mirror a real e-commerce team. The brand operator is the Brand Head — the system works for them.</p>
+  <p class="takeaway">Each agent has domain expertise, channel-specific skills, and works on shared brand context.</p>
 
   <div class="agents">
     <div class="agent-tier">
       <div class="ag orange wide">
         <div class="role">Brand Head</div>
         <h4>The Operator</h4>
-        <p>Human in the loop. Sets strategy, approves actions, captures directives.</p>
+        <p class="scope">Human in the loop. Sets strategy, approves actions, captures directives.</p>
       </div>
     </div>
     <div class="agent-tier">
       <div class="ag orange wide">
-        <div class="role">Chief of Staff</div>
-        <h4>Triage &amp; Briefing</h4>
-        <p>Monitors all signals, filters noise, routes to the right agent. Produces morning briefings.</p>
+        <div class="role">Observation Agent</div>
+        <h4>Monitor &amp; Triage</h4>
+        <p class="scope">Monitors all signals, surfaces anomalies, routes to the right agent.</p>
       </div>
     </div>
     <div class="agent-tier l1">
       <div class="ag orange">
         <div class="role">Marketing</div>
         <h4>Growth &amp; Ads</h4>
-        <p>Campaign performance, budget allocation, ROAS, creative fatigue</p>
+        <p class="scope">Ad spend efficiency across channels</p>
+        <div class="skills">
+          <div><span class="sk-ch">Amazon Ads</span> — PPC analysis · Keyword bid optimization · Campaign waste</div>
+          <div><span class="sk-ch">Meta Ads</span> — Creative fatigue · Audience overlap · Attribution</div>
+          <div><span class="sk-ch">Google Ads</span> — Search term efficiency · Shopping feed optimization</div>
+          <div><span class="sk-ch">Cross-channel</span> — Budget reallocation · ROAS investigation</div>
+        </div>
+      </div>
+      <div class="ag teal">
+        <div class="role">Channel Manager</div>
+        <h4>Listings &amp; Channels</h4>
+        <p class="scope">Listing health and channel operations</p>
+        <div class="skills">
+          <div><span class="sk-ch">Amazon</span> — Listing audit · Buy Box monitoring · Catalogue scoring</div>
+          <div><span class="sk-ch">Shopify</span> — Sync break detection · Storefront conversion · Inventory reconciliation</div>
+          <div><span class="sk-ch">Flipkart</span> — Compliance · Pricing parity · Listing quality</div>
+          <div><span class="sk-ch">Cross-channel</span> — Price drift · Channel cannibalisation</div>
+        </div>
       </div>
       <div class="ag blue">
         <div class="role">Category</div>
         <h4>Pricing &amp; Assortment</h4>
-        <p>Competitive pricing, product mix, P&amp;L ownership</p>
-      </div>
-      <div class="ag teal">
-        <div class="role">Marketplace</div>
-        <h4>Listings &amp; Channels</h4>
-        <p>Listing health, Buy Box, sync, storefront conversion</p>
+        <p class="scope">Competitive positioning and product mix</p>
+        <div class="skills">
+          <span class="sk-label">Skills</span> Price undercut detection · Assortment gap analysis · Margin-aware ranking
+        </div>
       </div>
       <div class="ag green">
         <div class="role">Operations</div>
         <h4>Inventory &amp; Fulfilment</h4>
-        <p>Stock cover, reorder timing, delivery speed, FC rebalancing</p>
+        <p class="scope">Stock management and delivery</p>
+        <div class="skills">
+          <span class="sk-label">Skills</span> Stock cover alerting · Reorder timing · Delivery speed tracking
+        </div>
       </div>
       <div class="ag dark">
         <div class="role">Finance</div>
         <h4>Margins &amp; Settlements</h4>
-        <p>Margin erosion, fee reconciliation, working capital</p>
+        <p class="scope">Profitability and reconciliation</p>
+        <div class="skills">
+          <span class="sk-label">Skills</span> Fee reconciliation · Margin erosion alerts · Settlement verification
+        </div>
       </div>
     </div>
   </div>
-
-  <p style="font-size:13px; color:var(--text-mid); text-align:center; margin-top:20px;">Each agent has deep channel specialists underneath — Amazon Ads, Shopify, Flipkart, Meta, Google Ads — that activate as complexity grows.</p>
 
 </section>
 
