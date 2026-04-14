@@ -339,7 +339,7 @@ footer p { margin-bottom: 4px; }
     <li><a href="#icp">07 · ICP &amp; GTM</a></li>
     <li><a href="#value">08 · The $10M Brand</a></li>
     <li><a href="#pricing">09 · What T6 Replaces</a></li>
-    <li><a href="#unit-economics">10 · Unit Economics</a></li>
+    <li><a href="#unit-economics">10 · Cost to Serve</a></li>
     <li><a href="#nervous-system">11 · Nervous System Path</a></li>
     <li><a href="#phased-scale">12 · Phased Scale</a></li>
     <li><a href="#architecture">13 · Architecture</a></li>
@@ -740,30 +740,21 @@ footer p { margin-bottom: 4px; }
 <!-- UNIT ECONOMICS -->
 <section id="unit-economics">
   <div class="sec-num">10 · Unit Economics</div>
-  <h2>~76% gross margin at launch. Path to ~85% at scale.</h2>
-  <h3>Fully-loaded cost per brand per month</h3>
+  <h2>Cost scales with usage, not brand size.</h2>
+  <p class="takeaway">Smaller brands use fewer agents. Larger brands use the full crew. Cost tracks actual agent usage — LLM calls, data ingestion, monitoring frequency.</p>
+
   <table>
-    <thead><tr><th>Cost line</th><th>Launch</th><th>Mature (Y2)</th><th>Scale (Y3+)</th></tr></thead>
+    <thead><tr><th>Brand GMV</th><th>Typical usage</th><th>T6 price</th><th>Est. cost to serve</th><th>Est. gross margin</th></tr></thead>
     <tbody>
-      <tr><td>LLM inference (Claude)</td><td>$460</td><td>$290</td><td>$140</td></tr>
-      <tr><td>Infra (RDS, S3, Celery, connectors)</td><td>$120</td><td>$100</td><td>$80</td></tr>
-      <tr><td>Customer success (amortised)</td><td>$300</td><td>$220</td><td>$150</td></tr>
-      <tr><td>Ops overhead (DevOps, monitoring, security)</td><td>$150</td><td>$120</td><td>$90</td></tr>
-      <tr><td><strong>Total fully-loaded COGS</strong></td><td><strong>~$1,030</strong></td><td><strong>~$730</strong></td><td><strong>~$460</strong></td></tr>
+      <tr><td><strong>$1–3M</strong></td><td>1–2 agents (PPC + listings)</td><td>$500–1K/mo</td><td>$80–200/mo</td><td><strong>~70–85%</strong></td></tr>
+      <tr><td><strong>$3–10M</strong></td><td>3–4 agents + monitoring</td><td>$1.5–3K/mo</td><td>$200–500/mo</td><td><strong>~75–85%</strong></td></tr>
+      <tr><td><strong>$10–50M</strong></td><td>Full crew, heavy usage</td><td>$3–8K/mo</td><td>$500–1,200/mo</td><td><strong>~75–85%</strong></td></tr>
     </tbody>
   </table>
 
-  <h3>Gross margin by ACV tier</h3>
-  <table>
-    <thead><tr><th>Brand GMV</th><th>ACV/mo</th><th>Launch GM</th><th>Mature GM</th><th>Scale GM</th></tr></thead>
-    <tbody>
-      <tr><td>$5–10M</td><td>$2,000</td><td><strong>72%</strong></td><td>78%</td><td>85%</td></tr>
-      <tr><td>$10–25M</td><td>$4,000</td><td><strong>77%</strong></td><td>83%</td><td>87%</td></tr>
-      <tr><td>$25–50M</td><td>$9,000</td><td><strong>79%</strong></td><td>84%</td><td>86%</td></tr>
-      <tr><td><strong>Blended</strong></td><td><strong>~$5K</strong></td><td><strong>~76%</strong></td><td><strong>~82%</strong></td><td><strong>~85%</strong></td></tr>
-    </tbody>
-  </table>
-  <p style="font-size:13px; color:var(--text-mid);"><strong>Three levers drive cost down:</strong> prompt caching (~37% LLM cost reduction), playbook determinism (more decisions become code over time), and inference price drops (~50% every 18 months historically).</p>
+  <div class="matrix-note" style="margin-top:20px;">
+    <strong>These are estimated ranges — actual cost to serve will be discovered as we onboard the first 10 brands.</strong> Three structural levers improve margins over time: prompt caching, playbook determinism (more decisions become code), and inference price drops (~50% every 18 months historically).
+  </div>
 </section>
 
 <hr class="divider">
