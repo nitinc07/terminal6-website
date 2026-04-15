@@ -31,6 +31,35 @@
 .ph2{background:var(--bg-white);border:1px dashed var(--border);border-left:3px solid var(--tm);border-radius:var(--rs);padding:16px 18px;margin-top:10px;font-size:13px;color:var(--t2);line-height:1.5}
 .ph2 strong{color:var(--t1)}
 
+/* AUDIT CARDS — rule-based insights (Amazon Ads tab). Severity-coloured
+   border-left matches the pattern used on tm-list / rf-item on Sprig. */
+.audit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+@media(max-width:1100px){.audit-grid{grid-template-columns:repeat(2,1fr)}}
+.audit-card{background:var(--bg-white);border:1px solid var(--border-s);border-left:3px solid var(--tm);border-radius:var(--rad);padding:14px 16px;box-shadow:var(--sh);cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:6px;min-height:112px}
+.audit-card:hover{transform:translateY(-2px);box-shadow:var(--shm)}
+.audit-card.red{border-left-color:var(--r)}
+.audit-card.amber{border-left-color:var(--a)}
+.audit-card.green{border-left-color:var(--g)}
+.audit-card .ac-head{display:flex;align-items:center;gap:8px;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.audit-card.red .ac-head{color:var(--r)}
+.audit-card.amber .ac-head{color:var(--a)}
+.audit-card.green .ac-head{color:var(--g)}
+.audit-card .ac-title{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--t1);line-height:1.3}
+.audit-card .ac-num{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--t1)}
+.audit-card .ac-body{font-size:12px;color:var(--t2);line-height:1.5}
+.audit-card .ac-more{margin-top:auto;font-size:11px;color:var(--acc-t);font-weight:500}
+.audit-empty{text-align:center;padding:28px;color:var(--t3);font-size:13px;font-style:italic;background:var(--bg-white);border:1px dashed var(--border);border-radius:var(--rad)}
+
+/* AUDIT DRAWER — fullscreen overlay on card click */
+.audit-drawer{position:fixed;inset:0;background:rgba(20,18,16,.35);z-index:900;display:flex;justify-content:flex-end}
+.audit-drawer-panel{width:min(720px,90vw);background:var(--bg);height:100vh;overflow-y:auto;box-shadow:-4px 0 24px rgba(0,0,0,.15)}
+.audit-drawer-head{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg-cream);position:sticky;top:0;z-index:1}
+/* Severity chip (used in drawer head) */
+.rf-sev{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 7px;border-radius:6px;display:inline-block;min-width:52px;text-align:center}
+.rf-sev.red{background:var(--rl);color:var(--r)}
+.rf-sev.amber{background:#FFF4E5;color:var(--a)}
+.rf-sev.green{background:var(--gl);color:var(--g)}
+
 /* INVENTORY & FULFILLMENT — sub-tab visibility */
 .iv-sub{display:none}
 .iv-sub.act{display:block}
@@ -191,6 +220,24 @@
     <div class="head">
       <div class="icon" style="background:#FF9900">&#127344;</div>
       <div><h2>Amazon Ads &middot; IN</h2><p class="sub">Sponsored Products / Brands / Display &mdash; spend, impressions, CTR, ACoS, ROAS.</p></div>
+    </div>
+
+    <!-- AUDIT INSIGHTS — rule-based today; Phase 2 swaps to LLM-composed narrative
+         without changing this card markup (backend returns the same shape). -->
+    <div class="sec" id="az-audit-sec">
+      <div class="sec-h">
+        <h3>Audit &middot; where money's working or wasted
+          <span class="note" id="az-audit-window">last 14 days</span>
+        </h3>
+      </div>
+      <div id="az-audit-cards" class="loading">Loading audit...</div>
+      <div class="ph2" style="margin-top:8px;font-size:11.5px;border-left-color:var(--tm)">
+        <strong>How this works:</strong> rules scan every campaign's last-14d fact sheet &mdash;
+        spend, ACoS (SP: 1-day &middot; SB/SD: 7-day), ROAS, days active, 7d velocity.
+        Each card shows its exact trigger rule and the campaigns / ASINs behind it.
+        Nothing changes automatically &mdash; these are flags for you to act on.
+        <em>(COGS per ASIN not yet uploaded &mdash; "grey zone" campaigns need that to confirm profitability.)</em>
+      </div>
     </div>
 
     <div class="g4" style="margin-bottom:20px">
@@ -423,6 +470,23 @@
   </div>
 
 </main>
+</div>
+
+<!-- AUDIT DRAWER — opens from Amazon Ads audit cards -->
+<div id="auditDrawer" class="audit-drawer" onclick="if(event.target===this) closeAuditDrawer()" style="display:none">
+  <div class="audit-drawer-panel">
+    <div class="audit-drawer-head">
+      <span id="adDrawerSeverity" class="rf-sev"></span>
+      <h3 id="adDrawerTitle" style="font-family:var(--serif);font-size:17px;font-weight:600;margin:0 auto 0 4px">&nbsp;</h3>
+      <button onclick="closeAuditDrawer()" style="background:none;border:0;font-size:22px;cursor:pointer;color:var(--t3);padding:0 6px">&times;</button>
+    </div>
+    <div id="adDrawerBody" style="padding:14px 20px;font-size:13px;color:var(--t2);line-height:1.6"></div>
+    <div style="padding:8px 20px 12px;font-size:11px;color:var(--t3);border-top:1px solid var(--border-s);border-bottom:1px solid var(--border-s);background:var(--bg-cream)">
+      <strong>Rule:</strong> <span id="adDrawerRule" class="mn2"></span><br>
+      <strong>Action:</strong> <span id="adDrawerAction"></span>
+    </div>
+    <div id="adDrawerTable" style="padding:14px 20px 24px"></div>
+  </div>
 </div>
 
 <script>
@@ -664,6 +728,114 @@ function loadAds(platform){
   document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
   api('/v1/amazon/ads-summary?days='+range.days).then(r=>renderAdsSummary(r,platform));
   api('/v1/amazon/ads-daily?days='+range.days+'&platform='+platform).then(r=>renderAdsDaily(r,platform));
+  // Audit only applies to Amazon — Google has its own signals; not wired yet.
+  if(platform==='amazon'){
+    api('/v1/amazon/audit?days=14').then(renderAudit).catch(showErr('az-audit-cards'));
+  }
+}
+
+/* ========== AUDIT INSIGHTS (Amazon) ========== */
+let _auditState = null;  // last audit payload, used by the drawer
+
+function renderAudit(payload){
+  _auditState = payload;
+  const el = document.getElementById('az-audit-cards');
+  if(!el) return;
+  const ins = payload.insights || [];
+  if(!ins.length){
+    el.innerHTML = '<div class="audit-empty">No rule flags on last '+payload.window.days+' days. Campaigns are within expected bands &mdash; nothing to act on right now.</div>';
+    return;
+  }
+  // Window note
+  const wn = document.getElementById('az-audit-window');
+  if(wn) wn.textContent = 'last '+payload.window.days+' days &middot; '+payload.summary.red_flags+' red &middot; '+payload.summary.amber_flags+' amber &middot; '+payload.summary.green_flags+' green';
+
+  const sevIcon = { red:'\ud83d\udd25', amber:'\u26a0\ufe0f', green:'\ud83d\ude80' };  // fire, warning, rocket
+
+  let html = '<div class="audit-grid">';
+  for(const i of ins){
+    const numLabel = i.headline_number || {};
+    const numFmt = numLabel.format === 'cur' ? cur(numLabel.value) : numLabel.format === 'pct' ? (numLabel.value + numLabel.unit) : numLabel.value;
+    html += `<div class="audit-card ${i.severity}" onclick="openAuditDrawer('${i.rule_id}')">
+      <div class="ac-head">${sevIcon[i.severity]||''} ${i.rule_id.replace(/_/g,' ')}</div>
+      <div class="ac-title">${i.title}</div>
+      <div class="ac-num">${numFmt}</div>
+      <div class="ac-body">${i.body}</div>
+      <div class="ac-more">${i.count} item${i.count===1?'':'s'} &middot; see details &rarr;</div>
+    </div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function openAuditDrawer(ruleId){
+  if(!_auditState) return;
+  const insight = (_auditState.insights||[]).find(i=>i.rule_id===ruleId);
+  if(!insight) return;
+
+  document.getElementById('adDrawerSeverity').className = 'rf-sev '+insight.severity;
+  document.getElementById('adDrawerSeverity').textContent = insight.severity.toUpperCase();
+  document.getElementById('adDrawerTitle').textContent = insight.title;
+  document.getElementById('adDrawerBody').innerHTML = insight.body;
+  document.getElementById('adDrawerRule').textContent = insight.rule_text;
+  document.getElementById('adDrawerAction').textContent = insight.action;
+  document.getElementById('adDrawerTable').innerHTML = _renderAuditCandidates(ruleId, insight.candidates||[]);
+  document.getElementById('auditDrawer').style.display = 'flex';
+}
+
+function closeAuditDrawer(){
+  document.getElementById('auditDrawer').style.display = 'none';
+}
+
+function _renderAuditCandidates(ruleId, candidates){
+  if(!candidates.length) return '<div class="empty">No items match this rule.</div>';
+
+  // Different rule → different column set.
+  //   Campaign-scope: bleeder, watch_high_acos, scaler, velocity_watch
+  //   ASIN-scope:     waste_asin
+  //   Single-row:     paid_cannibalising
+  if(ruleId === 'waste_asin'){
+    let h = '<table class="tbl"><thead><tr><th>ASIN</th><th>Product</th><th class="r">Spend</th><th class="r">Clicks</th><th class="r">Campaigns</th></tr></thead><tbody>';
+    for(const r of candidates){
+      const prod = (r.product_name||'').length>60 ? r.product_name.slice(0,60)+'...' : (r.product_name||'--');
+      h += `<tr>
+        <td class="mn2 hi">${r.asin}</td>
+        <td style="color:var(--t2);font-size:11.5px" title="${(r.product_name||'').replace(/"/g,'&quot;')}">${prod}</td>
+        <td class="mn2 r">${cur(r.spend)}</td>
+        <td class="mn2 r">${fmt(r.clicks)}</td>
+        <td class="mn2 r">${r.campaign_count}</td>
+      </tr>`;
+    }
+    return h + '</tbody></table>';
+  }
+
+  if(ruleId === 'paid_cannibalising'){
+    const d = candidates[0];
+    return `<table class="tbl"><tbody>
+      <tr><td class="hi">Paid share last 7d</td><td class="mn2 r">${pct(d.paid_share_last7,1)}</td></tr>
+      <tr><td class="hi">Paid share prior 7d</td><td class="mn2 r">${pct(d.paid_share_prior7,1)}</td></tr>
+      <tr><td class="hi">Jump</td><td class="mn2 r" style="color:var(--r);font-weight:600">+${d.pp_jump}pp</td></tr>
+      <tr><td class="hi">Sessions last 7d</td><td class="mn2 r">${fmt(d.sessions_last7)}</td></tr>
+      <tr><td class="hi">Sessions prior 7d</td><td class="mn2 r">${fmt(d.sessions_prior7)}</td></tr>
+      <tr><td class="hi">Sessions WoW</td><td class="mn2 r">${d.sessions_wow_pct!=null?d.sessions_wow_pct.toFixed(1)+'%':'--'}</td></tr>
+    </tbody></table>`;
+  }
+
+  // Default: campaign-scope columns
+  let h = '<table class="tbl"><thead><tr><th>Campaign</th><th>Type</th><th class="r">Spend</th><th class="r">Attr sales</th><th class="r">ACoS</th><th class="r">ROAS</th><th class="r">Days</th></tr></thead><tbody>';
+  for(const r of candidates){
+    const name = (r.campaign_name||'').length>60 ? r.campaign_name.slice(0,60)+'...' : (r.campaign_name||'--');
+    h += `<tr>
+      <td class="hi" title="${(r.campaign_name||'').replace(/"/g,'&quot;')}" style="font-size:11.5px">${name}</td>
+      <td>${r.ad_type}</td>
+      <td class="mn2 r">${cur(r.spend)}</td>
+      <td class="mn2 r">${cur(r.attr_sales)}</td>
+      <td class="mn2 r">${r.acos_pct!=null?pct(r.acos_pct,1):'--'}</td>
+      <td class="mn2 r">${r.roas!=null?r.roas.toFixed(2)+'x':'--'}</td>
+      <td class="mn2 r">${r.days_active}</td>
+    </tr>`;
+  }
+  return h + '</tbody></table>';
 }
 function renderAdsSummary(r,platform){
   const filtered=(r.data||[]).filter(x=>x.platform===platform);
