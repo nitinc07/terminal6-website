@@ -290,13 +290,13 @@
       <div class="cd"><div class="kl">Revenue at Risk (next 14d)</div><div class="kv" id="iv-risk">--</div><div class="kd n" id="iv-risk-sub">low-cover × velocity × price</div></div>
       <div class="cd"><div class="kl">Lost Revenue — OOS (30d)</div><div class="kv" id="iv-lost">--</div><div class="kd n" id="iv-lost-sub">estimated from zero-day windows</div></div>
       <div class="cd"><div class="kl">Capital Tied Up — Overstock</div><div class="kv" id="iv-capital">--</div><div class="kd n" id="iv-capital-sub">&gt;90 days cover + dead stock, at retail</div></div>
-      <div class="cd"><div class="kl">Cancellation Rate (7d)</div><div class="kv" id="iv-cancel">--</div><div class="kd n" id="iv-cancel-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Return Rate (7d)</div><div class="kv" id="iv-return">--</div><div class="kd n" id="iv-return-d">&nbsp;</div></div>
     </div>
 
-    <!-- Cancellation rate trend -->
+    <!-- Cancellation + Return rate trend -->
     <div class="sec">
-      <div class="sec-h"><h3>Cancellation Rate &middot; last 60 days <span class="note">daily cancelled ÷ total order lines; blue = 7-day moving average</span></h3></div>
-      <div id="iv-cancelTrend" class="loading" style="min-height:200px">Loading...</div>
+      <div class="sec-h"><h3>Cancellation &amp; Return Rate &middot; last 60 days <span class="note">daily rate + 7-day moving average; red dots on spikes (&gt;2× MA)</span></h3></div>
+      <div id="iv-cancelTrend" class="loading" style="min-height:240px">Loading...</div>
     </div>
 
     <!-- Stock-out risk — act this week -->
@@ -761,14 +761,15 @@ function renderInvTiles(s){
   document.getElementById('iv-lost-sub').textContent = (cnts.oos||0)+' ASINs currently OOS with prior velocity';
   document.getElementById('iv-capital').textContent = cur(t.capital_tied_up);
   document.getElementById('iv-capital-sub').textContent = (cnts.overstock||0)+' overstock + '+(cnts.dead_stock||0)+' dead';
-  document.getElementById('iv-cancel').textContent = t.cancel_rate_7d_pct!=null ? pct(t.cancel_rate_7d_pct,2) : '--';
-  const d = document.getElementById('iv-cancel-d');
-  if(t.cancel_rate_delta_pp!=null){
-    const up = t.cancel_rate_delta_pp > 0;
+  document.getElementById('iv-return').textContent = t.return_rate_7d_pct!=null ? pct(t.return_rate_7d_pct,2) : '--';
+  const d = document.getElementById('iv-return-d');
+  if(t.return_rate_delta_pp!=null){
+    const up = t.return_rate_delta_pp > 0;
     const arrow = up ? '\u2191' : '\u2193';
+    // rising return rate is bad (red/d), falling is good (green/u)
     const cls = up ? 'd' : 'u';
     d.className = 'kd '+cls;
-    d.innerHTML = arrow+' '+Math.abs(t.cancel_rate_delta_pp).toFixed(2)+'pp vs prior 7d · '+t.cancel_lines_7d+' of '+t.cancel_lines_total_7d+' lines';
+    d.innerHTML = arrow+' '+Math.abs(t.return_rate_delta_pp).toFixed(2)+'pp vs prior 7d · '+t.returns_7d+' returns on '+t.orders_shipped_7d+' shipped';
   } else {
     d.className = 'kd n';
     d.innerHTML = '&nbsp;';
@@ -778,28 +779,46 @@ function renderInvTiles(s){
 function renderCancelTrend(f){
   const el = document.getElementById('iv-cancelTrend');
   const daily = f.status_daily || [];
+  const retsDaily = f.returns_daily || [];
   if(!daily.length){
     el.innerHTML = '<div class="empty">No order data in window</div>';
     return;
   }
-  // Compute daily cancellation rate + 7-day rolling average
-  const points = daily.map(r=>{
-    const tot = (r.dispatched||0)+(r.ordered||0)+(r.cancelled||0);
-    return {date: r.date, rate: tot>0 ? (r.cancelled/tot*100) : null, tot: tot};
+
+  // Index returns by date for lookup (returns are keyed by return_date,
+  // status_daily is keyed by order placement date — both are calendar dates).
+  const retsByDate = {};
+  for(const r of retsDaily){ retsByDate[r.date] = r.total || 0; }
+
+  // Build cancel-rate points (vs placed that day)
+  const cancelPts = daily.map(r=>{
+    const placed = (r.dispatched||0)+(r.ordered||0)+(r.cancelled||0)+(r.rto||0)+(r.rvp||0);
+    return {date: r.date, rate: placed>0 ? (r.cancelled/placed*100) : null, cnt: r.cancelled||0, den: placed};
   });
-  // 7d moving average (trailing)
-  for(let i=0;i<points.length;i++){
-    const window = points.slice(Math.max(0,i-6), i+1).filter(p=>p.rate!=null);
-    points[i].ma7 = window.length ? window.reduce((a,p)=>a+p.rate,0)/window.length : null;
+  // Build return-rate points (returns on that date / orders shipped that date).
+  // The denominator is shipped = total - cancelled — the universe of returnable events.
+  const returnPts = daily.map(r=>{
+    const shipped = (r.dispatched||0)+(r.delivered||0)+(r.rto||0)+(r.rvp||0);
+    const retCount = retsByDate[r.date] || 0;
+    return {date: r.date, rate: shipped>0 ? (retCount/shipped*100) : null, cnt: retCount, den: shipped};
+  });
+
+  // 7d moving average helper
+  function ma7(pts){
+    for(let i=0;i<pts.length;i++){
+      const window = pts.slice(Math.max(0,i-6), i+1).filter(p=>p.rate!=null);
+      pts[i].ma7 = window.length ? window.reduce((a,p)=>a+p.rate,0)/window.length : null;
+    }
   }
+  ma7(cancelPts); ma7(returnPts);
 
   // SVG line chart
-  const W = 900, H = 240, padL = 44, padR = 16, padT = 14, padB = 32;
+  const W = 900, H = 260, padL = 44, padR = 16, padT = 14, padB = 34;
   const chartW = W - padL - padR, chartH = H - padT - padB;
-  const rates = points.map(p=>p.rate).filter(v=>v!=null);
-  const maxR = Math.max(15, Math.ceil(Math.max(...rates,0)*1.1));  // y-axis: 0 to max+10%
+  const allRates = [...cancelPts, ...returnPts].map(p=>p.rate).filter(v=>v!=null);
+  const maxR = Math.max(20, Math.ceil(Math.max(...allRates,0)*1.1));
   const minR = 0;
-  const N = points.length;
+  const N = cancelPts.length;
   const xAt = i => padL + (i/(Math.max(N-1,1))) * chartW;
   const yAt = v => padT + (1 - (v-minR)/(maxR-minR)) * chartH;
 
@@ -809,42 +828,53 @@ function renderCancelTrend(f){
     const v = minR + (maxR-minR)*(i/4);
     const y = yAt(v);
     gridSvg += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#EBE6D9" stroke-width="1"/>`;
-    gridSvg += `<text x="${padL-6}" y="${y+3}" text-anchor="end" font-size="10" fill="#999" font-family="var(--mono)">${v.toFixed(1)}%</text>`;
+    gridSvg += `<text x="${padL-6}" y="${y+3}" text-anchor="end" font-size="10" fill="#999" font-family="var(--mono)">${v.toFixed(0)}%</text>`;
   }
-  // x-axis labels — show ~8 dates evenly spaced
+  // x-axis labels — ~8 dates evenly spaced
   let xLabels = '';
   const labelStep = Math.max(1, Math.floor(N/8));
   for(let i=0;i<N;i+=labelStep){
-    xLabels += `<text x="${xAt(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#999" font-family="var(--mono)">${shortD(points[i].date)}</text>`;
+    xLabels += `<text x="${xAt(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#999" font-family="var(--mono)">${shortD(cancelPts[i].date)}</text>`;
   }
 
-  // Daily rate line (thin grey)
-  const dailyPath = points.map((p,i)=> p.rate==null ? '' : (i===0?'M':'L')+xAt(i)+','+yAt(p.rate)).filter(Boolean).join(' ');
-  // 7-day MA (bold blue)
-  const ma7Path = points.map((p,i)=> p.ma7==null ? '' : (i===0?'M':'L')+xAt(i)+','+yAt(p.ma7)).filter(Boolean).join(' ');
+  // Build paths
+  function linePath(pts, key){
+    return pts.map((p,i)=> p[key]==null ? '' : (i===0?'M':'L')+xAt(i)+','+yAt(p[key])).filter(Boolean).join(' ');
+  }
+  const cancelDaily = linePath(cancelPts, 'rate');
+  const cancelMA = linePath(cancelPts, 'ma7');
+  const returnDaily = linePath(returnPts, 'rate');
+  const returnMA = linePath(returnPts, 'ma7');
 
-  // Dots for spikes (>2× 7-day MA)
+  // Spike dots (>2× MA AND > 5% absolute, on whichever series)
   let spikes = '';
-  for(let i=0;i<N;i++){
-    const p = points[i];
-    if(p.rate!=null && p.ma7!=null && p.rate > 2*p.ma7 && p.rate > 5){
-      spikes += `<circle cx="${xAt(i)}" cy="${yAt(p.rate)}" r="3.5" fill="#C8554C"><title>${shortD(p.date)}: ${p.rate.toFixed(1)}% (${p.tot} lines)</title></circle>`;
+  function addSpikes(pts, color, label){
+    for(let i=0;i<pts.length;i++){
+      const p = pts[i];
+      if(p.rate!=null && p.ma7!=null && p.rate > 2*p.ma7 && p.rate > 5){
+        spikes += `<circle cx="${xAt(i)}" cy="${yAt(p.rate)}" r="3.5" fill="${color}"><title>${label} spike ${shortD(p.date)}: ${p.rate.toFixed(1)}% (${p.cnt} of ${p.den})</title></circle>`;
+      }
     }
   }
+  addSpikes(cancelPts, '#C8554C', 'Cancel');
+  addSpikes(returnPts, '#D97706', 'Return');
 
-  const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-height:260px">
+  const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-height:280px">
     ${gridSvg}
-    ${dailyPath ? `<path d="${dailyPath}" fill="none" stroke="#BBB" stroke-width="1" stroke-linejoin="round"/>` : ''}
-    ${ma7Path ? `<path d="${ma7Path}" fill="none" stroke="#2B5A8C" stroke-width="2" stroke-linejoin="round"/>` : ''}
+    ${cancelDaily ? `<path d="${cancelDaily}" fill="none" stroke="#BBB" stroke-width="1" stroke-linejoin="round" opacity="0.7"/>` : ''}
+    ${returnDaily ? `<path d="${returnDaily}" fill="none" stroke="#E7B894" stroke-width="1" stroke-linejoin="round" opacity="0.7"/>` : ''}
+    ${cancelMA ? `<path d="${cancelMA}" fill="none" stroke="#2B5A8C" stroke-width="2" stroke-linejoin="round"/>` : ''}
+    ${returnMA ? `<path d="${returnMA}" fill="none" stroke="#D97706" stroke-width="2" stroke-linejoin="round"/>` : ''}
     ${spikes}
     ${xLabels}
   </svg>`;
 
-  const current = points[points.length-1] || {};
-  const summary = `<div style="display:flex;gap:18px;font-size:12px;color:var(--t2);margin-bottom:8px">
-    <span><span style="display:inline-block;width:10px;height:2px;background:#BBB;margin-right:6px;vertical-align:middle"></span>Daily</span>
-    <span><span style="display:inline-block;width:10px;height:2px;background:#2B5A8C;margin-right:6px;vertical-align:middle"></span>7-day MA</span>
-    <span><span style="display:inline-block;width:8px;height:8px;background:#C8554C;border-radius:50%;margin-right:6px;vertical-align:middle"></span>Spike (&gt;2× MA)</span>
+  const summary = `<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--t2);margin-bottom:8px">
+    <span><span style="display:inline-block;width:10px;height:2px;background:#2B5A8C;margin-right:6px;vertical-align:middle"></span>Cancel rate · 7d MA</span>
+    <span><span style="display:inline-block;width:10px;height:2px;background:#D97706;margin-right:6px;vertical-align:middle"></span>Return rate · 7d MA</span>
+    <span style="color:var(--t3)"><span style="display:inline-block;width:10px;height:2px;background:#BBB;margin-right:6px;vertical-align:middle"></span>Daily (faint)</span>
+    <span><span style="display:inline-block;width:8px;height:8px;background:#C8554C;border-radius:50%;margin-right:6px;vertical-align:middle"></span>Cancel spike</span>
+    <span><span style="display:inline-block;width:8px;height:8px;background:#D97706;border-radius:50%;margin-right:6px;vertical-align:middle"></span>Return spike</span>
   </div>`;
 
   el.innerHTML = summary + svg;
