@@ -14,7 +14,7 @@
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css">
+<link rel="stylesheet" href="/shared.css?v=2026-04-15c">
 <style>
 /* Basil-specific styles only. Design tokens, layout, sidebar, cards, tables,
    pills, loading/error/empty states, delta pill, section header, placeholder
@@ -109,7 +109,7 @@
 .sb-row .tot{width:56px;text-align:right;color:var(--t2);font-family:var(--mono);font-size:11px}
 </style>
 <script>window.T6_BRAND_SLUG = 'basil';</script>
-<script src="/shared.js"></script>
+<script src="/shared.js?v=2026-04-15c"></script>
 </head>
 <body>
 <div class="app">
@@ -512,6 +512,16 @@
 /* Shared runtime (T6 namespace, api, fmt, cur, pct, shortD, dp, showErr) comes
  * from /shared.js — already loaded in <head>. window.T6_BRAND_SLUG is set there.
  * Only Basil-specific helpers + tab logic live in this script block. */
+
+/* Graceful fallback: if shared.js is stale in the browser cache and T6.tip
+ * is missing, stub it with a no-op instead of crashing every table render.
+ * Tooltips silently won't appear; page still loads. Cache-bust param on the
+ * <script> tag above should make this rare, but belt-and-braces. */
+if (typeof T6 === 'undefined') { window.T6 = {}; }
+if (typeof T6.tip !== 'function') {
+  T6.tip = function(){ return ''; };
+  console.warn('T6.tip not loaded — tooltips disabled. shared.js may be stale in cache.');
+}
 
 /* ========== BASIL-SPECIFIC FORMATTERS ========== */
 function rkBadge(r){
