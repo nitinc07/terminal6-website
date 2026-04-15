@@ -254,7 +254,25 @@ function signOut() {
 
 document.getElementById('year').textContent = new Date().getFullYear();
 
+/* Force-sign-out flow: /home.html?signout=1 clears any cached session AND
+ * disables Google's auto-select, so the next click shows the account picker
+ * even if only one Google account is signed in to the browser. Use case:
+ * switching between test accounts on dev subdomains, or a user wanting to
+ * move from their personal Google to a workspace email. */
+function clearAndShowPicker(){
+  sessionStorage.removeItem('t6_user');
+  sessionStorage.removeItem('t6_token');
+  try { if (window.google && google.accounts && google.accounts.id && google.accounts.id.disableAutoSelect) {
+    google.accounts.id.disableAutoSelect();
+  } } catch(e) {}
+  // Strip ?signout=1 so a reload doesn't keep clearing forever
+  if (location.search) history.replaceState(null, '', location.pathname);
+}
+
 window.addEventListener('DOMContentLoaded', function () {
+  const forceSignOut = new URLSearchParams(location.search).get('signout') === '1';
+  if (forceSignOut) { clearAndShowPicker(); return; }
+
   const saved = sessionStorage.getItem('t6_user');
   if (saved) {
     try {
@@ -264,7 +282,24 @@ window.addEventListener('DOMContentLoaded', function () {
         sessionStorage.removeItem('t6_user');
         return;
       }
-      enterHub(u);
+      // Instead of silently auto-entering, show a "Continue as X / Switch" prompt.
+      // One click on Continue = same as the old behaviour, but the switch option
+      // is visible for test accounts / multi-user scenarios.
+      const box = document.querySelector('.login-box');
+      if (box){
+        const cont = document.createElement('div');
+        cont.style.cssText = 'margin-top:18px;padding:12px 14px;background:var(--bg-warm);border-radius:10px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left';
+        const name = (u.name || u.email || '').slice(0, 30);
+        cont.innerHTML =
+          '<div style="flex:1;line-height:1.3"><div style="font-weight:500">Continue as '+ name +'</div><div style="font-size:11px;color:var(--text-light)">'+ (u.email || '') +'</div></div>' +
+          '<button id="continueBtn" style="background:var(--accent);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans)">Continue</button>';
+        box.appendChild(cont);
+        const switchLink = document.createElement('div');
+        switchLink.style.cssText = 'margin-top:12px;font-size:12px;text-align:center';
+        switchLink.innerHTML = '<a href="?signout=1" style="color:var(--text-mid);text-decoration:underline">Use a different account</a>';
+        box.appendChild(switchLink);
+        document.getElementById('continueBtn').addEventListener('click', function(){ enterHub(u); });
+      }
     } catch (e) { sessionStorage.removeItem('t6_user'); }
   }
 });

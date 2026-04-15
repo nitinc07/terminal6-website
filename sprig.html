@@ -121,7 +121,10 @@
     <div class="si" onclick="sw('settings',this)"><div class="ic">&#9881;</div><span>Policies &amp; Directives</span></div>
   </div>
   <div class="sb-b">
-    <a href="/home.html" style="display:block;font-size:11px;color:var(--tm);text-decoration:none;padding:6px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:8px">&larr; Workspace</a>
+    <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:6px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <a href="/home.html" style="color:var(--tm);text-decoration:none">&larr; Workspace</a>
+      <a href="/home.html?signout=1" style="color:var(--tm);text-decoration:none" title="Sign out / switch account">Sign out</a>
+    </div>
     <div class="ui">
       <div class="ua" id="sidebarAvatar">NR</div>
       <div><div style="font-size:13px;font-weight:500" id="sidebarName">Operator</div><div style="font-size:11px;color:var(--tm)">Brand Operator</div></div>
