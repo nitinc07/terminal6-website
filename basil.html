@@ -31,6 +31,20 @@
 .ph2{background:var(--bg-white);border:1px dashed var(--border);border-left:3px solid var(--tm);border-radius:var(--rs);padding:16px 18px;margin-top:10px;font-size:13px;color:var(--t2);line-height:1.5}
 .ph2 strong{color:var(--t1)}
 
+/* INVENTORY & FULFILLMENT — sub-tab visibility */
+.iv-sub{display:none}
+.iv-sub.act{display:block}
+/* reason bars (horizontal) */
+.rbar-row{display:grid;grid-template-columns:180px 1fr 120px;align-items:center;gap:12px;padding:5px 0;font-size:12px}
+.rbar-row .rk-name{color:var(--t1);font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rbar-row .rk-name .rtp{font-size:10px;font-weight:400;color:var(--t3);margin-left:4px;padding:1px 5px;border-radius:3px;background:var(--bg-cream)}
+.rbar-row .rk-name .rtp.rto{background:var(--al);color:var(--a)}
+.rbar-row .rk-name .rtp.rvp{background:#FFF3DD;color:#B8860B}
+.rbar-row .rk-bar{background:var(--bg-cream);height:14px;border-radius:3px;overflow:hidden}
+.rbar-row .rk-bar .rk-fill{height:100%;background:#D97706}
+.rbar-row .rk-bar .rk-fill.rto-fill{background:#C8554C}
+.rbar-row .rk-tail{font-size:11px;font-family:var(--mono);color:var(--t2);text-align:right}
+
 /* INVENTORY & FULFILLMENT — status pills */
 .stp{display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:500;letter-spacing:.02em}
 .stp.oos{background:var(--al);color:var(--a)}
@@ -281,56 +295,101 @@
       <div class="icon">&#128230;</div>
       <div>
         <h2>Inventory &amp; Fulfillment</h2>
-        <p class="sub">Revenue at risk, capital parked in overstock, and which ASINs need action this week. FBA inventory + 30-day velocity from daily_item_sales.</p>
+        <p class="sub">Revenue at risk, capital parked in overstock, return drivers, and which ASINs need action this week. FBA inventory + daily_item_sales on Amazon IN.</p>
       </div>
     </div>
 
-    <!-- Risk-first tile strip -->
-    <div class="g4" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Revenue at Risk (next 14d)</div><div class="kv" id="iv-risk">--</div><div class="kd n" id="iv-risk-sub">low-cover × velocity × price</div></div>
-      <div class="cd"><div class="kl">Lost Revenue — OOS (30d)</div><div class="kv" id="iv-lost">--</div><div class="kd n" id="iv-lost-sub">estimated from zero-day windows</div></div>
-      <div class="cd"><div class="kl">Capital Tied Up — Overstock</div><div class="kv" id="iv-capital">--</div><div class="kd n" id="iv-capital-sub">&gt;90 days cover + dead stock, at retail</div></div>
-      <div class="cd"><div class="kl">Return Rate (14–28d cohort)</div><div class="kv" id="iv-return">--</div><div class="kd n" id="iv-return-d">&nbsp;</div></div>
+    <!-- Sub-tab nav -->
+    <div class="pills" id="ivSubPills" style="margin-bottom:20px">
+      <button data-sub="overview" class="a">Overview</button>
+      <button data-sub="stock">Stock Health</button>
+      <button data-sub="returns">Returns</button>
     </div>
 
-    <!-- Cancellation + Return rate trend -->
-    <div class="sec">
-      <div class="sec-h"><h3>Cancellation &amp; Return Rate &middot; last 60 days <span class="note">daily rate + 7-day moving average; red dots on spikes (&gt;2× MA)</span></h3></div>
-      <div id="iv-cancelTrend" class="loading" style="min-height:240px">Loading...</div>
-    </div>
-
-    <!-- Stock-out risk — act this week -->
-    <div class="sec">
-      <div class="sec-h"><h3>Stock-out Risk — act this week <span class="note" id="iv-risk-hdr">&nbsp;</span></h3></div>
-      <div id="iv-riskTable" class="loading">Loading...</div>
-    </div>
-
-    <!-- Currently OOS — bleeding now -->
-    <div class="sec">
-      <div class="sec-h"><h3>Currently OOS — losing money now <span class="note" id="iv-oos-hdr">&nbsp;</span></h3></div>
-      <div id="iv-oosTable" class="loading">Loading...</div>
-    </div>
-
-    <!-- Overstock — capital parked -->
-    <div class="sec">
-      <div class="sec-h"><h3>Overstock — capital parked <span class="note" id="iv-over-hdr">&nbsp;</span></h3></div>
-      <div id="iv-overTable" class="loading">Loading...</div>
-    </div>
-
-    <!-- All ASINs (collapsed by default) -->
-    <div class="sec">
-      <div class="sec-h">
-        <h3>All ASINs <span class="note"><a href="#" onclick="document.getElementById('iv-allWrap').style.display=document.getElementById('iv-allWrap').style.display==='none'?'block':'none';return false" style="color:var(--acc);text-decoration:none" id="iv-allToggle">show</a> · healthy + dormant included</span></h3>
+    <!-- =============== SUB-TAB: OVERVIEW =============== -->
+    <div class="iv-sub act" id="ivs-overview">
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd"><div class="kl">Revenue at Risk (next 14d)</div><div class="kv" id="iv-risk">--</div><div class="kd n" id="iv-risk-sub">low-cover × velocity × price</div></div>
+        <div class="cd"><div class="kl">Lost Revenue — OOS (30d)</div><div class="kv" id="iv-lost">--</div><div class="kd n" id="iv-lost-sub">estimated from zero-day windows</div></div>
+        <div class="cd"><div class="kl">Capital Tied Up — Overstock</div><div class="kv" id="iv-capital">--</div><div class="kd n" id="iv-capital-sub">&gt;90 days cover + dead stock, at retail</div></div>
+        <div class="cd"><div class="kl">Return Rate (14–28d cohort)</div><div class="kv" id="iv-return">--</div><div class="kd n" id="iv-return-d">&nbsp;</div></div>
       </div>
-      <div id="iv-allWrap" style="display:none">
-        <div id="iv-allTable" class="loading">Loading...</div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Cancellation &amp; Return Rate &middot; last 60 days <span class="note">daily rate + 7-day moving average; red dots on cancel spikes (&gt;2× MA)</span></h3></div>
+        <div id="iv-cancelTrend" class="loading" style="min-height:240px">Loading...</div>
       </div>
+
       <div class="ph2" style="margin-top:10px;font-size:12px">
-        <strong>How loss is estimated:</strong>
-        <em>Revenue at risk</em> = (14 &minus; days cover) × 14-day velocity × 14-day avg price, only for ASINs at 1 &le; days cover &lt; 14.
-        <em>Lost revenue OOS</em> = zero-unit days in last 30d × 30-day active-velocity × avg price, only for ASINs with 0 fulfillable &amp; prior velocity.
-        <em>Capital tied up</em> = fulfillable × avg price for ASINs with &gt;90 days cover or zero velocity with stock.
-        All estimates are pre-GST retail &mdash; a more precise net view will come when settlements + COGS are wired in.
+        Dig deeper: <a href="#" onclick="ivSub('stock');return false" style="color:var(--acc)">Stock Health &rarr;</a> for restock priorities, OOS, and overstock · <a href="#" onclick="ivSub('returns');return false" style="color:var(--acc)">Returns &rarr;</a> for reason breakdown and top contributors.
+      </div>
+    </div>
+
+    <!-- =============== SUB-TAB: STOCK HEALTH =============== -->
+    <div class="iv-sub" id="ivs-stock">
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd"><div class="kl">Fulfillable Units</div><div class="kv" id="sh-ful">--</div><div class="kd n" id="sh-ful-sub">across ASINs in stock</div></div>
+        <div class="cd"><div class="kl">Inbound (in pipe)</div><div class="kv" id="sh-inb">--</div><div class="kd n">units on the way to FBA</div></div>
+        <div class="cd"><div class="kl">OOS ASINs</div><div class="kv" id="sh-oos">--</div><div class="kd n" id="sh-oos-sub">of catalog</div></div>
+        <div class="cd"><div class="kl">Reserved</div><div class="kv" id="sh-res">--</div><div class="kd n">units in picking / committed</div></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Stock-out Risk — act this week <span class="note" id="iv-risk-hdr">&nbsp;</span></h3></div>
+        <div id="iv-riskTable" class="loading">Loading...</div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Currently OOS — losing money now <span class="note" id="iv-oos-hdr">&nbsp;</span></h3></div>
+        <div id="iv-oosTable" class="loading">Loading...</div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Overstock — capital parked <span class="note" id="iv-over-hdr">&nbsp;</span></h3></div>
+        <div id="iv-overTable" class="loading">Loading...</div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">
+          <h3>All ASINs <span class="note"><a href="#" onclick="document.getElementById('iv-allWrap').style.display=document.getElementById('iv-allWrap').style.display==='none'?'block':'none';return false" style="color:var(--acc);text-decoration:none" id="iv-allToggle">show</a> · healthy + dormant included</span></h3>
+        </div>
+        <div id="iv-allWrap" style="display:none">
+          <div id="iv-allTable" class="loading">Loading...</div>
+        </div>
+        <div class="ph2" style="margin-top:10px;font-size:12px">
+          <strong>How loss is estimated:</strong>
+          <em>Revenue at risk</em> = (14 &minus; days cover) × 14-day velocity × 14-day avg price, only for ASINs at 1 &le; days cover &lt; 14.
+          <em>Lost revenue OOS</em> = zero-unit days in last 30d × 30-day active-velocity × avg price, only for ASINs with 0 fulfillable &amp; prior velocity.
+          <em>Capital tied up</em> = fulfillable × avg price for ASINs with &gt;90 days cover or zero velocity with stock.
+          All estimates are pre-GST retail &mdash; a more precise net view will come when settlements + COGS are wired in.
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SUB-TAB: RETURNS =============== -->
+    <div class="iv-sub" id="ivs-returns">
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd"><div class="kl">Total Returns (30d)</div><div class="kv" id="rt-total">--</div><div class="kd n" id="rt-total-sub">events across the catalog</div></div>
+        <div class="cd"><div class="kl">RVP Share</div><div class="kv" id="rt-rvp">--</div><div class="kd n" id="rt-rvp-sub">customer-returned after delivery</div></div>
+        <div class="cd"><div class="kl">RTO Share</div><div class="kv" id="rt-rto">--</div><div class="kd n" id="rt-rto-sub">never reached customer</div></div>
+        <div class="cd"><div class="kl">Top Reason</div><div class="kv" id="rt-top">--</div><div class="kd n" id="rt-top-sub">&nbsp;</div></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Return Reasons &middot; last 30 days <span class="note">sorted by share · revenue impact at 14-day avg selling price</span></h3></div>
+        <div id="rt-reasonBars" class="loading" style="min-height:180px">Loading...</div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Top Return Contributors <span class="note" id="rt-contrib-hdr">&nbsp;</span></h3></div>
+        <div id="rt-contribTable" class="loading">Loading...</div>
+        <div class="ph2" style="margin-top:10px;font-size:12px">
+          <strong>Reading the reason mix:</strong>
+          <em>UNWANTED_ITEM / FOUND_BETTER_PRICE / NOT_AS_DESCRIBED</em> dominant &rarr; <strong>listing-quality signal</strong> (photos, title, expectation mismatch).
+          <em>DEFECTIVE / QUALITY_UNACCEPTABLE / DAMAGED_BY_FC</em> dominant &rarr; <strong>product-quality signal</strong> (supplier, QC, or packaging).
+          <em>UNDELIVERABLE_REFUSED / MISSED_ESTIMATED_DELIVERY</em> dominant &rarr; <strong>fulfilment signal</strong> (ship speed, address data, logistics).
+          Return rate here is cohort-aligned (placed in last 30d, currently RTO/RVP).
+        </div>
       </div>
     </div>
   </div>
@@ -745,10 +804,26 @@ function renderCatalog(c){
 }
 
 /* ========== INVENTORY & FULFILLMENT ========== */
+let currentIvSub = 'overview';
+
+function ivSub(id){
+  // Switch sub-tab visibility + trigger any lazy loads
+  document.querySelectorAll('.iv-sub').forEach(el=>el.classList.toggle('act', el.id==='ivs-'+id));
+  document.querySelectorAll('#ivSubPills button').forEach(b=>b.classList.toggle('a', b.dataset.sub===id));
+  currentIvSub = id;
+  if(id==='returns' && !window._rtLoaded){
+    api('/v1/amazon/returns/breakdown?days=30').then(renderReturns).catch(showErr('rt-reasonBars'));
+    window._rtLoaded = true;
+  }
+}
+
 function loadInventory(){
   api('/v1/amazon/inventory/summary').then(renderInvTiles).catch(showErr('iv-risk'));
   api('/v1/amazon/fulfillment/timeseries?days=60').then(renderCancelTrend).catch(showErr('iv-cancelTrend'));
   api('/v1/amazon/inventory/per_asin').then(renderInvTables).catch(showErr('iv-riskTable'));
+  // Returns lazy-loaded when the sub-tab is clicked. Preload if currently on it.
+  window._rtLoaded = false;
+  if(currentIvSub==='returns'){ ivSub('returns'); }
 }
 
 function renderInvTiles(s){
@@ -761,6 +836,9 @@ function renderInvTiles(s){
   document.getElementById('iv-lost-sub').textContent = (cnts.oos||0)+' ASINs currently OOS with prior velocity';
   document.getElementById('iv-capital').textContent = cur(t.capital_tied_up);
   document.getElementById('iv-capital-sub').textContent = (cnts.overstock||0)+' overstock + '+(cnts.dead_stock||0)+' dead';
+
+  // Stock Health tile strip reuses summary + per_asin counts
+  // (populated when per_asin returns — renderInvTables finishes; see below)
   document.getElementById('iv-return').textContent = t.return_rate_mature_pct!=null ? pct(t.return_rate_mature_pct,2) : '--';
   const d = document.getElementById('iv-return-d');
   if(t.return_rate_delta_pp!=null){
@@ -919,6 +997,23 @@ function renderInvTables(p){
   const byStatus = {oos:[], low:[], healthy:[], overstock:[], dead_stock:[], dormant:[]};
   for(const r of p.data){ if(byStatus[r.status]) byStatus[r.status].push(r); }
 
+  // Stock Health tile strip — computed directly from per_asin rows
+  let sumFul = 0, sumInb = 0, sumRes = 0, countOos = 0, countAll = 0;
+  for(const r of p.data){
+    sumFul += r.fulfillable_qty || 0;
+    sumInb += r.inbound_qty || 0;
+    sumRes += r.reserved_qty || 0;
+    if(r.status !== 'dormant') countAll += 1;
+    if(r.status === 'oos') countOos += 1;
+  }
+  document.getElementById('sh-ful').textContent = fmt(sumFul);
+  const cnts = p.status_counts || {};
+  document.getElementById('sh-ful-sub').textContent = (cnts.healthy||0)+' healthy · '+(cnts.low||0)+' low · '+(cnts.overstock||0)+' overstock';
+  document.getElementById('sh-inb').textContent = fmt(sumInb);
+  document.getElementById('sh-oos').textContent = fmt(countOos);
+  document.getElementById('sh-oos-sub').textContent = countAll ? pct(countOos/countAll*100,0)+' of active catalog' : 'of catalog';
+  document.getElementById('sh-res').textContent = fmt(sumRes);
+
   // ---- Stock-out risk (low cover) ----
   const low = byStatus.low.slice().sort((a,b)=>b.potential_loss_14d - a.potential_loss_14d);
   document.getElementById('iv-risk-hdr').innerHTML = low.length
@@ -1063,6 +1158,87 @@ function renderInvTables(p){
   document.getElementById('iv-allTable').innerHTML = ah;
   document.getElementById('iv-allToggle').textContent = 'show ('+p.count+' ASINs)';
 }
+
+/* ========== RETURNS SUB-TAB ========== */
+function renderReturns(r){
+  // Tile strip
+  document.getElementById('rt-total').textContent = fmt(r.total_returns);
+  const rr = r.rto_rvp || {};
+  document.getElementById('rt-rvp').textContent = rr.rvp_share_pct!=null ? pct(rr.rvp_share_pct,1) : '--';
+  document.getElementById('rt-rvp-sub').textContent = fmt(rr.rvp_count||0)+' events · customer-returned';
+  document.getElementById('rt-rto').textContent = rr.rto_share_pct!=null ? pct(rr.rto_share_pct,1) : '--';
+  document.getElementById('rt-rto-sub').textContent = fmt(rr.rto_count||0)+' events · never delivered';
+  const topReason = (r.by_reason && r.by_reason[0]) || null;
+  if(topReason){
+    document.getElementById('rt-top').textContent = pct(topReason.share_pct,1);
+    document.getElementById('rt-top-sub').innerHTML = '<span class="hi">'+topReason.reason+'</span> · '+fmt(topReason.count)+' events · '+cur(topReason.revenue_impact);
+  }
+
+  // Reason bars — horizontal, sorted by share desc
+  const barsEl = document.getElementById('rt-reasonBars');
+  const reasons = r.by_reason || [];
+  if(!reasons.length){
+    barsEl.innerHTML = '<div class="empty">No return reasons in window</div>';
+  } else {
+    const maxShare = Math.max(...reasons.map(x=>x.share_pct||0), 1);
+    let html = '';
+    for(const x of reasons){
+      const typeClass = x.type.toLowerCase();
+      const fillClass = x.type === 'RTO' ? 'rto-fill' : '';
+      const width = ((x.share_pct||0)/maxShare*100).toFixed(1);
+      html += `<div class="rbar-row">
+        <div class="rk-name" title="${x.reason}">${x.reason}<span class="rtp ${typeClass}">${x.type}</span></div>
+        <div class="rk-bar"><div class="rk-fill ${fillClass}" style="width:${width}%"></div></div>
+        <div class="rk-tail">${pct(x.share_pct,1)} · ${fmt(x.count)} · ${cur(x.revenue_impact)}</div>
+      </div>`;
+    }
+    barsEl.innerHTML = html;
+  }
+
+  // Top contributors table
+  const contribEl = document.getElementById('rt-contribTable');
+  const asins = r.by_asin || [];
+  document.getElementById('rt-contrib-hdr').innerHTML = asins.length
+    ? asins.length+' ASINs · sorted by return count · window '+r.window_start+' → '+r.window_end
+    : 'no return contributors in window';
+  if(!asins.length){
+    contribEl.innerHTML = '<div class="empty">No return events in window</div>';
+  } else {
+    let html = '<table class="tbl"><thead><tr>'
+      + '<th>ASIN</th><th>Product</th>'
+      + '<th class="r">Returns</th><th class="r">Return Rate</th>'
+      + '<th>Top 3 Reasons</th><th class="r">Revenue Impact</th>'
+      + '</tr></thead><tbody>';
+    for(const a of asins){
+      const name = (a.product_name||'').length>44 ? a.product_name.slice(0,44)+'…' : (a.product_name||'--');
+      const rate = a.return_rate_pct;
+      let rateBadge = '<span style="color:var(--t3)">—</span>';
+      if(rate!=null){
+        const badgeCls = rate >= 25 ? 'oos' : rate >= 15 ? 'low' : 'hl';
+        rateBadge = `<span class="stp ${badgeCls}">${rate.toFixed(1)}%</span>`;
+      }
+      const reasons = (a.top_reasons||[]).map(tr=>`<span style="color:var(--t2);white-space:nowrap">${tr.reason} (${tr.count})</span>`).join(' · ');
+      html += `<tr>
+        <td class="mn2 hi">${a.asin||'--'}</td>
+        <td title="${(a.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+        <td class="mn2 r">${fmt(a.returns_count)}</td>
+        <td class="r">${rateBadge}</td>
+        <td style="font-size:11px">${reasons}</td>
+        <td class="mn2 r hi">${cur(a.revenue_impact)}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    contribEl.innerHTML = html;
+  }
+}
+
+/* Sub-tab pill wiring */
+document.getElementById('ivSubPills').addEventListener('click', e=>{
+  const b = e.target.closest('button');
+  if(!b) return;
+  const s = b.dataset.sub;
+  if(s) ivSub(s);
+});
 
 /* ========== RANGE PILLS ========== */
 document.getElementById('rangePills').addEventListener('click',e=>{
