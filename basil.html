@@ -158,7 +158,7 @@
 
     <div class="g4" style="margin-bottom:20px">
       <div class="cd"><div class="kl">Total Spend</div><div class="kv" id="az-spend">--</div><div class="kd n" id="az-spend-sub">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Attributed Sales (7d)</div><div class="kv" id="az-sales">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Attributed Sales</div><div class="kv" id="az-sales">--</div><div class="kd n">SP: 1d &middot; SB/SD: 7d</div></div>
       <div class="cd"><div class="kl">Blended ACoS</div><div class="kv" id="az-acos">--</div><div class="kd n">spend / attributed sales</div></div>
       <div class="cd"><div class="kl">Blended ROAS</div><div class="kv" id="az-roas">--</div><div class="kd n">attributed / spend</div></div>
     </div>
@@ -431,13 +431,13 @@ function renderOvFunnel(f){
 function renderOvAdMix(a){
   const el=document.getElementById('ov-adMix');
   if(!a.data||!a.data.length){el.innerHTML='<div class="empty">No ad data</div>';return;}
-  let html='<table class="tbl"><thead><tr><th>Platform</th><th>Type</th><th class="r">Spend</th><th class="r">Sales (7d)</th><th class="r">ACoS</th><th class="r">ROAS</th><th class="r">CTR</th></tr></thead><tbody>';
+  let html='<table class="tbl"><thead><tr><th>Platform</th><th>Type</th><th class="r">Spend</th><th class="r">Sales (attr)</th><th class="r">ACoS</th><th class="r">ROAS</th><th class="r">CTR</th></tr></thead><tbody>';
   for(const r of a.data){
     html+=`<tr>
       <td class="hi">${r.platform==='amazon'?'Amazon':r.platform==='google'?'Google':r.platform}</td>
       <td>${r.label}</td>
       <td class="mn2 r">${cur(r.spend)}</td>
-      <td class="mn2 r">${cur(r.attributed_sales_7d)}</td>
+      <td class="mn2 r">${cur(r.attributed_sales)}</td>
       <td class="mn2 r">${r.acos_pct!=null?pct(r.acos_pct):'--'}</td>
       <td class="mn2 r">${r.roas!=null?r.roas.toFixed(2)+'x':'--'}</td>
       <td class="mn2 r">${r.ctr_pct!=null?pct(r.ctr_pct):'--'}</td>
@@ -525,7 +525,7 @@ function renderAdsSummary(r,platform){
   const filtered=(r.data||[]).filter(x=>x.platform===platform);
   const prefix=platform==='amazon'?'az':'gd';
   const totSpend=filtered.reduce((a,x)=>a+(x.spend||0),0);
-  const totSales=filtered.reduce((a,x)=>a+(x.attributed_sales_7d||0),0);
+  const totSales=filtered.reduce((a,x)=>a+(x.attributed_sales||0),0);
   const totClicks=filtered.reduce((a,x)=>a+(x.clicks||0),0);
   const totImpr=filtered.reduce((a,x)=>a+(x.impressions||0),0);
   const byType=document.getElementById(prefix+'-byType');
@@ -541,7 +541,7 @@ function renderAdsSummary(r,platform){
     document.getElementById('gd-cpc').textContent=totClicks?cur(totSpend/totClicks):'--';
   }
   if(!filtered.length){byType.innerHTML='<div class="empty">No '+platform+' ad data in window</div>';return;}
-  let html='<table class="tbl"><thead><tr><th>Ad Type</th><th class="r">Spend</th><th class="r">Impressions</th><th class="r">Clicks</th><th class="r">CTR</th><th class="r">CPC</th><th class="r">Sales (7d)</th><th class="r">ACoS</th><th class="r">ROAS</th></tr></thead><tbody>';
+  let html='<table class="tbl"><thead><tr><th>Ad Type</th><th class="r">Spend</th><th class="r">Impressions</th><th class="r">Clicks</th><th class="r">CTR</th><th class="r">CPC</th><th class="r">Sales (attr)</th><th class="r">ACoS</th><th class="r">ROAS</th></tr></thead><tbody>';
   for(const x of filtered){
     html+=`<tr>
       <td class="hi">${x.label}</td>
@@ -550,7 +550,7 @@ function renderAdsSummary(r,platform){
       <td class="mn2 r">${fmt(x.clicks)}</td>
       <td class="mn2 r">${x.ctr_pct!=null?pct(x.ctr_pct):'--'}</td>
       <td class="mn2 r">${x.cpc!=null?cur(x.cpc):'--'}</td>
-      <td class="mn2 r">${cur(x.attributed_sales_7d)}</td>
+      <td class="mn2 r">${cur(x.attributed_sales)}</td>
       <td class="mn2 r">${x.acos_pct!=null?pct(x.acos_pct):'--'}</td>
       <td class="mn2 r">${x.roas!=null?x.roas.toFixed(2)+'x':'--'}</td>
     </tr>`;
@@ -570,11 +570,11 @@ function renderAdsDaily(r,platform){
     byDate[d].spend+=x.spend||0;
     byDate[d].impressions+=x.impressions||0;
     byDate[d].clicks+=x.clicks||0;
-    byDate[d].sales+=x.attributed_sales_7d||0;
+    byDate[d].sales+=x.attributed_sales||0;
     byDate[d].orders+=x.attributed_orders||0;
   }
   const dates=Object.keys(byDate).sort().reverse();
-  let html='<table class="tbl"><thead><tr><th>Date</th><th class="r">Spend</th><th class="r">Impressions</th><th class="r">Clicks</th><th class="r">CTR</th><th class="r">Sales (7d)</th><th class="r">ACoS</th></tr></thead><tbody>';
+  let html='<table class="tbl"><thead><tr><th>Date</th><th class="r">Spend</th><th class="r">Impressions</th><th class="r">Clicks</th><th class="r">CTR</th><th class="r">Sales (attr)</th><th class="r">ACoS</th></tr></thead><tbody>';
   for(const d of dates){
     const x=byDate[d];
     const ctr=x.impressions?x.clicks/x.impressions*100:null;
