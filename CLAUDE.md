@@ -145,35 +145,43 @@ Fonts are loaded from Google Fonts via a single `<link>` tag — keep that patte
 - Nginx serves static files from `/opt/terminal6-website/`, proxies `/v1/` to API with `X-Brand` header
 - Deploy: `ssh root@159.89.175.160 "cd /opt/terminal6-website && git pull"`
 
-### Dev Preview — GitHub Pages
+### Dev Preview — droplet-hosted (changed 15 Apr 2026)
 - **Branch:** `dev`
-- **URL:** `https://dev.terminal6.io`
-- Pushing to `dev` triggers a GitHub Pages rebuild (~30 seconds)
-- Used by Nitin to preview changes before merging to main
-- CNAME file (`dev.terminal6.io`) exists on dev branch only, not on main
+- **URL:** `https://dev.basil.terminal6.io` (and analogous `dev.<brand>.terminal6.io` as brands are added)
+- Clone at `/opt/terminal6-website-dev/` on the droplet, nginx vhost proxies `/v1/` to the **staging API on port 8002** (not prod's 8001) so backend changes can be tested end-to-end
+- Deploy: `ssh root@159.89.175.160 /opt/terminal6-website-dev/deploy.sh` — pulls latest `dev` branch
+- Previously used GitHub Pages at `dev.terminal6.io` (CNAME to `nitinc07.github.io`); that still works as a fallback for pure-static preview but is not the dev environment for API-backed work
 
 ### DNS (Bigrock)
 - `terminal6.io` — A record → `159.89.175.160` (droplet)
 - `www.terminal6.io` — A record → `159.89.175.160` (droplet)
-- `*.terminal6.io` — A record → `159.89.175.160` (wildcard, covers all brand subdomains)
+- `*.terminal6.io` — A record → `159.89.175.160` (wildcard, covers all brand subdomains AND dev-subdomains like `dev-api.terminal6.io`, `dev.basil.terminal6.io`, `dev.sprig.terminal6.io`)
 - `api.terminal6.io` — A record → `159.89.175.160`
-- `dev.terminal6.io` — CNAME → `nitinc07.github.io` (GitHub Pages)
+- `dev.terminal6.io` — CNAME → `nitinc07.github.io` (legacy GitHub Pages preview — only the bare `dev.terminal6.io` hostname; sub-subdomains like `dev.basil.terminal6.io` go to the droplet via the wildcard)
 
 ### SSL (Let's Encrypt / Certbot on droplet)
 - `terminal6.io` + `www.terminal6.io` — single cert, auto-renews
 - `api.terminal6.io` — own cert, auto-renews
-- `sprig.terminal6.io` — own cert, auto-renews
-- New brands: `certbot --nginx -d <brand>.terminal6.io` (one command per brand)
-- `dev.terminal6.io` — GitHub Pages handles SSL automatically
+- `sprig.terminal6.io`, `basil.terminal6.io` — own certs, auto-renew
+- `dev-api.terminal6.io`, `dev.basil.terminal6.io` — own certs (issued 15 Apr 2026), auto-renew
+- New brands: `certbot --nginx -d <brand>.terminal6.io` (one command per brand). Same for dev variants.
 
 ### Workflow
 ```
-dev branch  ──push──▶  GitHub Pages (dev.terminal6.io)  ── preview
-                │
-                │ merge when ready
+dev branch  ──push──▶  Droplet /opt/terminal6-website-dev (dev.basil.terminal6.io)
+                │                    hits staging API port 8002
+                │ merge dev → main when ready
                 ▼
-main branch ──pull──▶  Droplet (terminal6.io + *.terminal6.io)  ── live
+main branch ──pull──▶  Droplet /opt/terminal6-website (basil.terminal6.io)
+                                     hits prod API port 8001
 ```
+
+For backend-touching work, the dev → staging-API cycle is now one flow:
+1. Work on feature branch in `terminal6` repo → push
+2. `ssh root@159.89.175.160 "/opt/terminal6-staging/deploy.sh feature-branch"` to deploy API to staging
+3. Work on `dev` branch in `terminal6-website` repo → push → `/opt/terminal6-website-dev/deploy.sh` on droplet
+4. Test at `https://dev.basil.terminal6.io` (website-dev talks to staging API)
+5. When green: merge both to `main`, run prod deploys
 
 ### Onboarding a new brand subdomain
 1. No DNS needed (wildcard A record covers all subdomains)
