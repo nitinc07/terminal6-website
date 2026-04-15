@@ -281,44 +281,56 @@
       <div class="icon">&#128230;</div>
       <div>
         <h2>Inventory &amp; Fulfillment</h2>
-        <p class="sub">FBA stock levels, days-of-cover by ASIN, order status &amp; cancellations. Sourced from daily_product_inventory + daily_item_sales (Amazon IN).</p>
+        <p class="sub">Revenue at risk, capital parked in overstock, and which ASINs need action this week. FBA inventory + 30-day velocity from daily_item_sales.</p>
       </div>
     </div>
 
+    <!-- Risk-first tile strip -->
     <div class="g4" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Fulfillable Units</div><div class="kv" id="iv-ful">--</div><div class="kd n" id="iv-ful-sub">&nbsp;</div></div>
-      <div class="cd"><div class="kl">OOS ASINs</div><div class="kv" id="iv-oos">--</div><div class="kd n" id="iv-oos-sub">of catalog</div></div>
+      <div class="cd"><div class="kl">Revenue at Risk (next 14d)</div><div class="kv" id="iv-risk">--</div><div class="kd n" id="iv-risk-sub">low-cover × velocity × price</div></div>
+      <div class="cd"><div class="kl">Lost Revenue — OOS (30d)</div><div class="kv" id="iv-lost">--</div><div class="kd n" id="iv-lost-sub">estimated from zero-day windows</div></div>
+      <div class="cd"><div class="kl">Capital Tied Up — Overstock</div><div class="kv" id="iv-capital">--</div><div class="kd n" id="iv-capital-sub">&gt;90 days cover + dead stock, at retail</div></div>
       <div class="cd"><div class="kl">Cancellation Rate (7d)</div><div class="kv" id="iv-cancel">--</div><div class="kd n" id="iv-cancel-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Inbound Units</div><div class="kv" id="iv-inbound">--</div><div class="kd n" id="iv-inbound-sub">on the way to FBA</div></div>
     </div>
 
+    <!-- Cancellation rate trend -->
     <div class="sec">
-      <div class="sec-h"><h3>Order Status &middot; last 30 days <span class="note">dispatched &middot; pending &middot; cancelled &mdash; stacked per day</span></h3></div>
-      <div id="iv-statusBar" class="loading">Loading...</div>
+      <div class="sec-h"><h3>Cancellation Rate &middot; last 60 days <span class="note">daily cancelled ÷ total order lines; blue = 7-day moving average</span></h3></div>
+      <div id="iv-cancelTrend" class="loading" style="min-height:200px">Loading...</div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
-      <div class="sec" style="margin-bottom:0">
-        <div class="sec-h"><h3>Fulfillment Mix <span class="note">last 30 days &middot; order lines</span></h3></div>
-        <div id="iv-fcMix" class="loading">Loading...</div>
-      </div>
-      <div class="sec" style="margin-bottom:0">
-        <div class="sec-h"><h3>Recent Cancellations <span class="note">latest 20 lines</span></h3></div>
-        <div id="iv-cancelTable" class="loading">Loading...</div>
-      </div>
+    <!-- Stock-out risk — act this week -->
+    <div class="sec">
+      <div class="sec-h"><h3>Stock-out Risk — act this week <span class="note" id="iv-risk-hdr">&nbsp;</span></h3></div>
+      <div id="iv-riskTable" class="loading">Loading...</div>
     </div>
 
+    <!-- Currently OOS — bleeding now -->
+    <div class="sec">
+      <div class="sec-h"><h3>Currently OOS — losing money now <span class="note" id="iv-oos-hdr">&nbsp;</span></h3></div>
+      <div id="iv-oosTable" class="loading">Loading...</div>
+    </div>
+
+    <!-- Overstock — capital parked -->
+    <div class="sec">
+      <div class="sec-h"><h3>Overstock — capital parked <span class="note" id="iv-over-hdr">&nbsp;</span></h3></div>
+      <div id="iv-overTable" class="loading">Loading...</div>
+    </div>
+
+    <!-- All ASINs (collapsed by default) -->
     <div class="sec">
       <div class="sec-h">
-        <h3>Per-ASIN Inventory <span class="note" id="iv-perAsinCounts">&nbsp;</span></h3>
+        <h3>All ASINs <span class="note"><a href="#" onclick="document.getElementById('iv-allWrap').style.display=document.getElementById('iv-allWrap').style.display==='none'?'block':'none';return false" style="color:var(--acc);text-decoration:none" id="iv-allToggle">show</a> · healthy + dormant included</span></h3>
       </div>
-      <div id="iv-perAsinTable" class="loading">Loading...</div>
+      <div id="iv-allWrap" style="display:none">
+        <div id="iv-allTable" class="loading">Loading...</div>
+      </div>
       <div class="ph2" style="margin-top:10px;font-size:12px">
-        <strong>How to read:</strong>
-        <em>Days of cover</em> = fulfillable units &divide; 14-day avg velocity.
-        <em>Status</em>: &#128308; OOS (0 fulfillable, has velocity), &#128993; Low (&lt;14 days cover),
-        &#128994; Healthy (&ge;14 days), &#9899; Dormant (no stock, no velocity &mdash; likely discontinued).
-        Inventory is Amazon FBA only &mdash; MFN / Easy Ship stock lives in the brand's own warehouse and isn't captured here.
+        <strong>How loss is estimated:</strong>
+        <em>Revenue at risk</em> = (14 &minus; days cover) × 14-day velocity × 14-day avg price, only for ASINs at 1 &le; days cover &lt; 14.
+        <em>Lost revenue OOS</em> = zero-unit days in last 30d × 30-day active-velocity × avg price, only for ASINs with 0 fulfillable &amp; prior velocity.
+        <em>Capital tied up</em> = fulfillable × avg price for ASINs with &gt;90 days cover or zero velocity with stock.
+        All estimates are pre-GST retail &mdash; a more precise net view will come when settlements + COGS are wired in.
       </div>
     </div>
   </div>
@@ -734,173 +746,261 @@ function renderCatalog(c){
 
 /* ========== INVENTORY & FULFILLMENT ========== */
 function loadInventory(){
-  api('/v1/amazon/inventory/summary').then(renderInvSummary).catch(showErr('iv-ful'));
-  api('/v1/amazon/fulfillment/timeseries?days=30').then(renderFulfillment).catch(showErr('iv-statusBar'));
-  api('/v1/amazon/inventory/per_asin').then(renderPerAsin).catch(showErr('iv-perAsinTable'));
+  api('/v1/amazon/inventory/summary').then(renderInvTiles).catch(showErr('iv-risk'));
+  api('/v1/amazon/fulfillment/timeseries?days=60').then(renderCancelTrend).catch(showErr('iv-cancelTrend'));
+  api('/v1/amazon/inventory/per_asin').then(renderInvTables).catch(showErr('iv-riskTable'));
 }
 
-function renderInvSummary(s){
+function renderInvTiles(s){
   if(!s) return;
-  const inv = s.inventory || {};
-  const c = s.cancellations || {};
-  document.getElementById('iv-ful').textContent = fmt(inv.fulfillable);
-  document.getElementById('iv-ful-sub').textContent = fmt(inv.asins_sellable)+' of '+fmt(inv.asins_total)+' ASINs in stock';
-  document.getElementById('iv-oos').textContent = fmt(inv.asins_oos);
-  document.getElementById('iv-oos-sub').textContent = inv.asins_total ? pct(inv.asins_oos/inv.asins_total*100,0)+' of catalog' : 'of catalog';
-  document.getElementById('iv-inbound').textContent = fmt(inv.inbound);
-  document.getElementById('iv-cancel').textContent = c.last_7d_pct!=null ? pct(c.last_7d_pct,2) : '--';
+  const t = s.tiles || {};
+  document.getElementById('iv-risk').textContent = cur(t.revenue_at_risk_14d);
+  const cnts = s.status_counts || {};
+  document.getElementById('iv-risk-sub').textContent = (cnts.low||0)+' low-cover ASINs';
+  document.getElementById('iv-lost').textContent = cur(t.lost_revenue_oos_30d);
+  document.getElementById('iv-lost-sub').textContent = (cnts.oos||0)+' ASINs currently OOS with prior velocity';
+  document.getElementById('iv-capital').textContent = cur(t.capital_tied_up);
+  document.getElementById('iv-capital-sub').textContent = (cnts.overstock||0)+' overstock + '+(cnts.dead_stock||0)+' dead';
+  document.getElementById('iv-cancel').textContent = t.cancel_rate_7d_pct!=null ? pct(t.cancel_rate_7d_pct,2) : '--';
   const d = document.getElementById('iv-cancel-d');
-  if(c.delta_pp!=null){
-    const up = c.delta_pp > 0;
+  if(t.cancel_rate_delta_pp!=null){
+    const up = t.cancel_rate_delta_pp > 0;
     const arrow = up ? '\u2191' : '\u2193';
-    // cancellation rate rising is bad (d = down-red), falling is good (u = up-green)
     const cls = up ? 'd' : 'u';
     d.className = 'kd '+cls;
-    d.innerHTML = arrow+' '+Math.abs(c.delta_pp).toFixed(2)+'pp vs prior 7d ('+c.last_7d_lines_cancelled+' of '+c.last_7d_lines_total+' lines)';
+    d.innerHTML = arrow+' '+Math.abs(t.cancel_rate_delta_pp).toFixed(2)+'pp vs prior 7d · '+t.cancel_lines_7d+' of '+t.cancel_lines_total_7d+' lines';
   } else {
     d.className = 'kd n';
     d.innerHTML = '&nbsp;';
   }
 }
 
-function renderFulfillment(f){
-  // 1. Status stacked bar (daily)
-  const sbEl = document.getElementById('iv-statusBar');
+function renderCancelTrend(f){
+  const el = document.getElementById('iv-cancelTrend');
   const daily = f.status_daily || [];
   if(!daily.length){
-    sbEl.innerHTML = '<div class="empty">No order data in window</div>';
-  } else {
-    const maxTot = Math.max(...daily.map(r=>r.total||0), 1);
-    let html = '';
-    for(const r of daily){
-      const tot = r.total||0;
-      const pct = v => tot ? (v/tot*100) : 0;
-      html += `<div class="sb-row">
-        <div class="d">${shortD(r.date)}</div>
-        <div class="bar" title="dispatched ${r.dispatched} · ordered ${r.ordered} · cancelled ${r.cancelled}">
-          <div class="seg" style="width:${pct(r.dispatched)}%;background:var(--g)"></div>
-          <div class="seg" style="width:${pct(r.ordered)}%;background:#D4A017"></div>
-          <div class="seg" style="width:${pct(r.cancelled)}%;background:var(--a)"></div>
-        </div>
-        <div class="tot">${fmt(tot)}</div>
-      </div>`;
-    }
-    // Legend
-    html = `<div style="display:flex;gap:18px;font-size:12px;color:var(--t2);margin-bottom:10px">
-      <span><span class="dn-lg-sw" style="display:inline-block;width:10px;height:10px;background:var(--g);border-radius:2px;margin-right:6px"></span>Dispatched</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#D4A017;border-radius:2px;margin-right:6px"></span>Pending</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:var(--a);border-radius:2px;margin-right:6px"></span>Cancelled</span>
-    </div>` + html;
-    sbEl.innerHTML = html;
-  }
-
-  // 2. Fulfillment mix donut (window total)
-  const tots = f.fulfillment_totals || {};
-  const fcEl = document.getElementById('iv-fcMix');
-  const total = (tots.FBA||0)+(tots.EASY_SHIP||0)+(tots.SELF_SHIP||0)+(tots.UNKNOWN||0);
-  if(!total){
-    fcEl.innerHTML = '<div class="empty">No fulfillment data</div>';
-  } else {
-    // Simple SVG donut
-    const r = 52, c = 2*Math.PI*r, cx = 64, cy = 64;
-    let offset = 0;
-    const segments = [
-      {k:'FBA', color:'#3DA07A', label:'FBA'},
-      {k:'EASY_SHIP', color:'#D4A017', label:'Easy Ship'},
-      {k:'SELF_SHIP', color:'#6B7280', label:'Self Ship'},
-      {k:'UNKNOWN', color:'#C0C0C0', label:'Unknown'},
-    ];
-    let svg = `<svg class="dn-svg" width="128" height="128" viewBox="0 0 128 128">`;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#F2F0EB" stroke-width="16"/>`;
-    let legend = '';
-    for(const seg of segments){
-      const n = tots[seg.k] || 0;
-      if(!n) continue;
-      const share = n / total;
-      const dash = share * c;
-      svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="16"
-        stroke-dasharray="${dash} ${c-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
-      offset += dash;
-      legend += `<div><span class="sw" style="background:${seg.color}"></span><span class="n">${seg.label}</span> &middot; ${fmt(n)} (${(share*100).toFixed(1)}%)</div>`;
-    }
-    svg += `<text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="11" fill="#666" font-family="var(--mono)">total lines</text>`;
-    svg += `<text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="16" fill="#111" font-weight="600" font-family="var(--mono)">${fmt(total)}</text>`;
-    svg += `</svg>`;
-    fcEl.innerHTML = `<div class="dn-wrap">${svg}<div class="dn-lg">${legend}</div></div>`;
-  }
-
-  // 3. Recent cancellations table
-  const cEl = document.getElementById('iv-cancelTable');
-  const cans = f.recent_cancellations || [];
-  if(!cans.length){
-    cEl.innerHTML = '<div class="empty">No cancellations in window</div>';
-  } else {
-    let html = '<table class="tbl"><thead><tr><th>Date</th><th>ASIN</th><th>Product</th><th>Order</th></tr></thead><tbody>';
-    for(const r of cans){
-      const name = (r.product_name||'').length > 48 ? r.product_name.slice(0,48)+'…' : (r.product_name||'--');
-      html += `<tr>
-        <td>${shortD(r.date)}</td>
-        <td class="mn2 hi">${r.asin||'--'}</td>
-        <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
-        <td class="mn2" style="font-size:11px;color:var(--t3)">${r.order_id||'--'}</td>
-      </tr>`;
-    }
-    html += '</tbody></table>';
-    cEl.innerHTML = html;
-  }
-}
-
-function renderPerAsin(p){
-  const el = document.getElementById('iv-perAsinTable');
-  const counts = p.status_counts || {};
-  document.getElementById('iv-perAsinCounts').innerHTML =
-    `${p.count||0} ASINs &middot; &#128308; ${counts.oos||0} OOS &middot; &#128993; ${counts.low||0} low &middot; &#128994; ${counts.healthy||0} healthy &middot; &#9899; ${counts.dormant||0} dormant &middot; snapshot ${p.snapshot_date||'--'}`;
-
-  if(!p.data || !p.data.length){
-    el.innerHTML = '<div class="empty">No inventory data yet</div>';
+    el.innerHTML = '<div class="empty">No order data in window</div>';
     return;
   }
-  // Sort: oos first, then low, then by days_cover ascending (most urgent at top)
-  const rank = {oos:0, low:1, healthy:2, dormant:3};
-  const sorted = p.data.slice().sort((a,b)=>{
-    if(rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
-    // within status, ascending days_of_cover (nulls last)
-    const ac = a.days_of_cover==null ? Infinity : a.days_of_cover;
-    const bc = b.days_of_cover==null ? Infinity : b.days_of_cover;
-    return ac - bc;
+  // Compute daily cancellation rate + 7-day rolling average
+  const points = daily.map(r=>{
+    const tot = (r.dispatched||0)+(r.ordered||0)+(r.cancelled||0);
+    return {date: r.date, rate: tot>0 ? (r.cancelled/tot*100) : null, tot: tot};
+  });
+  // 7d moving average (trailing)
+  for(let i=0;i<points.length;i++){
+    const window = points.slice(Math.max(0,i-6), i+1).filter(p=>p.rate!=null);
+    points[i].ma7 = window.length ? window.reduce((a,p)=>a+p.rate,0)/window.length : null;
+  }
+
+  // SVG line chart
+  const W = 900, H = 240, padL = 44, padR = 16, padT = 14, padB = 32;
+  const chartW = W - padL - padR, chartH = H - padT - padB;
+  const rates = points.map(p=>p.rate).filter(v=>v!=null);
+  const maxR = Math.max(15, Math.ceil(Math.max(...rates,0)*1.1));  // y-axis: 0 to max+10%
+  const minR = 0;
+  const N = points.length;
+  const xAt = i => padL + (i/(Math.max(N-1,1))) * chartW;
+  const yAt = v => padT + (1 - (v-minR)/(maxR-minR)) * chartH;
+
+  // Gridlines at 25/50/75/100% of range
+  let gridSvg = '';
+  for(let i=1;i<=4;i++){
+    const v = minR + (maxR-minR)*(i/4);
+    const y = yAt(v);
+    gridSvg += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#EBE6D9" stroke-width="1"/>`;
+    gridSvg += `<text x="${padL-6}" y="${y+3}" text-anchor="end" font-size="10" fill="#999" font-family="var(--mono)">${v.toFixed(1)}%</text>`;
+  }
+  // x-axis labels — show ~8 dates evenly spaced
+  let xLabels = '';
+  const labelStep = Math.max(1, Math.floor(N/8));
+  for(let i=0;i<N;i+=labelStep){
+    xLabels += `<text x="${xAt(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#999" font-family="var(--mono)">${shortD(points[i].date)}</text>`;
+  }
+
+  // Daily rate line (thin grey)
+  const dailyPath = points.map((p,i)=> p.rate==null ? '' : (i===0?'M':'L')+xAt(i)+','+yAt(p.rate)).filter(Boolean).join(' ');
+  // 7-day MA (bold blue)
+  const ma7Path = points.map((p,i)=> p.ma7==null ? '' : (i===0?'M':'L')+xAt(i)+','+yAt(p.ma7)).filter(Boolean).join(' ');
+
+  // Dots for spikes (>2× 7-day MA)
+  let spikes = '';
+  for(let i=0;i<N;i++){
+    const p = points[i];
+    if(p.rate!=null && p.ma7!=null && p.rate > 2*p.ma7 && p.rate > 5){
+      spikes += `<circle cx="${xAt(i)}" cy="${yAt(p.rate)}" r="3.5" fill="#C8554C"><title>${shortD(p.date)}: ${p.rate.toFixed(1)}% (${p.tot} lines)</title></circle>`;
+    }
+  }
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-height:260px">
+    ${gridSvg}
+    ${dailyPath ? `<path d="${dailyPath}" fill="none" stroke="#BBB" stroke-width="1" stroke-linejoin="round"/>` : ''}
+    ${ma7Path ? `<path d="${ma7Path}" fill="none" stroke="#2B5A8C" stroke-width="2" stroke-linejoin="round"/>` : ''}
+    ${spikes}
+    ${xLabels}
+  </svg>`;
+
+  const current = points[points.length-1] || {};
+  const summary = `<div style="display:flex;gap:18px;font-size:12px;color:var(--t2);margin-bottom:8px">
+    <span><span style="display:inline-block;width:10px;height:2px;background:#BBB;margin-right:6px;vertical-align:middle"></span>Daily</span>
+    <span><span style="display:inline-block;width:10px;height:2px;background:#2B5A8C;margin-right:6px;vertical-align:middle"></span>7-day MA</span>
+    <span><span style="display:inline-block;width:8px;height:8px;background:#C8554C;border-radius:50%;margin-right:6px;vertical-align:middle"></span>Spike (&gt;2× MA)</span>
+  </div>`;
+
+  el.innerHTML = summary + svg;
+}
+
+function renderInvTables(p){
+  if(!p.data || !p.data.length){
+    document.getElementById('iv-riskTable').innerHTML = '<div class="empty">No ASIN data yet</div>';
+    return;
+  }
+  const byStatus = {oos:[], low:[], healthy:[], overstock:[], dead_stock:[], dormant:[]};
+  for(const r of p.data){ if(byStatus[r.status]) byStatus[r.status].push(r); }
+
+  // ---- Stock-out risk (low cover) ----
+  const low = byStatus.low.slice().sort((a,b)=>b.potential_loss_14d - a.potential_loss_14d);
+  document.getElementById('iv-risk-hdr').innerHTML = low.length
+    ? low.length+' ASINs at risk &middot; sum <span class="hi">'+cur(low.reduce((a,r)=>a+r.potential_loss_14d,0))+'</span> if not restocked'
+    : 'no ASINs at risk';
+  const riskEl = document.getElementById('iv-riskTable');
+  if(!low.length){
+    riskEl.innerHTML = '<div class="empty">All active ASINs have &ge;14 days cover — no restock urgency.</div>';
+  } else {
+    let h = '<table class="tbl"><thead><tr>'
+      + '<th>Priority</th><th>ASIN</th><th>Product</th>'
+      + '<th class="r">Days left</th><th class="r">Velocity /day</th>'
+      + '<th class="r">Avg price</th><th class="r">Potential loss (14d)</th><th>Inbound?</th>'
+      + '</tr></thead><tbody>';
+    for(const r of low){
+      const prio = r.days_of_cover!=null && r.days_of_cover<7 ? '<span class="stp oos">P1</span>'
+                  : '<span class="stp low">P2</span>';
+      const inb = r.inbound_qty>0
+        ? '<span style="color:var(--g);font-size:11px">✓ '+fmt(r.inbound_qty)+' units in pipe</span>'
+        : '<span style="color:var(--a);font-size:11px">❗ None inbound</span>';
+      const name = (r.product_name||'').length>48 ? r.product_name.slice(0,48)+'…' : (r.product_name||'--');
+      h += `<tr>
+        <td>${prio}</td>
+        <td class="mn2 hi">${r.asin||'--'}</td>
+        <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+        <td class="mn2 r">${r.days_of_cover!=null?r.days_of_cover.toFixed(1):'--'}</td>
+        <td class="mn2 r">${r.velocity_14d_avg!=null?r.velocity_14d_avg.toFixed(1):'--'}</td>
+        <td class="mn2 r">${r.avg_price!=null?cur(r.avg_price):'--'}</td>
+        <td class="mn2 r hi">${cur(r.potential_loss_14d)}</td>
+        <td>${inb}</td>
+      </tr>`;
+    }
+    h += '</tbody></table>';
+    riskEl.innerHTML = h;
+  }
+
+  // ---- Currently OOS (bleeding now) ----
+  const oos = byStatus.oos.slice().sort((a,b)=>b.lost_revenue_oos_est - a.lost_revenue_oos_est);
+  document.getElementById('iv-oos-hdr').innerHTML = oos.length
+    ? oos.length+' OOS ASINs with prior velocity &middot; est. lost <span class="hi">'+cur(oos.reduce((a,r)=>a+r.lost_revenue_oos_est,0))+'</span> in last 30d'
+    : 'no active OOS';
+  const oosEl = document.getElementById('iv-oosTable');
+  if(!oos.length){
+    oosEl.innerHTML = '<div class="empty">No active ASINs are currently out of stock on FBA. OOS ASINs with no prior sales are in the Dormant bucket.</div>';
+  } else {
+    let h = '<table class="tbl"><thead><tr>'
+      + '<th>ASIN</th><th>Product</th>'
+      + '<th class="r">Days OOS (30d)</th><th class="r">Pre-OOS velocity</th>'
+      + '<th class="r">Avg price</th><th class="r">Est. lost revenue</th><th>Last sold</th>'
+      + '</tr></thead><tbody>';
+    for(const r of oos){
+      const name = (r.product_name||'').length>48 ? r.product_name.slice(0,48)+'…' : (r.product_name||'--');
+      h += `<tr>
+        <td class="mn2 hi">${r.asin||'--'}</td>
+        <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+        <td class="mn2 r">${r.zero_unit_days_30d||0}</td>
+        <td class="mn2 r">${r.velocity_14d_avg!=null?r.velocity_14d_avg.toFixed(2):'--'}</td>
+        <td class="mn2 r">${r.avg_price!=null?cur(r.avg_price):'--'}</td>
+        <td class="mn2 r hi">${cur(r.lost_revenue_oos_est)}</td>
+        <td style="font-size:11px;color:var(--t3)">${r.last_sold_date||'--'}</td>
+      </tr>`;
+    }
+    h += '</tbody></table>';
+    oosEl.innerHTML = h;
+  }
+
+  // ---- Overstock + dead stock ----
+  const over = byStatus.overstock.concat(byStatus.dead_stock)
+    .slice().sort((a,b)=>b.est_retail_value - a.est_retail_value);
+  document.getElementById('iv-over-hdr').innerHTML = over.length
+    ? byStatus.overstock.length+' overstock + '+byStatus.dead_stock.length+' dead &middot; <span class="hi">'+cur(over.reduce((a,r)=>a+r.est_retail_value,0))+'</span> at retail parked in FBA'
+    : 'no overstocked ASINs';
+  const overEl = document.getElementById('iv-overTable');
+  if(!over.length){
+    overEl.innerHTML = '<div class="empty">No ASINs above 90-day cover threshold.</div>';
+  } else {
+    let h = '<table class="tbl"><thead><tr>'
+      + '<th>Flag</th><th>ASIN</th><th>Product</th>'
+      + '<th class="r">Cover</th><th class="r">Units</th><th class="r">Velocity</th>'
+      + '<th class="r">Avg price</th><th class="r">At retail</th>'
+      + '</tr></thead><tbody>';
+    for(const r of over){
+      const flag = r.status==='dead_stock'
+        ? '<span class="stp oos">Dead</span>'
+        : (r.days_of_cover>180 ? '<span class="stp oos">Extreme</span>' : '<span class="stp low">High</span>');
+      const cov = r.days_of_cover==null
+        ? '<span class="mn2">∞</span>'
+        : '<span class="mn2">'+r.days_of_cover.toFixed(0)+'d</span>';
+      const name = (r.product_name||'').length>48 ? r.product_name.slice(0,48)+'…' : (r.product_name||'--');
+      h += `<tr>
+        <td>${flag}</td>
+        <td class="mn2 hi">${r.asin||'--'}</td>
+        <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+        <td class="r">${cov}</td>
+        <td class="mn2 r">${fmt(r.fulfillable_qty)}</td>
+        <td class="mn2 r">${r.velocity_14d_avg!=null?r.velocity_14d_avg.toFixed(1):'0'}</td>
+        <td class="mn2 r">${r.avg_price!=null?cur(r.avg_price):'--'}</td>
+        <td class="mn2 r hi">${cur(r.est_retail_value)}</td>
+      </tr>`;
+    }
+    h += '</tbody></table>';
+    overEl.innerHTML = h;
+  }
+
+  // ---- All ASINs (collapsible) ----
+  const allSorted = p.data.slice().sort((a,b)=>{
+    const rank = {oos:0, low:1, overstock:2, dead_stock:3, healthy:4, dormant:5};
+    if(rank[a.status]!==rank[b.status]) return rank[a.status]-rank[b.status];
+    const ac = a.days_of_cover==null?Infinity:a.days_of_cover;
+    const bc = b.days_of_cover==null?Infinity:b.days_of_cover;
+    return ac-bc;
   });
   const pill = s => {
     if(s==='oos') return '<span class="stp oos">OOS</span>';
-    if(s==='low') return '<span class="stp low">Low cover</span>';
+    if(s==='low') return '<span class="stp low">Low</span>';
+    if(s==='overstock') return '<span class="stp low">Overstock</span>';
+    if(s==='dead_stock') return '<span class="stp oos">Dead</span>';
     if(s==='healthy') return '<span class="stp hl">Healthy</span>';
     return '<span class="stp dor">Dormant</span>';
   };
-  let html = '<table class="tbl"><thead><tr>'
+  let ah = '<table class="tbl"><thead><tr>'
     + '<th>Status</th><th>ASIN</th><th>Product</th>'
-    + '<th class="r">Fulfillable</th><th class="r">Reserved</th><th class="r">Inbound</th><th class="r">Unsell</th>'
-    + '<th class="r">14d Units</th><th class="r">Daily Vel</th><th class="r">Days Cover</th>'
+    + '<th class="r">Fulfillable</th><th class="r">Inbound</th>'
+    + '<th class="r">Velocity</th><th class="r">Days Cover</th><th class="r">14d Units</th>'
     + '</tr></thead><tbody>';
-  for(const r of sorted){
-    const name = (r.product_name||'').length > 56 ? r.product_name.slice(0,56)+'…' : (r.product_name||'--');
+  for(const r of allSorted){
+    const name = (r.product_name||'').length>48 ? r.product_name.slice(0,48)+'…' : (r.product_name||'--');
     const dc = r.days_of_cover;
-    const dcCell = dc==null
-      ? '<span style="color:var(--t3)">—</span>'
-      : `<span class="mn2">${dc.toFixed(1)}</span>`;
-    html += `<tr>
+    const dcCell = dc==null ? '<span style="color:var(--t3)">—</span>' : '<span class="mn2">'+dc.toFixed(1)+'</span>';
+    ah += `<tr>
       <td>${pill(r.status)}</td>
       <td class="mn2 hi">${r.asin||'--'}</td>
       <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
       <td class="mn2 r">${fmt(r.fulfillable_qty)}</td>
-      <td class="mn2 r">${fmt(r.reserved_qty)}</td>
       <td class="mn2 r">${fmt(r.inbound_qty)}</td>
-      <td class="mn2 r">${fmt(r.unfulfillable_qty)}</td>
-      <td class="mn2 r">${fmt(r.units_sold_14d)}</td>
-      <td class="mn2 r">${r.velocity_14d_avg ? r.velocity_14d_avg.toFixed(1) : '0'}</td>
+      <td class="mn2 r">${r.velocity_14d_avg!=null?r.velocity_14d_avg.toFixed(1):'0'}</td>
       <td class="r">${dcCell}</td>
+      <td class="mn2 r">${fmt(r.units_sold_14d)}</td>
     </tr>`;
   }
-  html += '</tbody></table>';
-  el.innerHTML = html;
+  ah += '</tbody></table>';
+  document.getElementById('iv-allTable').innerHTML = ah;
+  document.getElementById('iv-allToggle').textContent = 'show ('+p.count+' ASINs)';
 }
 
 /* ========== RANGE PILLS ========== */
