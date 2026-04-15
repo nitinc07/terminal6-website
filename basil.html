@@ -63,16 +63,28 @@
 /* INVENTORY & FULFILLMENT — sub-tab visibility */
 .iv-sub{display:none}
 .iv-sub.act{display:block}
-/* reason bars (horizontal) */
-.rbar-row{display:grid;grid-template-columns:180px 1fr 120px;align-items:center;gap:12px;padding:5px 0;font-size:12px}
-.rbar-row .rk-name{color:var(--t1);font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rbar-row .rk-name .rtp{font-size:10px;font-weight:400;color:var(--t3);margin-left:4px;padding:1px 5px;border-radius:3px;background:var(--bg-cream)}
-.rbar-row .rk-name .rtp.rto{background:var(--al);color:var(--a)}
-.rbar-row .rk-name .rtp.rvp{background:#FFF3DD;color:#B8860B}
-.rbar-row .rk-bar{background:var(--bg-cream);height:14px;border-radius:3px;overflow:hidden}
-.rbar-row .rk-bar .rk-fill{height:100%;background:#D97706}
-.rbar-row .rk-bar .rk-fill.rto-fill{background:#C8554C}
-.rbar-row .rk-tail{font-size:11px;font-family:var(--mono);color:var(--t2);text-align:right}
+/* Sub-tab nav — visually distinct from .pills (which look like filters) */
+.subtabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px}
+.subtabs button{background:none;border:none;padding:10px 18px 12px;font-size:14px;font-weight:500;color:var(--t3);cursor:pointer;position:relative;font-family:var(--sans);letter-spacing:.01em}
+.subtabs button:hover{color:var(--t1)}
+.subtabs button.a{color:var(--t1)}
+.subtabs button.a::after{content:'';position:absolute;left:12px;right:12px;bottom:-1px;height:2px;background:var(--acc);border-radius:1px}
+.subtabs button .cnt{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--t3);margin-left:6px;padding:1px 6px;background:var(--bg-cream);border-radius:8px}
+.subtabs button.a .cnt{color:var(--t2);background:var(--gl)}
+/* Pie chart container for reason breakdown */
+.pie-wrap{display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:center;padding:8px 4px}
+.pie-lg{font-size:12px;color:var(--t2);line-height:1.7;display:flex;flex-direction:column;gap:3px}
+.pie-lg .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px;vertical-align:middle}
+.pie-lg .n{font-weight:500;color:var(--t1)}
+.pie-lg .tail{font-family:var(--mono);font-size:11px;color:var(--t3);margin-left:auto;padding-left:10px}
+.pie-lg .row{display:flex;align-items:center;gap:4px}
+.pie-lg .rtp{font-size:10px;font-weight:500;padding:1px 5px;border-radius:3px;margin-left:4px}
+.pie-lg .rtp.rto{background:var(--al);color:var(--a)}
+.pie-lg .rtp.rvp{background:#FFF3DD;color:#B8860B}
+/* Inline reason pills in contributor table */
+.rsn-inline{font-size:11px;white-space:nowrap;color:var(--t2);margin-right:8px}
+.rsn-inline.dfc{color:var(--a);font-weight:500}
+.rsn-inline.dfc::before{content:'⚠ ';font-size:10px}
 
 /* INVENTORY & FULFILLMENT — status pills */
 .stp{display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:500;letter-spacing:.02em}
@@ -347,10 +359,10 @@
     </div>
 
     <!-- Sub-tab nav -->
-    <div class="pills" id="ivSubPills" style="margin-bottom:20px">
+    <div class="subtabs" id="ivSubPills">
       <button data-sub="overview" class="a">Overview</button>
-      <button data-sub="stock">Stock Health</button>
-      <button data-sub="returns">Returns</button>
+      <button data-sub="stock">Stock Health <span class="cnt" id="sub-stock-cnt"></span></button>
+      <button data-sub="returns">Returns <span class="cnt" id="sub-returns-cnt"></span></button>
     </div>
 
     <!-- =============== SUB-TAB: OVERVIEW =============== -->
@@ -1008,6 +1020,10 @@ function renderInvTiles(s){
   document.getElementById('iv-lost-sub').textContent = (cnts.oos||0)+' ASINs currently OOS with prior velocity';
   document.getElementById('iv-capital').textContent = cur(t.capital_tied_up);
   document.getElementById('iv-capital-sub').textContent = (cnts.overstock||0)+' overstock + '+(cnts.dead_stock||0)+' dead';
+  // Sub-tab count badges — number of actionable rows on each sub-tab
+  const stockBadge = (cnts.oos||0)+(cnts.low||0)+(cnts.overstock||0)+(cnts.dead_stock||0);
+  const b = document.getElementById('sub-stock-cnt');
+  if(b) b.textContent = stockBadge > 0 ? stockBadge : '';
 
   // Stock Health tile strip reuses summary + per_asin counts
   // (populated when per_asin returns — renderInvTables finishes; see below)
@@ -1332,6 +1348,13 @@ function renderInvTables(p){
 }
 
 /* ========== RETURNS SUB-TAB ========== */
+// Reason set whose returns are addressable via product/QC work
+// (mirrors DEFECT_REASONS on the backend — used for inline highlighting)
+const DEFECT_REASONS = new Set([
+  'DEFECTIVE', 'QUALITY_UNACCEPTABLE', 'DAMAGED_BY_FC', 'DAMAGED_BY_CARRIER',
+  'MISSING_PARTS', 'ITEM_DAMAGED',
+]);
+
 function renderReturns(r){
   // Tile strip
   document.getElementById('rt-total').textContent = fmt(r.total_returns);
@@ -1345,43 +1368,80 @@ function renderReturns(r){
     document.getElementById('rt-top').textContent = pct(topReason.share_pct,1);
     document.getElementById('rt-top-sub').innerHTML = '<span class="hi">'+topReason.reason+'</span> · '+fmt(topReason.count)+' events · '+cur(topReason.revenue_impact);
   }
+  // Sub-tab badge
+  const rb = document.getElementById('sub-returns-cnt');
+  if(rb) rb.textContent = r.total_returns > 0 ? fmt(r.total_returns) : '';
 
-  // Reason bars — horizontal, sorted by share desc
+  // Reason pie chart — SVG donut, color-coded by type
   const barsEl = document.getElementById('rt-reasonBars');
   const reasons = r.by_reason || [];
   if(!reasons.length){
     barsEl.innerHTML = '<div class="empty">No return reasons in window</div>';
   } else {
-    const maxShare = Math.max(...reasons.map(x=>x.share_pct||0), 1);
-    let html = '';
+    // Color palette: RVP reasons in warm oranges (customer-returned), RTO in reds (never-delivered).
+    const RVP_COLORS = ['#D97706', '#E89A3C', '#F2B366', '#F5C893', '#B8860B', '#A76F0E', '#D4A017', '#8B6914'];
+    const RTO_COLORS = ['#C8554C', '#D97267', '#E8877C', '#B84A42', '#A23E37', '#D85E53'];
+    let rvpI = 0, rtoI = 0;
     for(const x of reasons){
-      const typeClass = x.type.toLowerCase();
-      const fillClass = x.type === 'RTO' ? 'rto-fill' : '';
-      const width = ((x.share_pct||0)/maxShare*100).toFixed(1);
-      html += `<div class="rbar-row">
-        <div class="rk-name" title="${x.reason}">${x.reason}<span class="rtp ${typeClass}">${x.type}</span></div>
-        <div class="rk-bar"><div class="rk-fill ${fillClass}" style="width:${width}%"></div></div>
-        <div class="rk-tail">${pct(x.share_pct,1)} · ${fmt(x.count)} · ${cur(x.revenue_impact)}</div>
-      </div>`;
+      x._color = x.type === 'RTO'
+        ? RTO_COLORS[rtoI++ % RTO_COLORS.length]
+        : RVP_COLORS[rvpI++ % RVP_COLORS.length];
     }
-    barsEl.innerHTML = html;
+    // SVG donut
+    const cx = 100, cy = 100, R = 85, rInner = 48;
+    const total = reasons.reduce((a,x)=>a+(x.count||0), 0);
+    let startAngle = -Math.PI/2;  // start at top
+    let segSvg = '';
+    for(const x of reasons){
+      const frac = (x.count||0)/total;
+      if(frac <= 0) continue;
+      const endAngle = startAngle + frac*2*Math.PI;
+      const x1 = cx + R*Math.cos(startAngle), y1 = cy + R*Math.sin(startAngle);
+      const x2 = cx + R*Math.cos(endAngle), y2 = cy + R*Math.sin(endAngle);
+      const ix1 = cx + rInner*Math.cos(endAngle), iy1 = cy + rInner*Math.sin(endAngle);
+      const ix2 = cx + rInner*Math.cos(startAngle), iy2 = cy + rInner*Math.sin(startAngle);
+      const large = frac > 0.5 ? 1 : 0;
+      const d = `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${rInner} ${rInner} 0 ${large} 0 ${ix2} ${iy2} Z`;
+      segSvg += `<path d="${d}" fill="${x._color}" stroke="#fff" stroke-width="1.5"><title>${x.reason}: ${pct(x.share_pct,1)} (${fmt(x.count)} events, ${cur(x.revenue_impact)})</title></path>`;
+      startAngle = endAngle;
+    }
+    const svg = `<svg viewBox="0 0 200 200" width="200" height="200" style="flex:0 0 auto">
+      ${segSvg}
+      <text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="11" fill="#666" font-family="var(--mono)">total</text>
+      <text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="18" fill="#111" font-weight="600" font-family="var(--mono)">${fmt(total)}</text>
+    </svg>`;
+    // Legend — full reason list with share + revenue
+    let legend = '';
+    for(const x of reasons){
+      const defectFlag = DEFECT_REASONS.has(x.reason) ? '<span class="rtp" style="background:#FFE4E1;color:#B8473A;margin-left:4px" title="Actionable via QC / supplier fix">⚠ defect</span>' : '';
+      legend += `<div class="row"><span class="sw" style="background:${x._color}"></span><span class="n">${x.reason}</span><span class="rtp ${x.type.toLowerCase()}">${x.type}</span>${defectFlag}<span class="tail">${pct(x.share_pct,1)} · ${fmt(x.count)} · ${cur(x.revenue_impact)}</span></div>`;
+    }
+    barsEl.innerHTML = `<div class="pie-wrap">${svg}<div class="pie-lg">${legend}</div></div>`;
   }
 
-  // Top contributors table
+  // Top contributors table — sort by defect rate × returns volume to surface
+  // the most actionable ASINs first, not just the highest-return-volume ones.
   const contribEl = document.getElementById('rt-contribTable');
   const asins = r.by_asin || [];
   document.getElementById('rt-contrib-hdr').innerHTML = asins.length
-    ? asins.length+' ASINs · sorted by return count · window '+r.window_start+' → '+r.window_end
+    ? asins.length+' ASINs · window '+r.window_start+' → '+r.window_end+' · ⚠ = defect-related (actionable via QC)'
     : 'no return contributors in window';
   if(!asins.length){
     contribEl.innerHTML = '<div class="empty">No return events in window</div>';
   } else {
+    // Sort: defect_returns desc, then returns_count desc
+    const sorted = asins.slice().sort((a,b)=>{
+      const ad = a.defect_returns||0, bd = b.defect_returns||0;
+      if(ad !== bd) return bd - ad;
+      return (b.returns_count||0) - (a.returns_count||0);
+    });
     let html = '<table class="tbl"><thead><tr>'
       + '<th>ASIN</th><th>Product</th>'
       + '<th class="r">Returns</th><th class="r">Return Rate</th>'
+      + '<th class="r">Defect Rate</th>'
       + '<th>Top 3 Reasons</th><th class="r">Revenue Impact</th>'
       + '</tr></thead><tbody>';
-    for(const a of asins){
+    for(const a of sorted){
       const name = (a.product_name||'').length>44 ? a.product_name.slice(0,44)+'…' : (a.product_name||'--');
       const rate = a.return_rate_pct;
       let rateBadge = '<span style="color:var(--t3)">—</span>';
@@ -1389,13 +1449,24 @@ function renderReturns(r){
         const badgeCls = rate >= 25 ? 'oos' : rate >= 15 ? 'low' : 'hl';
         rateBadge = `<span class="stp ${badgeCls}">${rate.toFixed(1)}%</span>`;
       }
-      const reasons = (a.top_reasons||[]).map(tr=>`<span style="color:var(--t2);white-space:nowrap">${tr.reason} (${tr.count})</span>`).join(' · ');
+      const drate = a.defect_rate_pct;
+      let defectBadge = '<span style="color:var(--t3)">—</span>';
+      if(drate!=null){
+        const dCls = drate >= 30 ? 'oos' : drate >= 15 ? 'low' : 'hl';
+        defectBadge = `<span class="stp ${dCls}" title="${a.defect_returns} of ${a.returns_count} returns are defect-related">${drate.toFixed(1)}%</span>`;
+      }
+      // Inline reasons — defect ones highlighted with .dfc (red with warning icon)
+      const reasons = (a.top_reasons||[]).map(tr=>{
+        const cls = tr.is_defect ? 'rsn-inline dfc' : 'rsn-inline';
+        return `<span class="${cls}">${tr.reason} (${tr.count})</span>`;
+      }).join('');
       html += `<tr>
         <td class="mn2 hi">${a.asin||'--'}</td>
         <td title="${(a.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
         <td class="mn2 r">${fmt(a.returns_count)}</td>
         <td class="r">${rateBadge}</td>
-        <td style="font-size:11px">${reasons}</td>
+        <td class="r">${defectBadge}</td>
+        <td>${reasons}</td>
         <td class="mn2 r hi">${cur(a.revenue_impact)}</td>
       </tr>`;
     }
