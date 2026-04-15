@@ -108,6 +108,30 @@
     } catch(e) { /* sessionStorage malformed — ignore */ }
   }
 
+  /* tip(content, opts) — build an info-icon + hover-tooltip HTML snippet.
+   * Usage in a template string:
+   *   `<th>Days Cover ${T6.tip('fulfillable / velocity(14d)')}</th>`
+   * Or richer:
+   *   T6.tip({formula: 'x = y + z', note: 'y excludes cancelled'})
+   * Pass opts.rightAlign=true for columns on the right edge that would
+   * clip off-screen with center anchoring. */
+  function tip(content, opts){
+    opts = opts || {};
+    let body;
+    if(typeof content === 'string'){
+      body = escapeHtml(content);
+    } else {
+      const formula = content.formula ? '<code>' + escapeHtml(content.formula) + '</code>' : '';
+      const note = content.note ? '<span class="nt">' + escapeHtml(content.note) + '</span>' : '';
+      body = formula + note;
+    }
+    const cls = opts.rightAlign ? 'th-info rt' : 'th-info';
+    return '<span class="' + cls + '" tabindex="0" aria-label="What is this?">i<span class="th-tip">' + body + '</span></span>';
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
   /* ========== EXPORTS ==========
    * Surface the helpers on window so per-brand <script> blocks can call them
    * directly without imports. This is deliberate — no build step, vanilla JS. */
@@ -117,6 +141,7 @@
     token: token,
     api: api,
     fmt: fmt, cur: cur, pct: pct, shortD: shortD, chg: chg, dp: dp,
+    tip: tip,
     showErr: showErr,
     initUserChrome: initUserChrome,
   };
@@ -124,5 +149,5 @@
   // brand pages. These names were already used inline in sprig.html / basil.html.
   window.api = api;
   window.fmt = fmt; window.cur = cur; window.pct = pct; window.shortD = shortD;
-  window.chg = chg; window.dp = dp; window.showErr = showErr;
+  window.chg = chg; window.dp = dp; window.showErr = showErr; window.tip = tip;
 })();
