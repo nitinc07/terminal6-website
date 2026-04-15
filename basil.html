@@ -129,7 +129,7 @@
       <div class="cd"><div class="kl">Paid Share</div><div class="kv" id="rv-paid-share">--</div><div class="kd n" id="rv-paid-share-sub">paid clicks / sessions</div></div>
       <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="rv-bb">--</div><div class="kd n">sessions-weighted</div></div>
       <div class="cd"><div class="kl">Units</div><div class="kv" id="rv-units">--</div><div class="kd n" id="rv-conv-sub">conv <span id="rv-conv">--</span></div></div>
-      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="rv-tot">--</div><div class="kd n" id="rv-tot-sub">paid attr <span id="rv-paid-rev">--</span></div></div>
+      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="rv-tot">--</div><div class="kd n" id="rv-tot-sub">paid (1d attr) <span id="rv-paid-rev">--</span></div></div>
     </div>
 
     <div class="sec">
@@ -143,7 +143,7 @@
         <em>Paid</em> = clicks on our Amazon Ads (SP/SB/SD).
         <em>Organic (est)</em> = Sessions &minus; Paid Clicks &mdash; directional; Amazon's session bucketing is not 1:1 with ad clicks.
         <em>Buy Box %</em> is sessions-weighted &mdash; if we don't own BB, sessions don't convert.
-        <em>Units</em> and <em>Revenue</em> are today's totals; <em>Paid Rev</em> is 7-day last-click attribution from Amazon Ads (can exceed total revenue on short windows because of attribution lookforward).
+        <em>Units</em> and <em>Revenue</em> are today's totals; <em>Paid Rev (1d)</em> is Amazon Ads' 1-day last-click attribution — sales from clicks that converted within 24h. SB/SD ad types don't expose 1d in Amazon's API so they fall back to the 7d window; in practice this is a small slice for most brands.
         No add-to-cart metric &mdash; Amazon's Sales &amp; Traffic report doesn't expose it.
       </div>
     </div>
@@ -454,9 +454,9 @@ function loadRevenue(){
 }
 
 /* Single-table daily funnel renderer. Columns:
- *   Date | Sessions | Paid clicks | Organic (est) | Paid % | BB % | Units | Conv % | Revenue | Paid rev (7d) | Organic rev (est)
+ *   Date | Sessions | Paid clicks | Organic (est) | Paid % | BB % | Units | Conv % | Revenue | Paid rev (1d) | Organic rev (est)
  * The "Organic *" columns are server-computed as max(0, total − paid). On
- * short windows paid_revenue_7d can exceed total revenue because Amazon's
+ * short windows paid_revenue can exceed total revenue because Amazon's
  * 7-day last-click attribution looks forward — organic_rev_est clamps to 0
  * in those cases; the footnote on the page explains. */
 function renderFunnelView(f){
@@ -468,7 +468,7 @@ function renderFunnelView(f){
     document.getElementById('rv-units').textContent = fmt(t.units);
     document.getElementById('rv-conv').textContent = t.conversion_rate!=null ? pct(t.conversion_rate,2) : '--';
     document.getElementById('rv-tot').textContent = cur(t.revenue);
-    document.getElementById('rv-paid-rev').textContent = cur(t.paid_revenue_7d);
+    document.getElementById('rv-paid-rev').textContent = cur(t.paid_revenue);
     const d = document.getElementById('rv-sessions-sub');
     if(f.tiles && f.tiles.sessions_wow_pct!=null){
       const v = f.tiles.sessions_wow_pct;
@@ -492,7 +492,7 @@ function renderFunnelView(f){
     + '<th class="r">Units</th>'
     + '<th class="r">Conv %</th>'
     + '<th class="r">Revenue</th>'
-    + '<th class="r">Paid rev (7d)</th>'
+    + '<th class="r">Paid rev (1d)</th>'
     + '<th class="r">Organic rev (est)</th>'
     + '</tr></thead><tbody>';
 
@@ -507,7 +507,7 @@ function renderFunnelView(f){
       <td class="mn2 r">${fmt(row.units)}</td>
       <td class="mn2 r">${row.conversion_rate!=null?pct(row.conversion_rate,2):'--'}</td>
       <td class="mn2 r">${cur(row.revenue)}</td>
-      <td class="mn2 r">${cur(row.paid_revenue_7d)}</td>
+      <td class="mn2 r">${cur(row.paid_revenue)}</td>
       <td class="mn2 r">${cur(row.organic_revenue_est)}</td>
     </tr>`;
   }
