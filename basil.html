@@ -290,7 +290,7 @@
       <div class="cd"><div class="kl">Revenue at Risk (next 14d)</div><div class="kv" id="iv-risk">--</div><div class="kd n" id="iv-risk-sub">low-cover × velocity × price</div></div>
       <div class="cd"><div class="kl">Lost Revenue — OOS (30d)</div><div class="kv" id="iv-lost">--</div><div class="kd n" id="iv-lost-sub">estimated from zero-day windows</div></div>
       <div class="cd"><div class="kl">Capital Tied Up — Overstock</div><div class="kv" id="iv-capital">--</div><div class="kd n" id="iv-capital-sub">&gt;90 days cover + dead stock, at retail</div></div>
-      <div class="cd"><div class="kl">Return Rate (7d)</div><div class="kv" id="iv-return">--</div><div class="kd n" id="iv-return-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Return Rate (14–28d cohort)</div><div class="kv" id="iv-return">--</div><div class="kd n" id="iv-return-d">&nbsp;</div></div>
     </div>
 
     <!-- Cancellation + Return rate trend -->
@@ -761,7 +761,7 @@ function renderInvTiles(s){
   document.getElementById('iv-lost-sub').textContent = (cnts.oos||0)+' ASINs currently OOS with prior velocity';
   document.getElementById('iv-capital').textContent = cur(t.capital_tied_up);
   document.getElementById('iv-capital-sub').textContent = (cnts.overstock||0)+' overstock + '+(cnts.dead_stock||0)+' dead';
-  document.getElementById('iv-return').textContent = t.return_rate_7d_pct!=null ? pct(t.return_rate_7d_pct,2) : '--';
+  document.getElementById('iv-return').textContent = t.return_rate_mature_pct!=null ? pct(t.return_rate_mature_pct,2) : '--';
   const d = document.getElementById('iv-return-d');
   if(t.return_rate_delta_pp!=null){
     const up = t.return_rate_delta_pp > 0;
@@ -769,7 +769,7 @@ function renderInvTiles(s){
     // rising return rate is bad (red/d), falling is good (green/u)
     const cls = up ? 'd' : 'u';
     d.className = 'kd '+cls;
-    d.innerHTML = arrow+' '+Math.abs(t.return_rate_delta_pp).toFixed(2)+'pp vs prior 7d · '+t.returns_7d+' returns on '+t.orders_shipped_7d+' shipped';
+    d.innerHTML = arrow+' '+Math.abs(t.return_rate_delta_pp).toFixed(2)+'pp vs prior window · '+t.returns_mature+' returns on '+t.placed_mature+' placed';
   } else {
     d.className = 'kd n';
     d.innerHTML = '&nbsp;';
@@ -779,38 +779,47 @@ function renderInvTiles(s){
 function renderCancelTrend(f){
   const el = document.getElementById('iv-cancelTrend');
   const daily = f.status_daily || [];
-  const retsDaily = f.returns_daily || [];
   if(!daily.length){
     el.innerHTML = '<div class="empty">No order data in window</div>';
     return;
   }
 
-  // Index returns by date for lookup (returns are keyed by return_date,
-  // status_daily is keyed by order placement date — both are calendar dates).
-  const retsByDate = {};
-  for(const r of retsDaily){ retsByDate[r.date] = r.total || 0; }
+  // Return-rate computed COHORT-ALIGNED: for each placement date D, what % of
+  // orders placed that day are now RTO or RVP. Uses status_daily directly (no
+  // return_date-based mixing of cohorts). Last 14 days are marked "immature"
+  // because orders that young haven't had time to mature returns yet.
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const immatureCutoffMs = today.getTime() - 14*24*3600*1000;
 
-  // Build cancel-rate points (vs placed that day)
+  // Build cancel-rate points (cancellations happen same-day, no cohort issue)
   const cancelPts = daily.map(r=>{
     const placed = (r.dispatched||0)+(r.ordered||0)+(r.cancelled||0)+(r.rto||0)+(r.rvp||0);
     return {date: r.date, rate: placed>0 ? (r.cancelled/placed*100) : null, cnt: r.cancelled||0, den: placed};
   });
-  // Build return-rate points (returns on that date / orders shipped that date).
-  // The denominator is shipped = total - cancelled — the universe of returnable events.
+  // Return-rate points — by PLACEMENT date. Mark immature if placed <14d ago.
   const returnPts = daily.map(r=>{
-    const shipped = (r.dispatched||0)+(r.delivered||0)+(r.rto||0)+(r.rvp||0);
-    const retCount = retsByDate[r.date] || 0;
-    return {date: r.date, rate: shipped>0 ? (retCount/shipped*100) : null, cnt: retCount, den: shipped};
+    const placed = (r.dispatched||0)+(r.ordered||0)+(r.cancelled||0)+(r.rto||0)+(r.rvp||0);
+    const shipped = placed - (r.cancelled||0);  // only non-cancelled can be returned
+    const returned = (r.rto||0)+(r.rvp||0);
+    const ts = new Date(r.date+"T00:00:00").getTime();
+    const immature = ts >= immatureCutoffMs;
+    return {
+      date: r.date, rate: shipped>0 ? (returned/shipped*100) : null,
+      cnt: returned, den: shipped, immature: immature,
+    };
   });
 
-  // 7d moving average helper
-  function ma7(pts){
+  // 7d moving average helper. For returns, exclude immature days — their low
+  // rates would drag the MA down misleadingly.
+  function ma7(pts, skipImmature){
     for(let i=0;i<pts.length;i++){
-      const window = pts.slice(Math.max(0,i-6), i+1).filter(p=>p.rate!=null);
+      const window = pts.slice(Math.max(0,i-6), i+1).filter(p=>p.rate!=null && !(skipImmature && p.immature));
       pts[i].ma7 = window.length ? window.reduce((a,p)=>a+p.rate,0)/window.length : null;
     }
   }
-  ma7(cancelPts); ma7(returnPts);
+  ma7(cancelPts, false);
+  ma7(returnPts, true);
 
   // SVG line chart
   const W = 900, H = 260, padL = 44, padR = 16, padT = 14, padB = 34;
@@ -837,16 +846,39 @@ function renderCancelTrend(f){
     xLabels += `<text x="${xAt(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#999" font-family="var(--mono)">${shortD(cancelPts[i].date)}</text>`;
   }
 
-  // Build paths
+  // Build paths — return paths drop rendering for immature days so the line
+  // visually "ends" where mature data stops.
   function linePath(pts, key){
     return pts.map((p,i)=> p[key]==null ? '' : (i===0?'M':'L')+xAt(i)+','+yAt(p[key])).filter(Boolean).join(' ');
   }
+  function matureLinePath(pts, key){
+    // Skip immature points entirely so the solid line ends at the cohort cutoff.
+    const out = [];
+    let first = true;
+    for(let i=0;i<pts.length;i++){
+      const p = pts[i];
+      if(p[key]==null || p.immature) { first = true; continue; }
+      out.push((first ? 'M' : 'L') + xAt(i) + ',' + yAt(p[key]));
+      first = false;
+    }
+    return out.join(' ');
+  }
   const cancelDaily = linePath(cancelPts, 'rate');
   const cancelMA = linePath(cancelPts, 'ma7');
-  const returnDaily = linePath(returnPts, 'rate');
-  const returnMA = linePath(returnPts, 'ma7');
+  const returnDaily = matureLinePath(returnPts, 'rate');
+  const returnMA = matureLinePath(returnPts, 'ma7');
 
-  // Spike dots (>2× MA AND > 5% absolute, on whichever series)
+  // Immature band — light grey overlay for last 14 days on the chart
+  let immatureBand = '';
+  const firstImmatureIdx = returnPts.findIndex(p=>p.immature);
+  if(firstImmatureIdx >= 0 && firstImmatureIdx < N){
+    const x1 = xAt(firstImmatureIdx);
+    const x2 = xAt(N-1);
+    immatureBand = `<rect x="${x1}" y="${padT}" width="${x2-x1}" height="${chartH}" fill="#F2F0EB" opacity="0.55"/>
+      <text x="${(x1+x2)/2}" y="${padT+12}" text-anchor="middle" font-size="10" fill="#999" font-family="var(--mono)">return cohort still maturing</text>`;
+  }
+
+  // Spike dots for cancel series only (returns are cohort-lagged, spike detection misleading)
   let spikes = '';
   function addSpikes(pts, color, label){
     for(let i=0;i<pts.length;i++){
@@ -857,9 +889,9 @@ function renderCancelTrend(f){
     }
   }
   addSpikes(cancelPts, '#C8554C', 'Cancel');
-  addSpikes(returnPts, '#D97706', 'Return');
 
   const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-height:280px">
+    ${immatureBand}
     ${gridSvg}
     ${cancelDaily ? `<path d="${cancelDaily}" fill="none" stroke="#BBB" stroke-width="1" stroke-linejoin="round" opacity="0.7"/>` : ''}
     ${returnDaily ? `<path d="${returnDaily}" fill="none" stroke="#E7B894" stroke-width="1" stroke-linejoin="round" opacity="0.7"/>` : ''}
@@ -870,11 +902,10 @@ function renderCancelTrend(f){
   </svg>`;
 
   const summary = `<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--t2);margin-bottom:8px">
-    <span><span style="display:inline-block;width:10px;height:2px;background:#2B5A8C;margin-right:6px;vertical-align:middle"></span>Cancel rate · 7d MA</span>
-    <span><span style="display:inline-block;width:10px;height:2px;background:#D97706;margin-right:6px;vertical-align:middle"></span>Return rate · 7d MA</span>
+    <span><span style="display:inline-block;width:10px;height:2px;background:#2B5A8C;margin-right:6px;vertical-align:middle"></span>Cancel rate · 7d MA (by order date)</span>
+    <span><span style="display:inline-block;width:10px;height:2px;background:#D97706;margin-right:6px;vertical-align:middle"></span>Return rate · 7d MA (by order date, mature cohorts only)</span>
     <span style="color:var(--t3)"><span style="display:inline-block;width:10px;height:2px;background:#BBB;margin-right:6px;vertical-align:middle"></span>Daily (faint)</span>
     <span><span style="display:inline-block;width:8px;height:8px;background:#C8554C;border-radius:50%;margin-right:6px;vertical-align:middle"></span>Cancel spike</span>
-    <span><span style="display:inline-block;width:8px;height:8px;background:#D97706;border-radius:50%;margin-right:6px;vertical-align:middle"></span>Return spike</span>
   </div>`;
 
   el.innerHTML = summary + svg;
