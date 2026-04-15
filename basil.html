@@ -95,6 +95,17 @@
       <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="ov-bb">--</div><div class="kd n">weighted 7d avg</div></div>
     </div>
 
+    <!-- FUNNEL STRIP — 7d snapshot: sessions → paid share → BB → conv. Link to Revenue & Traffic for detail. -->
+    <div class="sec">
+      <div class="sec-h"><h3>Traffic Funnel <span class="note">last 7 days &middot; <a href="#" onclick="sw('revenue',document.querySelector('[onclick*=\"revenue\"]'));return false" style="color:var(--acc);text-decoration:none">see daily detail &rarr;</a></span></h3></div>
+      <div class="g4" style="margin-bottom:0">
+        <div class="cd"><div class="kl">Sessions (7d)</div><div class="kv" id="ov-fn-sessions">--</div><div class="kd n" id="ov-fn-sessions-d">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Paid Share</div><div class="kv" id="ov-fn-paid">--</div><div class="kd n" id="ov-fn-paid-d">of sessions &middot; clicks from Amazon Ads</div></div>
+        <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="ov-fn-bb">--</div><div class="kd n" id="ov-fn-bb-d">sessions-weighted</div></div>
+        <div class="cd"><div class="kl">Conversion</div><div class="kv" id="ov-fn-conv">--</div><div class="kd n" id="ov-fn-conv-d">units / sessions</div></div>
+      </div>
+    </div>
+
     <div class="sec">
       <div class="sec-h"><h3>Daily Revenue &middot; Amazon IN <span class="note" id="ov-rev-range"></span></h3></div>
       <div id="ov-revTable" class="loading">Loading...</div>
@@ -114,21 +125,27 @@
     </div>
 
     <div class="g5" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Revenue (selected window)</div><div class="kv" id="rv-tot">--</div><div class="kd n" id="rv-tot-sub">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Units</div><div class="kv" id="rv-units">--</div><div class="kd n">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Orders</div><div class="kv" id="rv-orders">--</div><div class="kd n">3P only</div></div>
-      <div class="cd"><div class="kl">ASP</div><div class="kv" id="rv-asp">--</div><div class="kd n">revenue / units</div></div>
-      <div class="cd"><div class="kl">Conv. Rate (7d)</div><div class="kv" id="rv-conv">--</div><div class="kd n">units / sessions</div></div>
+      <div class="cd"><div class="kl">Sessions</div><div class="kv" id="rv-sessions">--</div><div class="kd n" id="rv-sessions-sub">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Paid Share</div><div class="kv" id="rv-paid-share">--</div><div class="kd n" id="rv-paid-share-sub">paid clicks / sessions</div></div>
+      <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="rv-bb">--</div><div class="kd n">sessions-weighted</div></div>
+      <div class="cd"><div class="kl">Units</div><div class="kv" id="rv-units">--</div><div class="kd n" id="rv-conv-sub">conv <span id="rv-conv">--</span></div></div>
+      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="rv-tot">--</div><div class="kd n" id="rv-tot-sub">paid attr <span id="rv-paid-rev">--</span></div></div>
     </div>
 
     <div class="sec">
-      <div class="sec-h"><h3>Daily Revenue <span class="note">with DoD &middot; WoW &middot; MoM &middot; YoY deltas</span></h3></div>
-      <div id="rv-revTable" class="loading">Loading...</div>
-    </div>
-
-    <div class="sec">
-      <div class="sec-h"><h3>Daily Traffic &amp; Conversion</h3></div>
-      <div id="rv-trafficTable" class="loading">Loading...</div>
+      <div class="sec-h">
+        <h3>Daily Funnel &middot; Sessions &rarr; Buy Box &rarr; Units &rarr; Revenue <span class="note">paid vs organic split; organic columns are estimates (see note below)</span></h3>
+      </div>
+      <div id="rv-funnelTable" class="loading">Loading...</div>
+      <div class="ph2" style="margin-top:10px;font-size:12px">
+        <strong>How to read:</strong>
+        <em>Sessions</em> is Amazon's total PDP sessions for the day.
+        <em>Paid</em> = clicks on our Amazon Ads (SP/SB/SD).
+        <em>Organic (est)</em> = Sessions &minus; Paid Clicks &mdash; directional; Amazon's session bucketing is not 1:1 with ad clicks.
+        <em>Buy Box %</em> is sessions-weighted &mdash; if we don't own BB, sessions don't convert.
+        <em>Units</em> and <em>Revenue</em> are today's totals; <em>Paid Rev</em> is 7-day last-click attribution from Amazon Ads (can exceed total revenue on short windows because of attribution lookforward).
+        No add-to-cart metric &mdash; Amazon's Sales &amp; Traffic report doesn't expose it.
+      </div>
     </div>
   </div>
 
@@ -323,7 +340,7 @@ function loadOverview(){
   api('/v1/overview/pacing').then(renderMTD).catch(showErr('ov-mtd-rev'));
   api('/v1/marketing/blended?days=7').then(renderBlended).catch(showErr('ov-7d-spend'));
   api('/v1/amazon/revenue?days='+range.days).then(renderOverviewRev).catch(showErr('ov-revTable'));
-  api('/v1/amazon/traffic?days=7').then(renderOvBuyBox).catch(()=>{});
+  api('/v1/amazon/funnel?days=30').then(renderOvFunnel).catch(()=>{});
   api('/v1/amazon/serp-overview').then(renderOvSERP).catch(()=>{});
   api('/v1/amazon/catalogue-health?days=30').then(renderOvCatalog).catch(()=>{});
   api('/v1/amazon/ads-summary?days=7').then(renderOvAdMix).catch(showErr('ov-adMix'));
@@ -383,6 +400,34 @@ function renderOvCatalog(c){
   document.getElementById('ov-listings').textContent=fmt(c.amazon_listings);
   document.getElementById('ov-gap').textContent=fmt(c.asins_ad_spend_no_sales);
 }
+
+/* Funnel tile strip (Overview) — pulls from /v1/amazon/funnel's 7d tile block.
+ * Populates the existing Buy Box tile too (single source of truth). */
+function renderOvFunnel(f){
+  const t = (f && f.tiles && f.tiles.last_7d) ? f.tiles.last_7d : null;
+  const p = (f && f.tiles && f.tiles.prev_7d) ? f.tiles.prev_7d : null;
+  if(!t) return;
+  const $ = (id)=>document.getElementById(id);
+  $('ov-fn-sessions').textContent = fmt(t.sessions);
+  $('ov-fn-paid').textContent = t.paid_share_pct!=null ? pct(t.paid_share_pct,1) : '--';
+  $('ov-fn-bb').textContent = t.buy_box_pct!=null ? pct(t.buy_box_pct,2) : '--';
+  $('ov-fn-conv').textContent = t.conv_rate!=null ? pct(t.conv_rate,2) : '--';
+  // Shared Buy Box tile in the KPI grid (keeps both in sync)
+  $('ov-bb').textContent = t.buy_box_pct!=null ? pct(t.buy_box_pct,2) : '--';
+  // Deltas vs prior 7d
+  function setDelta(id, v){
+    const el = $(id); if(!el) return;
+    if(v==null){ el.className='kd n'; el.innerHTML='&nbsp;'; return; }
+    const cls = v>=0 ? 'u' : 'd';
+    const arrow = v>=0 ? '\u2191' : '\u2193';
+    el.className = 'kd '+cls;
+    el.innerHTML = arrow+' '+Math.abs(v).toFixed(1)+'% WoW';
+  }
+  setDelta('ov-fn-sessions-d', f.tiles.sessions_wow_pct);
+  setDelta('ov-fn-paid-d',     f.tiles.paid_share_wow_pct);
+  setDelta('ov-fn-bb-d',       f.tiles.buy_box_wow_pct);
+  setDelta('ov-fn-conv-d',     f.tiles.conv_wow_pct);
+}
 function renderOvAdMix(a){
   const el=document.getElementById('ov-adMix');
   if(!a.data||!a.data.length){el.innerHTML='<div class="empty">No ad data</div>';return;}
@@ -402,68 +447,72 @@ function renderOvAdMix(a){
   el.innerHTML=html;
 }
 
-/* ========== REVENUE & TRAFFIC ========== */
+/* ========== REVENUE & TRAFFIC — daily funnel ========== */
 function loadRevenue(){
   document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
-  api('/v1/amazon/revenue?days='+range.days).then(renderRevenueView).catch(showErr('rv-revTable'));
-  api('/v1/amazon/traffic?days='+range.days).then(renderTrafficView).catch(showErr('rv-trafficTable'));
+  api('/v1/amazon/funnel?days='+range.days).then(renderFunnelView).catch(showErr('rv-funnelTable'));
 }
-function renderRevenueView(r){
-  if(r.totals){
-    document.getElementById('rv-tot').textContent=cur(r.totals.revenue);
-    document.getElementById('rv-units').textContent=fmt(r.totals.units);
-    document.getElementById('rv-orders').textContent=fmt(r.totals.orders);
-    document.getElementById('rv-asp').textContent=r.totals.asp!=null?cur(r.totals.asp):'--';
-  }
-  if(r.tiles){
-    const d=document.getElementById('rv-tot-sub');
-    if(r.tiles.last_7d_wow_pct!=null){
-      const cls=r.tiles.last_7d_wow_pct>=0?'u':'d';
-      d.className='kd '+cls;
-      d.innerHTML=(r.tiles.last_7d_wow_pct>=0?'\u2191':'\u2193')+' 7d '+Math.abs(r.tiles.last_7d_wow_pct).toFixed(1)+'% WoW';
+
+/* Single-table daily funnel renderer. Columns:
+ *   Date | Sessions | Paid clicks | Organic (est) | Paid % | BB % | Units | Conv % | Revenue | Paid rev (7d) | Organic rev (est)
+ * The "Organic *" columns are server-computed as max(0, total − paid). On
+ * short windows paid_revenue_7d can exceed total revenue because Amazon's
+ * 7-day last-click attribution looks forward — organic_rev_est clamps to 0
+ * in those cases; the footnote on the page explains. */
+function renderFunnelView(f){
+  if(f && f.totals){
+    const t = f.totals;
+    document.getElementById('rv-sessions').textContent = fmt(t.sessions);
+    document.getElementById('rv-paid-share').textContent = t.paid_share_pct!=null ? pct(t.paid_share_pct,1) : '--';
+    document.getElementById('rv-bb').textContent = t.buy_box_pct!=null ? pct(t.buy_box_pct,2) : '--';
+    document.getElementById('rv-units').textContent = fmt(t.units);
+    document.getElementById('rv-conv').textContent = t.conversion_rate!=null ? pct(t.conversion_rate,2) : '--';
+    document.getElementById('rv-tot').textContent = cur(t.revenue);
+    document.getElementById('rv-paid-rev').textContent = cur(t.paid_revenue_7d);
+    const d = document.getElementById('rv-sessions-sub');
+    if(f.tiles && f.tiles.sessions_wow_pct!=null){
+      const v = f.tiles.sessions_wow_pct;
+      const cls = v>=0 ? 'u' : 'd';
+      const arrow = v>=0 ? '\u2191' : '\u2193';
+      d.className = 'kd '+cls;
+      d.innerHTML = arrow+' '+Math.abs(v).toFixed(1)+'% 7d WoW';
     }
   }
-  const el=document.getElementById('rv-revTable');
-  if(!r.data||!r.data.length){el.innerHTML='<div class="empty">No data in window</div>';return;}
-  let html='<table class="tbl"><thead><tr><th>Date</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th><th class="r">ASP</th><th class="r">DoD</th><th class="r">WoW</th><th class="r">MoM</th><th class="r">YoY</th></tr></thead><tbody>';
-  for(const row of r.data.slice().reverse()){
-    html+=`<tr>
-      <td class="hi">${shortD(row.date)}</td>
-      <td class="mn2 r">${cur(row.revenue)}</td>
-      <td class="mn2 r">${fmt(row.units)}</td>
-      <td class="mn2 r">${fmt(row.orders)}</td>
-      <td class="mn2 r">${row.asp!=null?cur(row.asp):'--'}</td>
-      <td class="r">${dp(row.dod_pct)}</td>
-      <td class="r">${dp(row.wow_pct)}</td>
-      <td class="r">${dp(row.mom_pct)}</td>
-      <td class="r">${dp(row.yoy_pct)}</td>
-    </tr>`;
-  }
-  html+='</tbody></table>';
-  el.innerHTML=html;
-}
-function renderTrafficView(t){
-  const el=document.getElementById('rv-trafficTable');
-  if(!t.data||!t.data.length){el.innerHTML='<div class="empty">No traffic data</div>';return;}
-  // Last-7d conv rate tile
-  const last7=t.data.slice(-7);
-  const sess=last7.reduce((a,r)=>a+(r.sessions||0),0);
-  const units=last7.reduce((a,r)=>a+(r.units||0),0);
-  document.getElementById('rv-conv').textContent=sess?pct(units/sess*100):'--';
-  let html='<table class="tbl"><thead><tr><th>Date</th><th class="r">Sessions</th><th class="r">Page Views</th><th class="r">Buy Box %</th><th class="r">Units</th><th class="r">Conv %</th><th class="r">Revenue</th></tr></thead><tbody>';
-  for(const row of t.data.slice().reverse()){
-    html+=`<tr>
+
+  const el = document.getElementById('rv-funnelTable');
+  if(!f || !f.data || !f.data.length){ el.innerHTML = '<div class="empty">No data in window</div>'; return; }
+
+  let html = '<table class="tbl"><thead><tr>'
+    + '<th>Date</th>'
+    + '<th class="r">Sessions</th>'
+    + '<th class="r">Paid clicks</th>'
+    + '<th class="r">Organic (est)</th>'
+    + '<th class="r">Paid %</th>'
+    + '<th class="r">BB %</th>'
+    + '<th class="r">Units</th>'
+    + '<th class="r">Conv %</th>'
+    + '<th class="r">Revenue</th>'
+    + '<th class="r">Paid rev (7d)</th>'
+    + '<th class="r">Organic rev (est)</th>'
+    + '</tr></thead><tbody>';
+
+  for(const row of f.data.slice().reverse()){
+    html += `<tr>
       <td class="hi">${shortD(row.date)}</td>
       <td class="mn2 r">${fmt(row.sessions)}</td>
-      <td class="mn2 r">${fmt(row.page_views)}</td>
+      <td class="mn2 r">${fmt(row.paid_clicks)}</td>
+      <td class="mn2 r">${fmt(row.organic_sessions_est)}</td>
+      <td class="mn2 r">${row.paid_share_pct!=null?pct(row.paid_share_pct,1):'--'}</td>
       <td class="mn2 r">${row.buy_box_pct!=null?pct(row.buy_box_pct,1):'--'}</td>
       <td class="mn2 r">${fmt(row.units)}</td>
       <td class="mn2 r">${row.conversion_rate!=null?pct(row.conversion_rate,2):'--'}</td>
       <td class="mn2 r">${cur(row.revenue)}</td>
+      <td class="mn2 r">${cur(row.paid_revenue_7d)}</td>
+      <td class="mn2 r">${cur(row.organic_revenue_est)}</td>
     </tr>`;
   }
-  html+='</tbody></table>';
-  el.innerHTML=html;
+  html += '</tbody></table>';
+  el.innerHTML = html;
 }
 
 /* ========== ADS (Amazon + Google share markup) ========== */
