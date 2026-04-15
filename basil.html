@@ -443,11 +443,15 @@
         <div class="sec-h"><h3>Top Return Contributors <span class="note" id="rt-contrib-hdr">&nbsp;</span></h3></div>
         <div id="rt-contribTable" class="loading">Loading...</div>
         <div class="ph2" style="margin-top:10px;font-size:12px">
+          <strong>How Defect Rate is computed:</strong>
+          defect-related returns (DEFECTIVE, QUALITY_UNACCEPTABLE, DAMAGED_BY_FC, DAMAGED_BY_CARRIER, MISSING_PARTS, ITEM_DAMAGED) &divide; total orders placed in the window.
+          This is the absolute QC signal &mdash; &ldquo;of the orders we shipped, what % came back as defective.&rdquo;
+          Thresholds: &ge;8% red (severe), 4–8% yellow (watch), &lt;4% green. Hover the badge for the full ratio.
+          <br>
           <strong>Reading the reason mix:</strong>
           <em>UNWANTED_ITEM / FOUND_BETTER_PRICE / NOT_AS_DESCRIBED</em> dominant &rarr; <strong>listing-quality signal</strong> (photos, title, expectation mismatch).
           <em>DEFECTIVE / QUALITY_UNACCEPTABLE / DAMAGED_BY_FC</em> dominant &rarr; <strong>product-quality signal</strong> (supplier, QC, or packaging).
           <em>UNDELIVERABLE_REFUSED / MISSED_ESTIMATED_DELIVERY</em> dominant &rarr; <strong>fulfilment signal</strong> (ship speed, address data, logistics).
-          Return rate here is cohort-aligned (placed in last 30d, currently RTO/RVP).
         </div>
       </div>
     </div>
@@ -1419,12 +1423,13 @@ function renderReturns(r){
     barsEl.innerHTML = `<div class="pie-wrap">${svg}<div class="pie-lg">${legend}</div></div>`;
   }
 
-  // Top contributors table — sort by defect rate × returns volume to surface
-  // the most actionable ASINs first, not just the highest-return-volume ones.
+  // Top contributors table — sort by defect return VOLUME (not rate alone) so
+  // a 2% defect on 10K orders doesn't get buried under a 20% defect on 50 orders.
+  // Rate column surfaces low-volume-but-high-rate ASINs separately.
   const contribEl = document.getElementById('rt-contribTable');
   const asins = r.by_asin || [];
   document.getElementById('rt-contrib-hdr').innerHTML = asins.length
-    ? asins.length+' ASINs · window '+r.window_start+' → '+r.window_end+' · ⚠ = defect-related (actionable via QC)'
+    ? asins.length+' ASINs · window '+r.window_start+' → '+r.window_end+' · Defect Rate = defect returns ÷ orders placed in window'
     : 'no return contributors in window';
   if(!asins.length){
     contribEl.innerHTML = '<div class="empty">No return events in window</div>';
@@ -1452,8 +1457,11 @@ function renderReturns(r){
       const drate = a.defect_rate_pct;
       let defectBadge = '<span style="color:var(--t3)">—</span>';
       if(drate!=null){
-        const dCls = drate >= 30 ? 'oos' : drate >= 15 ? 'low' : 'hl';
-        defectBadge = `<span class="stp ${dCls}" title="${a.defect_returns} of ${a.returns_count} returns are defect-related">${drate.toFixed(1)}%</span>`;
+        // Thresholds calibrated for % of orders (not % of returns):
+        //   ≥ 8% = red (severe QC problem) · 4–8% = yellow (watch) · <4% = green
+        const dCls = drate >= 8 ? 'oos' : drate >= 4 ? 'low' : 'hl';
+        const tip = `${a.defect_returns} defect returns ÷ ${a.orders_placed_noncancel} orders placed · ${a.defect_share_of_returns_pct}% of this ASIN's returns`;
+        defectBadge = `<span class="stp ${dCls}" title="${tip}">${drate.toFixed(1)}%</span>`;
       }
       // Inline reasons — defect ones highlighted with .dfc (red with warning icon)
       const reasons = (a.top_reasons||[]).map(tr=>{
