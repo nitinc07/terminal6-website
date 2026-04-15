@@ -30,6 +30,28 @@
 /* PHASE-2 CALLOUT — Basil's "coming next" blocks on Agents/Shopify/Other tabs */
 .ph2{background:var(--bg-white);border:1px dashed var(--border);border-left:3px solid var(--tm);border-radius:var(--rs);padding:16px 18px;margin-top:10px;font-size:13px;color:var(--t2);line-height:1.5}
 .ph2 strong{color:var(--t1)}
+
+/* INVENTORY & FULFILLMENT — status pills */
+.stp{display:inline-block;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:500;letter-spacing:.02em}
+.stp.oos{background:var(--al);color:var(--a)}
+.stp.low{background:#FFF3DD;color:#B8860B}
+.stp.hl{background:var(--gl);color:var(--g)}
+.stp.dor{background:var(--bg-cream);color:var(--t3)}
+.stp.disp{background:var(--gl);color:var(--g)}
+.stp.ord{background:#FFF3DD;color:#B8860B}
+.stp.can{background:var(--al);color:var(--a)}
+/* donut container (simple SVG, no chart lib) */
+.dn-wrap{display:flex;align-items:center;gap:28px;padding:8px 4px}
+.dn-svg{flex:0 0 auto}
+.dn-lg{flex:1;font-size:13px;color:var(--t2);line-height:1.8}
+.dn-lg .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px;vertical-align:middle}
+.dn-lg .n{font-weight:500;color:var(--t1)}
+/* stacked bar chart (daily status) */
+.sb-row{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:12px}
+.sb-row .d{width:72px;color:var(--t3);font-family:var(--mono);font-size:11px}
+.sb-row .bar{flex:1;display:flex;height:18px;border-radius:3px;overflow:hidden;background:var(--bg-cream)}
+.sb-row .seg{height:100%}
+.sb-row .tot{width:56px;text-align:right;color:var(--t2);font-family:var(--mono);font-size:11px}
 </style>
 <script>window.T6_BRAND_SLUG = 'basil';</script>
 <script src="/shared.js"></script>
@@ -51,6 +73,7 @@
     <div class="si" onclick="sw('gads',this)"><div class="ic">&#128269;</div><span>Google Ads</span></div>
     <div class="si" onclick="sw('serp',this)"><div class="ic">&#128208;</div><span>SERP Rank</span></div>
     <div class="si" onclick="sw('catalog',this)"><div class="ic">&#128230;</div><span>Catalogue</span></div>
+    <div class="si" onclick="sw('inventory',this)"><div class="ic">&#128230;</div><span>Inventory &amp; Fulfillment</span></div>
   </div>
   <div class="ss">
     <div class="sl">Coming Next</div>
@@ -252,6 +275,54 @@
     </div>
   </div>
 
+  <!-- ========== INVENTORY & FULFILLMENT ========== -->
+  <div class="vw" id="v-inventory">
+    <div class="head">
+      <div class="icon">&#128230;</div>
+      <div>
+        <h2>Inventory &amp; Fulfillment</h2>
+        <p class="sub">FBA stock levels, days-of-cover by ASIN, order status &amp; cancellations. Sourced from daily_product_inventory + daily_item_sales (Amazon IN).</p>
+      </div>
+    </div>
+
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Fulfillable Units</div><div class="kv" id="iv-ful">--</div><div class="kd n" id="iv-ful-sub">&nbsp;</div></div>
+      <div class="cd"><div class="kl">OOS ASINs</div><div class="kv" id="iv-oos">--</div><div class="kd n" id="iv-oos-sub">of catalog</div></div>
+      <div class="cd"><div class="kl">Cancellation Rate (7d)</div><div class="kv" id="iv-cancel">--</div><div class="kd n" id="iv-cancel-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Inbound Units</div><div class="kv" id="iv-inbound">--</div><div class="kd n" id="iv-inbound-sub">on the way to FBA</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h3>Order Status &middot; last 30 days <span class="note">dispatched &middot; pending &middot; cancelled &mdash; stacked per day</span></h3></div>
+      <div id="iv-statusBar" class="loading">Loading...</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+      <div class="sec" style="margin-bottom:0">
+        <div class="sec-h"><h3>Fulfillment Mix <span class="note">last 30 days &middot; order lines</span></h3></div>
+        <div id="iv-fcMix" class="loading">Loading...</div>
+      </div>
+      <div class="sec" style="margin-bottom:0">
+        <div class="sec-h"><h3>Recent Cancellations <span class="note">latest 20 lines</span></h3></div>
+        <div id="iv-cancelTable" class="loading">Loading...</div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h">
+        <h3>Per-ASIN Inventory <span class="note" id="iv-perAsinCounts">&nbsp;</span></h3>
+      </div>
+      <div id="iv-perAsinTable" class="loading">Loading...</div>
+      <div class="ph2" style="margin-top:10px;font-size:12px">
+        <strong>How to read:</strong>
+        <em>Days of cover</em> = fulfillable units &divide; 14-day avg velocity.
+        <em>Status</em>: &#128308; OOS (0 fulfillable, has velocity), &#128993; Low (&lt;14 days cover),
+        &#128994; Healthy (&ge;14 days), &#9899; Dormant (no stock, no velocity &mdash; likely discontinued).
+        Inventory is Amazon FBA only &mdash; MFN / Easy Ship stock lives in the brand's own warehouse and isn't captured here.
+      </div>
+    </div>
+  </div>
+
   <!-- ========== PLACEHOLDERS ========== -->
   <div class="vw" id="v-agents">
     <div class="head">
@@ -308,6 +379,7 @@ const viewTitles={
   gads:'&#128269; Google Ads',
   serp:'&#128208; SERP Rank',
   catalog:'&#128230; Catalogue',
+  inventory:'&#128230; Inventory &amp; Fulfillment',
   agents:'&#129302; Growth Agents',
   shopify:'&#128717; Shopify D2C',
   otherch:'&#128722; Other Channels',
@@ -332,6 +404,7 @@ function sw(id,el){
   if(id==='gads') loadAds('google');
   if(id==='serp') loadSERP();
   if(id==='catalog') loadCatalog();
+  if(id==='inventory') loadInventory();
 }
 
 /* ========== OVERVIEW ========== */
@@ -657,6 +730,177 @@ function renderCatalog(c){
   }
   html+='</tbody></table>';
   el.innerHTML=html;
+}
+
+/* ========== INVENTORY & FULFILLMENT ========== */
+function loadInventory(){
+  api('/v1/amazon/inventory/summary').then(renderInvSummary).catch(showErr('iv-ful'));
+  api('/v1/amazon/fulfillment/timeseries?days=30').then(renderFulfillment).catch(showErr('iv-statusBar'));
+  api('/v1/amazon/inventory/per_asin').then(renderPerAsin).catch(showErr('iv-perAsinTable'));
+}
+
+function renderInvSummary(s){
+  if(!s) return;
+  const inv = s.inventory || {};
+  const c = s.cancellations || {};
+  document.getElementById('iv-ful').textContent = fmt(inv.fulfillable);
+  document.getElementById('iv-ful-sub').textContent = fmt(inv.asins_sellable)+' of '+fmt(inv.asins_total)+' ASINs in stock';
+  document.getElementById('iv-oos').textContent = fmt(inv.asins_oos);
+  document.getElementById('iv-oos-sub').textContent = inv.asins_total ? pct(inv.asins_oos/inv.asins_total*100,0)+' of catalog' : 'of catalog';
+  document.getElementById('iv-inbound').textContent = fmt(inv.inbound);
+  document.getElementById('iv-cancel').textContent = c.last_7d_pct!=null ? pct(c.last_7d_pct,2) : '--';
+  const d = document.getElementById('iv-cancel-d');
+  if(c.delta_pp!=null){
+    const up = c.delta_pp > 0;
+    const arrow = up ? '\u2191' : '\u2193';
+    // cancellation rate rising is bad (d = down-red), falling is good (u = up-green)
+    const cls = up ? 'd' : 'u';
+    d.className = 'kd '+cls;
+    d.innerHTML = arrow+' '+Math.abs(c.delta_pp).toFixed(2)+'pp vs prior 7d ('+c.last_7d_lines_cancelled+' of '+c.last_7d_lines_total+' lines)';
+  } else {
+    d.className = 'kd n';
+    d.innerHTML = '&nbsp;';
+  }
+}
+
+function renderFulfillment(f){
+  // 1. Status stacked bar (daily)
+  const sbEl = document.getElementById('iv-statusBar');
+  const daily = f.status_daily || [];
+  if(!daily.length){
+    sbEl.innerHTML = '<div class="empty">No order data in window</div>';
+  } else {
+    const maxTot = Math.max(...daily.map(r=>r.total||0), 1);
+    let html = '';
+    for(const r of daily){
+      const tot = r.total||0;
+      const pct = v => tot ? (v/tot*100) : 0;
+      html += `<div class="sb-row">
+        <div class="d">${shortD(r.date)}</div>
+        <div class="bar" title="dispatched ${r.dispatched} · ordered ${r.ordered} · cancelled ${r.cancelled}">
+          <div class="seg" style="width:${pct(r.dispatched)}%;background:var(--g)"></div>
+          <div class="seg" style="width:${pct(r.ordered)}%;background:#D4A017"></div>
+          <div class="seg" style="width:${pct(r.cancelled)}%;background:var(--a)"></div>
+        </div>
+        <div class="tot">${fmt(tot)}</div>
+      </div>`;
+    }
+    // Legend
+    html = `<div style="display:flex;gap:18px;font-size:12px;color:var(--t2);margin-bottom:10px">
+      <span><span class="dn-lg-sw" style="display:inline-block;width:10px;height:10px;background:var(--g);border-radius:2px;margin-right:6px"></span>Dispatched</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#D4A017;border-radius:2px;margin-right:6px"></span>Pending</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--a);border-radius:2px;margin-right:6px"></span>Cancelled</span>
+    </div>` + html;
+    sbEl.innerHTML = html;
+  }
+
+  // 2. Fulfillment mix donut (window total)
+  const tots = f.fulfillment_totals || {};
+  const fcEl = document.getElementById('iv-fcMix');
+  const total = (tots.FBA||0)+(tots.EASY_SHIP||0)+(tots.SELF_SHIP||0)+(tots.UNKNOWN||0);
+  if(!total){
+    fcEl.innerHTML = '<div class="empty">No fulfillment data</div>';
+  } else {
+    // Simple SVG donut
+    const r = 52, c = 2*Math.PI*r, cx = 64, cy = 64;
+    let offset = 0;
+    const segments = [
+      {k:'FBA', color:'#3DA07A', label:'FBA'},
+      {k:'EASY_SHIP', color:'#D4A017', label:'Easy Ship'},
+      {k:'SELF_SHIP', color:'#6B7280', label:'Self Ship'},
+      {k:'UNKNOWN', color:'#C0C0C0', label:'Unknown'},
+    ];
+    let svg = `<svg class="dn-svg" width="128" height="128" viewBox="0 0 128 128">`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#F2F0EB" stroke-width="16"/>`;
+    let legend = '';
+    for(const seg of segments){
+      const n = tots[seg.k] || 0;
+      if(!n) continue;
+      const share = n / total;
+      const dash = share * c;
+      svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="16"
+        stroke-dasharray="${dash} ${c-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})"/>`;
+      offset += dash;
+      legend += `<div><span class="sw" style="background:${seg.color}"></span><span class="n">${seg.label}</span> &middot; ${fmt(n)} (${(share*100).toFixed(1)}%)</div>`;
+    }
+    svg += `<text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="11" fill="#666" font-family="var(--mono)">total lines</text>`;
+    svg += `<text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="16" fill="#111" font-weight="600" font-family="var(--mono)">${fmt(total)}</text>`;
+    svg += `</svg>`;
+    fcEl.innerHTML = `<div class="dn-wrap">${svg}<div class="dn-lg">${legend}</div></div>`;
+  }
+
+  // 3. Recent cancellations table
+  const cEl = document.getElementById('iv-cancelTable');
+  const cans = f.recent_cancellations || [];
+  if(!cans.length){
+    cEl.innerHTML = '<div class="empty">No cancellations in window</div>';
+  } else {
+    let html = '<table class="tbl"><thead><tr><th>Date</th><th>ASIN</th><th>Product</th><th>Order</th></tr></thead><tbody>';
+    for(const r of cans){
+      const name = (r.product_name||'').length > 48 ? r.product_name.slice(0,48)+'…' : (r.product_name||'--');
+      html += `<tr>
+        <td>${shortD(r.date)}</td>
+        <td class="mn2 hi">${r.asin||'--'}</td>
+        <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+        <td class="mn2" style="font-size:11px;color:var(--t3)">${r.order_id||'--'}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    cEl.innerHTML = html;
+  }
+}
+
+function renderPerAsin(p){
+  const el = document.getElementById('iv-perAsinTable');
+  const counts = p.status_counts || {};
+  document.getElementById('iv-perAsinCounts').innerHTML =
+    `${p.count||0} ASINs &middot; &#128308; ${counts.oos||0} OOS &middot; &#128993; ${counts.low||0} low &middot; &#128994; ${counts.healthy||0} healthy &middot; &#9899; ${counts.dormant||0} dormant &middot; snapshot ${p.snapshot_date||'--'}`;
+
+  if(!p.data || !p.data.length){
+    el.innerHTML = '<div class="empty">No inventory data yet</div>';
+    return;
+  }
+  // Sort: oos first, then low, then by days_cover ascending (most urgent at top)
+  const rank = {oos:0, low:1, healthy:2, dormant:3};
+  const sorted = p.data.slice().sort((a,b)=>{
+    if(rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
+    // within status, ascending days_of_cover (nulls last)
+    const ac = a.days_of_cover==null ? Infinity : a.days_of_cover;
+    const bc = b.days_of_cover==null ? Infinity : b.days_of_cover;
+    return ac - bc;
+  });
+  const pill = s => {
+    if(s==='oos') return '<span class="stp oos">OOS</span>';
+    if(s==='low') return '<span class="stp low">Low cover</span>';
+    if(s==='healthy') return '<span class="stp hl">Healthy</span>';
+    return '<span class="stp dor">Dormant</span>';
+  };
+  let html = '<table class="tbl"><thead><tr>'
+    + '<th>Status</th><th>ASIN</th><th>Product</th>'
+    + '<th class="r">Fulfillable</th><th class="r">Reserved</th><th class="r">Inbound</th><th class="r">Unsell</th>'
+    + '<th class="r">14d Units</th><th class="r">Daily Vel</th><th class="r">Days Cover</th>'
+    + '</tr></thead><tbody>';
+  for(const r of sorted){
+    const name = (r.product_name||'').length > 56 ? r.product_name.slice(0,56)+'…' : (r.product_name||'--');
+    const dc = r.days_of_cover;
+    const dcCell = dc==null
+      ? '<span style="color:var(--t3)">—</span>'
+      : `<span class="mn2">${dc.toFixed(1)}</span>`;
+    html += `<tr>
+      <td>${pill(r.status)}</td>
+      <td class="mn2 hi">${r.asin||'--'}</td>
+      <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+      <td class="mn2 r">${fmt(r.fulfillable_qty)}</td>
+      <td class="mn2 r">${fmt(r.reserved_qty)}</td>
+      <td class="mn2 r">${fmt(r.inbound_qty)}</td>
+      <td class="mn2 r">${fmt(r.unfulfillable_qty)}</td>
+      <td class="mn2 r">${fmt(r.units_sold_14d)}</td>
+      <td class="mn2 r">${r.velocity_14d_avg ? r.velocity_14d_avg.toFixed(1) : '0'}</td>
+      <td class="r">${dcCell}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  el.innerHTML = html;
 }
 
 /* ========== RANGE PILLS ========== */
