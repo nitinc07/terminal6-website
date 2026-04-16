@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<title>Terminal6 — Basil</title>
+<title>Terminal6 — Demo</title>
 <script>
 /* ACCESS GATE — checks sessionStorage for signed-in user.
    Actual brand access is verified server-side by the API (brand_users table). */
@@ -164,7 +164,7 @@
 .ag-trace .step:last-child{border-bottom:none}
 .ag-trace .step-num{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--acc);background:var(--gl);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
 </style>
-<script>window.T6_BRAND_SLUG = 'basil';</script>
+<script>window.T6_BRAND_SLUG = 'demo';</script>
 <script src="/shared.js?v=2026-04-15c"></script>
 </head>
 <body>
@@ -174,7 +174,7 @@
 <aside class="sb">
   <div class="sb-brand">
     <h1><span class="lm">T6</span>Terminal6</h1>
-    <div class="bs"><span style="display:flex;align-items:center;gap:7px"><span class="bd"></span>Basil</span><span style="font-size:11px;color:var(--tm)">V1</span></div>
+    <div class="bs"><span style="display:flex;align-items:center;gap:7px"><span class="bd"></span>Demo Brand</span><span style="font-size:11px;color:var(--tm)">V1</span></div>
   </div>
   <div class="ss">
     <div class="sl">Amazon IN</div>
@@ -615,13 +615,13 @@
   </div>
 
   <div class="vw" id="v-shopify">
-    <div class="head"><div class="icon" style="background:#96BF48">&#128717;</div><div><h2>Shopify D2C</h2><p class="sub">shareyourbasil.myshopify.com</p></div></div>
+    <div class="head"><div class="icon" style="background:#96BF48">&#128717;</div><div><h2>Shopify D2C</h2><p class="sub">Connected Shopify Store</p></div></div>
     <div class="ph2"><strong>Pending:</strong> Shopify custom-app token install. Once connected, this tab picks up Shopify orders, sessions (GA4), and blended cross-channel revenue.</div>
   </div>
 
   <div class="vw" id="v-otherch">
     <div class="head"><div class="icon" style="background:var(--tm)">&#128722;</div><div><h2>Other Channels</h2><p class="sub">Flipkart &middot; Myntra &middot; Amazon UAE (not active)</p></div></div>
-    <div class="ph2">Flipkart (57 listings) and Myntra (58 listings) are catalogued but sales / ads ingestion isn't live yet. Amazon UAE profile exists but unused &mdash; confirmed inactive 14 Apr.</div>
+    <div class="ph2">Flipkart and Myntra listings are catalogued but sales / ads ingestion isn't live yet. Additional marketplace connectors coming soon.</div>
   </div>
 
 
@@ -894,7 +894,7 @@ function renderFunnelView(f){
 
   let html = '<table class="tbl"><thead><tr>'
     + '<th>Date</th>'
-    + '<th class="r">Sessions '+T6.tip('Amazon PDP sessions that day across all Basil ASINs. From daily_product_page_views.')+'</th>'
+    + '<th class="r">Sessions '+T6.tip('Amazon PDP sessions that day across all ASINs. From daily_product_page_views.')+'</th>'
     + '<th class="r">Paid clicks '+T6.tip('Clicks on Amazon Ads (SP+SB+SD) that day.')+'</th>'
     + '<th class="r">Organic (est) '+T6.tip({formula: 'max(0, sessions − paid clicks)', note:'Directional only. Amazon\u2019s sessions aren\u2019t strictly 1:1 with ad clicks, so this can underestimate.'})+'</th>'
     + '<th class="r">Paid % '+T6.tip({formula: 'paid clicks ÷ sessions', note:'Share of traffic driven by paid ads.'})+'</th>'
@@ -1224,7 +1224,7 @@ function installOtherTileTips(){
   setR('tip-ov-listings', 'Distinct active Amazon IN ChannelListings. One per ASIN.');
   setR('tip-ov-gap', {formula: 'ASINs with ad_spend > 0 AND revenue = 0, last 30d', note: 'Gap signal — paying for traffic but not converting. Check listing quality, price, or buy-box eligibility.'});
   setR('tip-ov-bb', {formula: 'sessions-weighted average buy_box_pct', note: 'From Amazon S&T report. When our seller holds the Buy Box, sessions can convert. Otherwise traffic is wasted.'});
-  setR('tip-ov-fn-sessions', 'Total Amazon PDP sessions in last 7 days (from S&T report). Unique visitor sessions that viewed any Basil ASIN.');
+  setR('tip-ov-fn-sessions', 'Total Amazon PDP sessions in last 7 days (from S&T report). Unique visitor sessions that viewed any ASIN.');
   setR('tip-ov-fn-paid', {formula: 'paid clicks ÷ total sessions', note: 'Paid clicks from Amazon Ads. Directional — Amazon\u2019s session bucketing isn\u2019t strictly 1:1 with ad clicks.'});
   setR('tip-ov-fn-bb', 'Sessions-weighted buy-box %. Drop in BB = sessions stop converting.');
   setR('tip-ov-fn-conv', {formula: 'units ÷ sessions', note: 'Unit Session Percentage in Amazon\u2019s terminology. Higher is better.'});
