@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTM Prospects | Terminal6</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared.css">
+<style>
+/* GTM-specific styles */
+.gtm-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.gtm-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.gtm-stat .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); margin-bottom: 4px; }
+.gtm-stat .value { font-family: var(--mono); font-size: 24px; font-weight: 600; color: var(--text); }
+.gtm-stat .sub { font-size: 12px; color: var(--text-mid); margin-top: 2px; }
+
+.gtm-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
+.gtm-filters select, .gtm-filters input { font-family: var(--sans); font-size: 13px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); color: var(--text); }
+.gtm-filters input[type="search"] { width: 220px; }
+.gtm-filters select { min-width: 120px; }
+
+.gtm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.gtm-table thead { position: sticky; top: 0; z-index: 1; }
+.gtm-table th { background: var(--bg-warm); padding: 8px 10px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-mid); cursor: pointer; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.gtm-table th:hover { color: var(--accent); }
+.gtm-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.gtm-table tr:hover td { background: var(--accent-light); }
+
+.pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.pill-high { background: #dcfce7; color: #166534; }
+.pill-medium { background: #fef9c3; color: #854d0e; }
+.pill-low { background: #f3f4f6; color: #6b7280; }
+.pill-new { background: #dbeafe; color: #1e40af; }
+.pill-disq { background: #fecaca; color: #991b1b; }
+.pill-shopify { background: #d1fae5; color: #065f46; }
+.pill-custom { background: #e0e7ff; color: #3730a3; }
+.pill-woo { background: #fce7f3; color: #9d174d; }
+
+.amazon-badge { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.amazon-yes { background: #22c55e; }
+.amazon-no { background: #ef4444; }
+.amazon-unknown { background: #d1d5db; }
+
+a.dtc-link { color: var(--accent); text-decoration: none; font-size: 12px; }
+a.dtc-link:hover { text-decoration: underline; }
+
+.pagination { display: flex; align-items: center; gap: 8px; margin-top: 16px; justify-content: center; }
+.pagination button { font-family: var(--sans); font-size: 13px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); cursor: pointer; color: var(--text); }
+.pagination button:hover { background: var(--bg-warm); }
+.pagination button:disabled { opacity: 0.4; cursor: default; }
+.pagination .page-info { font-size: 13px; color: var(--text-mid); }
+
+.sort-arrow { font-size: 10px; margin-left: 3px; }
+
+.table-wrap { overflow-x: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
+
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-family: var(--serif); font-size: 28px; font-weight: 700; color: var(--text); margin: 0 0 4px 0; }
+.page-header p { font-size: 14px; color: var(--text-mid); margin: 0; }
+</style>
+</head>
+<body style="background: var(--bg); margin: 0; padding: 24px 32px; font-family: var(--sans);">
+
+<script>
+/* ACCESS GATE */
+(function(){
+  const saved=sessionStorage.getItem('t6_user');
+  if(!saved){location.replace('/home.html');document.documentElement.style.display='none';}
+})();
+</script>
+
+<div class="page-header">
+  <h1>GTM Prospects</h1>
+  <p>HIGH-fit brands across Amazon + DTC. <span id="total-label"></span></p>
+</div>
+
+<!-- Stats cards -->
+<div class="gtm-stats" id="stats-row"></div>
+
+<!-- Filters -->
+<div class="gtm-filters">
+  <select id="f-fit">
+    <option value="">All Fit</option>
+    <option value="HIGH" selected>HIGH</option>
+    <option value="MEDIUM">MEDIUM</option>
+    <option value="LOW">LOW</option>
+  </select>
+  <select id="f-geo">
+    <option value="">All Geo</option>
+    <option value="USA">USA</option>
+    <option value="United Kingdom">UK</option>
+    <option value="Australia">Australia</option>
+    <option value="Germany">Germany</option>
+    <option value="France">France</option>
+    <option value="Canada">Canada</option>
+    <option value="United Arab Emirates">UAE</option>
+  </select>
+  <select id="f-platform">
+    <option value="">All Platform</option>
+    <option value="Shopify">Shopify</option>
+    <option value="Custom">Custom</option>
+    <option value="WooCommerce">WooCommerce</option>
+    <option value="Magento">Magento</option>
+  </select>
+  <select id="f-amazon">
+    <option value="">Amazon: Any</option>
+    <option value="true">On Amazon</option>
+    <option value="false">Not on Amazon</option>
+  </select>
+  <select id="f-status">
+    <option value="">All Status</option>
+    <option value="NEW" selected>NEW</option>
+    <option value="DISQUALIFIED">DISQUALIFIED</option>
+  </select>
+  <input type="search" id="f-search" placeholder="Search brand or company...">
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table class="gtm-table">
+    <thead>
+      <tr>
+        <th data-col="brand_name">Brand</th>
+        <th data-col="company_name">Company</th>
+        <th data-col="geography">Geo</th>
+        <th data-col="category">Category</th>
+        <th data-col="revenue_2024">Rev 2024 ($M)</th>
+        <th data-col="revenue_cagr_5yr">CAGR 5yr</th>
+        <th>Amazon</th>
+        <th>DTC</th>
+        <th data-col="icp_fit">Fit</th>
+        <th data-col="outreach_status">Status</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  <button id="btn-prev" disabled>&laquo; Prev</button>
+  <span class="page-info" id="page-info"></span>
+  <button id="btn-next">Next &raquo;</button>
+</div>
+
+<script>
+(function(){
+  const API = 'https://api.terminal6.io';
+  function tok(){ return sessionStorage.getItem('t6_token') || ''; }
+  async function api(path){
+    const r = await fetch(API + path, { headers: { 'Authorization': 'Bearer ' + tok() } });
+    if(r.status === 401 || r.status === 403){ location.replace('/home.html'); return; }
+    return r.json();
+  }
+
+  let state = { page: 1, sort: 'revenue_2024', order: 'desc' };
+
+  // Stats
+  async function loadStats(){
+    const s = await api('/v1/gtm/prospects/stats');
+    if(!s) return;
+    const el = document.getElementById('stats-row');
+    el.innerHTML = `
+      <div class="gtm-stat"><div class="label">HIGH Fit (non-India)</div><div class="value">${(s.by_fit?.HIGH||0) - (s.by_geo?.India||0)}</div></div>
+      <div class="gtm-stat"><div class="label">Golden List</div><div class="value">${s.golden_list||0}</div><div class="sub">Amazon + DTC</div></div>
+      <div class="gtm-stat"><div class="label">On Amazon</div><div class="value">${s.amazon?.['True']||s.amazon?.['true']||0}</div></div>
+      <div class="gtm-stat"><div class="label">Shopify</div><div class="value">${s.by_platform?.Shopify||0}</div></div>
+      <div class="gtm-stat"><div class="label">Custom DTC</div><div class="value">${s.by_platform?.Custom||0}</div></div>
+      <div class="gtm-stat"><div class="label">New Leads</div><div class="value">${s.by_status?.NEW||0}</div></div>
+    `;
+  }
+
+  // Table
+  async function loadTable(){
+    const f = {
+      fit: document.getElementById('f-fit').value,
+      geo: document.getElementById('f-geo').value,
+      platform: document.getElementById('f-platform').value,
+      amazon: document.getElementById('f-amazon').value,
+      status: document.getElementById('f-status').value,
+      search: document.getElementById('f-search').value,
+    };
+    let q = `/v1/gtm/prospects?page=${state.page}&per_page=50&sort=${state.sort}&order=${state.order}`;
+    if(f.fit) q += `&fit=${f.fit}`;
+    if(f.geo) q += `&geo=${encodeURIComponent(f.geo)}`;
+    if(f.platform) q += `&platform=${f.platform}`;
+    if(f.amazon) q += `&amazon=${f.amazon}`;
+    if(f.status) q += `&status=${f.status}`;
+    if(f.search) q += `&search=${encodeURIComponent(f.search)}`;
+
+    const d = await api(q);
+    if(!d) return;
+
+    document.getElementById('total-label').textContent = `${d.total.toLocaleString()} brands`;
+
+    const tb = document.getElementById('table-body');
+    tb.innerHTML = d.data.map(r => `<tr>
+      <td><strong>${esc(r.brand_name)}</strong></td>
+      <td style="font-size:12px;color:var(--text-mid)">${esc(r.company_name||'')}</td>
+      <td>${esc(r.geography||'')}</td>
+      <td style="font-size:12px">${esc(r.category||'')}</td>
+      <td style="font-family:var(--mono);text-align:right">${r.revenue_2024 ? r.revenue_2024.toFixed(1) : '-'}</td>
+      <td style="font-family:var(--mono);text-align:right">${r.cagr_5yr ? (r.cagr_5yr > 0 ? '+' : '') + r.cagr_5yr.toFixed(1) + '%' : '-'}</td>
+      <td style="text-align:center"><span class="amazon-badge ${r.amazon_presence === true ? 'amazon-yes' : r.amazon_presence === false ? 'amazon-no' : 'amazon-unknown'}"></span></td>
+      <td>${r.dtc_website ? `<a class="dtc-link" href="https://${r.dtc_website}" target="_blank">${esc(r.dtc_website)}</a>` + (r.dtc_platform && r.dtc_platform !== 'None' ? ` <span class="pill pill-${r.dtc_platform.toLowerCase()}">${r.dtc_platform}</span>` : '') : '<span style="color:var(--text-light)">-</span>'}</td>
+      <td><span class="pill pill-${r.icp_fit?.toLowerCase()}">${r.icp_fit}</span></td>
+      <td><span class="pill ${r.outreach_status === 'NEW' ? 'pill-new' : 'pill-disq'}">${r.outreach_status}</span></td>
+    </tr>`).join('');
+
+    // Pagination
+    document.getElementById('page-info').textContent = `Page ${d.page} of ${d.pages}`;
+    document.getElementById('btn-prev').disabled = d.page <= 1;
+    document.getElementById('btn-next').disabled = d.page >= d.pages;
+  }
+
+  function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+  // Filter change handlers
+  ['f-fit','f-geo','f-platform','f-amazon','f-status'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => { state.page = 1; loadTable(); });
+  });
+  let searchTimeout;
+  document.getElementById('f-search').addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => { state.page = 1; loadTable(); }, 300);
+  });
+
+  // Sort
+  document.querySelectorAll('.gtm-table th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if(state.sort === col) state.order = state.order === 'desc' ? 'asc' : 'desc';
+      else { state.sort = col; state.order = 'desc'; }
+      // Update arrows
+      document.querySelectorAll('.sort-arrow').forEach(a => a.remove());
+      th.insertAdjacentHTML('beforeend', `<span class="sort-arrow">${state.order === 'desc' ? '▼' : '▲'}</span>`);
+      state.page = 1;
+      loadTable();
+    });
+  });
+
+  // Pagination
+  document.getElementById('btn-prev').addEventListener('click', () => { state.page--; loadTable(); });
+  document.getElementById('btn-next').addEventListener('click', () => { state.page++; loadTable(); });
+
+  // Init
+  loadStats();
+  loadTable();
+})();
+</script>
+
+</body>
+</html>
