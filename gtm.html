@@ -177,10 +177,11 @@ function handleGTMSignIn(response) {
   function tok(){ return sessionStorage.getItem('t6_token') || ''; }
   async function api(path){
     const r = await fetch(API + path, { headers: { 'Authorization': 'Bearer ' + tok() } });
-    if(r.status === 401 || r.status === 403){
+    if(r.status === 401){
       document.getElementById('login-prompt').style.display = 'block';
       return null;
     }
+    if(r.status === 403){ alert('Access denied — platform admin only'); return null; }
     return r.json();
   }
 
