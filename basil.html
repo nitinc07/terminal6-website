@@ -501,6 +501,11 @@
       <div class="sec-h"><h3>Monthly P&amp;L</h3></div>
       <div id="pnl-monthly-table" class="loading">Loading...</div>
     </div>
+    <!-- Fee Audit -->
+    <div class="sec">
+      <div class="sec-h"><h3>Fee Audit — Rate Card vs Settlement</h3></div>
+      <div id="pnl-fee-audit" class="loading">Loading...</div>
+    </div>
     <!-- Per-ASIN table -->
     <div class="sec">
       <div class="sec-h"><h3>Per-ASIN P&amp;L</h3></div>
@@ -536,20 +541,28 @@
     <div class="ph2">Flipkart (57 listings) and Myntra (58 listings) are catalogued but sales / ads ingestion isn't live yet. Amazon UAE profile exists but unused &mdash; confirmed inactive 14 Apr.</div>
   </div>
 
-  <!-- BUG REPORTS — always visible at bottom of page -->
-  <div id="bugSection" style="margin-top:40px;border-top:1px solid var(--border);padding-top:24px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <h3 style="font-family:var(--serif);font-size:16px;font-weight:600;color:var(--t1);margin:0">Bug Reports</h3>
-      <span id="bugCount" style="font-size:12px;color:var(--t3)"></span>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:18px">
-      <input id="bugInput" type="text" placeholder="Describe the bug..." style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--sans);background:var(--bg-white);color:var(--t1)" />
-      <button id="bugSubmit" onclick="submitBug()" style="padding:9px 18px;border:none;border-radius:var(--rs);background:var(--acc);color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);white-space:nowrap">Report Bug</button>
-    </div>
-    <div id="bugList" style="display:flex;flex-direction:column;gap:6px"></div>
-  </div>
 
 </main>
+</div>
+
+<!-- BUG REPORT PANEL — fixed bottom-right, collapsible -->
+<div id="bugPanel" style="position:fixed;bottom:0;right:24px;width:380px;z-index:800;font-family:var(--sans);transition:transform .2s ease">
+  <!-- collapsed tab -->
+  <div id="bugTab" onclick="toggleBugPanel()" style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--acc);color:#fff;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:500;user-select:none">
+    <span>&#128027; Bug Reports</span>
+    <span id="bugCount" style="font-size:11px;background:rgba(255,255,255,.25);padding:1px 7px;border-radius:8px;display:none"></span>
+    <span id="bugChevron" style="margin-left:auto;font-size:16px;transition:transform .2s">&#9650;</span>
+  </div>
+  <!-- expanded body -->
+  <div id="bugBody" style="display:none;background:var(--bg-white);border:1px solid var(--border);border-top:none;border-bottom:none;max-height:360px;overflow-y:auto">
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border-s)">
+      <div style="display:flex;gap:8px">
+        <input id="bugInput" type="text" placeholder="Describe the bug..." style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--sans);background:var(--bg);color:var(--t1)" />
+        <button id="bugSubmit" onclick="submitBug()" style="padding:8px 14px;border:none;border-radius:var(--rs);background:var(--acc);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans);white-space:nowrap">Submit</button>
+      </div>
+    </div>
+    <div id="bugList" style="padding:8px 14px 14px;display:flex;flex-direction:column;gap:6px"></div>
+  </div>
 </div>
 
 <!-- AUDIT DRAWER — opens from Amazon Ads audit cards -->
@@ -1683,6 +1696,7 @@ document.getElementById('ivSubPills').addEventListener('click', e=>{
 function loadPnL(){
   api('/v1/amazon/pnl/summary?days=90').then(renderPnLSummary).catch(showErr('pnl-waterfall'));
   api('/v1/amazon/pnl/monthly?months=6').then(renderPnLMonthly).catch(showErr('pnl-monthly-table'));
+  api('/v1/amazon/pnl/fee-audit?days=90').then(renderFeeAudit).catch(showErr('pnl-fee-audit'));
   api('/v1/amazon/pnl/by-asin?days=90&limit=50&sort=revenue').then(renderPnLTable).catch(showErr('pnl-asin-table'));
 }
 function renderPnLSummary(d){
@@ -1773,6 +1787,47 @@ function renderPnLMonthly(d){
   html+='</tbody></table>';
   el.innerHTML=html;
 }
+function renderFeeAudit(d){
+  const el=document.getElementById('pnl-fee-audit');
+  if(!d){el.innerHTML='<div class="empty">No fee audit data</div>';return;}
+  let html='';
+  // Summary card
+  if(d.total_potential_recovery>0){
+    html+='<div style="background:var(--rl);border:1px solid var(--r);border-radius:var(--rad);padding:12px 16px;margin-bottom:14px">';
+    html+='<div style="font-size:13px;font-weight:600;color:var(--r)">Potential Recovery: '+cur(d.total_potential_recovery)+'</div>';
+    html+='<div style="font-size:11px;color:var(--t2);margin-top:4px">'+d.asins_flagged+' of '+d.asins_audited+' ASINs flagged with fee overcharges vs Amazon\'s own rate card estimates.</div>';
+    html+='</div>';
+  }else{
+    html+='<div style="background:var(--gl);border:1px solid var(--g);border-radius:var(--rad);padding:12px 16px;margin-bottom:14px">';
+    html+='<div style="font-size:13px;font-weight:600;color:var(--g)">No overcharges detected</div>';
+    html+='<div style="font-size:11px;color:var(--t2);margin-top:4px">'+d.asins_audited+' ASINs audited against Amazon\'s FBA Estimated Fees report. All within expected range.</div>';
+    html+='</div>';
+  }
+  if(d.overcharges&&d.overcharges.length){
+    html+='<table class="tbl"><thead><tr>';
+    html+='<th>ASIN</th><th>Product</th><th class="r">Units</th><th>Fee Type</th>';
+    html+='<th class="r">Expected/unit</th><th class="r">Actual/unit</th><th class="r">Variance</th><th class="r">Recovery</th>';
+    html+='</tr></thead><tbody>';
+    for(const o of d.overcharges){
+      for(let i=0;i<o.flags.length;i++){
+        const f=o.flags[i];
+        const first=i===0;
+        html+='<tr>';
+        html+='<td class="mn2">'+(first?o.asin:'')+'</td>';
+        html+='<td>'+(first?(o.product_name||'').substring(0,30):'')+'</td>';
+        html+='<td class="mn2 r">'+(first?fmt(o.units):'')+'</td>';
+        html+='<td>'+f.fee_type+'</td>';
+        html+='<td class="mn2 r">'+cur(f.expected_per_unit)+'</td>';
+        html+='<td class="mn2 r" style="color:var(--r)">'+cur(f.actual_per_unit)+'</td>';
+        html+='<td class="mn2 r" style="color:var(--r)">+'+f.variance_pct.toFixed(0)+'%</td>';
+        html+='<td class="mn2 r" style="font-weight:600;color:var(--r)">'+cur(f.potential_recovery)+'</td>';
+        html+='</tr>';
+      }
+    }
+    html+='</tbody></table>';
+  }
+  el.innerHTML=html;
+}
 function renderPnLTable(d){
   const el=document.getElementById('pnl-asin-table');
   if(!d||!d.data||!d.data.length){el.innerHTML='<div class="empty">No per-ASIN P&amp;L data</div>';return;}
@@ -1822,27 +1877,38 @@ document.getElementById('catPills').addEventListener('click',e=>{
 document.getElementById('ctSearch').addEventListener('keydown',e=>{ if(e.key==='Enter') loadCatalog(); });
 
 /* ========== BUG REPORTS ========== */
+let bugOpen = false;
+function toggleBugPanel(){
+  bugOpen = !bugOpen;
+  document.getElementById('bugBody').style.display = bugOpen ? 'block' : 'none';
+  document.getElementById('bugChevron').style.transform = bugOpen ? 'rotate(180deg)' : '';
+  if(bugOpen) document.getElementById('bugInput').focus();
+}
 async function loadBugs(){
   try {
     const d = await api('/v1/feedback/list');
     const el = document.getElementById('bugList');
-    const open = d.items.filter(b => b.status === 'open').length;
-    document.getElementById('bugCount').textContent = open ? open + ' open' : '';
+    const openN = d.items.filter(b => b.status === 'open').length;
+    const badge = document.getElementById('bugCount');
+    if(openN){ badge.textContent = openN; badge.style.display = 'inline'; }
+    else { badge.style.display = 'none'; }
     if(!d.items.length){ el.innerHTML='<div style="font-size:13px;color:var(--t3);font-style:italic;padding:8px 0">No bugs reported yet.</div>'; return; }
     el.innerHTML = d.items.map(b => {
       const resolved = b.status === 'resolved';
-      const dt = b.created_at.split(' ')[0] || b.created_at.split('T')[0];
+      const dt = (b.created_at||'').split(' ')[0] || (b.created_at||'').split('T')[0];
       const who = b.submitted_by.split('@')[0];
-      const safe = escapeHtml(b.description);
-      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rs);${resolved?'opacity:.55':''}">
-        <span style="flex:1;font-size:13px;color:var(--t1);${resolved?'text-decoration:line-through':''}">${safe}</span>
-        <span style="font-size:11px;color:var(--t3);white-space:nowrap">${who} &middot; ${dt}</span>
-        ${resolved ? '<span style="font-size:11px;color:var(--g);font-weight:500">Fixed</span>' : '<span style="font-size:11px;color:var(--a);font-weight:500">Open</span>'}
+      const safe = escHtml(b.description);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:${resolved?'var(--bg-cream)':'var(--bg)'};border:1px solid var(--border-s);border-radius:var(--rs);${resolved?'opacity:.5':''}">
+        <span style="flex:1;font-size:12.5px;color:var(--t1);line-height:1.4;${resolved?'text-decoration:line-through':''}">${safe}</span>
+        <span style="font-size:10px;color:var(--t3);white-space:nowrap">${who} &middot; ${dt}</span>
+        ${resolved
+          ? '<span style="font-size:10px;color:var(--g);font-weight:600">FIXED</span>'
+          : '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--a);flex-shrink:0" title="Open"></span>'}
       </div>`;
     }).join('');
   } catch(e){ console.warn('bugs load failed', e); }
 }
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 async function submitBug(){
   const inp = document.getElementById('bugInput');
   const desc = inp.value.trim();
@@ -1860,7 +1926,7 @@ async function submitBug(){
     inp.value = '';
     loadBugs();
   } catch(e){ alert('Failed to submit bug: ' + e.message); }
-  btn.disabled = false; btn.textContent = 'Report Bug';
+  btn.disabled = false; btn.textContent = 'Submit';
 }
 document.getElementById('bugInput').addEventListener('keydown', e => { if(e.key==='Enter') submitBug(); });
 
