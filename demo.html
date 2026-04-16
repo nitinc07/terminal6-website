@@ -163,6 +163,16 @@
 .ag-trace .step{padding:5px 0;border-bottom:1px solid var(--border-s);display:flex;gap:10px;align-items:flex-start}
 .ag-trace .step:last-child{border-bottom:none}
 .ag-trace .step-num{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--acc);background:var(--gl);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+
+/* LIVE STREAMING */
+.ag-run-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--rs);font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--acc);background:var(--bg);color:var(--acc);font-family:var(--sans);transition:all .15s;margin-left:auto}
+.ag-run-btn:hover{background:var(--acc);color:#fff}
+.ag-run-btn.running{pointer-events:none;opacity:.7}
+.ag-stream{background:#0d1117;border-radius:var(--rs);padding:12px 14px;font-family:var(--mono);font-size:11.5px;color:#8b949e;line-height:1.6;max-height:300px;overflow-y:auto;margin-top:10px;white-space:pre-wrap;word-break:break-word}
+.ag-stream .status{color:#58a6ff}
+.ag-stream .token{color:#c9d1d9}
+.ag-stream .cursor{display:inline-block;width:7px;height:14px;background:#58a6ff;animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-left:1px}
+@keyframes blink{50%{opacity:0}}
 </style>
 <script>window.T6_BRAND_SLUG = 'demo';</script>
 <script src="/shared.js?v=2026-04-15c"></script>
@@ -221,6 +231,8 @@
   <div class="vw act" id="v-overview">
     <!-- AGENT: Daily Brief -->
     <div id="agent-brief" class="ag-brief" style="display:none"></div>
+    <div style="text-align:right;margin-bottom:8px"><button class="ag-run-btn" onclick="streamAgent('daily-brief','agent-brief-stream','daily_brief')">&#9654; Run Live Analysis</button></div>
+    <div id="agent-brief-stream"></div>
 
     <div class="g4" style="margin-bottom:20px">
       <div class="cd"><div class="kl">MTD Revenue (Amazon IN) <span id="tip-ov-mtd-rev"></span></div><div class="kv" id="ov-mtd-rev">--</div><div class="kd n" id="ov-mtd-rev-d">&nbsp;</div></div>
@@ -302,8 +314,10 @@
       <div class="ag-ihead">
         <span class="ag-icon">&#127919;</span>
         <span class="ag-name">Marketing Strategist</span>
+        <button class="ag-run-btn" onclick="streamAgent('marketing','ag-mkt-stream','marketing')">&#9654; Run Live</button>
         <span class="ag-score" id="ag-mkt-score">--</span>
       </div>
+      <div id="ag-mkt-stream"></div>
       <div class="ag-summary" id="ag-mkt-summary"></div>
       <div class="ag-recs" id="ag-mkt-recs"></div>
       <div id="ag-mkt-trace" style="display:none"></div>
@@ -438,8 +452,10 @@
       <div class="ag-ihead">
         <span class="ag-icon">&#128230;</span>
         <span class="ag-name">Inventory Watchdog</span>
+        <button class="ag-run-btn" onclick="streamAgent('inventory','ag-inv-stream','inventory')">&#9654; Run Live</button>
         <span class="ag-score" id="ag-inv-score">--</span>
       </div>
+      <div id="ag-inv-stream"></div>
       <div class="ag-summary" id="ag-inv-summary"></div>
       <div class="ag-recs" id="ag-inv-recs"></div>
       <div id="ag-inv-trace" style="display:none"></div>
@@ -2119,6 +2135,104 @@ function loadAgentInventory(){
     _renderRecs(document.getElementById('ag-inv-recs'), o.alerts||[]);
     _renderTrace(document.getElementById('ag-inv-trace'), o.reasoning_trace);
   }).catch(()=>{});
+}
+
+/* ========== LIVE STREAMING ========== */
+function streamAgent(agentSlug, streamContainerId, agentKey){
+  const container = document.getElementById(streamContainerId);
+  const btn = event.target.closest('.ag-run-btn');
+  if(btn){ btn.classList.add('running'); btn.innerHTML='&#9203; Running...'; }
+
+  // Show the parent panel if hidden
+  const panel = container.closest('.ag-inline');
+  if(panel) panel.style.display = 'block';
+
+  // Create streaming terminal
+  container.innerHTML = '<div class="ag-stream"><span class="status">Connecting...</span><span class="cursor"></span></div>';
+  const terminal = container.querySelector('.ag-stream');
+  const cursor = terminal.querySelector('.cursor');
+
+  const t = T6.token ? T6.token() : (sessionStorage.getItem('t6_token') || '');
+  const headers = { 'Authorization': 'Bearer ' + t };
+  if(window.T6_BRAND_SLUG) headers['X-Brand'] = window.T6_BRAND_SLUG;
+
+  const API_BASE = (location.hostname.includes('.terminal6.io') && location.hostname !== 'terminal6.io' && location.hostname !== 'www.terminal6.io') ? '' : 'https://api.terminal6.io';
+
+  fetch(API_BASE + '/v1/agents/' + agentSlug + '/stream', { headers })
+    .then(response => {
+      if(!response.ok) throw new Error('API ' + response.status);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let tokenText = '';
+
+      function processChunk(chunk){
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        let eventType = '';
+        for(const line of lines){
+          if(line.startsWith('event: ')){ eventType = line.slice(7).trim(); continue; }
+          if(line.startsWith('data: ')){
+            const data = line.slice(6);
+            if(eventType === 'status'){
+              terminal.innerHTML = '<span class="status">' + data + '</span>\n<span class="token"></span><span class="cursor"></span>';
+              tokenText = '';
+            } else if(eventType === 'token'){
+              const unescaped = data.replace(/\\n/g, '\n');
+              tokenText += unescaped;
+              const tokenEl = terminal.querySelector('.token');
+              if(tokenEl) tokenEl.textContent = tokenText;
+              terminal.scrollTop = terminal.scrollHeight;
+            } else if(eventType === 'done'){
+              try {
+                const result = JSON.parse(data);
+                terminal.querySelector('.cursor')?.remove();
+                // Show cost
+                if(result.cost_usd != null){
+                  terminal.innerHTML += '\n\n<span class="status">Done. Cost: $' + result.cost_usd.toFixed(4) + ' (' + (result.usage?.input_tokens||0) + ' in + ' + (result.usage?.output_tokens||0) + ' out tokens)</span>';
+                }
+                // After a short pause, render structured output
+                setTimeout(() => {
+                  container.innerHTML = '';
+                  if(agentKey === 'daily_brief'){
+                    // Re-render brief
+                    _agBriefDone = false;
+                    loadAgentBrief();
+                  } else if(agentKey === 'marketing'){
+                    _agMktDone = false;
+                    loadAgentMarketing();
+                  } else if(agentKey === 'inventory'){
+                    _agInvDone = false;
+                    loadAgentInventory();
+                  }
+                }, 2500);
+              } catch(e){ console.error('Parse error', e); }
+            } else if(eventType === 'error'){
+              terminal.innerHTML += '\n<span style="color:#f87171">Error: ' + data + '</span>';
+              terminal.querySelector('.cursor')?.remove();
+            }
+            eventType = '';
+          }
+        }
+      }
+
+      function pump(){
+        return reader.read().then(({done, value}) => {
+          if(done){ return; }
+          processChunk(decoder.decode(value, {stream: true}));
+          return pump();
+        });
+      }
+      return pump();
+    })
+    .catch(err => {
+      terminal.innerHTML = '<span style="color:#f87171">Error: ' + err.message + '</span>';
+    })
+    .finally(() => {
+      if(btn){ btn.classList.remove('running'); btn.innerHTML='&#9654; Run Live'; }
+    });
 }
 
 function agAct(btn, action){
