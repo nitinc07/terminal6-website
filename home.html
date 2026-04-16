@@ -245,6 +245,9 @@ function handleGoogleSignIn(response) {
 function enterHub(user) {
   // On brand subdomains, skip the hub — go straight to the dashboard
   if (IS_SUBDOMAIN) { location.replace('/'); return; }
+  // If a gated page sent us here with ?redirect=, go back there after sign-in
+  const redir = new URLSearchParams(location.search).get('redirect');
+  if (redir && redir.startsWith('/')) { location.replace(redir); return; }
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('hub').classList.add('active');
   const av = document.getElementById('avatar');
@@ -282,6 +285,7 @@ window.addEventListener('DOMContentLoaded', function () {
   if (forceSignOut) { clearAndShowPicker(); return; }
 
   const saved = sessionStorage.getItem('t6_user');
+  const pendingRedirect = new URLSearchParams(location.search).get('redirect');
   if (saved) {
     try {
       const u = JSON.parse(saved);
@@ -290,6 +294,8 @@ window.addEventListener('DOMContentLoaded', function () {
         sessionStorage.removeItem('t6_user');
         return;
       }
+      // If redirecting back to a gated page and already signed in, go immediately
+      if (pendingRedirect && pendingRedirect.startsWith('/')) { location.replace(pendingRedirect); return; }
       // Instead of silently auto-entering, show a "Continue as X / Switch" prompt.
       // One click on Continue = same as the old behaviour, but the switch option
       // is visible for test accounts / multi-user scenarios.

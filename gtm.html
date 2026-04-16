@@ -63,10 +63,10 @@ a.dtc-link:hover { text-decoration: underline; }
 <body style="background: var(--bg); margin: 0; padding: 24px 32px; font-family: var(--sans);">
 
 <script>
-/* ACCESS GATE */
+/* ACCESS GATE — redirect to home with return URL */
 (function(){
   const saved=sessionStorage.getItem('t6_user');
-  if(!saved){location.replace('/home.html');document.documentElement.style.display='none';}
+  if(!saved){location.replace('/home.html?redirect=/gtm.html');document.documentElement.style.display='none';}
 })();
 </script>
 
