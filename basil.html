@@ -465,35 +465,30 @@
   <div class="vw" id="v-pnl">
     <div class="head">
       <div class="icon">&#128176;</div>
-      <div><h2>Profit &amp; Loss</h2><p class="sub">Settlement-reconciled P&amp;L by ASIN. Updated ~7-14 days after order placement.</p></div>
-      <div class="pills" id="pnlPills">
-        <button data-days="7">7D</button>
-        <button data-days="30" class="a">30D</button>
-        <button data-days="90">90D</button>
-      </div>
+      <div><h2>Profit &amp; Loss</h2><p class="sub">Settlement-reconciled P&amp;L (ex-GST). Settlements lag orders by ~7-14 days.</p></div>
     </div>
     <div id="pnl-lag-banner" style="display:none;background:var(--bg-cream);border:1px solid var(--border);border-radius:var(--rad);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--t2)"></div>
     <!-- KPI cards -->
     <div class="g4" style="margin-bottom:20px">
       <div class="cd">
-        <div class="kl">Gross Revenue</div>
-        <div class="kv" id="pnl-revenue">--</div>
-        <div class="kd n" id="pnl-revenue-d">&nbsp;</div>
+        <div class="kl">Gross Revenue (ex-GST)</div>
+        <div class="kv" id="pnl-gross">--</div>
+        <div class="kd n" id="pnl-gross-d">&nbsp;</div>
       </div>
       <div class="cd">
-        <div class="kl">Total Fees (% of rev)</div>
-        <div class="kv" id="pnl-fees">--</div>
-        <div class="kd n" id="pnl-fees-d">&nbsp;</div>
+        <div class="kl">Net Revenue (post-returns)</div>
+        <div class="kv" id="pnl-net">--</div>
+        <div class="kd n" id="pnl-net-d">&nbsp;</div>
+      </div>
+      <div class="cd">
+        <div class="kl">Remittance (bank deposit)</div>
+        <div class="kv" id="pnl-remit">--</div>
+        <div class="kd n" id="pnl-remit-d">&nbsp;</div>
       </div>
       <div class="cd">
         <div class="kl">Contribution Margin</div>
         <div class="kv" id="pnl-cm">--</div>
         <div class="kd n" id="pnl-cm-d">&nbsp;</div>
-      </div>
-      <div class="cd">
-        <div class="kl">TACoS</div>
-        <div class="kv" id="pnl-tacos">--</div>
-        <div class="kd n" id="pnl-tacos-d">&nbsp;</div>
       </div>
     </div>
     <!-- Fee waterfall -->
@@ -501,10 +496,10 @@
       <div class="sec-h"><h3>Fee Waterfall</h3></div>
       <div id="pnl-waterfall" class="loading">Loading...</div>
     </div>
-    <!-- Daily trend -->
+    <!-- Monthly P&L -->
     <div class="sec">
-      <div class="sec-h"><h3>Daily CM% Trend</h3></div>
-      <div id="pnl-daily-chart" class="loading">Loading...</div>
+      <div class="sec-h"><h3>Monthly P&amp;L</h3></div>
+      <div id="pnl-monthly-table" class="loading">Loading...</div>
     </div>
     <!-- Per-ASIN table -->
     <div class="sec">
@@ -539,6 +534,19 @@
   <div class="vw" id="v-otherch">
     <div class="head"><div class="icon" style="background:var(--tm)">&#128722;</div><div><h2>Other Channels</h2><p class="sub">Flipkart &middot; Myntra &middot; Amazon UAE (not active)</p></div></div>
     <div class="ph2">Flipkart (57 listings) and Myntra (58 listings) are catalogued but sales / ads ingestion isn't live yet. Amazon UAE profile exists but unused &mdash; confirmed inactive 14 Apr.</div>
+  </div>
+
+  <!-- BUG REPORTS — always visible at bottom of page -->
+  <div id="bugSection" style="margin-top:40px;border-top:1px solid var(--border);padding-top:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 style="font-family:var(--serif);font-size:16px;font-weight:600;color:var(--t1);margin:0">Bug Reports</h3>
+      <span id="bugCount" style="font-size:12px;color:var(--t3)"></span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:18px">
+      <input id="bugInput" type="text" placeholder="Describe the bug..." style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:var(--sans);background:var(--bg-white);color:var(--t1)" />
+      <button id="bugSubmit" onclick="submitBug()" style="padding:9px 18px;border:none;border-radius:var(--rs);background:var(--acc);color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--sans);white-space:nowrap">Report Bug</button>
+    </div>
+    <div id="bugList" style="display:flex;flex-direction:column;gap:6px"></div>
   </div>
 
 </main>
@@ -613,7 +621,7 @@ function sw(id,el){
   document.getElementById('viewTitle').innerHTML=viewTitles[id]||id;
   currentView=id;
   // Range pills visibility
-  const showPills=['overview','revenue','amzads','gads','pnl'].includes(id);
+  const showPills=['overview','revenue','amzads','gads'].includes(id);
   document.getElementById('rangePills').style.display=showPills?'flex':'none';
 
   if(id==='overview') loadOverview();
@@ -1672,131 +1680,98 @@ document.getElementById('ivSubPills').addEventListener('click', e=>{
 
 /* ========== RANGE PILLS ========== */
 /* ========== P&L ========== */
-let pnlDays=30;
 function loadPnL(){
-  pnlDays=range.days;
-  document.querySelectorAll('#pnlPills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===pnlDays));
-  api('/v1/amazon/pnl/summary?days='+pnlDays).then(renderPnLSummary).catch(showErr('pnl-waterfall'));
-  api('/v1/amazon/pnl/daily?days='+pnlDays).then(renderPnLDaily).catch(showErr('pnl-daily-chart'));
-  api('/v1/amazon/pnl/by-asin?days='+pnlDays+'&limit=50&sort=revenue').then(renderPnLTable).catch(showErr('pnl-asin-table'));
+  api('/v1/amazon/pnl/summary?days=90').then(renderPnLSummary).catch(showErr('pnl-waterfall'));
+  api('/v1/amazon/pnl/monthly?months=6').then(renderPnLMonthly).catch(showErr('pnl-monthly-table'));
+  api('/v1/amazon/pnl/by-asin?days=90&limit=50&sort=revenue').then(renderPnLTable).catch(showErr('pnl-asin-table'));
 }
 function renderPnLSummary(d){
   if(!d||!d.totals) return;
   const t=d.totals;
-  document.getElementById('pnl-revenue').textContent=cur(t.revenue);
-  document.getElementById('pnl-fees').textContent=cur(Math.abs(t.total_fees));
-  const feeSub=document.getElementById('pnl-fees-d');
-  feeSub.className='kd n';
-  feeSub.textContent=t.fee_pct!=null?(t.fee_pct.toFixed(1)+'% of revenue'):'';
+  document.getElementById('pnl-gross').textContent=cur(t.gross_revenue);
+  const grossSub=document.getElementById('pnl-gross-d');
+  grossSub.className='kd n';
+  grossSub.textContent=t.return_pct!=null?('Returns '+t.return_pct.toFixed(1)+'% ('+cur(t.returns_value)+')'):'';
+  document.getElementById('pnl-net').textContent=cur(t.net_revenue);
+  const netSub=document.getElementById('pnl-net-d');
+  netSub.className='kd n';
+  netSub.textContent=t.fee_pct!=null?('Platform fees '+t.fee_pct.toFixed(1)+'%'):'';
+  document.getElementById('pnl-remit').textContent=cur(t.remittance);
+  const remitSub=document.getElementById('pnl-remit-d');
+  remitSub.className='kd n';
+  remitSub.textContent='Excl ad spend (billed separately)';
   document.getElementById('pnl-cm').textContent=cur(t.contribution_margin);
   const cmSub=document.getElementById('pnl-cm-d');
   if(t.cm_pct!=null){
     cmSub.className='kd '+(t.cm_pct>=0?'u':'d');
-    cmSub.textContent=(t.cm_pct>=0?'':'')+'CM '+t.cm_pct.toFixed(1)+'%';
+    cmSub.textContent='CM '+t.cm_pct.toFixed(1)+'%'+(t.tacos!=null?' | TACoS '+t.tacos.toFixed(1)+'%':'');
   }else{ cmSub.className='kd n'; cmSub.textContent=''; }
-  document.getElementById('pnl-tacos').textContent=t.tacos!=null?t.tacos.toFixed(1)+'%':'--';
-  document.getElementById('pnl-tacos-d').textContent=t.ad_spend?'Ad spend '+cur(Math.abs(t.ad_spend)):'No ad spend data';
   // Settlement lag banner
   const banner=document.getElementById('pnl-lag-banner');
-  if(d.data_coverage_pct!=null&&d.data_coverage_pct<70){
+  if(d.to_date){
     banner.style.display='block';
-    banner.innerHTML='&#9432; Settlement data covers '+d.days_with_data+' of '+d.days+' days ('+d.data_coverage_pct+'%). '
-      +'Settlements lag 7-14 days after order placement. Latest data: '+(d.to_date||'--')+'.';
+    banner.innerHTML='Settlement data: '+d.from_date+' to '+d.to_date+' ('+d.days_with_data+' days). '
+      +'Settlements lag 7-14 days after order placement.';
   }else{ banner.style.display='none'; }
   // Waterfall
-  renderWaterfall(d.fee_waterfall||[],t.revenue);
+  renderWaterfall(d.fee_waterfall||[],t.net_revenue);
 }
-function renderWaterfall(items,revenue){
+function renderWaterfall(items,netRevenue){
   const el=document.getElementById('pnl-waterfall');
   if(!items.length){el.innerHTML='<div class="empty">No P&amp;L data yet</div>';return;}
+  // Find max absolute amount for bar scaling
+  const maxAmt=Math.max(...items.map(w=>Math.abs(w.amount)));
   let html='<div style="display:flex;flex-direction:column;gap:6px;padding:8px 0">';
   for(const w of items){
-    const isRev=w.name==='Revenue';
+    const isGross=w.name==='Gross Revenue';
+    const isNet=w.name==='Net Revenue';
     const isCM=w.name==='Contribution Margin';
     const isPositive=w.amount>=0;
     const absAmt=Math.abs(w.amount);
-    const barW=revenue>0?Math.min(absAmt/revenue*100,100):0;
-    const color=isRev?'var(--acc)':isCM?(w.amount>=0?'var(--g)':'var(--r)'):(isPositive?'var(--g)':'var(--r)');
-    const opacity=isRev||isCM?'1':'0.65';
-    html+='<div style="display:flex;align-items:center;gap:10px;font-size:12px">';
+    const barW=maxAmt>0?Math.min(absAmt/maxAmt*100,100):0;
+    const color=isGross||isNet?'var(--acc)':isCM?(w.amount>=0?'var(--g)':'var(--r)'):(isPositive?'var(--g)':'var(--r)');
+    const opacity=isGross||isNet||isCM?'1':'0.65';
+    const bold=isGross||isNet||isCM?'font-weight:600':'';
+    html+='<div style="display:flex;align-items:center;gap:10px;font-size:12px;'+bold+'">';
     html+='<div style="width:130px;text-align:right;color:var(--t2);flex-shrink:0">'+w.name+'</div>';
     html+='<div style="flex:1;background:var(--bg-cream);border-radius:3px;height:22px;position:relative;overflow:hidden">';
     html+='<div style="width:'+barW.toFixed(1)+'%;height:100%;background:'+color+';opacity:'+opacity+';border-radius:3px"></div>';
     html+='</div>';
     html+='<div style="width:90px;font-family:var(--mono);font-size:11px;text-align:right;flex-shrink:0">'+cur(absAmt)+'</div>';
-    html+='<div style="width:50px;font-size:11px;color:var(--t3);text-align:right;flex-shrink:0">'+(w.pct_of_revenue!=null?w.pct_of_revenue.toFixed(1)+'%':'')+'</div>';
+    html+='<div style="width:50px;font-size:11px;color:var(--t3);text-align:right;flex-shrink:0">'+(w.pct_of_net!=null?w.pct_of_net.toFixed(1)+'%':'')+'</div>';
     html+='</div>';
   }
   html+='</div>';
   el.innerHTML=html;
 }
-function renderPnLDaily(d){
-  const el=document.getElementById('pnl-daily-chart');
-  if(!d||!d.data||!d.data.length){el.innerHTML='<div class="empty">No daily P&amp;L data</div>';return;}
-  const pts=d.data;
-  // Build SVG sparkline for CM%
-  const W=900,H=200,padL=50,padR=20,padT=20,padB=30;
-  const chartW=W-padL-padR,chartH=H-padT-padB;
-  const N=pts.length;
-  const vals=pts.map(p=>p.cm_pct).filter(v=>v!=null);
-  if(!vals.length){el.innerHTML='<div class="empty">No CM% data</div>';return;}
-  const minV=Math.min(...vals,0),maxV=Math.max(...vals);
-  const rangeV=maxV-minV||1;
-  const xAt=i=>padL+(i/(Math.max(N-1,1)))*chartW;
-  const yAt=v=>padT+(1-(v-minV)/rangeV)*chartH;
-  // Zero line
-  const zeroY=yAt(0);
-  let svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;font-family:var(--mono);font-size:10px">';
-  // Grid lines
-  const steps=5;
-  for(let i=0;i<=steps;i++){
-    const v=minV+(rangeV/steps)*i;
-    const y=yAt(v);
-    svg+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#EBE6D9" stroke-width="0.5"/>';
-    svg+='<text x="'+(padL-6)+'" y="'+(y+3)+'" text-anchor="end" fill="#999">'+v.toFixed(0)+'%</text>';
-  }
-  // Zero line highlight
-  if(minV<0&&maxV>0){
-    svg+='<line x1="'+padL+'" y1="'+zeroY+'" x2="'+(W-padR)+'" y2="'+zeroY+'" stroke="#BBB" stroke-dasharray="4,3"/>';
-  }
-  // CM% line
-  let path='';
-  for(let i=0;i<N;i++){
-    const v=pts[i].cm_pct;
-    if(v==null) continue;
-    const x=xAt(i),y=yAt(v);
-    path+=(path?'L':'M')+x.toFixed(1)+','+y.toFixed(1);
-  }
-  svg+='<path d="'+path+'" stroke="var(--acc)" stroke-width="2" fill="none"/>';
-  // Dots
-  for(let i=0;i<N;i++){
-    const v=pts[i].cm_pct;
-    if(v==null) continue;
-    const x=xAt(i),y=yAt(v);
-    const col=v>=0?'var(--g)':'var(--r)';
-    svg+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3" fill="'+col+'"/>';
-  }
-  // X-axis labels (every 5th)
-  for(let i=0;i<N;i+=Math.max(1,Math.floor(N/8))){
-    svg+='<text x="'+xAt(i).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" fill="#999">'+shortD(pts[i].date)+'</text>';
-  }
-  svg+='</svg>';
-  // Also add a summary table below
-  svg+='<table class="tbl" style="margin-top:12px"><thead><tr>';
-  svg+='<th>Date</th><th class="r">Revenue</th><th class="r">Fees</th><th class="r">Ad Spend</th><th class="r">CM</th><th class="r">CM%</th><th class="r">Units</th>';
-  svg+='</tr></thead><tbody>';
-  for(const r of pts.slice().reverse()){
+function renderPnLMonthly(d){
+  const el=document.getElementById('pnl-monthly-table');
+  if(!d||!d.data||!d.data.length){el.innerHTML='<div class="empty">No monthly P&amp;L data</div>';return;}
+  let html='<table class="tbl"><thead><tr>';
+  html+='<th>Month</th><th class="r">Gross Rev</th><th class="r">Returns</th><th class="r">Net Rev</th>';
+  html+='<th class="r">Fees</th><th class="r">Ad Spend</th><th class="r">COGS</th>';
+  html+='<th class="r">CM</th><th class="r">CM%</th><th class="r">Remittance</th><th class="r">Units</th>';
+  html+='</tr></thead><tbody>';
+  for(const r of d.data.slice().reverse()){
     const cmCls=r.cm_pct!=null&&r.cm_pct<0?'color:var(--r)':'';
-    svg+='<tr><td class="hi">'+shortD(r.date)+'</td>';
-    svg+='<td class="mn2 r">'+cur(r.revenue)+'</td>';
-    svg+='<td class="mn2 r" style="color:var(--r)">'+cur(Math.abs(r.total_fees))+'</td>';
-    svg+='<td class="mn2 r">'+(r.ad_spend?cur(Math.abs(r.ad_spend)):'--')+'</td>';
-    svg+='<td class="mn2 r" style="'+cmCls+'">'+cur(r.contribution_margin)+'</td>';
-    svg+='<td class="mn2 r" style="'+cmCls+'">'+(r.cm_pct!=null?r.cm_pct.toFixed(1)+'%':'--')+'</td>';
-    svg+='<td class="mn2 r">'+fmt(r.units_sold)+'</td></tr>';
+    const label=r.is_mtd?r.month+' (MTD)':r.month;
+    const rowStyle=r.is_mtd?'background:var(--bg-cream)':'';
+    html+='<tr style="'+rowStyle+'">';
+    html+='<td class="hi">'+label+'</td>';
+    html+='<td class="mn2 r">'+cur(r.gross_revenue)+'</td>';
+    html+='<td class="mn2 r" style="color:var(--r)">'+cur(r.returns_value)+(r.return_pct!=null?' <span style="font-size:10px;color:var(--t3)">('+r.return_pct.toFixed(0)+'%)</span>':'')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:600">'+cur(r.net_revenue)+'</td>';
+    html+='<td class="mn2 r" style="color:var(--r)">'+cur(Math.abs(r.total_fees))+(r.fee_pct!=null?' <span style="font-size:10px;color:var(--t3)">('+r.fee_pct.toFixed(0)+'%)</span>':'')+'</td>';
+    html+='<td class="mn2 r">'+(r.ad_spend?cur(Math.abs(r.ad_spend)):'--')+'</td>';
+    html+='<td class="mn2 r">'+(r.cogs_total?cur(Math.abs(r.cogs_total)):'--')+'</td>';
+    html+='<td class="mn2 r" style="'+cmCls+'">'+cur(r.contribution_margin)+'</td>';
+    html+='<td class="mn2 r" style="'+cmCls+'">'+(r.cm_pct!=null?r.cm_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:600">'+cur(r.remittance)+'</td>';
+    html+='<td class="mn2 r">'+fmt(r.units_sold)+'</td>';
+    html+='</tr>';
   }
-  svg+='</tbody></table>';
-  el.innerHTML=svg;
+  html+='</tbody></table>';
+  el.innerHTML=html;
 }
 function renderPnLTable(d){
   const el=document.getElementById('pnl-asin-table');
@@ -1828,14 +1803,6 @@ function renderPnLTable(d){
   el.innerHTML=html;
 }
 
-document.getElementById('pnlPills').addEventListener('click',e=>{
-  const b=e.target.closest('button'); if(!b) return;
-  range.days=+b.dataset.days;
-  document.querySelectorAll('#pnlPills button').forEach(x=>x.classList.toggle('a',x===b));
-  document.querySelectorAll('#rangePills button').forEach(x=>x.classList.toggle('a',+x.dataset.days===range.days));
-  loadPnL();
-});
-
 document.getElementById('rangePills').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   const d=+b.dataset.days; if(!d) return;
@@ -1845,7 +1812,6 @@ document.getElementById('rangePills').addEventListener('click',e=>{
   else if(currentView==='revenue') loadRevenue();
   else if(currentView==='amzads') loadAds('amazon');
   else if(currentView==='gads') loadAds('google');
-  else if(currentView==='pnl') loadPnL();
 });
 document.getElementById('catPills').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
@@ -1855,11 +1821,55 @@ document.getElementById('catPills').addEventListener('click',e=>{
 });
 document.getElementById('ctSearch').addEventListener('keydown',e=>{ if(e.key==='Enter') loadCatalog(); });
 
+/* ========== BUG REPORTS ========== */
+async function loadBugs(){
+  try {
+    const d = await api('/v1/feedback/list');
+    const el = document.getElementById('bugList');
+    const open = d.items.filter(b => b.status === 'open').length;
+    document.getElementById('bugCount').textContent = open ? open + ' open' : '';
+    if(!d.items.length){ el.innerHTML='<div style="font-size:13px;color:var(--t3);font-style:italic;padding:8px 0">No bugs reported yet.</div>'; return; }
+    el.innerHTML = d.items.map(b => {
+      const resolved = b.status === 'resolved';
+      const dt = b.created_at.split(' ')[0] || b.created_at.split('T')[0];
+      const who = b.submitted_by.split('@')[0];
+      const safe = escapeHtml(b.description);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rs);${resolved?'opacity:.55':''}">
+        <span style="flex:1;font-size:13px;color:var(--t1);${resolved?'text-decoration:line-through':''}">${safe}</span>
+        <span style="font-size:11px;color:var(--t3);white-space:nowrap">${who} &middot; ${dt}</span>
+        ${resolved ? '<span style="font-size:11px;color:var(--g);font-weight:500">Fixed</span>' : '<span style="font-size:11px;color:var(--a);font-weight:500">Open</span>'}
+      </div>`;
+    }).join('');
+  } catch(e){ console.warn('bugs load failed', e); }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function submitBug(){
+  const inp = document.getElementById('bugInput');
+  const desc = inp.value.trim();
+  if(!desc) return;
+  const btn = document.getElementById('bugSubmit');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const t = T6.token();
+    const headers = { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' };
+    if(window.T6_BRAND_SLUG) headers['X-Brand'] = window.T6_BRAND_SLUG;
+    const r = await fetch((T6.IS_SUBDOMAIN ? '' : T6.API_BASE) + '/v1/feedback/submit', {
+      method: 'POST', headers, body: JSON.stringify({ description: desc })
+    });
+    if(!r.ok) throw new Error('API ' + r.status);
+    inp.value = '';
+    loadBugs();
+  } catch(e){ alert('Failed to submit bug: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Report Bug';
+}
+document.getElementById('bugInput').addEventListener('keydown', e => { if(e.key==='Enter') submitBug(); });
+
 /* ========== INIT ========== */
 T6.initUserChrome();
 installInvTileTips();
 installOtherTileTips();
 loadOverview();
+loadBugs();
 </script>
 </body>
 </html>
