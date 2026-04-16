@@ -62,13 +62,7 @@ a.dtc-link:hover { text-decoration: underline; }
 </head>
 <body style="background: var(--bg); margin: 0; padding: 24px 32px; font-family: var(--sans);">
 
-<script>
-/* ACCESS GATE — redirect to home with return URL */
-(function(){
-  const saved=sessionStorage.getItem('t6_user');
-  if(!saved){location.replace('/home.html?redirect=/gtm.html');document.documentElement.style.display='none';}
-})();
-</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <div class="page-header">
   <h1>GTM Prospects</h1>
@@ -143,13 +137,50 @@ a.dtc-link:hover { text-decoration: underline; }
   <button id="btn-next">Next &raquo;</button>
 </div>
 
+<div id="login-prompt" style="display:none; text-align:center; padding:60px 20px;">
+  <div style="font-family:var(--serif); font-size:28px; font-weight:700; color:var(--accent); margin-bottom:8px;">T6</div>
+  <div style="font-size:16px; color:var(--text-mid); margin-bottom:24px;">Sign in to access GTM Prospects</div>
+  <div id="g_id_onload"
+       data-client_id="32739695176-gkc23he5t5l0h7gfq57rkm5pm673l3e5.apps.googleusercontent.com"
+       data-context="signin"
+       data-ux_mode="popup"
+       data-callback="handleGTMSignIn"
+       data-auto_prompt="false"></div>
+  <div class="g_id_signin"
+       data-type="standard"
+       data-shape="rectangular"
+       data-theme="outline"
+       data-text="sign_in_with"
+       data-size="large"
+       data-logo_alignment="left"
+       data-width="300"
+       style="display:inline-block"></div>
+</div>
+
 <script>
+const PLATFORM_EMAILS = ['contact@terminal6.io', 'nitinc07@gmail.com', 'kangkan.b14@gmail.com'];
+
+function handleGTMSignIn(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email = (payload.email || '').toLowerCase();
+    if (!PLATFORM_EMAILS.includes(email)) { alert('Access restricted.'); return; }
+    sessionStorage.setItem('t6_user', JSON.stringify({ name: payload.name, email: payload.email }));
+    sessionStorage.setItem('t6_token', response.credential);
+    document.getElementById('login-prompt').style.display = 'none';
+    initGTM();
+  } catch(e) { alert('Sign-in failed'); }
+}
+
 (function(){
   const API = 'https://api.terminal6.io';
   function tok(){ return sessionStorage.getItem('t6_token') || ''; }
   async function api(path){
     const r = await fetch(API + path, { headers: { 'Authorization': 'Bearer ' + tok() } });
-    if(r.status === 401 || r.status === 403){ location.replace('/home.html'); return; }
+    if(r.status === 401 || r.status === 403){
+      document.getElementById('login-prompt').style.display = 'block';
+      return null;
+    }
     return r.json();
   }
 
@@ -244,8 +275,11 @@ a.dtc-link:hover { text-decoration: underline; }
   document.getElementById('btn-next').addEventListener('click', () => { state.page++; loadTable(); });
 
   // Init
-  loadStats();
-  loadTable();
+  window.initGTM = function(){ loadStats(); loadTable(); };
+
+  // Auto-load if already signed in
+  if(tok()) initGTM();
+  else document.getElementById('login-prompt').style.display = 'block';
 })();
 </script>
 
