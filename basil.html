@@ -1943,35 +1943,39 @@ function renderRealtimePnL(d){
 }
 function renderRtAsin(d){
   const el=document.getElementById('pnl-rt-asin');
-  if(!d||!d.data||!d.data.length){el.innerHTML='<div class="empty">No per-ASIN CM2 data</div>';return;}
-  let html='<table class="tbl"><thead><tr>';
-  // Waterfall: Gross → Returns → Net → COGS → CM1 | Comm → Return Cost → FBA → SP Ads → CM2
-  html+='<th>ASIN</th><th>Product</th>';
-  html+='<th class="r">Gross</th><th class="r">Ret%</th><th class="r">Net Rev</th>';
-  html+='<th class="r">COGS%</th><th class="r">CM1%</th>';
-  html+='<th class="r">Comm%</th><th class="r">RetCost%</th><th class="r">FBA%</th><th class="r">TACoS</th>';
-  html+='<th class="r">CM2%</th><th class="r">CM2</th>';
+  if(!d||!d.data||!d.data.length){el.innerHTML='<div class="empty">No per-ASIN data</div>';return;}
+  const sep='border-left:2px solid var(--border)';
+  let html='<table class="tbl" style="font-size:12px"><thead><tr>';
+  html+='<th>ASIN</th><th style="max-width:140px">Product</th>';
+  html+='<th class="r">Gross</th><th class="r">Ret%</th><th class="r" style="font-weight:700">Net Rev</th>';
+  html+='<th class="r" style="'+sep+'">COGS%</th><th class="r" style="font-weight:700">GM%</th>';
+  html+='<th class="r" style="'+sep+'">Comm%</th><th class="r">RetCost%</th><th class="r">FBA%</th><th class="r" style="font-weight:700">CM2%</th>';
+  html+='<th class="r" style="'+sep+'">TACoS</th><th class="r" style="font-weight:700">CM3%</th><th class="r" style="font-weight:700">CM3</th>';
   html+='</tr></thead><tbody>';
   for(const r of d.data){
-    const cm1Cls=r.cm1_pct!=null&&r.cm1_pct<0?'color:var(--r)':'';
-    const cm2Cls=r.cm2_pct!=null&&r.cm2_pct<0?'color:var(--r)':'color:var(--g)';
-    const name=(r.product_name||'').length>30?r.product_name.substring(0,30)+'...':r.product_name||'';
+    const gmCls=r.gm_pct!=null&&r.gm_pct<30?'color:var(--a)':'';
+    const cm2Cls=r.cm2_pct!=null&&r.cm2_pct<10?'color:var(--r)':'';
+    const cm3Cls=r.cm3_pct!=null?(r.cm3_pct<0?'color:var(--r)':r.cm3_pct<10?'color:var(--a)':'color:var(--g)'):'';
+    const name=(r.product_name||'').length>25?r.product_name.substring(0,25)+'...':r.product_name||'';
     html+='<tr>';
-    html+='<td class="mn2">'+r.asin+'</td>';
-    html+='<td title="'+(r.product_name||'').replace(/"/g,'&quot;')+'">'+name+'</td>';
-    // Stage 1: Gross → Net → CM1
+    html+='<td class="mn2" style="font-size:11px">'+r.asin+'</td>';
+    html+='<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(r.product_name||'').replace(/"/g,'&quot;')+'">'+name+'</td>';
+    // Stage 1: Revenue
     html+='<td class="mn2 r">'+cur(r.gross_revenue)+'</td>';
-    html+='<td class="mn2 r" style="color:var(--r)">'+(r.return_pct!=null?r.return_pct.toFixed(0)+'%':'0%')+'</td>';
+    html+='<td class="mn2 r" style="color:var(--r)">'+(r.return_pct!=null&&r.return_pct>0?r.return_pct.toFixed(0)+'%':'-')+'</td>';
     html+='<td class="mn2 r" style="font-weight:600">'+cur(r.net_revenue)+'</td>';
-    html+='<td class="mn2 r">'+(r.cogs_pct!=null?r.cogs_pct.toFixed(0)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="font-weight:500;'+cm1Cls+'">'+(r.cm1_pct!=null?r.cm1_pct.toFixed(0)+'%':'--')+'</td>';
-    // Stage 2: Fees → CM2
-    html+='<td class="mn2 r">'+(r.commission_pct!=null?r.commission_pct.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r">'+(r.return_cost_pct!=null?r.return_cost_pct.toFixed(1)+'%':'--')+'</td>';
+    // Stage 2: GM
+    html+='<td class="mn2 r" style="'+sep+'">'+(r.cogs_pct!=null?r.cogs_pct.toFixed(0)+'%':'--')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:600;'+gmCls+'">'+(r.gm_pct!=null?r.gm_pct.toFixed(0)+'%':'--')+'</td>';
+    // Stage 3: Platform fees → CM2
+    html+='<td class="mn2 r" style="'+sep+'">'+(r.commission_pct!=null?r.commission_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r">'+(r.return_cost_pct!=null&&r.return_cost_pct>0?r.return_cost_pct.toFixed(1)+'%':'-')+'</td>';
     html+='<td class="mn2 r">'+(r.fba_pct!=null?r.fba_pct.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r">'+(r.tacos!=null?r.tacos.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="font-weight:600;'+cm2Cls+'">'+(r.cm2_pct!=null?r.cm2_pct.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="font-weight:600;'+cm2Cls+'">'+cur(r.cm2)+'</td>';
+    html+='<td class="mn2 r" style="font-weight:600;'+cm2Cls+'">'+(r.cm2_pct!=null?r.cm2_pct.toFixed(0)+'%':'--')+'</td>';
+    // Stage 4: Ads → CM3
+    html+='<td class="mn2 r" style="'+sep+'">'+(r.tacos!=null?r.tacos.toFixed(1)+'%':'-')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:700;'+cm3Cls+'">'+(r.cm3_pct!=null?r.cm3_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:700;'+cm3Cls+'">'+cur(r.cm3)+'</td>';
     html+='</tr>';
   }
   html+='</tbody></table>';
