@@ -566,67 +566,77 @@
   <div class="vw" id="v-pnl">
     <div class="head">
       <div class="icon">&#128176;</div>
-      <div><h2>Profit &amp; Loss</h2><p class="sub">Settlement-reconciled P&amp;L (ex-GST). Settlements lag orders by ~7-14 days.</p></div>
+      <div><h2>Profit &amp; Loss</h2><p class="sub">Amazon IN &middot; ex-GST</p></div>
     </div>
-    <div id="pnl-lag-banner" style="display:none;background:var(--bg-cream);border:1px solid var(--border);border-radius:var(--rad);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--t2)"></div>
-    <!-- KPI cards -->
-    <div class="g4" style="margin-bottom:20px">
-      <div class="cd">
-        <div class="kl">Gross Revenue (ex-GST)</div>
-        <div class="kv" id="pnl-gross">--</div>
-        <div class="kd n" id="pnl-gross-d">&nbsp;</div>
+    <div class="subtabs" id="pnlSubPills">
+      <button data-sub="realtime" class="a">Real-time P&amp;L</button>
+      <button data-sub="settlement">Settlement P&amp;L</button>
+      <button data-sub="audit">Fee Audit</button>
+    </div>
+
+    <!-- ── SUB: Real-time P&L ── -->
+    <div class="iv-sub act" id="pnls-realtime">
+      <div class="sec">
+        <div class="sec-h"><h3>Real-time P&amp;L (CM2)</h3><span style="font-size:11px;color:var(--t3);margin-left:8px">Live from orders + derived rates, no settlement lag</span></div>
+        <div id="pnl-realtime" class="loading">Loading...</div>
       </div>
-      <div class="cd">
-        <div class="kl">Net Revenue (post-returns)</div>
-        <div class="kv" id="pnl-net">--</div>
-        <div class="kd n" id="pnl-net-d">&nbsp;</div>
-      </div>
-      <div class="cd">
-        <div class="kl">Remittance (bank deposit)</div>
-        <div class="kv" id="pnl-remit">--</div>
-        <div class="kd n" id="pnl-remit-d">&nbsp;</div>
-      </div>
-      <div class="cd">
-        <div class="kl">Contribution Margin</div>
-        <div class="kv" id="pnl-cm">--</div>
-        <div class="kd n" id="pnl-cm-d">&nbsp;</div>
-      </div>
-    </div>
-    <!-- Fee waterfall -->
-    <div class="sec">
-      <div class="sec-h"><h3>Fee Waterfall</h3></div>
-      <div id="pnl-waterfall" class="loading">Loading...</div>
-    </div>
-    <!-- Monthly P&L -->
-    <div class="sec">
-      <div class="sec-h"><h3>Monthly P&amp;L</h3></div>
-      <div id="pnl-monthly-table" class="loading">Loading...</div>
-    </div>
-    <!-- Real-time P&L (CM2) -->
-    <div class="sec">
-      <div class="sec-h"><h3>Real-time P&amp;L (CM2)</h3><span style="font-size:11px;color:var(--t3);margin-left:8px">Live from orders, no settlement lag</span></div>
-      <div id="pnl-realtime" class="loading">Loading...</div>
-    </div>
-    <!-- Per-ASIN CM2 -->
-    <div class="sec">
-      <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <h3>Per-ASIN P&amp;L</h3>
-        <div class="pills" id="rtAsinPills">
-          <button data-days="1">1D</button>
-          <button data-days="7">7D</button>
-          <button data-days="30" class="a">30D</button>
-          <button data-days="90">90D</button>
+      <div class="sec">
+        <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3>Per-ASIN P&amp;L</h3>
+          <div class="pills" id="rtAsinPills">
+            <button data-days="1">1D</button>
+            <button data-days="7">7D</button>
+            <button data-days="30" class="a">30D</button>
+            <button data-days="90">90D</button>
+          </div>
+          <span id="rtAsinPeriod" style="font-size:11px;color:var(--t3)"></span>
         </div>
-        <span id="rtAsinPeriod" style="font-size:11px;color:var(--t3)"></span>
+        <div id="pnl-rt-asin" class="loading">Loading...</div>
       </div>
-      <div id="pnl-rt-asin" class="loading">Loading...</div>
     </div>
-    <!-- Fee Audit -->
-    <div class="sec">
-      <div class="sec-h"><h3>Fee Audit — Rate Card vs Settlement</h3></div>
-      <div id="pnl-fee-audit" class="loading">Loading...</div>
+
+    <!-- ── SUB: Settlement P&L ── -->
+    <div class="iv-sub" id="pnls-settlement">
+      <div id="pnl-lag-banner" style="display:none;background:var(--bg-cream);border:1px solid var(--border);border-radius:var(--rad);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--t2)"></div>
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd">
+          <div class="kl">Gross Revenue (ex-GST)</div>
+          <div class="kv" id="pnl-gross">--</div>
+          <div class="kd n" id="pnl-gross-d">&nbsp;</div>
+        </div>
+        <div class="cd">
+          <div class="kl">Net Revenue (post-returns)</div>
+          <div class="kv" id="pnl-net">--</div>
+          <div class="kd n" id="pnl-net-d">&nbsp;</div>
+        </div>
+        <div class="cd">
+          <div class="kl">Remittance (bank deposit)</div>
+          <div class="kv" id="pnl-remit">--</div>
+          <div class="kd n" id="pnl-remit-d">&nbsp;</div>
+        </div>
+        <div class="cd">
+          <div class="kl">Contribution Margin</div>
+          <div class="kv" id="pnl-cm">--</div>
+          <div class="kd n" id="pnl-cm-d">&nbsp;</div>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-h"><h3>Fee Waterfall</h3></div>
+        <div id="pnl-waterfall" class="loading">Loading...</div>
+      </div>
+      <div class="sec">
+        <div class="sec-h"><h3>Monthly P&amp;L</h3></div>
+        <div id="pnl-monthly-table" class="loading">Loading...</div>
+      </div>
     </div>
-    <!-- Settlement per-ASIN removed — real-time CM3 table above is the primary view -->
+
+    <!-- ── SUB: Fee Audit ── -->
+    <div class="iv-sub" id="pnls-audit">
+      <div class="sec">
+        <div class="sec-h"><h3>Fee Audit — Estimated vs Settlement</h3></div>
+        <div id="pnl-fee-audit" class="loading">Loading...</div>
+      </div>
+    </div>
   </div>
 
   <!-- ========== PLACEHOLDERS ========== -->
@@ -1809,13 +1819,23 @@ document.getElementById('ivSubPills').addEventListener('click', e=>{
 
 /* ========== RANGE PILLS ========== */
 /* ========== P&L ========== */
+let currentPnlSub='realtime';
 function loadPnL(){
-  api('/v1/amazon/pnl/summary?days=90').then(renderPnLSummary).catch(showErr('pnl-waterfall'));
-  api('/v1/amazon/pnl/monthly?months=6').then(renderPnLMonthly).catch(showErr('pnl-monthly-table'));
-  api('/v1/amazon/pnl/realtime?days=30').then(renderRealtimePnL).catch(showErr('pnl-realtime'));
-  loadRtAsin(rtAsinDays);
-  api('/v1/amazon/pnl/fee-audit?days=90').then(renderFeeAudit).catch(showErr('pnl-fee-audit'));
-  // Settlement per-ASIN removed — real-time CM3 table is the primary view
+  switchPnlSub(currentPnlSub);
+}
+function switchPnlSub(id){
+  currentPnlSub=id;
+  document.querySelectorAll('#pnls-realtime,#pnls-settlement,#pnls-audit').forEach(el=>el.classList.toggle('act',el.id==='pnls-'+id));
+  document.querySelectorAll('#pnlSubPills button').forEach(b=>b.classList.toggle('a',b.dataset.sub===id));
+  if(id==='realtime'){
+    api('/v1/amazon/pnl/realtime?days=30').then(renderRealtimePnL).catch(showErr('pnl-realtime'));
+    loadRtAsin(rtAsinDays);
+  }else if(id==='settlement'){
+    api('/v1/amazon/pnl/summary?days=90').then(renderPnLSummary).catch(showErr('pnl-waterfall'));
+    api('/v1/amazon/pnl/monthly?months=6').then(renderPnLMonthly).catch(showErr('pnl-monthly-table'));
+  }else if(id==='audit'){
+    api('/v1/amazon/pnl/fee-audit?days=90').then(renderFeeAudit).catch(showErr('pnl-fee-audit'));
+  }
 }
 function renderPnLSummary(d){
   if(!d||!d.totals) return;
@@ -2097,6 +2117,10 @@ function renderPnLTable(d){
   el.innerHTML=html;
 }
 
+document.getElementById('pnlSubPills').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  switchPnlSub(b.dataset.sub);
+});
 document.getElementById('rtAsinPills').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   loadRtAsin(+b.dataset.days);
