@@ -358,9 +358,8 @@
       <div class="ag-recs" id="ag-mkt-recs"></div>
     </div>
 
-    <!-- AUDIT INSIGHTS — rule-based today; Phase 2 swaps to LLM-composed narrative
-         without changing this card markup (backend returns the same shape). -->
-    <div class="sec" id="az-audit-sec">
+    <!-- AUDIT INSIGHTS — replaced by agent bucket cards above. Kept hidden for fallback. -->
+    <div class="sec" id="az-audit-sec" style="display:none">
       <div class="sec-h">
         <h3>Audit &middot; where money's working or wasted
           <span class="note" id="az-audit-window">last 14 days</span>
@@ -748,6 +747,19 @@
       <strong>Action:</strong> <span id="adDrawerAction"></span>
     </div>
     <div id="adDrawerTable" style="padding:14px 20px 24px"></div>
+  </div>
+</div>
+
+<!-- AGENT BUCKET MODAL — opens from bucket card click -->
+<div id="bucketModal" class="audit-drawer" onclick="if(event.target===this) closeBucketModal()" style="display:none">
+  <div class="audit-drawer-panel" style="max-width:720px">
+    <div class="audit-drawer-head">
+      <span id="bmSeverity" class="rf-sev"></span>
+      <h3 id="bmTitle" style="font-family:var(--serif);font-size:17px;font-weight:600;margin:0 auto 0 4px"></h3>
+      <button onclick="closeBucketModal()" style="background:none;border:0;font-size:22px;cursor:pointer;color:var(--t3);padding:0 6px">&times;</button>
+    </div>
+    <div id="bmImpact" style="padding:10px 20px;font-size:12px;color:var(--t2);background:var(--bg-cream);border-bottom:1px solid var(--border-s)"></div>
+    <div id="bmItems" style="padding:14px 20px 24px"></div>
   </div>
 </div>
 
@@ -2432,35 +2444,60 @@ function _timeAgo(isoStr){
   return Math.floor(hrs/24)+'d ago';
 }
 
+var _bucketData={};
 function _renderBuckets(el, buckets){
   if(!buckets||!Object.keys(buckets).length){ el.innerHTML=''; return; }
-  const icons={bleeders:'\uD83D\uDD25',low_stock_pause:'\uD83D\uDCE6',wasted_spend:'\uD83D\uDEB0',cannibalization_risk:'\u26A0\uFE0F',scalers:'\uD83D\uDE80',overstock_push:'\uD83D\uDCE6'};
-  const order=['bleeders','low_stock_pause','wasted_spend','cannibalization_risk','scalers','overstock_push'];
-  let html='';
-  for(const key of order){
-    const b=buckets[key];
+  _bucketData=buckets;
+  var icons={bleeders:'\uD83D\uDD25',low_stock_pause:'\uD83D\uDCE6',wasted_spend:'\uD83D\uDEB0',cannibalization_risk:'\u26A0\uFE0F',scalers:'\uD83D\uDE80',overstock_push:'\uD83D\uDCE6'};
+  var order=['bleeders','low_stock_pause','wasted_spend','cannibalization_risk','scalers','overstock_push'];
+  var html='';
+  for(var ki=0;ki<order.length;ki++){
+    var key=order[ki], b=buckets[key];
     if(!b||!b.items||!b.items.length) continue;
-    const sev=(b.severity||'amber').toLowerCase();
-    const amt=b.total_amount?(b.total_amount>=1e5?'\u20B9'+(b.total_amount/1e5).toFixed(1)+'L':b.total_amount>=1e3?'\u20B9'+(b.total_amount/1e3).toFixed(1)+'K':'\u20B9'+b.total_amount):'';
-
-    html+=`<div class="ag-bucket ${sev}" onclick="this.classList.toggle('expanded')">
-      <div class="bk-head">${icons[key]||''} ${b.label||key}</div>
-      <div class="bk-title">${b.count} ${b.count===1?'item':'items'}</div>
-      ${amt?`<div class="bk-amount">\u20B9${amt}</div>`:''}
-      <div class="bk-impact">${b.impact||b.headline||''}</div>
-      <div class="bk-more">${b.count} ${b.count===1?'item':'items'} \u00B7 see details \u2192</div>
-      <div class="ag-bucket-items">`;
-    for(const item of b.items){
-      html+=`<div class="ag-bucket-item">
-        <div class="bi-entity">${item.entity}</div>
-        <div class="bi-numbers">${item.numbers||''}</div>
-        <div class="bi-reason">${item.reason||''}</div>
-        <div class="bi-action">\u2192 ${item.action||''}</div>
-      </div>`;
-    }
-    html+=`</div></div>`;
+    var sev=(b.severity||'amber').toLowerCase();
+    var amt=b.total_amount?(b.total_amount>=1e5?(b.total_amount/1e5).toFixed(1)+' L':b.total_amount>=1e3?(b.total_amount/1e3).toFixed(1)+'K':''+b.total_amount):'';
+    html+='<div class="ag-bucket '+sev+'" onclick="openBucketModal(\''+key+'\')">'
+      +'<div class="bk-head">'+(icons[key]||'')+' '+(b.label||key)+'</div>'
+      +'<div class="bk-title">'+b.count+' '+(b.count===1?'item':'items')+'</div>'
+      +(amt?'<div class="bk-amount">\u20B9'+amt+'</div>':'')
+      +'<div class="bk-impact">'+(b.headline||'')+'</div>'
+      +'<div class="bk-more">'+b.count+' '+(b.count===1?'item':'items')+' \u00B7 see details \u2192</div>'
+      +'</div>';
   }
   el.innerHTML=html;
+}
+function openBucketModal(key){
+  var b=_bucketData[key];
+  if(!b) return;
+  var sev=(b.severity||'amber').toLowerCase();
+  document.getElementById('bmSeverity').className='rf-sev '+sev;
+  document.getElementById('bmSeverity').textContent=(b.severity||'').toUpperCase();
+  document.getElementById('bmTitle').textContent=b.label||key;
+  document.getElementById('bmImpact').innerHTML='<strong>Impact:</strong> '+(b.impact||b.headline||'');
+  var html='';
+  for(var i=0;i<b.items.length;i++){
+    var item=b.items[i];
+    html+='<div style="padding:14px 0;border-bottom:1px solid var(--border-s)">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+      +'<span style="font-family:var(--mono);font-size:11px;font-weight:600;color:var(--acc);background:var(--gl);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center">'+(i+1)+'</span>'
+      +'<span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--t1)">'+item.entity+'</span>'
+      +'<span style="font-size:10px;color:var(--t3);background:var(--bg-cream);padding:2px 6px;border-radius:4px">'+(item.entity_type||'')+'</span>'
+      +'</div>'
+      +'<div style="font-size:12.5px;color:var(--t1);margin-bottom:4px;font-family:var(--mono)">'+(item.numbers||'')+'</div>'
+      +'<div style="font-size:12px;color:var(--t2);line-height:1.5;margin-bottom:8px">'+(item.reason||'')+'</div>'
+      +'<div style="font-size:12.5px;color:var(--acc-t);font-weight:600;margin-bottom:10px">\u2192 '+(item.action||'')+'</div>'
+      +'<div style="display:flex;gap:8px">'
+      +'<button onclick="agBucketAct(this,\''+key+'\','+i+',\'approve\')" style="padding:5px 14px;border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--g);background:var(--gl);color:var(--g);font-family:var(--sans)">Approve</button>'
+      +'<button onclick="agBucketAct(this,\''+key+'\','+i+',\'dismiss\')" style="padding:5px 14px;border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--t2);font-family:var(--sans)">Dismiss</button>'
+      +'</div></div>';
+  }
+  document.getElementById('bmItems').innerHTML=html;
+  document.getElementById('bucketModal').style.display='flex';
+}
+function closeBucketModal(){ document.getElementById('bucketModal').style.display='none'; }
+function agBucketAct(btn,bucketKey,idx,action){
+  btn.parentElement.innerHTML='<span style="font-size:11px;color:var(--t3)">'+(action==='approve'?'\u2705 Approved':'\u274C Dismissed')+'</span>';
+  try{ var t=T6.token?T6.token():(sessionStorage.getItem('t6_token')||''); fetch((location.hostname.includes('.terminal6.io')?'':'/api')+'/v1/agents/marketing/action',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({bucket:bucketKey,item_index:idx,action:action})}); }catch(e){}
 }
 
 function _renderRecs(recsEl, items){
