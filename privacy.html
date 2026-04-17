@@ -29,7 +29,7 @@ footer { text-align: center; padding: 40px 32px; border-top: 1px solid var(--bor
 <div class="container">
 
 <h1>Privacy Policy</h1>
-<p class="updated">Last updated: 9 April 2026</p>
+<p class="updated">Last updated: 17 April 2026</p>
 
 <p>Terminal6 ("we", "us", "our") is a product of Aavin Marketing Services, Bengaluru, India. This Privacy Policy describes how we collect, use, and protect information when you use our platform and services.</p>
 
@@ -43,26 +43,55 @@ footer { text-align: center; padding: 40px 32px; border-top: 1px solid var(--bor
 
 <h2>2. How We Use Your Information</h2>
 <ul>
-  <li>To provide, maintain, and improve our platform and services.</li>
-  <li>To aggregate your marketplace and advertising data into a unified view.</li>
-  <li>To generate analytics, reports, and AI-powered recommendations for your business.</li>
-  <li>To manage advertising campaigns on your behalf across Google Ads, Meta Ads, and Amazon Ads.</li>
+  <li>To provide, maintain, and improve our platform and services for you.</li>
+  <li>To unify <em>your own</em> marketplace and advertising data into a single per-customer view of your business. We do not pool, combine, or aggregate your data with any other Terminal6 customer's data.</li>
+  <li>To generate analytics, reports, and AI-powered recommendations for <em>your</em> business, returned only to you and the operators you authorise.</li>
+  <li>To manage advertising campaigns on your behalf across Google Ads, Meta Ads, and Amazon Ads, strictly within your own connected ad accounts.</li>
   <li>To communicate with you about your account and our services.</li>
 </ul>
+<p>We do not sell your data. We do not use your data to benchmark you against other Terminal6 customers. We do not use your data to train models that are offered to, or derive insights for, any other party.</p>
 
-<h2>3. Data from Google Ads</h2>
+<h2>3. Data from Amazon (SP-API, Vendor Central, Amazon Ads)</h2>
+<p>When you connect your Amazon Selling Partner (Seller Central), Amazon Vendor Central, or Amazon Advertising account, Terminal6 accesses data through the Amazon Selling Partner API (SP-API), Vendor Central reporting APIs, and the Amazon Advertising API. The categories of data we access include:</p>
+<ul>
+  <li>Orders and sales (including order status, order items, and order metrics).</li>
+  <li>Inventory levels (FBA fulfillable, inbound, reserved, unsellable).</li>
+  <li>Product catalog and listing data for your ASINs.</li>
+  <li>Advertising campaign performance (Sponsored Products, Sponsored Brands, Sponsored Display), including spend, clicks, impressions, attributed sales, keywords, and search term reports for your own campaigns.</li>
+  <li>Settlement reports (for reconciling fees, refunds, and net revenue).</li>
+  <li>Returns data (FBA customer returns, reason codes, and disposition).</li>
+  <li>Brand Analytics reports (for authorised Brand Registry owners), strictly for the brand owner's own ASINs and brand.</li>
+</ul>
+
+<p><strong>How we use Amazon data.</strong> Data obtained through the Amazon Selling Partner API and Amazon Advertising API is used solely to:</p>
+<ul>
+  <li>Display your Amazon performance to you within the Terminal6 dashboard.</li>
+  <li>Compute SKU-level, channel-level, and cross-channel economics (revenue, fees, advertising cost, returns, contribution margin) for your own business.</li>
+  <li>Generate daily briefs, anomaly alerts, and AI-powered recommendations for <em>your</em> advertising, inventory, pricing, and catalogue decisions.</li>
+  <li>Execute actions that you have authorised (such as adjusting your own Amazon advertising bids and budgets within your own Amazon Ads account).</li>
+</ul>
+
+<p><strong>Strict data isolation — no cross-customer aggregation.</strong> Each Terminal6 customer's Amazon data is stored in logically isolated records keyed to that customer's brand identifier. Our AI agents, reports, and recommendations operate strictly within a single customer's data at a time. We do <em>not</em> aggregate, pool, combine, or otherwise merge data obtained from one Authorized User's Amazon account with data from any other Authorized User. We do <em>not</em> use one customer's Amazon data to produce benchmarks, insights, features, or recommendations that are delivered to any other customer or third party. Derived metrics, scores, and recommendations computed on your Amazon data are returned only to you and the operators you authorise.</p>
+
+<p><strong>No resale or redistribution.</strong> We do not sell, license, lease, or otherwise provide your Amazon data — raw or derived — to any third party, including other Terminal6 customers, affiliates, or competitors. We do not use your Amazon data to train general-purpose models offered to other parties.</p>
+
+<p><strong>Revocation and deletion.</strong> You may disconnect your Amazon account from Terminal6 at any time from within the platform or by contacting us. On revocation, we will stop all further data collection immediately. We will delete your stored Amazon data on your written request, subject to any narrow retention requirements imposed by law.</p>
+
+<p>Terminal6's use of data obtained via the Amazon Selling Partner API complies with the Amazon Acceptable Use Policy and the Amazon Data Protection Policy applicable to SP-API developers.</p>
+
+<h2>4. Data from Google Ads</h2>
 <p>When you connect your Google Ads account, we access campaign performance data, keyword metrics, search term reports, and conversion data through the Google Ads API. This data is used solely to:</p>
 <ul>
   <li>Display your advertising performance within the Terminal6 dashboard.</li>
-  <li>Generate cross-channel analytics combining Google Ads data with your other marketplace data.</li>
-  <li>Provide AI-powered recommendations for budget allocation and campaign optimisation.</li>
+  <li>Produce cross-channel analytics for <em>your own</em> business by combining your Google Ads data with your other connected data.</li>
+  <li>Provide AI-powered recommendations for budget allocation and campaign optimisation within your own accounts.</li>
 </ul>
-<p>We do not sell, share, or use your Google Ads data for any purpose other than providing our services to you. Your Google Ads data is stored securely and access is limited to authorised personnel.</p>
+<p>We do not sell, share, or use your Google Ads data for any purpose other than providing our services to you. We do not aggregate your Google Ads data with other Terminal6 customers' data. Your Google Ads data is stored securely and access is limited to authorised personnel.</p>
 
-<h2>4. Data from Other Advertising Platforms</h2>
-<p>We access Meta Ads (Facebook/Instagram) and Amazon Ads data under similar terms. Campaign metrics, spend data, and attribution data are used exclusively to provide cross-channel analytics and recommendations within Terminal6.</p>
+<h2>5. Data from Other Advertising Platforms</h2>
+<p>We access Meta Ads (Facebook/Instagram) data under similar terms. Campaign metrics, spend data, and attribution data are used exclusively to provide cross-channel analytics and recommendations for <em>your own</em> business within Terminal6, and are never aggregated across customers or sold.</p>
 
-<h2>5. Data Storage and Security</h2>
+<h2>6. Data Storage and Security</h2>
 <ul>
   <li>Your data is stored on secure cloud infrastructure (Amazon Web Services, ap-south-1 region).</li>
   <li>All data is encrypted in transit (TLS 1.2+) and at rest.</li>
@@ -70,7 +99,7 @@ footer { text-align: center; padding: 40px 32px; border-top: 1px solid var(--bor
   <li>We retain your data for as long as your account is active. You may request deletion at any time.</li>
 </ul>
 
-<h2>6. Data Sharing</h2>
+<h2>7. Data Sharing</h2>
 <p>We do not sell your data. We may share data only in the following circumstances:</p>
 <ul>
   <li><strong>With your consent:</strong> When you explicitly authorise sharing with a third party.</li>
@@ -78,7 +107,7 @@ footer { text-align: center; padding: 40px 32px; border-top: 1px solid var(--bor
   <li><strong>Legal requirements:</strong> When required by law or to protect our legal rights.</li>
 </ul>
 
-<h2>7. Your Rights</h2>
+<h2>8. Your Rights</h2>
 <p>You have the right to:</p>
 <ul>
   <li>Access the data we hold about you.</li>
@@ -88,13 +117,13 @@ footer { text-align: center; padding: 40px 32px; border-top: 1px solid var(--bor
   <li>Export your data in a machine-readable format.</li>
 </ul>
 
-<h2>8. Cookies</h2>
+<h2>9. Cookies</h2>
 <p>We use session storage for authentication state. We do not use tracking cookies or third-party analytics on our platform.</p>
 
-<h2>9. Changes to This Policy</h2>
+<h2>10. Changes to This Policy</h2>
 <p>We may update this policy from time to time. Changes will be posted on this page with an updated date.</p>
 
-<h2>10. Contact</h2>
+<h2>11. Contact</h2>
 <p>For questions about this privacy policy or to exercise your data rights, contact us at <a href="mailto:contact@terminal6.io">contact@terminal6.io</a>.</p>
 
 </div>

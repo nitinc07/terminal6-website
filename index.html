@@ -377,9 +377,11 @@ footer a:hover { color: var(--text); }
     <div class="nav-links">
       <a href="#how">How it works</a>
       <a href="#agents">Agents</a>
+      <a href="#data">Your data</a>
+      <a href="#pricing">Pricing</a>
       <a href="#founder">About</a>
       <a href="/home.html" class="nav-cta" style="background:var(--accent);margin-right:8px">Sign in</a>
-      <a href="#contact" class="nav-cta">Get in touch</a>
+      <a href="#contact" class="nav-cta">Request a quote</a>
     </div>
   </div>
 </nav>
@@ -392,7 +394,7 @@ footer a:hover { color: var(--text); }
     Being built for fast-scaling Amazon and DTC brands. Terminal6 connects your Seller Central, Vendor Central, Amazon Ads, DTC store, and ad platforms into one decision layer — so specialist AI agents make the cross-functional calls your dashboards never will.
   </p>
   <div class="hero-cta-row">
-    <a href="#contact" class="btn-primary">Talk to us</a>
+    <a href="#contact" class="btn-primary">Request a quote</a>
     <a href="#how" class="btn-ghost">See how it works →</a>
   </div>
 </section>
@@ -641,6 +643,37 @@ footer a:hover { color: var(--text); }
 
 <div class="section-divider"></div>
 
+<!-- YOUR DATA, YOUR CONTROL -->
+<section class="section" id="data">
+  <div class="section-label">Your Data, Your Control</div>
+  <h2>Your data stays yours.<br>Never pooled. Never sold.</h2>
+  <p class="section-desc">
+    Terminal6 is a single-tenant analytical tool for the brand that connects it. Data we access through Amazon Selling Partner API, Amazon Advertising API, Vendor Central, Shopify, Google Ads, Meta Ads, and your OMS is used only to power your dashboard, your briefs, and your agents. We do not aggregate data across customers. We do not benchmark you against other brands on the platform. We do not sell, license, or share your marketplace data with anyone.
+  </p>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-num">01</div>
+      <h3>Strictly per-customer</h3>
+      <p>Every record we store is keyed to your brand ID and logically isolated. Our AI agents reason over your data only — they have no access to any other customer's data. No cross-customer training, no cross-customer features, no cross-customer insights.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">02</div>
+      <h3>No resale, no redistribution</h3>
+      <p>We never sell, license, or redistribute your Amazon or marketplace data — raw or derived — to any third party. Derived metrics, reports, and recommendations computed on your data are returned only to you and the operators you authorise.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">03</div>
+      <h3>Disconnect and delete, any time</h3>
+      <p>You can revoke any connected account in one click. On disconnect, we stop pulling data immediately and delete stored records on request. Full audit trail of every read and every action the agents take on your behalf.</p>
+    </div>
+  </div>
+  <p style="font-size:14px;color:var(--text-light);margin-top:20px;">
+    Full details in our <a href="/privacy.html" style="color:var(--accent);text-decoration:underline;">Privacy Policy</a>. Terminal6's use of data obtained via the Amazon Selling Partner API complies with the Amazon Acceptable Use Policy.
+  </p>
+</section>
+
+<div class="section-divider"></div>
+
 <!-- FOUNDER -->
 <section class="section" id="founder">
   <div class="section-label">Who's Building This</div>
@@ -672,16 +705,47 @@ footer a:hover { color: var(--text); }
 
 <div class="section-divider"></div>
 
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2>Pricing that scales with<br>what you actually use.</h2>
+  <p class="section-desc">
+    Terminal6 pricing is <strong>quote-based</strong>. What you pay depends on the number of brands and channels you connect, the SKU count in your catalogue, the agents you activate, and the volume of data we process for you each month. No setup fees, no long-term lock-ins, and no per-seat charges for your team.
+  </p>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-num">01</div>
+      <h3>Design partners</h3>
+      <p>We are currently working with a small group of brands at <strong>no software cost</strong> during our design-partner phase, in exchange for detailed feedback and outcome measurement. Selected case-by-case.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">02</div>
+      <h3>Post-GA, usage-based</h3>
+      <p>Post-general-availability pricing is <strong>a monthly subscription priced by usage</strong> — scaled to channels connected, SKUs under management, and agents activated. Disclosed in full before you sign; nothing is hidden or metered after the fact.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">03</div>
+      <h3>Request a quote</h3>
+      <p>Tell us what you sell and where you sell it, and we will send a written quote specific to your brand within two business days. No sales pressure; no automatic renewals without notice.</p>
+    </div>
+  </div>
+  <div style="margin-top:32px;text-align:center;">
+    <a href="#contact" class="btn-primary">Request a quote →</a>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
 <!-- CTA / CONTACT FORM -->
 <section class="section" id="contact">
   <div class="cta-section" style="text-align:center;">
-    <h2>Live with our first<br>design partners.</h2>
+    <h2>Request a quote.</h2>
     <p>
-      We're building Terminal6 with a small group of design partners — brands that help shape the product and get early access in return. If you run an Amazon or DTC brand and want to be one of them, we'd love to hear from you.
+      Tell us about your brand and the channels you sell on. We will reply within two business days with a written quote specific to your setup. If you run an Amazon or DTC brand and would rather join our design-partner cohort at no software cost, mention it in the message field.
     </p>
     <form class="contact-form" id="contactForm" action="https://api.web3forms.com/submit" method="POST">
       <input type="hidden" name="access_key" value="f5412327-2637-4898-82ef-22307c425a99">
-      <input type="hidden" name="subject" value="New lead from terminal6.io">
+      <input type="hidden" name="subject" value="Quote request from terminal6.io">
       <input type="hidden" name="from_name" value="Terminal6 Website">
       <div class="form-grid">
         <div class="form-row">
@@ -733,10 +797,10 @@ footer a:hover { color: var(--text); }
         <label for="message">What's the biggest operational problem you face today? (optional)</label>
         <textarea name="message" id="message" placeholder="e.g. We can't connect our ad spend data with inventory levels across channels..."></textarea>
       </div>
-      <button type="submit" class="form-submit">Get in touch</button>
+      <button type="submit" class="form-submit">Request a quote</button>
     </form>
     <div class="form-success" id="formSuccess">
-      Thank you! We'll be in touch soon.
+      Thank you. We will reply with a written quote within two business days.
     </div>
   </div>
 </section>
