@@ -348,7 +348,9 @@
       <div class="ag-ihead">
         <span class="ag-icon">&#127919;</span>
         <span class="ag-name">Marketing Strategist</span>
-        <button class="ag-run-btn" onclick="streamAgent('marketing','ag-mkt-stream','marketing')">&#9654; Run Live</button>
+        <button class="ag-run-btn" id="ag-mkt-run" onclick="streamAgent('marketing','ag-mkt-stream','marketing')">&#9654; Run Live</button>
+        <button class="ag-run-btn" id="ag-mkt-stop" onclick="stopAgent('marketing')" style="display:none;border-color:var(--r);color:var(--r)">&#9632; Stop</button>
+        <button class="ag-run-btn" id="ag-mkt-reset" onclick="resetAgent('marketing')" style="display:none;border-color:var(--t3);color:var(--t3)">&#8634; Reset</button>
         <span class="ag-score" id="ag-mkt-score">--</span>
       </div>
       <div id="ag-mkt-stream"></div>
@@ -2650,107 +2652,135 @@ function loadAgentInventory(){
 }
 
 /* ========== LIVE STREAMING ========== */
+var _agentReaders={};
 function streamAgent(agentSlug, streamContainerId, agentKey){
-  const container = document.getElementById(streamContainerId);
-  const btn = event.target.closest('.ag-run-btn');
-  if(btn){ btn.classList.add('running'); btn.innerHTML='&#9203; Running...'; }
+  var container = document.getElementById(streamContainerId);
+  var runBtn = document.getElementById('ag-'+agentKey.replace('daily_brief','mkt').replace('marketing','mkt').replace('inventory','inv')+'-run')
+    || document.getElementById('ag-mkt-run');
+  var stopBtn = document.getElementById('ag-'+agentKey.replace('daily_brief','mkt').replace('marketing','mkt').replace('inventory','inv')+'-stop');
+  var resetBtn = document.getElementById('ag-'+agentKey.replace('daily_brief','mkt').replace('marketing','mkt').replace('inventory','inv')+'-reset');
 
-  // Show the parent panel if hidden
-  const panel = container.closest('.ag-inline');
+  if(runBtn){ runBtn.style.display='none'; }
+  if(stopBtn){ stopBtn.style.display='inline-flex'; }
+  if(resetBtn){ resetBtn.style.display='none'; }
+
+  var panel = container.closest('.ag-inline');
   if(panel) panel.style.display = 'block';
 
-  // Create streaming UI — reasoning trace panel (not raw terminal)
   container.innerHTML = '<div class="ag-stream-trace"><div class="st-status">Connecting...</div><div class="st-steps"></div></div>';
-  const tracePanel = container.querySelector('.ag-stream-trace');
-  const statusEl = tracePanel.querySelector('.st-status');
-  const stepsEl = tracePanel.querySelector('.st-steps');
-  let stepCount = 0;
+  var statusEl = container.querySelector('.st-status');
+  var stepsEl = container.querySelector('.st-steps');
+  var stepCount = 0;
+  var stopped = false;
 
-  const t = T6.token ? T6.token() : (sessionStorage.getItem('t6_token') || '');
-  const headers = { 'Authorization': 'Bearer ' + t };
+  var t = T6.token ? T6.token() : (sessionStorage.getItem('t6_token') || '');
+  var headers = { 'Authorization': 'Bearer ' + t };
   if(window.T6_BRAND_SLUG) headers['X-Brand'] = window.T6_BRAND_SLUG;
+  var API_BASE = (location.hostname.includes('.terminal6.io') && location.hostname !== 'terminal6.io' && location.hostname !== 'www.terminal6.io') ? '' : 'https://api.terminal6.io';
 
-  const API_BASE = (location.hostname.includes('.terminal6.io') && location.hostname !== 'terminal6.io' && location.hostname !== 'www.terminal6.io') ? '' : 'https://api.terminal6.io';
+  var controller = new AbortController();
+  _agentReaders[agentKey] = controller;
 
-  fetch(API_BASE + '/v1/agents/' + agentSlug + '/stream', { headers })
-    .then(response => {
+  fetch(API_BASE + '/v1/agents/' + agentSlug + '/stream', { headers: headers, signal: controller.signal })
+    .then(function(response){
       if(!response.ok) throw new Error('API ' + response.status);
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let tokenText = '';
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+      var tokenText = '';
 
       function processChunk(chunk){
         buffer += chunk;
-        const lines = buffer.split('\n');
+        var lines = buffer.split('\n');
         buffer = lines.pop() || '';
-
-        let eventType = '';
-        for(const line of lines){
+        var eventType = '';
+        for(var li=0;li<lines.length;li++){
+          var line=lines[li];
           if(line.startsWith('event: ')){ eventType = line.slice(7).trim(); continue; }
           if(line.startsWith('data: ')){
-            const data = line.slice(6);
+            var data = line.slice(6);
             if(eventType === 'status'){
               statusEl.textContent = data;
-              // Add as a reasoning step
               stepCount++;
-              stepsEl.innerHTML += `<div class="step" style="animation:fadeIn .3s"><span class="step-num">${stepCount}</span><span class="step-text">${data}</span></div>`;
+              stepsEl.innerHTML += '<div class="step" style="animation:fadeIn .3s"><span class="step-num">'+stepCount+'</span><span class="step-text">'+data+'</span></div>';
               stepsEl.scrollTop = stepsEl.scrollHeight;
             } else if(eventType === 'token'){
-              // Still accumulate tokens (needed for final parse) but don't show raw terminal
-              const unescaped = data.replace(/\\n/g, '\n');
+              var unescaped = data.replace(/\\n/g, '\n');
               tokenText += unescaped;
-              // Show a subtle "thinking" indicator
-              statusEl.textContent = 'Reasoning... (' + Math.round(tokenText.length/100) + ' blocks)';
+              statusEl.textContent = 'Building recommendations...';
             } else if(eventType === 'done'){
               try {
-                const result = JSON.parse(data);
-                statusEl.textContent = 'Analysis complete.';
-                // Show reasoning trace from the actual output
+                var result = JSON.parse(data);
+                // Replace steps with the actual reasoning trace
                 if(result.output && result.output.reasoning_trace){
+                  statusEl.textContent = 'Analysis complete \u2714';
+                  statusEl.style.color='var(--g)';
                   stepsEl.innerHTML='';
-                  result.output.reasoning_trace.forEach((s,i)=>{
-                    stepsEl.innerHTML+=`<div class="step" style="animation:fadeIn .3s"><span class="step-num">${i+1}</span><span class="step-text">${s}</span></div>`;
+                  result.output.reasoning_trace.forEach(function(s,i){
+                    stepsEl.innerHTML+='<div class="step" style="animation:fadeIn .3s"><span class="step-num">'+(i+1)+'</span><span class="step-text">'+s+'</span></div>';
                   });
                 }
-                // After a short pause, render structured output
-                setTimeout(() => {
+                if(result.cost_usd!=null){
+                  stepsEl.innerHTML+='<div style="font-size:10px;color:var(--t3);margin-top:8px;padding-top:6px;border-top:1px solid var(--border-s)">Cost: $'+result.cost_usd.toFixed(4)+' ('+((result.usage||{}).input_tokens||0)+' in + '+((result.usage||{}).output_tokens||0)+' out)</div>';
+                }
+                setTimeout(function(){
                   container.innerHTML = '';
-                  if(agentKey === 'daily_brief'){
-                    _agBriefDone = false;
-                    loadAgentBrief();
-                  } else if(agentKey === 'marketing'){
-                    _agMktDone = false;
-                    loadAgentMarketing();
-                  } else if(agentKey === 'inventory'){
-                    _agInvDone = false;
-                    loadAgentInventory();
-                  }
-                }, 2500);
+                  if(agentKey==='daily_brief'){ _agBriefDone=false; loadAgentBrief(); }
+                  else if(agentKey==='marketing'){ _agMktDone=false; loadAgentMarketing(); }
+                  else if(agentKey==='inventory'){ _agInvDone=false; loadAgentInventory(); }
+                }, 2000);
               } catch(e){ console.error('Parse error', e); }
             } else if(eventType === 'error'){
-              statusEl.innerHTML = '<span style="color:#f87171">Error: ' + data + '</span>';
+              statusEl.innerHTML = '<span style="color:var(--r)">Error: ' + data + '</span>';
             }
             eventType = '';
           }
         }
       }
-
       function pump(){
-        return reader.read().then(({done, value}) => {
-          if(done){ return; }
-          processChunk(decoder.decode(value, {stream: true}));
+        return reader.read().then(function(r){
+          if(r.done || stopped) return;
+          processChunk(decoder.decode(r.value, {stream: true}));
           return pump();
         });
       }
       return pump();
     })
-    .catch(err => {
-      terminal.innerHTML = '<span style="color:#f87171">Error: ' + err.message + '</span>';
+    .catch(function(err){
+      if(err.name==='AbortError'){
+        statusEl.textContent='Stopped by user.';
+        statusEl.style.color='var(--a)';
+      } else {
+        statusEl.innerHTML='<span style="color:var(--r)">Error: '+err.message+'</span>';
+      }
     })
-    .finally(() => {
-      if(btn){ btn.classList.remove('running'); btn.innerHTML='&#9654; Run Live'; }
+    .finally(function(){
+      if(runBtn){ runBtn.style.display='inline-flex'; runBtn.innerHTML='&#9654; Run Live'; runBtn.classList.remove('running'); }
+      if(stopBtn){ stopBtn.style.display='none'; }
+      if(resetBtn){ resetBtn.style.display='inline-flex'; }
+      delete _agentReaders[agentKey];
     });
+}
+function stopAgent(agentKey){
+  var c=_agentReaders[agentKey];
+  if(c) c.abort();
+}
+function resetAgent(agentKey){
+  var mappings={marketing:['ag-mkt-stream','ag-mkt-summary','ag-mkt-buckets','ag-mkt-recs','ag-mkt-trace'],inventory:['ag-inv-stream','ag-inv-recs','ag-inv-trace'],daily_brief:['agent-brief-stream']};
+  var ids=mappings[agentKey]||[];
+  for(var i=0;i<ids.length;i++){
+    var el=document.getElementById(ids[i]);
+    if(el){ el.innerHTML=''; el.style.display=el.classList.contains('ag-recs')||el.id.includes('bucket')?'grid':'none'; }
+  }
+  var scoreEl=document.getElementById('ag-'+(agentKey==='marketing'?'mkt':agentKey==='inventory'?'inv':'')+'-score');
+  if(scoreEl){ scoreEl.innerHTML='--'; scoreEl.className='ag-score'; }
+  var summaryEl=document.getElementById('ag-'+(agentKey==='marketing'?'mkt':agentKey==='inventory'?'inv':'')+'-summary');
+  if(summaryEl) summaryEl.textContent='';
+  var resetBtn=document.getElementById('ag-'+(agentKey==='marketing'?'mkt':'inv')+'-reset');
+  if(resetBtn) resetBtn.style.display='none';
+  var exportBtn=document.getElementById('ag-export-btn');
+  if(exportBtn) exportBtn.remove();
+  _approvedActions=[];
 }
 
 function agAct(btn, action){
