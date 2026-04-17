@@ -2171,11 +2171,12 @@ function renderRtAsinTable(){
     const fmtP1 = v => v!=null?v.toFixed(1)+'%':'-';
     if(isParent){
       const rid='rtmsku-'+(r.master_sku_id||'').replace(/[^a-z0-9]/gi,'');
-      const nameCell = `<strong>${r.msku_name||'--'}</strong> <span style="color:var(--t3);font-size:10.5px;font-family:var(--mono);margin-left:4px">${r.asin_count} ASIN${r.asin_count===1?'':'s'}</span>`;
-      let h=`<tr class="rtmsku-row" onclick="toggleRtMsku('${rid}')" style="cursor:pointer;background:var(--bg-cream);font-weight:600">
+      // Product name + ASIN count on its own line below name (matches Catalog tab pattern)
+      const nameCell = `<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.msku_name||'').replace(/"/g,'&quot;')}"><strong>${r.msku_name||'--'}</strong></div><div style="font-size:10.5px;color:var(--t3);font-family:var(--mono);margin-top:2px">${r.asin_count} ASIN${r.asin_count===1?'':'s'}</div>`;
+      return `<tr class="rtmsku-row" onclick="toggleRtMsku('${rid}')" style="cursor:pointer;background:var(--bg-cream);font-weight:600">
         <td style="color:var(--t3);font-family:var(--mono);font-size:11px" id="${rid}-tri">&#9656;</td>
-        <td class="mn2 hi" style="font-size:11.5px">${r.msku_code||'--'}</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px" title="${(r.msku_name||'').replace(/"/g,'&quot;')}">${nameCell}</td>
+        <td class="mn2 hi" style="font-size:11.5px;white-space:nowrap">${r.msku_code||'--'}</td>
+        <td style="font-size:12px">${nameCell}</td>
         <td class="mn2 r">${cur(r.gross_revenue)}</td>
         <td class="mn2 r" style="color:var(--r)">${r.return_pct!=null&&r.return_pct>0?r.return_pct.toFixed(0)+'%':'-'}</td>
         <td class="mn2 r">${cur(r.net_revenue)}</td>
@@ -2189,43 +2190,42 @@ function renderRtAsinTable(){
         <td class="mn2 r" style="${cm3Cls}">${fmtP1(r.cm3_pct)}</td>
         <td class="mn2 r" style="${cm3Cls}">${cur(r.cm3)}</td>
       </tr>`;
-      // Pre-render children rows in a hidden tbody segment
-      const childRows = (r.children||[]).map(c => dataRow(c, false, rid)).join('');
-      h += `<tr class="rtmsku-children" id="${rid}-ch" style="display:none"><td colspan="15" style="padding:0">
-        <table class="tbl" style="margin:0;border:none;font-size:12px"><tbody>${childRows}</tbody></table>
-      </td></tr>`;
-      return h;
     } else {
-      const name=(r.product_name||'').length>30?r.product_name.substring(0,30)+'...':r.product_name||'';
-      return `<tr style="background:var(--bg-white)">
+      const name=(r.product_name||'').length>50?r.product_name.substring(0,50)+'...':r.product_name||'';
+      return `<tr class="rtmsku-child" data-pid="${parentRid}" style="display:none;background:var(--bg-white)">
         <td style="width:18px"></td>
-        <td class="mn2" style="font-size:11px;padding-left:24px">${r.asin}</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+        <td class="mn2 hi" style="font-size:11px;padding-left:24px;white-space:nowrap">${r.asin}</td>
+        <td style="font-size:11.5px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px" title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
         <td class="mn2 r">${cur(r.gross_revenue)}</td>
         <td class="mn2 r" style="color:var(--r)">${r.return_pct!=null&&r.return_pct>0?r.return_pct.toFixed(0)+'%':'-'}</td>
-        <td class="mn2 r" style="font-weight:600">${cur(r.net_revenue)}</td>
+        <td class="mn2 r">${cur(r.net_revenue)}</td>
         <td class="mn2 r" style="${sep}">${fmtP(r.cogs_pct)}</td>
-        <td class="mn2 r" style="font-weight:600;${gmCls}">${fmtP(r.gm_pct)}</td>
+        <td class="mn2 r" style="${gmCls}">${fmtP(r.gm_pct)}</td>
         <td class="mn2 r" style="${sep}">${fmtP1(r.commission_pct)}</td>
         <td class="mn2 r">${r.return_cost_pct!=null&&r.return_cost_pct>0?r.return_cost_pct.toFixed(1)+'%':'-'}</td>
         <td class="mn2 r">${fmtP1(r.fba_pct)}</td>
-        <td class="mn2 r" style="font-weight:600;${cm2Cls}">${fmtP(r.cm2_pct)}</td>
+        <td class="mn2 r" style="${cm2Cls}">${fmtP(r.cm2_pct)}</td>
         <td class="mn2 r" style="${sep}">${fmtP1(r.tacos)}</td>
-        <td class="mn2 r" style="font-weight:700;${cm3Cls}">${fmtP1(r.cm3_pct)}</td>
-        <td class="mn2 r" style="font-weight:700;${cm3Cls}">${cur(r.cm3)}</td>
+        <td class="mn2 r" style="${cm3Cls}">${fmtP1(r.cm3_pct)}</td>
+        <td class="mn2 r" style="${cm3Cls}">${cur(r.cm3)}</td>
       </tr>`;
     }
   }
-  for(const r of mskuRows){ html += dataRow(r, true); }
+  for(const r of mskuRows){
+    const rid='rtmsku-'+(r.master_sku_id||'').replace(/[^a-z0-9]/gi,'');
+    html += dataRow(r, true);
+    for(const c of (r.children||[])){ html += dataRow(c, false, rid); }
+  }
   html+='</tbody></table>';
   el.innerHTML=html;
 }
 function toggleRtMsku(rid){
   const tri=document.getElementById(rid+'-tri');
-  const ch=document.getElementById(rid+'-ch');
-  if(!ch) return;
-  const open=ch.style.display!=='none';
-  ch.style.display=open?'none':'';
+  if(!tri) return;
+  const kids=document.querySelectorAll('tr.rtmsku-child[data-pid="'+rid+'"]');
+  if(!kids.length) return;
+  const open=kids[0].style.display!=='none';
+  kids.forEach(k=>{ k.style.display=open?'none':''; });
   tri.innerHTML=open?'&#9656;':'&#9662;';
 }
 function sortRtAsin(col){
