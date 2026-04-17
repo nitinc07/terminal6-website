@@ -1214,15 +1214,14 @@ function renderSERP(s){
 }
 
 /* ========== CATALOGUE ========== */
-let pmCatalogCache = null;  // cached /catalogue payload used to render expanded child rows
-let pmMasterCache  = null;  // cached /product-master payload
+let pmMasterCache = null;  // cached /product-master payload (variants embedded)
 
 function loadCatalog(){
   const search=document.getElementById('ctSearch').value.trim();
   const qs='/v1/amazon/catalogue?days='+catDays+'&limit=500'+(search?('&search='+encodeURIComponent(search)):'');
-  api(qs).then(c=>{ pmCatalogCache = c; renderCatalog(c); if(pmMasterCache) renderProductMaster(pmMasterCache); }).catch(showErr('ct-table'));
+  api(qs).then(renderCatalog).catch(showErr('ct-table'));
   api('/v1/amazon/catalogue-health?days='+catDays).then(renderCatHealth).catch(()=>{});
-  api('/v1/amazon/product-master?days='+catDays).then(c=>{ pmMasterCache = c; renderProductMaster(c); }).catch(showErr('pm-table'));
+  api('/v1/amazon/product-master').then(c=>{ pmMasterCache = c; renderProductMaster(c); }).catch(showErr('pm-table'));
 }
 function renderProductMaster(c){
   const el = document.getElementById('pm-table');
@@ -1232,71 +1231,59 @@ function renderProductMaster(c){
   if(!rows.length){ el.innerHTML='<div class="empty">No active MSKUs</div>'; return; }
   let html='<table class="tbl"><thead><tr>'
     +'<th style="width:18px"></th>'
-    +'<th>MSKU</th><th>Name</th>'
+    +'<th>MSKU</th><th>Product Name</th>'
     +'<th class="r">Variants '+T6.tip('# distinct ASINs under this MSKU &middot; active / total listings (counting fulfillment siblings).')+'</th>'
     +'<th class="r">FBA / FBM</th>'
     +'<th class="r">MRP</th>'
     +'<th class="r">COGS '+T6.tip('Rolled up from variant COGS (modal value). &mdash; means no variant had COGS set.')+'</th>'
-    +'<th class="r">ASP '+T6.tip('Average selling price = revenue &divide; units over selected window.')+'</th>'
-    +'<th class="r">Units ('+c.days+'d)</th>'
-    +'<th class="r">Revenue ('+c.days+'d)</th>'
     +'</tr></thead><tbody>';
   for(const r of rows){
     const rid = 'pmr-' + (r.msku_id||'').replace(/[^a-z0-9]/gi,'');
     const cogsCell = r.cogs==null ? '<span style="color:var(--neg);font-weight:500">&mdash;</span>' : cur(r.cogs);
-    html += `<tr class="pm-row" data-mskuid="${r.msku_id}" data-rid="${rid}" onclick="togglePm('${rid}','${r.msku_id}')" style="cursor:pointer">
+    html += `<tr class="pm-row" data-mskuid="${r.msku_id}" data-rid="${rid}" onclick="togglePm('${rid}')" style="cursor:pointer">
       <td style="color:var(--t3);font-family:var(--mono);font-size:11px" id="${rid}-tri">&#9656;</td>
       <td class="mn2 hi">${r.msku_code||'--'}</td>
-      <td><strong>${r.msku_name||'--'}</strong>${r.parent_asin?(' <span style="color:var(--t3);font-size:11px;font-family:var(--mono)">'+r.parent_asin+'</span>'):''}</td>
+      <td><strong>${r.msku_name||'--'}</strong>${r.parent_asin?(' <span style="color:var(--t3);font-size:11px;font-family:var(--mono);margin-left:6px">'+r.parent_asin+'</span>'):''}</td>
       <td class="mn2 r">${r.asins} ASIN${r.asins===1?'':'s'} <span style="color:var(--t3)">&middot;</span> <span style="color:${r.active>0?'var(--pos)':'var(--t3)'}">${r.active}</span>/${r.listings}</td>
       <td class="mn2 r"><span style="color:var(--t2)">${r.fba}</span> / <span style="color:var(--t3)">${r.fbm}</span></td>
       <td class="mn2 r">${r.mrp!=null?cur(r.mrp):'&mdash;'}</td>
       <td class="mn2 r">${cogsCell}</td>
-      <td class="mn2 r">${r.avg_selling_price!=null?cur(r.avg_selling_price):'&mdash;'}</td>
-      <td class="mn2 r">${fmt(r.units)}</td>
-      <td class="mn2 r">${cur(r.revenue)}</td>
     </tr>
-    <tr class="pm-children" id="${rid}-ch" style="display:none;background:var(--bg-cream)"><td colspan="10" style="padding:0"><div id="${rid}-ch-body" style="padding:10px 14px"></div></td></tr>`;
+    <tr class="pm-children" id="${rid}-ch" style="display:none;background:var(--bg-cream)"><td colspan="7" style="padding:0"><div id="${rid}-ch-body" style="padding:10px 14px"></div></td></tr>`;
   }
   html+='</tbody></table>';
   el.innerHTML=html;
+  // pre-render child bodies (cheap; already in-memory)
+  for(const r of rows){
+    const rid = 'pmr-' + (r.msku_id||'').replace(/[^a-z0-9]/gi,'');
+    const body = document.getElementById(rid+'-ch-body');
+    if(!body) continue;
+    const vs = r.variants || [];
+    if(!vs.length){ body.innerHTML='<div class="empty" style="padding:6px;font-size:12px">No variants</div>'; continue; }
+    let h='<table class="tbl" style="margin:0"><thead><tr>'
+      +'<th>Channel SKU</th><th>ASIN</th><th>Fulfillment</th><th class="r">Status</th>'
+      +'</tr></thead><tbody>';
+    for(const v of vs){
+      const ful = v.fulfilment_method || '&mdash;';
+      const statusTxt = v.is_active ? '<span style="color:var(--pos)">Active</span>' : '<span style="color:var(--t3)">Inactive</span>';
+      h+=`<tr>
+        <td class="mn2"><strong>${v.seller_sku||'&mdash;'}</strong></td>
+        <td class="mn2 hi">${v.asin||'&mdash;'}</td>
+        <td class="mn2"><span style="color:${ful==='FBA'?'var(--t1)':'var(--t2)'};font-size:11.5px">${ful}</span></td>
+        <td class="mn2 r">${statusTxt}</td>
+      </tr>`;
+    }
+    h+='</tbody></table>';
+    body.innerHTML=h;
+  }
 }
-function togglePm(rid, mskuid){
+function togglePm(rid){
   const tri = document.getElementById(rid+'-tri');
   const ch = document.getElementById(rid+'-ch');
   if(!ch) return;
   const open = ch.style.display !== 'none';
   ch.style.display = open ? 'none' : '';
   tri.innerHTML = open ? '&#9656;' : '&#9662;';
-  if(!open){
-    // lazy-populate from cached catalog payload, filtered by master_sku_id
-    const body = document.getElementById(rid+'-ch-body');
-    if(body.dataset.rendered) return;
-    if(!pmCatalogCache || !pmCatalogCache.data){ body.innerHTML='<div class="empty" style="padding:6px">Loading variants…</div>'; return; }
-    const kids = pmCatalogCache.data.filter(x => x.master_sku_id === mskuid);
-    if(!kids.length){ body.innerHTML='<div class="empty" style="padding:6px;font-size:12px">No ASINs with sales in this window. <em>(Inactive ASINs are not returned by /catalogue — they\'re in the MSKU row counts only.)</em></div>'; body.dataset.rendered='1'; return; }
-    let h='<table class="tbl" style="margin:0"><thead><tr>'
-      +'<th>ASIN</th><th>Product</th>'
-      +'<th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th>'
-      +'<th class="r">Ad Spend</th><th class="r">ACoS</th><th class="r">TACoS</th>'
-      +'</tr></thead><tbody>';
-    for(const k of kids){
-      const trimmed=(k.product_name||'').length>64?k.product_name.slice(0,64)+'...':(k.product_name||'--');
-      h+=`<tr>
-        <td class="mn2 hi">${k.asin||'--'}</td>
-        <td style="font-size:12px">${trimmed}</td>
-        <td class="mn2 r">${cur(k.revenue)}</td>
-        <td class="mn2 r">${fmt(k.units)}</td>
-        <td class="mn2 r">${fmt(k.orders)}</td>
-        <td class="mn2 r">${cur(k.ad_spend)}</td>
-        <td class="mn2 r">${k.acos_pct!=null?pct(k.acos_pct):'--'}</td>
-        <td class="mn2 r">${k.tacos_pct!=null?pct(k.tacos_pct):'--'}</td>
-      </tr>`;
-    }
-    h+='</tbody></table>';
-    body.innerHTML=h;
-    body.dataset.rendered='1';
-  }
 }
 function renderCatHealth(c){
   document.getElementById('ct-listings').textContent=fmt(c.amazon_listings);
