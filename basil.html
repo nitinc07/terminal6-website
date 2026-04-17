@@ -626,11 +626,7 @@
       <div class="sec-h"><h3>Fee Audit — Rate Card vs Settlement</h3></div>
       <div id="pnl-fee-audit" class="loading">Loading...</div>
     </div>
-    <!-- Per-ASIN table -->
-    <div class="sec">
-      <div class="sec-h"><h3>Per-ASIN P&amp;L</h3></div>
-      <div id="pnl-asin-table" class="loading">Loading...</div>
-    </div>
+    <!-- Settlement per-ASIN removed — real-time CM3 table above is the primary view -->
   </div>
 
   <!-- ========== PLACEHOLDERS ========== -->
@@ -1819,7 +1815,7 @@ function loadPnL(){
   api('/v1/amazon/pnl/realtime?days=30').then(renderRealtimePnL).catch(showErr('pnl-realtime'));
   loadRtAsin(rtAsinDays);
   api('/v1/amazon/pnl/fee-audit?days=90').then(renderFeeAudit).catch(showErr('pnl-fee-audit'));
-  api('/v1/amazon/pnl/by-asin?days=90&limit=50&sort=revenue').then(renderPnLTable).catch(showErr('pnl-asin-table'));
+  // Settlement per-ASIN removed — real-time CM3 table is the primary view
 }
 function renderPnLSummary(d){
   if(!d||!d.totals) return;
