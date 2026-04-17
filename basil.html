@@ -602,6 +602,16 @@
       <div class="sec-h"><h3>Monthly P&amp;L</h3></div>
       <div id="pnl-monthly-table" class="loading">Loading...</div>
     </div>
+    <!-- Real-time P&L (CM2) -->
+    <div class="sec">
+      <div class="sec-h"><h3>Real-time P&amp;L (CM2)</h3><span style="font-size:11px;color:var(--t3);margin-left:8px">Live from orders, no settlement lag</span></div>
+      <div id="pnl-realtime" class="loading">Loading...</div>
+    </div>
+    <!-- Per-ASIN CM2 -->
+    <div class="sec">
+      <div class="sec-h"><h3>Per-ASIN CM2</h3></div>
+      <div id="pnl-rt-asin" class="loading">Loading...</div>
+    </div>
     <!-- Fee Audit -->
     <div class="sec">
       <div class="sec-h"><h3>Fee Audit — Rate Card vs Settlement</h3></div>
@@ -1797,6 +1807,8 @@ document.getElementById('ivSubPills').addEventListener('click', e=>{
 function loadPnL(){
   api('/v1/amazon/pnl/summary?days=90').then(renderPnLSummary).catch(showErr('pnl-waterfall'));
   api('/v1/amazon/pnl/monthly?months=6').then(renderPnLMonthly).catch(showErr('pnl-monthly-table'));
+  api('/v1/amazon/pnl/realtime?days=30').then(renderRealtimePnL).catch(showErr('pnl-realtime'));
+  api('/v1/amazon/pnl/realtime/by-asin?days=30&limit=50').then(renderRtAsin).catch(showErr('pnl-rt-asin'));
   api('/v1/amazon/pnl/fee-audit?days=90').then(renderFeeAudit).catch(showErr('pnl-fee-audit'));
   api('/v1/amazon/pnl/by-asin?days=90&limit=50&sort=revenue').then(renderPnLTable).catch(showErr('pnl-asin-table'));
 }
@@ -1883,6 +1895,74 @@ function renderPnLMonthly(d){
     html+='<td class="mn2 r" style="'+cmCls+'">'+(r.cm_pct!=null?r.cm_pct.toFixed(1)+'%':'--')+'</td>';
     html+='<td class="mn2 r" style="font-weight:600">'+cur(r.remittance)+'</td>';
     html+='<td class="mn2 r">'+fmt(r.units_sold)+'</td>';
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+function renderRealtimePnL(d){
+  const el=document.getElementById('pnl-realtime');
+  if(!d||!d.net_revenue){el.innerHTML='<div class="empty">No real-time P&amp;L data</div>';return;}
+  const n=d.net_revenue;
+  function rw(label,val,pct,bold,color){
+    const s=bold?'font-weight:600':'';
+    const c=color||'';
+    return '<tr style="'+s+'"><td>'+label+'</td><td class="mn2 r" style="'+c+'">'+cur(Math.abs(val))+'</td><td class="mn2 r" style="'+c+'">'+(pct!=null?pct.toFixed(1)+'%':'--')+'</td></tr>';
+  }
+  let html='<div style="display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap">';
+  html+='<div class="cd" style="min-width:140px"><div class="kl">Net Revenue</div><div class="kv">'+cur(n)+'</div></div>';
+  html+='<div class="cd" style="min-width:140px"><div class="kl">Platform Fees</div><div class="kv">'+d.platform_fees_pct.toFixed(1)+'%</div></div>';
+  html+='<div class="cd" style="min-width:140px"><div class="kl">Return Cost (RVP)</div><div class="kv">'+d.return_cost_pct.toFixed(1)+'%</div></div>';
+  html+='<div class="cd" style="min-width:140px"><div class="kl">CM2</div><div class="kv" style="color:'+(d.cm2>=0?'var(--g)':'var(--r)')+'">'+d.cm2_pct.toFixed(1)+'%</div></div>';
+  html+='</div>';
+  html+='<table class="tbl"><thead><tr><th>Line Item</th><th class="r">Amount</th><th class="r">% of Net</th></tr></thead><tbody>';
+  html+=rw('Gross Revenue (ex-GST)',d.gross_revenue,d.gross_revenue/n*100,true);
+  html+=rw('Returns (RTO+RVP)',d.returns_value,d.return_pct,false,'color:var(--r)');
+  html+=rw('Net Revenue',n,100,true);
+  html+='<tr><td colspan="3" style="border:0;height:4px"></td></tr>';
+  html+=rw('Commission (8% + GST)',Math.abs(d.commission),d.commission_pct,false,'color:var(--r)');
+  html+=rw('FBA Forward (delivered)',Math.abs(d.fba_forward),d.fba_pct,false,'color:var(--r)');
+  html+=rw('Closing Fee (delivered)',Math.abs(d.closing_fee),d.closing_pct,false,'color:var(--r)');
+  html+=rw('TCS + TDS',Math.abs(d.tcs_tds),d.tcs_tds_pct,false,'color:var(--r)');
+  html+=rw('Return Cost (RVP)',Math.abs(d.return_cost),d.return_cost_pct,false,'color:var(--r)');
+  if(d.return_cost_detail){
+    const rc=d.return_cost_detail;
+    html+='<tr style="font-size:11px;color:var(--t3)"><td style="padding-left:24px">Refund commission</td><td class="mn2 r">'+cur(Math.abs(rc.refund_commission))+'</td><td></td></tr>';
+    html+='<tr style="font-size:11px;color:var(--t3)"><td style="padding-left:24px">FBA retained</td><td class="mn2 r">'+cur(Math.abs(rc.fba_retained))+'</td><td></td></tr>';
+    html+='<tr style="font-size:11px;color:var(--t3)"><td style="padding-left:24px">Closing retained</td><td class="mn2 r">'+cur(Math.abs(rc.closing_retained))+'</td><td></td></tr>';
+  }
+  html+='<tr><td colspan="3" style="border:0;height:4px"></td></tr>';
+  html+=rw('SP Ad Spend',Math.abs(d.sp_ad_spend),d.sp_ad_spend_pct,false,'color:var(--r)');
+  html+=rw('COGS (delivered)',Math.abs(d.cogs),d.cogs_pct,false,'color:var(--r)');
+  html+='<tr><td colspan="3" style="border:0;height:4px"></td></tr>';
+  const cmColor=d.cm2>=0?'color:var(--g)':'color:var(--r)';
+  html+=rw('CM2',Math.abs(d.cm2),d.cm2_pct,true,cmColor);
+  html+='</tbody></table>';
+  html+='<div style="font-size:11px;color:var(--t3);margin-top:8px">'+d.units.shipped+' shipped = '+d.units.delivered+' delivered + '+d.units.rvp+' RVP + '+d.units.rto+' RTO. Excludes SB/SD ads, reimbursements, promotions.</div>';
+  el.innerHTML=html;
+}
+function renderRtAsin(d){
+  const el=document.getElementById('pnl-rt-asin');
+  if(!d||!d.data||!d.data.length){el.innerHTML='<div class="empty">No per-ASIN CM2 data</div>';return;}
+  let html='<table class="tbl"><thead><tr>';
+  html+='<th>ASIN</th><th>Product</th><th class="r">Net Rev</th>';
+  html+='<th class="r">Comm%</th><th class="r">FBA%</th><th class="r">Return%</th>';
+  html+='<th class="r">TACoS</th><th class="r">COGS%</th><th class="r">CM2</th><th class="r">CM2%</th>';
+  html+='</tr></thead><tbody>';
+  for(const r of d.data){
+    const cmCls=r.cm2_pct!=null&&r.cm2_pct<0?'color:var(--r)':'color:var(--g)';
+    const name=(r.product_name||'').length>35?r.product_name.substring(0,35)+'...':r.product_name||'';
+    html+='<tr>';
+    html+='<td class="mn2">'+r.asin+'</td>';
+    html+='<td title="'+(r.product_name||'').replace(/"/g,'&quot;')+'">'+name+'</td>';
+    html+='<td class="mn2 r">'+cur(r.net_revenue)+'</td>';
+    html+='<td class="mn2 r">'+(r.commission_pct!=null?r.commission_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r">'+(r.fba_pct!=null?r.fba_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r">'+(r.return_cost_pct!=null?r.return_cost_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r">'+(r.tacos!=null?r.tacos.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r">'+(r.cogs_pct!=null?r.cogs_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r" style="'+cmCls+'">'+cur(r.cm2)+'</td>';
+    html+='<td class="mn2 r" style="'+cmCls+'">'+(r.cm2_pct!=null?r.cm2_pct.toFixed(1)+'%':'--')+'</td>';
     html+='</tr>';
   }
   html+='</tbody></table>';
