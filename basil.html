@@ -1945,24 +1945,33 @@ function renderRtAsin(d){
   const el=document.getElementById('pnl-rt-asin');
   if(!d||!d.data||!d.data.length){el.innerHTML='<div class="empty">No per-ASIN CM2 data</div>';return;}
   let html='<table class="tbl"><thead><tr>';
-  html+='<th>ASIN</th><th>Product</th><th class="r">Net Rev</th>';
-  html+='<th class="r">Comm%</th><th class="r">FBA%</th><th class="r">Return%</th>';
-  html+='<th class="r">TACoS</th><th class="r">COGS%</th><th class="r">CM2</th><th class="r">CM2%</th>';
+  // Waterfall: Gross → Returns → Net → COGS → CM1 | Comm → Return Cost → FBA → SP Ads → CM2
+  html+='<th>ASIN</th><th>Product</th>';
+  html+='<th class="r">Gross</th><th class="r">Ret%</th><th class="r">Net Rev</th>';
+  html+='<th class="r">COGS%</th><th class="r">CM1%</th>';
+  html+='<th class="r">Comm%</th><th class="r">RetCost%</th><th class="r">FBA%</th><th class="r">TACoS</th>';
+  html+='<th class="r">CM2%</th><th class="r">CM2</th>';
   html+='</tr></thead><tbody>';
   for(const r of d.data){
-    const cmCls=r.cm2_pct!=null&&r.cm2_pct<0?'color:var(--r)':'color:var(--g)';
-    const name=(r.product_name||'').length>35?r.product_name.substring(0,35)+'...':r.product_name||'';
+    const cm1Cls=r.cm1_pct!=null&&r.cm1_pct<0?'color:var(--r)':'';
+    const cm2Cls=r.cm2_pct!=null&&r.cm2_pct<0?'color:var(--r)':'color:var(--g)';
+    const name=(r.product_name||'').length>30?r.product_name.substring(0,30)+'...':r.product_name||'';
     html+='<tr>';
     html+='<td class="mn2">'+r.asin+'</td>';
     html+='<td title="'+(r.product_name||'').replace(/"/g,'&quot;')+'">'+name+'</td>';
-    html+='<td class="mn2 r">'+cur(r.net_revenue)+'</td>';
+    // Stage 1: Gross → Net → CM1
+    html+='<td class="mn2 r">'+cur(r.gross_revenue)+'</td>';
+    html+='<td class="mn2 r" style="color:var(--r)">'+(r.return_pct!=null?r.return_pct.toFixed(0)+'%':'0%')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:600">'+cur(r.net_revenue)+'</td>';
+    html+='<td class="mn2 r">'+(r.cogs_pct!=null?r.cogs_pct.toFixed(0)+'%':'--')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:500;'+cm1Cls+'">'+(r.cm1_pct!=null?r.cm1_pct.toFixed(0)+'%':'--')+'</td>';
+    // Stage 2: Fees → CM2
     html+='<td class="mn2 r">'+(r.commission_pct!=null?r.commission_pct.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r">'+(r.fba_pct!=null?r.fba_pct.toFixed(1)+'%':'--')+'</td>';
     html+='<td class="mn2 r">'+(r.return_cost_pct!=null?r.return_cost_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r">'+(r.fba_pct!=null?r.fba_pct.toFixed(1)+'%':'--')+'</td>';
     html+='<td class="mn2 r">'+(r.tacos!=null?r.tacos.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r">'+(r.cogs_pct!=null?r.cogs_pct.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="'+cmCls+'">'+cur(r.cm2)+'</td>';
-    html+='<td class="mn2 r" style="'+cmCls+'">'+(r.cm2_pct!=null?r.cm2_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:600;'+cm2Cls+'">'+(r.cm2_pct!=null?r.cm2_pct.toFixed(1)+'%':'--')+'</td>';
+    html+='<td class="mn2 r" style="font-weight:600;'+cm2Cls+'">'+cur(r.cm2)+'</td>';
     html+='</tr>';
   }
   html+='</tbody></table>';
