@@ -592,7 +592,7 @@
       </div>
       <div class="sec">
         <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3>Per-ASIN P&amp;L</h3>
+          <h3>Per-MSKU P&amp;L <span class="note">grouped by MSKU; click row to expand individual ASINs</span></h3>
           <div class="pills" id="rtAsinPills">
             <button data-days="1">1D</button>
             <button data-days="7">7D</button>
@@ -2063,7 +2063,7 @@ let _rtAsinSort={col:'net_revenue',asc:false};
 function loadRtAsin(days){
   rtAsinDays=days;
   document.querySelectorAll('#rtAsinPills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
-  api('/v1/amazon/pnl/realtime/by-asin?days='+days+'&limit=100').then(d=>{
+  api('/v1/amazon/pnl/realtime/by-asin?days='+days+'&limit=300').then(d=>{
     _rtAsinData=d;
     // Period label
     const today=new Date();
@@ -2073,13 +2073,67 @@ function loadRtAsin(days){
     renderRtAsinTable();
   }).catch(showErr('pnl-rt-asin'));
 }
+// Aggregate per-ASIN rows up to MSKU level. Sums absolutes, derives percentages from sums.
+function _rollupMsku(asins){
+  const sum = (key) => asins.reduce((a,r)=>a+(r[key]||0),0);
+  const gross = sum('gross_revenue');
+  const ret = -sum('returns');           // returns stored negative
+  const net = sum('net_revenue');
+  const cogs = -sum('cogs');
+  const gm = sum('gm');
+  const comm = -sum('commission');
+  const rcost = -sum('return_cost');
+  const fba = -sum('fba_forward');
+  const closing = -sum('closing_fee');
+  const cm2 = sum('cm2');
+  const sp = -sum('sp_ad_spend');
+  const cm3 = sum('cm3');
+  const denom = (n) => Math.abs(net) > 1 ? n / net * 100 : null;
+  return {
+    asin_count: asins.length,
+    msku_code: asins[0].msku_code,
+    msku_name: asins[0].msku_name,
+    master_sku_id: asins[0].master_sku_id,
+    gross_revenue: gross,
+    returns: -ret,
+    return_pct: gross ? ret / gross * 100 : null,
+    net_revenue: net,
+    cogs: -cogs,
+    cogs_pct: denom(cogs),
+    gm: gm,
+    gm_pct: denom(gm),
+    commission: -comm,
+    commission_pct: denom(comm),
+    return_cost: -rcost,
+    return_cost_pct: denom(rcost),
+    fba_forward: -fba,
+    fba_pct: denom(fba),
+    closing_fee: -closing,
+    cm2: cm2,
+    cm2_pct: denom(cm2),
+    sp_ad_spend: -sp,
+    tacos: net && sp ? sp / net * 100 : null,
+    cm3: cm3,
+    cm3_pct: denom(cm3),
+    units_shipped: asins.reduce((a,r)=>a+(r.units_shipped||0),0),
+    units_delivered: asins.reduce((a,r)=>a+(r.units_delivered||0),0),
+    units_rvp: asins.reduce((a,r)=>a+(r.units_rvp||0),0),
+    children: asins,
+  };
+}
 function renderRtAsinTable(){
   const el=document.getElementById('pnl-rt-asin');
   if(!_rtAsinData||!_rtAsinData.data||!_rtAsinData.data.length){el.innerHTML='<div class="empty">No order data for this period. Data may lag 1-2 days from the daily pipeline.</div>';return;}
-  // Sort
-  const rows=[..._rtAsinData.data];
+  // Group rows by msku_code
+  const groups = {};
+  for(const r of _rtAsinData.data){
+    const k = r.msku_code || '__nomsku__';
+    (groups[k] = groups[k] || []).push(r);
+  }
+  const mskuRows = Object.values(groups).map(_rollupMsku);
+  // Sort MSKU rows
   const sc=_rtAsinSort.col;
-  rows.sort((a,b)=>{
+  mskuRows.sort((a,b)=>{
     const av=a[sc]!=null?a[sc]:(_rtAsinSort.asc?Infinity:-Infinity);
     const bv=b[sc]!=null?b[sc]:(_rtAsinSort.asc?Infinity:-Infinity);
     return _rtAsinSort.asc?av-bv:bv-av;
@@ -2093,7 +2147,8 @@ function renderRtAsinTable(){
     return '<th class="'+cls+'" style="cursor:pointer;'+sty+'" onclick="sortRtAsin(\''+col+'\')">'+label+(active?arrow:'')+'</th>';
   }
   let html='<table class="tbl" style="font-size:12px"><thead><tr>';
-  html+='<th>ASIN</th><th style="max-width:140px">Product</th>';
+  html+='<th style="width:18px"></th>';
+  html+='<th>MSKU / ASIN</th><th style="max-width:180px">Product</th>';
   html+=th('Gross','gross_revenue','');
   html+=th('Ret%','return_pct','');
   html+=th('Net Rev','net_revenue','font-weight:700');
@@ -2107,30 +2162,71 @@ function renderRtAsinTable(){
   html+=th('CM3%','cm3_pct','font-weight:700');
   html+=th('CM3','cm3','font-weight:700');
   html+='</tr></thead><tbody>';
-  for(const r of rows){
+
+  function dataRow(r, isParent, parentRid){
     const gmCls=r.gm_pct!=null&&r.gm_pct<30?'color:var(--a)':'';
     const cm2Cls=r.cm2_pct!=null&&r.cm2_pct<10?'color:var(--r)':'';
     const cm3Cls=r.cm3_pct!=null?(r.cm3_pct<0?'color:var(--r)':r.cm3_pct<10?'color:var(--a)':'color:var(--g)'):'';
-    const name=(r.product_name||'').length>25?r.product_name.substring(0,25)+'...':r.product_name||'';
-    html+='<tr>';
-    html+='<td class="mn2" style="font-size:11px">'+r.asin+'</td>';
-    html+='<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(r.product_name||'').replace(/"/g,'&quot;')+'">'+name+'</td>';
-    html+='<td class="mn2 r">'+cur(r.gross_revenue)+'</td>';
-    html+='<td class="mn2 r" style="color:var(--r)">'+(r.return_pct!=null&&r.return_pct>0?r.return_pct.toFixed(0)+'%':'-')+'</td>';
-    html+='<td class="mn2 r" style="font-weight:600">'+cur(r.net_revenue)+'</td>';
-    html+='<td class="mn2 r" style="'+sep+'">'+(r.cogs_pct!=null?r.cogs_pct.toFixed(0)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="font-weight:600;'+gmCls+'">'+(r.gm_pct!=null?r.gm_pct.toFixed(0)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="'+sep+'">'+(r.commission_pct!=null?r.commission_pct.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r">'+(r.return_cost_pct!=null&&r.return_cost_pct>0?r.return_cost_pct.toFixed(1)+'%':'-')+'</td>';
-    html+='<td class="mn2 r">'+(r.fba_pct!=null?r.fba_pct.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="font-weight:600;'+cm2Cls+'">'+(r.cm2_pct!=null?r.cm2_pct.toFixed(0)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="'+sep+'">'+(r.tacos!=null?r.tacos.toFixed(1)+'%':'-')+'</td>';
-    html+='<td class="mn2 r" style="font-weight:700;'+cm3Cls+'">'+(r.cm3_pct!=null?r.cm3_pct.toFixed(1)+'%':'--')+'</td>';
-    html+='<td class="mn2 r" style="font-weight:700;'+cm3Cls+'">'+cur(r.cm3)+'</td>';
-    html+='</tr>';
+    const fmtP = v => v!=null?v.toFixed(0)+'%':'--';
+    const fmtP1 = v => v!=null?v.toFixed(1)+'%':'-';
+    if(isParent){
+      const rid='rtmsku-'+(r.master_sku_id||'').replace(/[^a-z0-9]/gi,'');
+      const nameCell = `<strong>${r.msku_name||'--'}</strong> <span style="color:var(--t3);font-size:10.5px;font-family:var(--mono);margin-left:4px">${r.asin_count} ASIN${r.asin_count===1?'':'s'}</span>`;
+      let h=`<tr class="rtmsku-row" onclick="toggleRtMsku('${rid}')" style="cursor:pointer;background:var(--bg-cream);font-weight:600">
+        <td style="color:var(--t3);font-family:var(--mono);font-size:11px" id="${rid}-tri">&#9656;</td>
+        <td class="mn2 hi" style="font-size:11.5px">${r.msku_code||'--'}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px" title="${(r.msku_name||'').replace(/"/g,'&quot;')}">${nameCell}</td>
+        <td class="mn2 r">${cur(r.gross_revenue)}</td>
+        <td class="mn2 r" style="color:var(--r)">${r.return_pct!=null&&r.return_pct>0?r.return_pct.toFixed(0)+'%':'-'}</td>
+        <td class="mn2 r">${cur(r.net_revenue)}</td>
+        <td class="mn2 r" style="${sep}">${fmtP(r.cogs_pct)}</td>
+        <td class="mn2 r" style="${gmCls}">${fmtP(r.gm_pct)}</td>
+        <td class="mn2 r" style="${sep}">${fmtP1(r.commission_pct)}</td>
+        <td class="mn2 r">${r.return_cost_pct!=null&&r.return_cost_pct>0?r.return_cost_pct.toFixed(1)+'%':'-'}</td>
+        <td class="mn2 r">${fmtP1(r.fba_pct)}</td>
+        <td class="mn2 r" style="${cm2Cls}">${fmtP(r.cm2_pct)}</td>
+        <td class="mn2 r" style="${sep}">${fmtP1(r.tacos)}</td>
+        <td class="mn2 r" style="${cm3Cls}">${fmtP1(r.cm3_pct)}</td>
+        <td class="mn2 r" style="${cm3Cls}">${cur(r.cm3)}</td>
+      </tr>`;
+      // Pre-render children rows in a hidden tbody segment
+      const childRows = (r.children||[]).map(c => dataRow(c, false, rid)).join('');
+      h += `<tr class="rtmsku-children" id="${rid}-ch" style="display:none"><td colspan="15" style="padding:0">
+        <table class="tbl" style="margin:0;border:none;font-size:12px"><tbody>${childRows}</tbody></table>
+      </td></tr>`;
+      return h;
+    } else {
+      const name=(r.product_name||'').length>30?r.product_name.substring(0,30)+'...':r.product_name||'';
+      return `<tr style="background:var(--bg-white)">
+        <td style="width:18px"></td>
+        <td class="mn2" style="font-size:11px;padding-left:24px">${r.asin}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+        <td class="mn2 r">${cur(r.gross_revenue)}</td>
+        <td class="mn2 r" style="color:var(--r)">${r.return_pct!=null&&r.return_pct>0?r.return_pct.toFixed(0)+'%':'-'}</td>
+        <td class="mn2 r" style="font-weight:600">${cur(r.net_revenue)}</td>
+        <td class="mn2 r" style="${sep}">${fmtP(r.cogs_pct)}</td>
+        <td class="mn2 r" style="font-weight:600;${gmCls}">${fmtP(r.gm_pct)}</td>
+        <td class="mn2 r" style="${sep}">${fmtP1(r.commission_pct)}</td>
+        <td class="mn2 r">${r.return_cost_pct!=null&&r.return_cost_pct>0?r.return_cost_pct.toFixed(1)+'%':'-'}</td>
+        <td class="mn2 r">${fmtP1(r.fba_pct)}</td>
+        <td class="mn2 r" style="font-weight:600;${cm2Cls}">${fmtP(r.cm2_pct)}</td>
+        <td class="mn2 r" style="${sep}">${fmtP1(r.tacos)}</td>
+        <td class="mn2 r" style="font-weight:700;${cm3Cls}">${fmtP1(r.cm3_pct)}</td>
+        <td class="mn2 r" style="font-weight:700;${cm3Cls}">${cur(r.cm3)}</td>
+      </tr>`;
+    }
   }
+  for(const r of mskuRows){ html += dataRow(r, true); }
   html+='</tbody></table>';
   el.innerHTML=html;
+}
+function toggleRtMsku(rid){
+  const tri=document.getElementById(rid+'-tri');
+  const ch=document.getElementById(rid+'-ch');
+  if(!ch) return;
+  const open=ch.style.display!=='none';
+  ch.style.display=open?'none':'';
+  tri.innerHTML=open?'&#9656;':'&#9662;';
 }
 function sortRtAsin(col){
   if(_rtAsinSort.col===col) _rtAsinSort.asc=!_rtAsinSort.asc;
