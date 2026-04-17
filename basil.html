@@ -609,7 +609,16 @@
     </div>
     <!-- Per-ASIN CM2 -->
     <div class="sec">
-      <div class="sec-h"><h3>Per-ASIN CM2</h3></div>
+      <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <h3>Per-ASIN P&amp;L</h3>
+        <div class="pills" id="rtAsinPills">
+          <button data-days="1">Yesterday</button>
+          <button data-days="7">7D</button>
+          <button data-days="30" class="a">30D</button>
+          <button data-days="90">90D</button>
+        </div>
+        <span id="rtAsinPeriod" style="font-size:11px;color:var(--t3)"></span>
+      </div>
       <div id="pnl-rt-asin" class="loading">Loading...</div>
     </div>
     <!-- Fee Audit -->
@@ -1808,7 +1817,7 @@ function loadPnL(){
   api('/v1/amazon/pnl/summary?days=90').then(renderPnLSummary).catch(showErr('pnl-waterfall'));
   api('/v1/amazon/pnl/monthly?months=6').then(renderPnLMonthly).catch(showErr('pnl-monthly-table'));
   api('/v1/amazon/pnl/realtime?days=30').then(renderRealtimePnL).catch(showErr('pnl-realtime'));
-  api('/v1/amazon/pnl/realtime/by-asin?days=30&limit=50').then(renderRtAsin).catch(showErr('pnl-rt-asin'));
+  loadRtAsin(rtAsinDays);
   api('/v1/amazon/pnl/fee-audit?days=90').then(renderFeeAudit).catch(showErr('pnl-fee-audit'));
   api('/v1/amazon/pnl/by-asin?days=90&limit=50&sort=revenue').then(renderPnLTable).catch(showErr('pnl-asin-table'));
 }
@@ -1941,18 +1950,57 @@ function renderRealtimePnL(d){
   html+='<div style="font-size:11px;color:var(--t3);margin-top:8px">'+d.units.shipped+' shipped = '+d.units.delivered+' delivered + '+d.units.rvp+' RVP + '+d.units.rto+' RTO. Excludes SB/SD ads, reimbursements, promotions.</div>';
   el.innerHTML=html;
 }
-function renderRtAsin(d){
+let rtAsinDays=30;
+let _rtAsinData=null;
+let _rtAsinSort={col:'net_revenue',asc:false};
+function loadRtAsin(days){
+  rtAsinDays=days;
+  document.querySelectorAll('#rtAsinPills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===days));
+  api('/v1/amazon/pnl/realtime/by-asin?days='+days+'&limit=100').then(d=>{
+    _rtAsinData=d;
+    // Period label
+    const today=new Date();
+    const from=new Date(today); from.setDate(from.getDate()-days);
+    const lbl=days===1?'Yesterday':(shortD(from.toISOString().slice(0,10))+' - '+shortD(today.toISOString().slice(0,10))+' ('+days+'d)');
+    document.getElementById('rtAsinPeriod').textContent=lbl;
+    renderRtAsinTable();
+  }).catch(showErr('pnl-rt-asin'));
+}
+function renderRtAsinTable(){
   const el=document.getElementById('pnl-rt-asin');
-  if(!d||!d.data||!d.data.length){el.innerHTML='<div class="empty">No per-ASIN data</div>';return;}
+  if(!_rtAsinData||!_rtAsinData.data||!_rtAsinData.data.length){el.innerHTML='<div class="empty">No per-ASIN data</div>';return;}
+  // Sort
+  const rows=[..._rtAsinData.data];
+  const sc=_rtAsinSort.col;
+  rows.sort((a,b)=>{
+    const av=a[sc]!=null?a[sc]:(_rtAsinSort.asc?Infinity:-Infinity);
+    const bv=b[sc]!=null?b[sc]:(_rtAsinSort.asc?Infinity:-Infinity);
+    return _rtAsinSort.asc?av-bv:bv-av;
+  });
   const sep='border-left:2px solid var(--border)';
+  const arrow=_rtAsinSort.asc?' ▲':' ▼';
+  function th(label,col,extra){
+    const active=_rtAsinSort.col===col;
+    const cls='r'+(active?' hi':'');
+    const sty=(extra||'')+(active?';text-decoration:underline':'');
+    return '<th class="'+cls+'" style="cursor:pointer;'+sty+'" onclick="sortRtAsin(\''+col+'\')">'+label+(active?arrow:'')+'</th>';
+  }
   let html='<table class="tbl" style="font-size:12px"><thead><tr>';
   html+='<th>ASIN</th><th style="max-width:140px">Product</th>';
-  html+='<th class="r">Gross</th><th class="r">Ret%</th><th class="r" style="font-weight:700">Net Rev</th>';
-  html+='<th class="r" style="'+sep+'">COGS%</th><th class="r" style="font-weight:700">GM%</th>';
-  html+='<th class="r" style="'+sep+'">Comm%</th><th class="r">RetCost%</th><th class="r">FBA%</th><th class="r" style="font-weight:700">CM2%</th>';
-  html+='<th class="r" style="'+sep+'">TACoS</th><th class="r" style="font-weight:700">CM3%</th><th class="r" style="font-weight:700">CM3</th>';
+  html+=th('Gross','gross_revenue','');
+  html+=th('Ret%','return_pct','');
+  html+=th('Net Rev','net_revenue','font-weight:700');
+  html+=th('COGS%','cogs_pct',sep);
+  html+=th('GM%','gm_pct','font-weight:700');
+  html+=th('Comm%','commission_pct',sep);
+  html+=th('RetCost%','return_cost_pct','');
+  html+=th('FBA%','fba_pct','');
+  html+=th('CM2%','cm2_pct','font-weight:700');
+  html+=th('TACoS','tacos',sep);
+  html+=th('CM3%','cm3_pct','font-weight:700');
+  html+=th('CM3','cm3','font-weight:700');
   html+='</tr></thead><tbody>';
-  for(const r of d.data){
+  for(const r of rows){
     const gmCls=r.gm_pct!=null&&r.gm_pct<30?'color:var(--a)':'';
     const cm2Cls=r.cm2_pct!=null&&r.cm2_pct<10?'color:var(--r)':'';
     const cm3Cls=r.cm3_pct!=null?(r.cm3_pct<0?'color:var(--r)':r.cm3_pct<10?'color:var(--a)':'color:var(--g)'):'';
@@ -1960,19 +2008,15 @@ function renderRtAsin(d){
     html+='<tr>';
     html+='<td class="mn2" style="font-size:11px">'+r.asin+'</td>';
     html+='<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(r.product_name||'').replace(/"/g,'&quot;')+'">'+name+'</td>';
-    // Stage 1: Revenue
     html+='<td class="mn2 r">'+cur(r.gross_revenue)+'</td>';
     html+='<td class="mn2 r" style="color:var(--r)">'+(r.return_pct!=null&&r.return_pct>0?r.return_pct.toFixed(0)+'%':'-')+'</td>';
     html+='<td class="mn2 r" style="font-weight:600">'+cur(r.net_revenue)+'</td>';
-    // Stage 2: GM
     html+='<td class="mn2 r" style="'+sep+'">'+(r.cogs_pct!=null?r.cogs_pct.toFixed(0)+'%':'--')+'</td>';
     html+='<td class="mn2 r" style="font-weight:600;'+gmCls+'">'+(r.gm_pct!=null?r.gm_pct.toFixed(0)+'%':'--')+'</td>';
-    // Stage 3: Platform fees → CM2
     html+='<td class="mn2 r" style="'+sep+'">'+(r.commission_pct!=null?r.commission_pct.toFixed(1)+'%':'--')+'</td>';
     html+='<td class="mn2 r">'+(r.return_cost_pct!=null&&r.return_cost_pct>0?r.return_cost_pct.toFixed(1)+'%':'-')+'</td>';
     html+='<td class="mn2 r">'+(r.fba_pct!=null?r.fba_pct.toFixed(1)+'%':'--')+'</td>';
     html+='<td class="mn2 r" style="font-weight:600;'+cm2Cls+'">'+(r.cm2_pct!=null?r.cm2_pct.toFixed(0)+'%':'--')+'</td>';
-    // Stage 4: Ads → CM3
     html+='<td class="mn2 r" style="'+sep+'">'+(r.tacos!=null?r.tacos.toFixed(1)+'%':'-')+'</td>';
     html+='<td class="mn2 r" style="font-weight:700;'+cm3Cls+'">'+(r.cm3_pct!=null?r.cm3_pct.toFixed(1)+'%':'--')+'</td>';
     html+='<td class="mn2 r" style="font-weight:700;'+cm3Cls+'">'+cur(r.cm3)+'</td>';
@@ -1980,6 +2024,11 @@ function renderRtAsin(d){
   }
   html+='</tbody></table>';
   el.innerHTML=html;
+}
+function sortRtAsin(col){
+  if(_rtAsinSort.col===col) _rtAsinSort.asc=!_rtAsinSort.asc;
+  else{_rtAsinSort.col=col;_rtAsinSort.asc=false;}
+  renderRtAsinTable();
 }
 function renderFeeAudit(d){
   const el=document.getElementById('pnl-fee-audit');
@@ -2052,6 +2101,10 @@ function renderPnLTable(d){
   el.innerHTML=html;
 }
 
+document.getElementById('rtAsinPills').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  loadRtAsin(+b.dataset.days);
+});
 document.getElementById('rangePills').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
   const d=+b.dataset.days; if(!d) return;
