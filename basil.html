@@ -2707,14 +2707,26 @@ function streamAgent(agentSlug, streamContainerId, agentKey){
             } else if(eventType === 'token'){
               var unescaped = data.replace(/\\n/g, '\n');
               tokenText += unescaped;
-              statusEl.textContent = 'Building recommendations...';
+              // Parse streaming tokens for "Step N:" patterns in reasoning_trace
+              var stepMatch = tokenText.match(/\"Step (\d+)[:\u2014][^"]*\"/g);
+              if(stepMatch && stepMatch.length > stepCount){
+                for(var si=stepCount;si<stepMatch.length;si++){
+                  var stepText = stepMatch[si].replace(/^"|"$/g,'');
+                  stepCount = si + 1;
+                  stepsEl.innerHTML += '<div class="step" style="animation:fadeIn .3s"><span class="step-num">'+stepCount+'</span><span class="step-text">'+stepText+'</span></div>';
+                  stepsEl.scrollTop = stepsEl.scrollHeight;
+                  statusEl.textContent = stepText.substring(0, 60) + '...';
+                }
+              } else if(tokenText.length > 500 && stepCount < 1){
+                statusEl.textContent = 'Analyzing...';
+              }
             } else if(eventType === 'done'){
               try {
                 var result = JSON.parse(data);
-                // Replace steps with the actual reasoning trace
-                if(result.output && result.output.reasoning_trace){
-                  statusEl.textContent = 'Analysis complete \u2714';
-                  statusEl.style.color='var(--g)';
+                statusEl.textContent = 'Analysis complete \u2714';
+                statusEl.style.color='var(--g)';
+                // If reasoning trace steps weren't captured from stream, show them now
+                if(result.output && result.output.reasoning_trace && stepCount < 2){
                   stepsEl.innerHTML='';
                   result.output.reasoning_trace.forEach(function(s,i){
                     stepsEl.innerHTML+='<div class="step" style="animation:fadeIn .3s"><span class="step-num">'+(i+1)+'</span><span class="step-text">'+s+'</span></div>';
