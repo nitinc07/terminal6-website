@@ -2495,9 +2495,45 @@ function openBucketModal(key){
   document.getElementById('bucketModal').style.display='flex';
 }
 function closeBucketModal(){ document.getElementById('bucketModal').style.display='none'; }
+var _approvedActions=[];
 function agBucketAct(btn,bucketKey,idx,action){
   btn.parentElement.innerHTML='<span style="font-size:11px;color:var(--t3)">'+(action==='approve'?'\u2705 Approved':'\u274C Dismissed')+'</span>';
+  if(action==='approve'){
+    var b=_bucketData[bucketKey], item=b.items[idx];
+    _approvedActions.push({priority:_approvedActions.length+1, bucket:b.label||bucketKey, entity:item.entity, type:item.entity_type||'', metrics:item.numbers||'', action:item.action||'', impact:b.impact||''});
+    _showExportBtn();
+  }
   try{ var t=T6.token?T6.token():(sessionStorage.getItem('t6_token')||''); fetch((location.hostname.includes('.terminal6.io')?'':'/api')+'/v1/agents/marketing/action',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify({bucket:bucketKey,item_index:idx,action:action})}); }catch(e){}
+}
+function _showExportBtn(){
+  var existing=document.getElementById('ag-export-btn');
+  if(existing) return;
+  var panel=document.getElementById('agent-marketing');
+  if(!panel) return;
+  var btn=document.createElement('button');
+  btn.id='ag-export-btn';
+  btn.onclick=exportApprovedActions;
+  btn.style.cssText='margin-top:10px;padding:8px 16px;border-radius:var(--rs);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--acc);background:var(--bg);color:var(--acc);font-family:var(--sans);display:flex;align-items:center;gap:6px';
+  btn.innerHTML='\uD83D\uDCE5 Export '+_approvedActions.length+' Approved Actions (CSV)';
+  panel.appendChild(btn);
+}
+function exportApprovedActions(){
+  if(!_approvedActions.length) return;
+  var headers=['Priority','Bucket','Entity','Type','Current Metrics','Action','Impact'];
+  var rows=[headers.join(',')];
+  for(var i=0;i<_approvedActions.length;i++){
+    var a=_approvedActions[i];
+    rows.push([a.priority,'"'+a.bucket+'"','"'+a.entity.replace(/"/g,'""')+'"','"'+a.type+'"','"'+a.metrics.replace(/"/g,'""')+'"','"'+a.action.replace(/"/g,'""')+'"','"'+a.impact.replace(/"/g,'""')+'"'].join(','));
+  }
+  var csv='\uFEFF'+rows.join('\r\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var link=document.createElement('a');
+  link.href=url;
+  var d=new Date();
+  link.download='T6_Marketing_Actions_'+d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0')+'.csv';
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function _renderRecs(recsEl, items){
