@@ -612,7 +612,7 @@
       <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <h3>Per-ASIN P&amp;L</h3>
         <div class="pills" id="rtAsinPills">
-          <button data-days="1">Yesterday</button>
+          <button data-days="1">1D</button>
           <button data-days="7">7D</button>
           <button data-days="30" class="a">30D</button>
           <button data-days="90">90D</button>
@@ -1964,7 +1964,7 @@ function loadRtAsin(days){
 }
 function renderRtAsinTable(){
   const el=document.getElementById('pnl-rt-asin');
-  if(!_rtAsinData||!_rtAsinData.data||!_rtAsinData.data.length){el.innerHTML='<div class="empty">No per-ASIN data</div>';return;}
+  if(!_rtAsinData||!_rtAsinData.data||!_rtAsinData.data.length){el.innerHTML='<div class="empty">No order data for this period. Data may lag 1-2 days from the daily pipeline.</div>';return;}
   // Sort
   const rows=[..._rtAsinData.data];
   const sc=_rtAsinSort.col;
