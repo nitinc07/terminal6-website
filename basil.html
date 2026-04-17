@@ -2441,7 +2441,8 @@ function _renderBuckets(el, buckets){
     const b=buckets[key];
     if(!b||!b.items||!b.items.length) continue;
     const sev=(b.severity||'amber').toLowerCase();
-    const amt=b.total_amount?_fmt(b.total_amount):'';
+    const amt=b.total_amount?(b.total_amount>=1e5?'\u20B9'+(b.total_amount/1e5).toFixed(1)+'L':b.total_amount>=1e3?'\u20B9'+(b.total_amount/1e3).toFixed(1)+'K':'\u20B9'+b.total_amount):'';
+
     html+=`<div class="ag-bucket ${sev}" onclick="this.classList.toggle('expanded')">
       <div class="bk-head">${icons[key]||''} ${b.label||key}</div>
       <div class="bk-title">${b.count} ${b.count===1?'item':'items'}</div>
