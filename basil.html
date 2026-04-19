@@ -520,6 +520,7 @@
     <!-- Sub-tab nav -->
     <div class="subtabs" id="ivSubPills">
       <button data-sub="overview" class="a">Overview</button>
+      <button data-sub="restock">Restock Planner <span class="cnt" id="sub-restock-cnt"></span></button>
       <button data-sub="stock">Stock Health <span class="cnt" id="sub-stock-cnt"></span></button>
       <button data-sub="returns">Returns <span class="cnt" id="sub-returns-cnt"></span></button>
     </div>
@@ -540,6 +541,28 @@
 
       <div class="ph2" style="margin-top:10px;font-size:12px">
         Dig deeper: <a href="#" onclick="ivSub('stock');return false" style="color:var(--acc)">Stock Health &rarr;</a> for restock priorities, OOS, and overstock · <a href="#" onclick="ivSub('returns');return false" style="color:var(--acc)">Returns &rarr;</a> for reason breakdown and top contributors.
+      </div>
+    </div>
+
+    <!-- =============== SUB-TAB: RESTOCK PLANNER =============== -->
+    <div class="iv-sub" id="ivs-restock">
+      <div class="subtabs" id="rsFilterPills" style="margin-bottom:12px;border:0">
+        <button data-rf="all" class="a" style="font-size:12px">All</button>
+        <button data-rf="urgent" style="font-size:12px">Urgent</button>
+        <button data-rf="moderate" style="font-size:12px">Moderate</button>
+        <button data-rf="ok" style="font-size:12px">Ok</button>
+        <button data-rf="overstock" style="font-size:12px">Overstock</button>
+      </div>
+      <div class="table-wrap">
+        <table class="mn2"><thead><tr>
+          <th class="l">ASIN</th><th class="l">Product</th>
+          <th class="l">Status</th>
+          <th class="r">Available</th><th class="r">Inbound</th>
+          <th class="r">Cover (7d)</th><th class="r">Avg/day (7d)</th>
+          <th class="r">Cover (30d)</th><th class="r">Avg/day (30d)</th>
+          <th class="r">Sold (30d)</th>
+          <th class="r">Organic (30d)</th><th class="r">PPC (30d)</th>
+        </tr></thead><tbody id="restock-tbody"></tbody></table>
       </div>
     </div>
 
@@ -1477,15 +1500,66 @@ function ivSub(id){
     api('/v1/amazon/returns/breakdown?days=30').then(renderReturns).catch(showErr('rt-reasonBars'));
     window._rtLoaded = true;
   }
+  if(id==='restock' && !window._rsLoaded){
+    api('/v1/amazon/inventory/restock').then(renderRestock).catch(showErr('restock-tbody'));
+    window._rsLoaded = true;
+  }
 }
 
 function loadInventory(){
   api('/v1/amazon/inventory/summary').then(renderInvTiles).catch(showErr('iv-risk'));
   api('/v1/amazon/fulfillment/timeseries?days=60').then(renderCancelTrend).catch(showErr('iv-cancelTrend'));
   api('/v1/amazon/inventory/per_asin').then(renderInvTables).catch(showErr('iv-riskTable'));
-  // Returns lazy-loaded when the sub-tab is clicked. Preload if currently on it.
   window._rtLoaded = false;
+  window._rsLoaded = false;
   if(currentIvSub==='returns'){ ivSub('returns'); }
+  if(currentIvSub==='restock'){ ivSub('restock'); }
+}
+
+/* ───── Restock planner ───── */
+let _restockData = [];
+function renderRestock(res){
+  if(!res||!res.data) return;
+  _restockData = res.data;
+  const cnts = res.status_counts||{};
+  const badge = (cnts.urgent||0)+(cnts.moderate||0);
+  document.getElementById('sub-restock-cnt').textContent = badge>0?badge:'';
+  _drawRestockTable('all');
+  // Filter pills
+  document.getElementById('rsFilterPills').addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b)return;
+    const f=b.dataset.rf; if(!f)return;
+    document.querySelectorAll('#rsFilterPills button').forEach(x=>x.classList.toggle('a',x.dataset.rf===f));
+    _drawRestockTable(f);
+  });
+}
+function _drawRestockTable(filter){
+  const rows = filter==='all'? _restockData : _restockData.filter(r=>r.status===filter);
+  const statusBadge = s => {
+    const cls = s==='urgent'?'r':s==='moderate'?'y':s==='overstock'?'b':'g';
+    const colors = {r:'#c62828',y:'#e65100',g:'#2e7d32',b:'#1565c0'};
+    return '<span style="background:'+colors[cls]+';color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;text-transform:capitalize">'+s+'</span>';
+  };
+  let html='';
+  for(const r of rows){
+    const covStyle7 = r.coverage_7d!==null&&r.coverage_7d<14?'color:#c62828;font-weight:600':'';
+    const covStyle30 = r.coverage_30d!==null&&r.coverage_30d<14?'color:#c62828;font-weight:600':'';
+    html+='<tr>';
+    html+='<td class="l mn2" style="font-family:monospace;font-size:12px">'+r.asin+'</td>';
+    html+='<td class="l mn2" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.product_name||'--')+'</td>';
+    html+='<td class="l mn2">'+statusBadge(r.status)+'</td>';
+    html+='<td class="r mn2">'+fmt(r.available)+'</td>';
+    html+='<td class="r mn2">'+fmt(r.inbound)+'</td>';
+    html+='<td class="r mn2" style="'+covStyle7+'">'+(r.coverage_7d!==null?r.coverage_7d+' d':'--')+'</td>';
+    html+='<td class="r mn2">'+r.avg_daily_7d+'</td>';
+    html+='<td class="r mn2" style="'+covStyle30+'">'+(r.coverage_30d!==null?r.coverage_30d+' d':'--')+'</td>';
+    html+='<td class="r mn2">'+r.avg_daily_30d+'</td>';
+    html+='<td class="r mn2">'+fmt(r.units_sold_30d)+'</td>';
+    html+='<td class="r mn2">'+fmt(r.organic_units_30d)+'</td>';
+    html+='<td class="r mn2">'+fmt(r.ppc_units_30d)+'</td>';
+    html+='</tr>';
+  }
+  document.getElementById('restock-tbody').innerHTML = html||'<tr><td colspan="12" class="l mn2" style="padding:20px;color:#999">No ASINs match this filter</td></tr>';
 }
 
 function renderInvTiles(s){
