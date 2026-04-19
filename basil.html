@@ -307,7 +307,7 @@
     <!-- Row 3: Traffic & Health KPIs -->
     <div class="g4" style="margin-bottom:20px">
       <div class="cd"><div class="kl">Sessions</div><div class="kv" id="wbr-sessions">--</div><div class="kd n" id="wbr-sessions-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Conversion</div><div class="kv" id="wbr-conv">--</div><div class="kd n">units / sessions</div></div>
+      <div class="cd"><div class="kl">Paid Share</div><div class="kv" id="wbr-paidshare">--</div><div class="kd n">ad clicks / sessions</div></div>
       <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="wbr-bb">--</div><div class="kd n">sessions-weighted</div></div>
       <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="wbr-return">--</div><div class="kd n">cohort-aligned (14-28d)</div></div>
     </div>
@@ -948,7 +948,7 @@ function renderWBR(r){
   // Row 3: Traffic & Health
   document.getElementById('wbr-sessions').textContent=fmt(s.sessions);
   _wbrDelta('wbr-sessions-d', d.sessions_pct, 'vs prior');
-  document.getElementById('wbr-conv').textContent=s.conversion_pct!=null?s.conversion_pct.toFixed(2)+'%':'--';
+  document.getElementById('wbr-paidshare').textContent=s.paid_share_pct!=null?s.paid_share_pct.toFixed(1)+'%':'--';
   document.getElementById('wbr-bb').textContent=s.buy_box_pct!=null?s.buy_box_pct.toFixed(1)+'%':'--';
   document.getElementById('wbr-return').textContent=s.return_rate_pct!=null?s.return_rate_pct.toFixed(1)+'%':'--';
 
@@ -988,6 +988,7 @@ function _renderWBRTable(data, gran){
     +'<th class="r">TACoS</th>'
     +'<th class="r">ROAS</th>'
     +'<th class="r">Sessions</th>'
+    +'<th class="r">Paid %</th>'
     +'<th class="r">Conv %</th>'
     +'<th class="r">BB %</th>'
     +'</tr></thead><tbody>';
@@ -1004,7 +1005,8 @@ function _renderWBRTable(data, gran){
       +'<td class="mn2 r">'+(row.acos_pct!=null?row.acos_pct.toFixed(1)+'%':'--')+'</td>'
       +'<td class="mn2 r">'+(row.tacos_pct!=null?row.tacos_pct.toFixed(1)+'%':'--')+'</td>'
       +'<td class="mn2 r">'+(row.roas!=null?row.roas.toFixed(1)+'x':'--')+'</td>'
-      +'<td class="mn2 r">'+fmt(row.sessions)+'</td>'
+      +'<td class="mn2 r">'+(row.sessions?fmt(row.sessions):'<span style="color:var(--t3)">--</span>')+'</td>'
+      +'<td class="mn2 r">'+(row.paid_share_pct!=null?row.paid_share_pct.toFixed(1)+'%':'--')+'</td>'
       +'<td class="mn2 r">'+(row.conversion_pct!=null?row.conversion_pct.toFixed(2)+'%':'--')+'</td>'
       +'<td class="mn2 r">'+(row.buy_box_pct!=null?row.buy_box_pct.toFixed(1)+'%':'--')+'</td>'
       +'</tr>';
