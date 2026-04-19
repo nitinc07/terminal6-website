@@ -1527,6 +1527,13 @@ function loadInventory(){
 
 /* ───── Restock planner ───── */
 let _restockData = [];
+// Wire filter pills once (not per render — avoids listener accumulation)
+document.getElementById('rsFilterPills').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  const f=b.dataset.rf; if(!f)return;
+  document.querySelectorAll('#rsFilterPills button').forEach(x=>x.classList.toggle('a',x.dataset.rf===f));
+  _drawRestockTable(f);
+});
 function renderRestock(res){
   if(!res||!res.data) return;
   _restockData = res.data;
@@ -1534,13 +1541,6 @@ function renderRestock(res){
   const badge = (cnts.urgent||0)+(cnts.moderate||0);
   document.getElementById('sub-restock-cnt').textContent = badge>0?badge:'';
   _drawRestockTable('all');
-  // Filter pills
-  document.getElementById('rsFilterPills').addEventListener('click', e=>{
-    const b=e.target.closest('button'); if(!b)return;
-    const f=b.dataset.rf; if(!f)return;
-    document.querySelectorAll('#rsFilterPills button').forEach(x=>x.classList.toggle('a',x.dataset.rf===f));
-    _drawRestockTable(f);
-  });
 }
 function _drawRestockTable(filter){
   const rows = filter==='all'? _restockData : _restockData.filter(r=>r.status===filter);
