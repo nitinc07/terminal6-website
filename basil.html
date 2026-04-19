@@ -271,46 +271,62 @@
     <div class="tb-note" id="dataFreshness"></div>
   </div>
 
-  <!-- ========== OVERVIEW ========== -->
+  <!-- ========== OVERVIEW (WBR) ========== -->
   <div class="vw act" id="v-overview">
     <!-- AGENT: Daily Brief -->
     <div id="agent-brief" class="ag-brief" style="display:none"></div>
     <div style="text-align:right;margin-bottom:8px"><button class="ag-run-btn" onclick="streamAgent('daily-brief','agent-brief-stream','daily_brief')">&#9654; Run Live Analysis</button></div>
     <div id="agent-brief-stream"></div>
 
-    <div class="g4" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">MTD Revenue (Amazon IN) <span id="tip-ov-mtd-rev"></span></div><div class="kv" id="ov-mtd-rev">--</div><div class="kd n" id="ov-mtd-rev-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">MTD Units <span id="tip-ov-mtd-units"></span></div><div class="kv" id="ov-mtd-units">--</div><div class="kd n" id="ov-mtd-units-d">vs prior MTD</div></div>
-      <div class="cd"><div class="kl">Ad Spend (7d) <span id="tip-ov-7d-spend"></span></div><div class="kv" id="ov-7d-spend">--</div><div class="kd n" id="ov-7d-spend-mix">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Blended ROAS (7d) <span id="tip-ov-7d-roas" class="rt-anchor"></span></div><div class="kv" id="ov-7d-roas">--</div><div class="kd n" id="ov-7d-tacos">TACoS <span id="ov-7d-tacos-val">--</span></div></div>
-    </div>
-
-    <div class="g4" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Tracked Keywords <span id="tip-ov-kw"></span></div><div class="kv" id="ov-kw">--</div><div class="kd n" id="ov-kw-sub">ranking on SERP</div></div>
-      <div class="cd"><div class="kl">Amazon Listings <span id="tip-ov-listings"></span></div><div class="kv" id="ov-listings">--</div><div class="kd n">active ChannelListings</div></div>
-      <div class="cd"><div class="kl">ASINs w/ Ad Spend, No Sales <span id="tip-ov-gap"></span></div><div class="kv" id="ov-gap">--</div><div class="kd n" id="ov-gap-sub">last 30d</div></div>
-      <div class="cd"><div class="kl">Buy Box % <span id="tip-ov-bb" class="rt-anchor"></span></div><div class="kv" id="ov-bb">--</div><div class="kd n">weighted 7d avg</div></div>
-    </div>
-
-    <!-- FUNNEL STRIP — 7d snapshot: sessions → paid share → BB → conv. Link to Revenue & Traffic for detail. -->
-    <div class="sec">
-      <div class="sec-h"><h3>Traffic Funnel <span class="note">last 7 days &middot; <a href="#" onclick="sw('revenue',document.querySelector('[onclick*=\"revenue\"]'));return false" style="color:var(--acc);text-decoration:none">see daily detail &rarr;</a></span></h3></div>
-      <div class="g4" style="margin-bottom:0">
-        <div class="cd"><div class="kl">Sessions (7d) <span id="tip-ov-fn-sessions"></span></div><div class="kv" id="ov-fn-sessions">--</div><div class="kd n" id="ov-fn-sessions-d">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Paid Share <span id="tip-ov-fn-paid"></span></div><div class="kv" id="ov-fn-paid">--</div><div class="kd n" id="ov-fn-paid-d">of sessions &middot; clicks from Amazon Ads</div></div>
-        <div class="cd"><div class="kl">Buy Box % <span id="tip-ov-fn-bb"></span></div><div class="kv" id="ov-fn-bb">--</div><div class="kd n" id="ov-fn-bb-d">sessions-weighted</div></div>
-        <div class="cd"><div class="kl">Conversion <span id="tip-ov-fn-conv" class="rt-anchor"></span></div><div class="kv" id="ov-fn-conv">--</div><div class="kd n" id="ov-fn-conv-d">units / sessions</div></div>
+    <!-- Granularity Switcher -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div class="pills" id="granPills">
+        <button class="a" data-gran="day">Day</button>
+        <button data-gran="week">Week</button>
+        <button data-gran="month">Month</button>
       </div>
+      <span id="wbr-window" style="font-size:11px;color:var(--t3)"></span>
     </div>
 
-    <div class="sec">
-      <div class="sec-h"><h3>Daily Revenue &middot; Amazon IN <span class="note" id="ov-rev-range"></span></h3></div>
-      <div id="ov-revTable" class="loading">Loading...</div>
+    <!-- Row 1: Revenue KPIs -->
+    <div class="g4" style="margin-bottom:12px">
+      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="wbr-revenue">--</div><div class="kd n" id="wbr-revenue-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Units</div><div class="kv" id="wbr-units">--</div><div class="kd n" id="wbr-units-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Orders</div><div class="kv" id="wbr-orders">--</div><div class="kd n" id="wbr-orders-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">AOV</div><div class="kv" id="wbr-aov">--</div><div class="kd n">&nbsp;</div></div>
     </div>
 
+    <!-- Row 2: Ads KPIs -->
+    <div class="g4" style="margin-bottom:12px">
+      <div class="cd"><div class="kl">Ad Spend</div><div class="kv" id="wbr-spend">--</div><div class="kd n" id="wbr-spend-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">ACoS</div><div class="kv" id="wbr-acos">--</div><div class="kd n">spend / attributed sales</div></div>
+      <div class="cd"><div class="kl">TACoS</div><div class="kv" id="wbr-tacos">--</div><div class="kd n">spend / total revenue</div></div>
+      <div class="cd"><div class="kl">ROAS</div><div class="kv" id="wbr-roas">--</div><div class="kd n">attributed / spend</div></div>
+    </div>
+
+    <!-- Row 3: Traffic & Health KPIs -->
+    <div class="g4" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Sessions</div><div class="kv" id="wbr-sessions">--</div><div class="kd n" id="wbr-sessions-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Conversion</div><div class="kv" id="wbr-conv">--</div><div class="kd n">units / sessions</div></div>
+      <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="wbr-bb">--</div><div class="kd n">sessions-weighted</div></div>
+      <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="wbr-return">--</div><div class="kd n">cohort-aligned (14-28d)</div></div>
+    </div>
+
+    <!-- WBR Trend Table -->
     <div class="sec">
-      <div class="sec-h"><h3>Ad Platform Mix <span class="note">last 7 days</span></h3></div>
-      <div id="ov-adMix" class="loading">Loading...</div>
+      <div class="sec-h"><h3>Amazon WBR Trend <span class="note" id="wbr-trend-note"></span></h3></div>
+      <div id="wbr-trend-table" class="loading">Loading...</div>
+    </div>
+
+    <!-- Inventory Health -->
+    <div class="sec">
+      <div class="sec-h"><h3>Inventory Health <span class="note">latest snapshot</span></h3></div>
+      <div class="g4" style="margin-bottom:0">
+        <div class="cd"><div class="kl">OOS ASINs</div><div class="kv" id="wbr-oos">--</div><div class="kd n">zero fulfillable stock</div></div>
+        <div class="cd"><div class="kl">Low Cover (&lt;14d)</div><div class="kv" id="wbr-lowcover">--</div><div class="kd n">ASINs at risk of stockout</div></div>
+        <div class="cd"><div class="kl">FBA Inventory</div><div class="kv" id="wbr-fba">--</div><div class="kd n">total fulfillable units</div></div>
+        <div class="cd"><div class="kl">Days of Cover</div><div class="kv" id="wbr-doh">--</div><div class="kd n">median across ASINs</div></div>
+      </div>
     </div>
   </div>
 
@@ -865,8 +881,8 @@ function sw(id,el){
   if(el) el.classList.add('act');
   document.getElementById('viewTitle').innerHTML=viewTitles[id]||id;
   currentView=id;
-  // Range pills visibility
-  const showPills=['overview','revenue','amzads','gads'].includes(id);
+  // Range pills visibility (overview uses granularity pills instead)
+  const showPills=['revenue','amzads','gads'].includes(id);
   document.getElementById('rangePills').style.display=showPills?'flex':'none';
 
   if(id==='overview'){ loadOverview(); loadAgentBrief(); }
@@ -879,128 +895,119 @@ function sw(id,el){
   if(id==='pnl') loadPnL();
 }
 
-/* ========== OVERVIEW ========== */
+/* ========== OVERVIEW (WBR) ========== */
+var _wbrGranularity='day';
 function loadOverview(){
-  document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
-  api('/v1/overview/pacing').then(renderMTD).catch(showErr('ov-mtd-rev'));
-  api('/v1/marketing/blended?days=7').then(renderBlended).catch(showErr('ov-7d-spend'));
-  api('/v1/amazon/revenue?days='+range.days).then(renderOverviewRev).catch(showErr('ov-revTable'));
-  api('/v1/amazon/funnel?days=30').then(renderOvFunnel).catch(()=>{});
-  api('/v1/amazon/serp-overview').then(renderOvSERP).catch(()=>{});
-  api('/v1/amazon/catalogue-health?days=30').then(renderOvCatalog).catch(()=>{});
-  api('/v1/amazon/ads-summary?days=7').then(renderOvAdMix).catch(showErr('ov-adMix'));
-}
-function renderMTD(p){
-  if(!p||!p.mtd) return;
-  document.getElementById('ov-mtd-rev').textContent=cur(p.mtd.revenue);
-  document.getElementById('ov-mtd-units').textContent=fmt(p.mtd.units);
-  const d=document.getElementById('ov-mtd-rev-d');
-  if(p.delta_pct!=null){
-    const cls=p.delta_pct>=0?'u':'d';
-    const arrow=p.delta_pct>=0?'\u2191':'\u2193';
-    d.className='kd '+cls;
-    d.innerHTML=arrow+' '+Math.abs(p.delta_pct).toFixed(1)+'% vs prior MTD ('+cur(p.prior_mtd.revenue)+')';
-  } else { d.className='kd n'; d.textContent='vs prior month MTD'; }
-}
-function renderBlended(b){
-  if(!b) return;
-  document.getElementById('ov-7d-spend').textContent=cur(b.total_spend);
-  document.getElementById('ov-7d-roas').textContent=b.blended_roas!=null?(b.blended_roas.toFixed(2)+'x'):'--';
-  document.getElementById('ov-7d-tacos-val').textContent=b.tacos_pct!=null?(b.tacos_pct.toFixed(1)+'%'):'--';
-  const mix=(b.platform_mix||[]).map(p=>(p.name||p.platform)+' '+p.share_pct.toFixed(0)+'%').join(' · ');
-  document.getElementById('ov-7d-spend-mix').textContent=mix||'\xa0';
-}
-function renderOverviewRev(r){
-  document.getElementById('ov-rev-range').textContent='last '+range.days+' days';
-  const el=document.getElementById('ov-revTable');
-  if(!r.data||!r.data.length){el.innerHTML='<div class="empty">No revenue data yet</div>';return;}
-  let html='<table class="tbl"><thead><tr>'
-    +'<th>Date</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th>'
-    +'<th class="r">ASP '+T6.tip({formula: 'revenue ÷ units', note:'Average selling price for that day.'})+'</th>'
-    +'<th class="r">DoD '+T6.tip({formula: '(today − yesterday) ÷ yesterday', note:'Day-on-day change in revenue.'})+'</th>'
-    +'<th class="r">WoW '+T6.tip({formula: '(7d ending today − prior 7d) ÷ prior 7d', note:'Week-on-week change. Rolling windows, not calendar weeks.'})+'</th>'
-    +'<th class="r">MoM '+T6.tip({formula: '(30d ending today − prior 30d) ÷ prior 30d', note:'Rolling 30-day comparison.'})+'</th>'
-    +'<th class="r">YoY '+T6.tip({formula: '(today − same day last year) ÷ same day last year', note:'Only visible when 365d+ of history exists.'}, {rightAlign:true})+'</th>'
-    +'</tr></thead><tbody>';
-  for(const row of r.data.slice().reverse()){
-    html+=`<tr>
-      <td class="hi">${shortD(row.date)}</td>
-      <td class="mn2 r">${cur(row.revenue)}</td>
-      <td class="mn2 r">${fmt(row.units)}</td>
-      <td class="mn2 r">${fmt(row.orders)}</td>
-      <td class="mn2 r">${row.asp!=null?cur(row.asp):'--'}</td>
-      <td class="r">${dp(row.dod_pct)}</td>
-      <td class="r">${dp(row.wow_pct)}</td>
-      <td class="r">${dp(row.mom_pct)}</td>
-      <td class="r">${dp(row.yoy_pct)}</td>
-    </tr>`;
-  }
-  html+='</tbody></table>';
-  el.innerHTML=html;
-}
-function renderOvBuyBox(t){
-  if(!t||!t.data||!t.data.length) return;
-  const vals=t.data.map(r=>r.buy_box_pct).filter(v=>v!=null);
-  const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-  document.getElementById('ov-bb').textContent=avg!=null?pct(avg,1):'--';
-}
-function renderOvSERP(s){
-  document.getElementById('ov-kw').textContent=fmt(s.keywords_tracked);
-  document.getElementById('ov-kw-sub').textContent=(s.keywords_ranking||0)+' currently ranking';
-}
-function renderOvCatalog(c){
-  document.getElementById('ov-listings').textContent=fmt(c.amazon_listings);
-  document.getElementById('ov-gap').textContent=fmt(c.asins_ad_spend_no_sales);
+  // Hide range pills on overview (use granularity pills instead)
+  document.getElementById('rangePills').style.display='none';
+  document.querySelectorAll('#granPills button').forEach(b=>b.classList.toggle('a',b.dataset.gran===_wbrGranularity));
+  loadWBR(_wbrGranularity);
 }
 
-/* Funnel tile strip (Overview) — pulls from /v1/amazon/funnel's 7d tile block.
- * Populates the existing Buy Box tile too (single source of truth). */
-function renderOvFunnel(f){
-  const t = (f && f.tiles && f.tiles.last_7d) ? f.tiles.last_7d : null;
-  const p = (f && f.tiles && f.tiles.prev_7d) ? f.tiles.prev_7d : null;
-  if(!t) return;
-  const $ = (id)=>document.getElementById(id);
-  $('ov-fn-sessions').textContent = fmt(t.sessions);
-  $('ov-fn-paid').textContent = t.paid_share_pct!=null ? pct(t.paid_share_pct,1) : '--';
-  $('ov-fn-bb').textContent = t.buy_box_pct!=null ? pct(t.buy_box_pct,2) : '--';
-  $('ov-fn-conv').textContent = t.conv_rate!=null ? pct(t.conv_rate,2) : '--';
-  // Shared Buy Box tile in the KPI grid (keeps both in sync)
-  $('ov-bb').textContent = t.buy_box_pct!=null ? pct(t.buy_box_pct,2) : '--';
-  // Deltas vs prior 7d
-  function setDelta(id, v){
-    const el = $(id); if(!el) return;
-    if(v==null){ el.className='kd n'; el.innerHTML='&nbsp;'; return; }
-    const cls = v>=0 ? 'u' : 'd';
-    const arrow = v>=0 ? '\u2191' : '\u2193';
-    el.className = 'kd '+cls;
-    el.innerHTML = arrow+' '+Math.abs(v).toFixed(1)+'% WoW';
-  }
-  setDelta('ov-fn-sessions-d', f.tiles.sessions_wow_pct);
-  setDelta('ov-fn-paid-d',     f.tiles.paid_share_wow_pct);
-  setDelta('ov-fn-bb-d',       f.tiles.buy_box_wow_pct);
-  setDelta('ov-fn-conv-d',     f.tiles.conv_wow_pct);
+// Granularity pill handler
+document.addEventListener('DOMContentLoaded',function(){
+  var gp=document.getElementById('granPills');
+  if(gp) gp.addEventListener('click',function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.gran) return;
+    _wbrGranularity=btn.dataset.gran;
+    gp.querySelectorAll('button').forEach(function(b){b.classList.toggle('a',b===btn)});
+    loadWBR(_wbrGranularity);
+  });
+});
+
+function loadWBR(gran){
+  document.getElementById('wbr-trend-table').innerHTML='<div class="loading">Loading...</div>';
+  api('/v1/amazon/wbr-overview?granularity='+gran).then(renderWBR).catch(showErr('wbr-trend-table'));
 }
-function renderOvAdMix(a){
-  const el=document.getElementById('ov-adMix');
-  if(!a.data||!a.data.length){el.innerHTML='<div class="empty">No ad data</div>';return;}
-  let html='<table class="tbl"><thead><tr>'
-    +'<th>Platform</th><th>Type</th>'
-    +'<th class="r">Spend</th>'
-    +'<th class="r">Sales (attr) '+T6.tip({formula: 'platform-attributed revenue', note:'SP uses 1-day last-click; SB/SD fall back to 7-day (Amazon API quirk). Google uses conversions_value.'})+'</th>'
-    +'<th class="r">ACoS '+T6.tip({formula: 'ad spend ÷ attributed sales', note:'Lower is better. 20% ACoS = 20 paise spent per rupee of attributed revenue.'})+'</th>'
-    +'<th class="r">ROAS '+T6.tip({formula: 'attributed sales ÷ ad spend', note:'Inverse of ACoS. 5x ROAS = ₹5 revenue per ₹1 spent.'})+'</th>'
-    +'<th class="r">CTR '+T6.tip({formula: 'clicks ÷ impressions × 100', note:'Click-through rate. Higher = ad creative / keyword is resonating.'}, {rightAlign:true})+'</th>'
+
+function renderWBR(r){
+  if(!r||!r.summary) return;
+  var s=r.summary, d=r.delta||{}, inv=r.inventory||{};
+
+  // Window label
+  document.getElementById('wbr-window').textContent=r.window_start+' to '+r.window_end+' ('+r.granularity+')';
+  document.getElementById('wbr-trend-note').textContent=r.periods+' '+r.granularity+'s, '+r.window_start+' to '+r.window_end;
+
+  // Row 1: Revenue
+  document.getElementById('wbr-revenue').textContent=cur(s.revenue);
+  _wbrDelta('wbr-revenue-d', d.revenue_pct, 'vs prior');
+  document.getElementById('wbr-units').textContent=fmt(s.units);
+  _wbrDelta('wbr-units-d', d.units_pct, 'vs prior');
+  document.getElementById('wbr-orders').textContent=fmt(s.orders);
+  _wbrDelta('wbr-orders-d', d.orders_pct, 'vs prior');
+  document.getElementById('wbr-aov').textContent=s.aov?cur(s.aov):'--';
+
+  // Row 2: Ads
+  document.getElementById('wbr-spend').textContent=cur(s.ad_spend);
+  _wbrDelta('wbr-spend-d', d.ad_spend_pct, 'vs prior');
+  document.getElementById('wbr-acos').textContent=s.acos_pct!=null?s.acos_pct.toFixed(1)+'%':'--';
+  document.getElementById('wbr-tacos').textContent=s.tacos_pct!=null?s.tacos_pct.toFixed(1)+'%':'--';
+  document.getElementById('wbr-roas').textContent=s.roas!=null?s.roas.toFixed(2)+'x':'--';
+
+  // Row 3: Traffic & Health
+  document.getElementById('wbr-sessions').textContent=fmt(s.sessions);
+  _wbrDelta('wbr-sessions-d', d.sessions_pct, 'vs prior');
+  document.getElementById('wbr-conv').textContent=s.conversion_pct!=null?s.conversion_pct.toFixed(2)+'%':'--';
+  document.getElementById('wbr-bb').textContent=s.buy_box_pct!=null?s.buy_box_pct.toFixed(1)+'%':'--';
+  document.getElementById('wbr-return').textContent=s.return_rate_pct!=null?s.return_rate_pct.toFixed(1)+'%':'--';
+
+  // Inventory
+  document.getElementById('wbr-oos').textContent=fmt(inv.oos_count);
+  document.getElementById('wbr-lowcover').textContent=fmt(inv.low_cover_count);
+  document.getElementById('wbr-fba').textContent=fmt(inv.total_fulfillable);
+  document.getElementById('wbr-doh').textContent=inv.median_days_cover!=null?inv.median_days_cover+'d':'--';
+
+  // Trend table
+  _renderWBRTable(r.data||[], r.granularity);
+}
+
+function _wbrDelta(elId, pct_val, suffix){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  if(pct_val==null){el.className='kd n';el.innerHTML='\xa0';return;}
+  var cls=pct_val>=0?'u':'d';
+  var arrow=pct_val>=0?'\u2191':'\u2193';
+  el.className='kd '+cls;
+  el.innerHTML=arrow+' '+Math.abs(pct_val).toFixed(1)+'% '+(suffix||'');
+}
+
+function _renderWBRTable(data, gran){
+  var el=document.getElementById('wbr-trend-table');
+  if(!data.length){el.innerHTML='<div class="empty">No data for this period</div>';return;}
+
+  var periodLabel=gran==='day'?'Date':gran==='week'?'Week':'Month';
+  var html='<table class="tbl"><thead><tr>'
+    +'<th>'+periodLabel+'</th>'
+    +'<th class="r">Revenue</th>'
+    +'<th class="r">Units</th>'
+    +'<th class="r">Orders</th>'
+    +'<th class="r">AOV</th>'
+    +'<th class="r">Ad Spend</th>'
+    +'<th class="r">ACoS</th>'
+    +'<th class="r">TACoS</th>'
+    +'<th class="r">ROAS</th>'
+    +'<th class="r">Sessions</th>'
+    +'<th class="r">Conv %</th>'
+    +'<th class="r">BB %</th>'
     +'</tr></thead><tbody>';
-  for(const r of a.data){
-    html+=`<tr>
-      <td class="hi">${r.platform==='amazon'?'Amazon':r.platform==='google'?'Google':r.platform}</td>
-      <td>${r.label}</td>
-      <td class="mn2 r">${cur(r.spend)}</td>
-      <td class="mn2 r">${cur(r.attributed_sales)}</td>
-      <td class="mn2 r">${r.acos_pct!=null?pct(r.acos_pct):'--'}</td>
-      <td class="mn2 r">${r.roas!=null?r.roas.toFixed(2)+'x':'--'}</td>
-      <td class="mn2 r">${r.ctr_pct!=null?pct(r.ctr_pct):'--'}</td>
-    </tr>`;
+
+  for(var i=data.length-1;i>=0;i--){
+    var row=data[i];
+    html+='<tr>'
+      +'<td class="hi">'+(row.label||row.period)+'</td>'
+      +'<td class="mn2 r">'+cur(row.revenue)+'</td>'
+      +'<td class="mn2 r">'+fmt(row.units)+'</td>'
+      +'<td class="mn2 r">'+fmt(row.orders)+'</td>'
+      +'<td class="mn2 r">'+(row.aov?cur(row.aov):'--')+'</td>'
+      +'<td class="mn2 r">'+cur(row.ad_spend)+'</td>'
+      +'<td class="mn2 r">'+(row.acos_pct!=null?row.acos_pct.toFixed(1)+'%':'--')+'</td>'
+      +'<td class="mn2 r">'+(row.tacos_pct!=null?row.tacos_pct.toFixed(1)+'%':'--')+'</td>'
+      +'<td class="mn2 r">'+(row.roas!=null?row.roas.toFixed(1)+'x':'--')+'</td>'
+      +'<td class="mn2 r">'+fmt(row.sessions)+'</td>'
+      +'<td class="mn2 r">'+(row.conversion_pct!=null?row.conversion_pct.toFixed(2)+'%':'--')+'</td>'
+      +'<td class="mn2 r">'+(row.buy_box_pct!=null?row.buy_box_pct.toFixed(1)+'%':'--')+'</td>'
+      +'</tr>';
   }
   html+='</tbody></table>';
   el.innerHTML=html;
