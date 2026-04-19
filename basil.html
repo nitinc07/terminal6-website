@@ -569,17 +569,8 @@
         <button data-rf="ok" style="font-size:12px">Ok</button>
         <button data-rf="overstock" style="font-size:12px">Overstock</button>
       </div>
-      <div class="table-wrap">
-        <table class="mn2"><thead><tr>
-          <th class="l">ASIN</th><th class="l">Product</th>
-          <th class="l">Status</th>
-          <th class="r">Available</th><th class="r">Inbound</th>
-          <th class="r">Cover (7d)</th><th class="r">Avg/day (7d)</th>
-          <th class="r">Cover (30d)</th><th class="r">Avg/day (30d)</th>
-          <th class="r">Sold (30d)</th>
-          <th class="r">Organic (30d)</th><th class="r">PPC (30d)</th>
-        </tr></thead><tbody id="restock-tbody"></tbody></table>
-      </div>
+      <div class="sec-h"><h3>FBA Inventory <span class="note" id="rs-hdr">&nbsp;</span></h3></div>
+      <div id="restock-table" class="loading">Loading...</div>
     </div>
 
     <!-- =============== SUB-TAB: STOCK HEALTH =============== -->
@@ -601,10 +592,7 @@
         <div id="iv-oosTable" class="loading">Loading...</div>
       </div>
 
-      <div class="sec">
-        <div class="sec-h"><h3>Overstock — capital parked <span class="note" id="iv-over-hdr">&nbsp;</span></h3></div>
-        <div id="iv-overTable" class="loading">Loading...</div>
-      </div>
+      <!-- Overstock table removed — now part of Restock Planner sub-tab -->
 
       <div class="sec">
         <div class="sec-h">
@@ -1540,35 +1528,59 @@ function renderRestock(res){
   const cnts = res.status_counts||{};
   const badge = (cnts.urgent||0)+(cnts.moderate||0);
   document.getElementById('sub-restock-cnt').textContent = badge>0?badge:'';
+  const total = res.data.reduce((a,r)=>a+r.est_retail_value,0);
+  document.getElementById('rs-hdr').innerHTML = res.count+' ASINs &middot; <span class="hi">'+cur(total)+'</span> at retail in FBA';
   _drawRestockTable('all');
 }
 function _drawRestockTable(filter){
   const rows = filter==='all'? _restockData : _restockData.filter(r=>r.status===filter);
-  const statusBadge = s => {
-    const cls = s==='urgent'?'r':s==='moderate'?'y':s==='overstock'?'b':'g';
-    const colors = {r:'#c62828',y:'#e65100',g:'#2e7d32',b:'#1565c0'};
-    return '<span style="background:'+colors[cls]+';color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;text-transform:capitalize">'+s+'</span>';
-  };
-  let html='';
-  for(const r of rows){
-    const covStyle7 = r.coverage_7d!==null&&r.coverage_7d<14?'color:#c62828;font-weight:600':'';
-    const covStyle30 = r.coverage_30d!==null&&r.coverage_30d<14?'color:#c62828;font-weight:600':'';
-    html+='<tr>';
-    html+='<td class="l mn2" style="font-family:monospace;font-size:12px">'+r.asin+'</td>';
-    html+='<td class="l mn2" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.product_name||'--')+'</td>';
-    html+='<td class="l mn2">'+statusBadge(r.status)+'</td>';
-    html+='<td class="r mn2">'+fmt(r.available)+'</td>';
-    html+='<td class="r mn2">'+fmt(r.inbound)+'</td>';
-    html+='<td class="r mn2" style="'+covStyle7+'">'+(r.coverage_7d!==null?r.coverage_7d+' d':'--')+'</td>';
-    html+='<td class="r mn2">'+r.avg_daily_7d+'</td>';
-    html+='<td class="r mn2" style="'+covStyle30+'">'+(r.coverage_30d!==null?r.coverage_30d+' d':'--')+'</td>';
-    html+='<td class="r mn2">'+r.avg_daily_30d+'</td>';
-    html+='<td class="r mn2">'+fmt(r.units_sold_30d)+'</td>';
-    html+='<td class="r mn2">'+fmt(r.organic_units_30d)+'</td>';
-    html+='<td class="r mn2">'+fmt(r.ppc_units_30d)+'</td>';
-    html+='</tr>';
+  const el = document.getElementById('restock-table');
+  if(!rows.length){
+    el.innerHTML = '<div class="empty">No ASINs match this filter.</div>';
+    return;
   }
-  document.getElementById('restock-tbody').innerHTML = html||'<tr><td colspan="12" class="l mn2" style="padding:20px;color:#999">No ASINs match this filter</td></tr>';
+  const flag = r => {
+    if(r.status==='urgent') return '<span class="stp oos">Urgent</span>';
+    if(r.status==='moderate') return '<span class="stp low">Moderate</span>';
+    if(r.status==='overstock') return r.coverage_7d>180?'<span class="stp oos">Extreme</span>':'<span class="stp low">High</span>';
+    return '<span class="stp ok">Ok</span>';
+  };
+  let h = '<table class="tbl"><thead><tr>'
+    + '<th>Flag</th><th>ASIN</th><th>Product</th>'
+    + '<th class="r">Cover (7d) '+T6.tip('Days of FBA stock at 7-day avg velocity')+'</th>'
+    + '<th class="r">Cover (30d) '+T6.tip('Days of FBA stock at 30-day avg velocity')+'</th>'
+    + '<th class="r">FBA Stock '+T6.tip('Fulfillable units in FBA warehouses. MFN/Easy Ship stock is seller-managed and not tracked by Amazon.')+'</th>'
+    + '<th class="r">Inbound</th>'
+    + '<th class="r">Velocity '+T6.tip('7d avg daily units ordered')+'</th>'
+    + '<th class="r">Sold (30d)</th>'
+    + '<th class="r">Organic '+T6.tip('Total units minus SP attributed orders (1d window)')+'</th>'
+    + '<th class="r">PPC</th>'
+    + '<th class="r">Avg Price</th>'
+    + '<th class="r">At Retail '+T6.tip({formula:'FBA stock x avg price',note:'Inventory value at current retail. FBA stock only.'},  {rightAlign:true})+'</th>'
+    + '</tr></thead><tbody>';
+  for(const r of rows){
+    const name = (r.product_name||'').length>45 ? r.product_name.slice(0,45)+'...' : (r.product_name||'--');
+    const cov7 = r.coverage_7d!=null ? r.coverage_7d+'d' : '--';
+    const cov30 = r.coverage_30d!=null ? r.coverage_30d+'d' : '--';
+    const cov7s = r.coverage_7d!=null&&r.coverage_7d<14 ? ' style="color:#c62828;font-weight:600"' : '';
+    h += `<tr>
+      <td>${flag(r)}</td>
+      <td class="mn2 hi">${r.asin||'--'}</td>
+      <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
+      <td class="r"${cov7s}>${cov7}</td>
+      <td class="r">${cov30}</td>
+      <td class="mn2 r">${fmt(r.available)}</td>
+      <td class="mn2 r">${fmt(r.inbound)}</td>
+      <td class="mn2 r">${r.avg_daily_7d}</td>
+      <td class="mn2 r">${fmt(r.units_sold_30d)}</td>
+      <td class="mn2 r">${fmt(r.organic_units_30d)}</td>
+      <td class="mn2 r">${fmt(r.ppc_units_30d)}</td>
+      <td class="mn2 r">${r.avg_price!=null?cur(r.avg_price):'--'}</td>
+      <td class="mn2 r hi">${cur(r.est_retail_value)}</td>
+    </tr>`;
+  }
+  h += '</tbody></table>';
+  el.innerHTML = h;
 }
 
 function renderInvTiles(s){
@@ -1836,47 +1848,7 @@ function renderInvTables(p){
     oosEl.innerHTML = h;
   }
 
-  // ---- Overstock + dead stock ----
-  const over = byStatus.overstock.concat(byStatus.dead_stock)
-    .slice().sort((a,b)=>b.est_retail_value - a.est_retail_value);
-  document.getElementById('iv-over-hdr').innerHTML = over.length
-    ? byStatus.overstock.length+' overstock + '+byStatus.dead_stock.length+' dead &middot; <span class="hi">'+cur(over.reduce((a,r)=>a+r.est_retail_value,0))+'</span> at retail parked in FBA'
-    : 'no overstocked ASINs';
-  const overEl = document.getElementById('iv-overTable');
-  if(!over.length){
-    overEl.innerHTML = '<div class="empty">No ASINs above 90-day cover threshold.</div>';
-  } else {
-    let h = '<table class="tbl"><thead><tr>'
-      + '<th>Flag ' + T6.tip({formula: 'Extreme = >180d cover · High = 91–180d · Dead = velocity 0 + stock > 0', note: 'Extreme + Dead are the most urgent to liquidate. Dead often means discontinued or seasonal.'}) + '</th>'
-      + '<th>ASIN</th><th>Product</th>'
-      + '<th class="r">Cover ' + T6.tip('Days of cover = fulfillable ÷ 14-day velocity. ∞ when velocity is 0 (dead stock).') + '</th>'
-      + '<th class="r">Units</th>'
-      + '<th class="r">Velocity ' + T6.tip('Daily average units ordered in last 14 days. Excludes CANCELLED.') + '</th>'
-      + '<th class="r">Avg price ' + T6.tip('14-day avg selling price (or 30d if 14d has no sales).') + '</th>'
-      + '<th class="r">At retail ' + T6.tip({formula: 'fulfillable × avg_price', note: 'Inventory value at current retail price. Not COGS — true tied-up capital is lower. Pre-GST.'}, {rightAlign:true}) + '</th>'
-      + '</tr></thead><tbody>';
-    for(const r of over){
-      const flag = r.status==='dead_stock'
-        ? '<span class="stp oos">Dead</span>'
-        : (r.days_of_cover>180 ? '<span class="stp oos">Extreme</span>' : '<span class="stp low">High</span>');
-      const cov = r.days_of_cover==null
-        ? '<span class="mn2">∞</span>'
-        : '<span class="mn2">'+r.days_of_cover.toFixed(0)+'d</span>';
-      const name = (r.product_name||'').length>48 ? r.product_name.slice(0,48)+'…' : (r.product_name||'--');
-      h += `<tr>
-        <td>${flag}</td>
-        <td class="mn2 hi">${r.asin||'--'}</td>
-        <td title="${(r.product_name||'').replace(/"/g,'&quot;')}">${name}</td>
-        <td class="r">${cov}</td>
-        <td class="mn2 r">${fmt(r.fulfillable_qty)}</td>
-        <td class="mn2 r">${r.velocity_14d_avg!=null?r.velocity_14d_avg.toFixed(1):'0'}</td>
-        <td class="mn2 r">${r.avg_price!=null?cur(r.avg_price):'--'}</td>
-        <td class="mn2 r hi">${cur(r.est_retail_value)}</td>
-      </tr>`;
-    }
-    h += '</tbody></table>';
-    overEl.innerHTML = h;
-  }
+  // Overstock table removed — now in Restock Planner sub-tab
 
   // ---- All ASINs (collapsible) ----
   const allSorted = p.data.slice().sort((a,b)=>{
