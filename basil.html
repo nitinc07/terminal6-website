@@ -190,13 +190,23 @@
 .ag-bucket-item .bi-reason{color:var(--t3);font-style:italic}
 .ag-bucket-item .bi-action{color:var(--acc-t);font-weight:500;margin-top:4px}
 
-/* LIVE STREAMING — reasoning trace style */
-.ag-stream-trace{background:var(--bg-cream);border:1px solid var(--border-s);border-radius:var(--rad);padding:14px 16px;margin-bottom:12px}
-.ag-stream-trace .st-status{font-size:12px;color:var(--acc-t);font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.ag-stream-trace .st-status::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--acc);animation:pulse 1.2s infinite}
-.ag-stream-trace .st-steps{display:flex;flex-direction:column;gap:0}
+/* LIVE STREAMING — uses same .ag-trace styling for consistency */
+.ag-trace.streaming{cursor:default}
+.ag-trace.streaming .steps{display:block!important}
+.ag-trace .st-status{font-size:11px;color:var(--acc-t);font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.ag-trace .st-status::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--acc);animation:pulse 1.2s infinite}
+.ag-trace.done .st-status::before{animation:none;background:var(--g)}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* View Calculations modal */
+.calc-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:8px}
+.calc-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--t3);padding:6px 8px;border-bottom:2px solid var(--border-s);font-weight:600}
+.calc-table td{padding:5px 8px;border-bottom:1px solid var(--border-s);color:var(--t1);font-family:var(--mono);font-size:11px}
+.calc-table tr:hover{background:var(--bg-cream)}
+.calc-table .verdict-c{color:var(--r);font-weight:600}
+.calc-table .verdict-l{color:var(--a);font-weight:600}
+.calc-table .verdict-j{color:var(--g)}
+.calc-table .verdict-n{color:var(--t3)}
 
 /* LIVE STREAMING */
 .ag-run-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--rs);font-size:11.5px;font-weight:500;cursor:pointer;border:1px solid var(--acc);background:var(--bg);color:var(--acc);font-family:var(--sans);transition:all .15s;margin-left:auto}
@@ -762,6 +772,22 @@
     </div>
     <div id="bmImpact" style="padding:10px 20px;font-size:12px;color:var(--t2);background:var(--bg-cream);border-bottom:1px solid var(--border-s)"></div>
     <div id="bmItems" style="padding:14px 20px 24px"></div>
+    <div id="bmCalcBar" style="display:none;padding:10px 20px;border-top:1px solid var(--border-s);background:var(--bg-cream);text-align:right">
+      <button onclick="openCalcModal()" style="padding:6px 16px;border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--acc);background:var(--bg);color:var(--acc);font-family:var(--sans)">View Calculations</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALCULATIONS DETAIL MODAL — keyword/ASIN level data behind a bucket -->
+<div id="calcModal" class="audit-drawer" onclick="if(event.target===this) closeCalcModal()" style="display:none">
+  <div class="audit-drawer-panel" style="max-width:900px">
+    <div class="audit-drawer-head">
+      <h3 id="calcTitle" style="font-family:var(--serif);font-size:17px;font-weight:600;margin:0 auto 0 0"></h3>
+      <button onclick="downloadCalcCSV()" style="padding:5px 14px;border-radius:var(--rs);font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--acc);background:var(--bg);color:var(--acc);font-family:var(--sans);margin-right:8px">Download CSV</button>
+      <button onclick="closeCalcModal()" style="background:none;border:0;font-size:22px;cursor:pointer;color:var(--t3);padding:0 6px">&times;</button>
+    </div>
+    <div id="calcSummary" style="padding:10px 20px;font-size:12px;color:var(--t2);background:var(--bg-cream);border-bottom:1px solid var(--border-s)"></div>
+    <div id="calcBody" style="padding:14px 20px 24px;overflow-x:auto"></div>
   </div>
 </div>
 
@@ -2494,9 +2520,98 @@ function openBucketModal(key){
       +'</div></div>';
   }
   document.getElementById('bmItems').innerHTML=html;
+  // Show "View Calculations" if we have campaign_drilldown data
+  _currentBucketKey=key;
+  document.getElementById('bmCalcBar').style.display=(_agentDrilldown&&Object.keys(_agentDrilldown).length)?'block':'none';
   document.getElementById('bucketModal').style.display='flex';
 }
+var _currentBucketKey='';
+var _agentDrilldown=null;
 function closeBucketModal(){ document.getElementById('bucketModal').style.display='none'; }
+
+function openCalcModal(){
+  var key=_currentBucketKey;
+  var b=_bucketData[key];
+  if(!b||!_agentDrilldown) return;
+  document.getElementById('calcTitle').textContent=(b.label||key)+' \u2014 Calculation Detail';
+
+  var dd=_agentDrilldown;
+  var rows=[];
+  // Build table from campaign drilldown — show campaigns relevant to this bucket
+  for(var ci=0;ci<dd.length;ci++){
+    var camp=dd[ci];
+    var relevant=false;
+    // Filter by bucket type
+    if(key==='cannibalization_risk' && (camp.cannibalization_spend>0||camp.likely_cannibalization_spend>0)) relevant=true;
+    if(key==='wasted_spend') relevant=true;
+    if(key==='scalers' && camp.acos && camp.acos<20) relevant=true;
+    if(key==='bleeders' && camp.acos && camp.acos>80) relevant=true;
+    if(!relevant && (key==='cannibalization_risk'||key==='bleeders'||key==='scalers')) continue;
+    if(!camp.top_keywords||!camp.top_keywords.length) continue;
+
+    for(var ki=0;ki<camp.top_keywords.length;ki++){
+      var kw=camp.top_keywords[ki];
+      // For cannibalization, only show cannibalizing keywords
+      if(key==='cannibalization_risk' && kw.verdict!=='cannibalization' && kw.verdict!=='likely_cannibalization') continue;
+      // For wasted spend, only show zero-order keywords with >Rs 500 spend
+      if(key==='wasted_spend' && (kw.orders>0 || kw.spend<500)) continue;
+      rows.push({campaign:camp.campaign,ad_type:camp.ad_type,camp_spend:camp.total_spend,camp_acos:camp.acos,
+        term:kw.term,spend:kw.spend,clicks:kw.clicks,orders:kw.orders,sales:kw.sales,
+        org_rank:kw.organic_rank,verdict:kw.verdict});
+    }
+  }
+
+  // Sort by spend desc
+  rows.sort(function(a,b){return b.spend-a.spend});
+
+  var totalSpend=0;
+  for(var ri=0;ri<rows.length;ri++) totalSpend+=rows[ri].spend;
+  document.getElementById('calcSummary').innerHTML='<strong>'+rows.length+' keyword\u00D7campaign rows</strong> | Total spend: \u20B9'+totalSpend.toLocaleString('en-IN')+' | Source: search term harvest \u00D7 SERP organic rank cross-reference';
+
+  var verdictClass={cannibalization:'verdict-c',likely_cannibalization:'verdict-l',justified:'verdict-j',no_serp_data:'verdict-n'};
+  var verdictLabel={cannibalization:'Cannibal',likely_cannibalization:'Likely',justified:'Justified',no_serp_data:'No SERP'};
+
+  var html='<table class="calc-table"><thead><tr>'
+    +'<th>Keyword</th><th>Campaign</th><th style="text-align:right">Spend</th><th style="text-align:right">Clicks</th>'
+    +'<th style="text-align:right">Orders</th><th style="text-align:right">Sales</th><th style="text-align:right">Org Rank</th>'
+    +'<th>Verdict</th></tr></thead><tbody>';
+  for(var ri=0;ri<rows.length;ri++){
+    var r=rows[ri];
+    var vc=verdictClass[r.verdict]||'';
+    var vl=verdictLabel[r.verdict]||r.verdict;
+    html+='<tr><td style="font-family:var(--sans);max-width:200px;overflow:hidden;text-overflow:ellipsis" title="'+r.term+'">'+r.term+'</td>'
+      +'<td style="font-family:var(--sans);font-size:10px;max-width:180px;overflow:hidden;text-overflow:ellipsis" title="'+r.campaign+'">'+r.campaign+'</td>'
+      +'<td style="text-align:right">\u20B9'+r.spend.toLocaleString('en-IN')+'</td>'
+      +'<td style="text-align:right">'+r.clicks+'</td>'
+      +'<td style="text-align:right">'+r.orders+'</td>'
+      +'<td style="text-align:right">\u20B9'+r.sales.toLocaleString('en-IN')+'</td>'
+      +'<td style="text-align:right">'+(r.org_rank?'#'+r.org_rank:'\u2014')+'</td>'
+      +'<td class="'+vc+'">'+vl+'</td></tr>';
+  }
+  html+='</tbody></table>';
+  document.getElementById('calcBody').innerHTML=rows.length?html:'<p style="color:var(--t3);font-size:12px">No keyword-level detail available for this bucket.</p>';
+  document.getElementById('calcModal').style.display='flex';
+}
+function closeCalcModal(){ document.getElementById('calcModal').style.display='none'; }
+
+function downloadCalcCSV(){
+  var table=document.querySelector('#calcBody .calc-table');
+  if(!table) return;
+  var csv='\uFEFF'; // BOM for Excel
+  var rows=table.querySelectorAll('tr');
+  for(var i=0;i<rows.length;i++){
+    var cells=rows[i].querySelectorAll('th,td');
+    var line=[];
+    for(var j=0;j<cells.length;j++) line.push('"'+cells[j].textContent.replace(/"/g,'""')+'"');
+    csv+=line.join(',')+'\r\n';
+  }
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(_currentBucketKey||'calculations')+'_detail.csv';
+  a.click();
+}
+
 var _approvedActions=[];
 function agBucketAct(btn,bucketKey,idx,action){
   btn.parentElement.innerHTML='<span style="font-size:11px;color:var(--t3)">'+(action==='approve'?'\u2705 Approved':'\u274C Dismissed')+'</span>';
@@ -2628,6 +2743,10 @@ function loadAgentMarketing(){
       document.getElementById('ag-mkt-buckets').innerHTML='';
       _renderRecs(document.getElementById('ag-mkt-recs'), o.recommendations||[]);
     }
+    // Fetch campaign drilldown for "View Calculations"
+    api('/v1/agents/marketing/drilldown').then(function(dd){
+      if(dd&&dd.campaign_drilldown) _agentDrilldown=dd.campaign_drilldown;
+    }).catch(function(){});
   }).catch(()=>{});
 }
 
@@ -2667,9 +2786,19 @@ function streamAgent(agentSlug, streamContainerId, agentKey){
   var panel = container.closest('.ag-inline');
   if(panel) panel.style.display = 'block';
 
-  container.innerHTML = '<div class="ag-stream-trace"><div class="st-status">Connecting...</div><div class="st-steps"></div></div>';
+  // Hide existing cached content while streaming
+  var traceEl = document.getElementById('ag-'+agentKey.replace('daily_brief','mkt').replace('marketing','mkt').replace('inventory','inv')+'-trace');
+  var summaryEl = document.getElementById('ag-'+agentKey.replace('daily_brief','mkt').replace('marketing','mkt').replace('inventory','inv')+'-summary');
+  var bucketsEl = document.getElementById('ag-'+agentKey.replace('daily_brief','mkt').replace('marketing','mkt').replace('inventory','inv')+'-buckets');
+  var recsEl = document.getElementById('ag-'+agentKey.replace('daily_brief','mkt').replace('marketing','mkt').replace('inventory','inv')+'-recs');
+  if(traceEl) traceEl.style.display='none';
+  if(summaryEl) summaryEl.style.display='none';
+  if(bucketsEl) bucketsEl.style.display='none';
+  if(recsEl) recsEl.style.display='none';
+
+  container.innerHTML = '<div class="ag-trace streaming"><div class="st-status">Connecting...</div><div class="steps"></div></div>';
   var statusEl = container.querySelector('.st-status');
-  var stepsEl = container.querySelector('.st-steps');
+  var stepsEl = container.querySelector('.steps');
   var stepCount = 0;
   var stopped = false;
 
@@ -2725,6 +2854,9 @@ function streamAgent(agentSlug, streamContainerId, agentKey){
                 var result = JSON.parse(data);
                 statusEl.textContent = 'Analysis complete \u2714';
                 statusEl.style.color='var(--g)';
+                // Mark trace as done (stops pulse animation)
+                var traceBox = container.querySelector('.ag-trace');
+                if(traceBox) traceBox.classList.remove('streaming'), traceBox.classList.add('done');
                 // If reasoning trace steps weren't captured from stream, show them now
                 if(result.output && result.output.reasoning_trace && stepCount < 2){
                   stepsEl.innerHTML='';
@@ -2737,6 +2869,10 @@ function streamAgent(agentSlug, streamContainerId, agentKey){
                 }
                 setTimeout(function(){
                   container.innerHTML = '';
+                  // Restore hidden elements before reloading
+                  if(summaryEl) summaryEl.style.display='';
+                  if(bucketsEl) bucketsEl.style.display='';
+                  if(recsEl) recsEl.style.display='';
                   if(agentKey==='daily_brief'){ _agBriefDone=false; loadAgentBrief(); }
                   else if(agentKey==='marketing'){ _agMktDone=false; loadAgentMarketing(); }
                   else if(agentKey==='inventory'){ _agInvDone=false; loadAgentInventory(); }
