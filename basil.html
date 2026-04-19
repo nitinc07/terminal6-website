@@ -2520,40 +2520,172 @@ function openBucketModal(key){
       +'</div></div>';
   }
   document.getElementById('bmItems').innerHTML=html;
-  // Show "View Calculations" if we have campaign_drilldown data
+  // Show "View Calculations" if we have drilldown data
   _currentBucketKey=key;
-  document.getElementById('bmCalcBar').style.display=(_agentDrilldown&&Object.keys(_agentDrilldown).length)?'block':'none';
+  var hasData=(_agentDrilldown&&_agentDrilldown.length)||(_agentUnitEcon&&_agentUnitEcon.length);
+  document.getElementById('bmCalcBar').style.display=hasData?'block':'none';
   document.getElementById('bucketModal').style.display='flex';
 }
 var _currentBucketKey='';
 var _agentDrilldown=null;
+var _agentUnitEcon=[];
+var _agentImpact={};
+var _agentCampaigns=[];
 function closeBucketModal(){ document.getElementById('bucketModal').style.display='none'; }
 
 function openCalcModal(){
   var key=_currentBucketKey;
   var b=_bucketData[key];
-  if(!b||!_agentDrilldown) return;
+  if(!b) return;
   document.getElementById('calcTitle').textContent=(b.label||key)+' \u2014 Calculation Detail';
 
-  var dd=_agentDrilldown;
+  // Route to bucket-specific renderer
+  if(key==='bleeders') _renderCalcBleeders();
+  else if(key==='cannibalization_risk') _renderCalcKeywords('cannibalization_risk');
+  else if(key==='wasted_spend') _renderCalcKeywords('wasted_spend');
+  else if(key==='scalers') _renderCalcKeywords('scalers');
+  else if(key==='low_stock_pause') _renderCalcLowStock();
+  else _renderCalcKeywords(key); // fallback
+
+  document.getElementById('calcModal').style.display='flex';
+}
+
+function _renderCalcBleeders(){
+  // Show MSKU family economics — the math behind "margin destroyed"
+  var ue=_agentUnitEcon||[];
+  var impact=_agentImpact||{};
+  var bleeders=impact.bleeders||{};
+
+  // Group unit economics by MSKU family
+  var families={};
+  for(var i=0;i<ue.length;i++){
+    var u=ue[i];
+    var msku=u.msku||'Ungrouped';
+    if(!families[msku]) families[msku]={revenue:0,units:0,rev_cm2:0,rev_cm3:0,ad_spend:0,asins:[]};
+    var rev=u.gross_revenue||0;
+    families[msku].revenue+=rev;
+    families[msku].units+=u.units_shipped||0;
+    families[msku].rev_cm2+=(u.cm2_pct||0)*rev;
+    families[msku].rev_cm3+=(u.cm3_pct||0)*rev;
+    families[msku].ad_spend+=(u.sp_ad_spend_pu||0)*(u.units_shipped||0);
+    families[msku].asins.push(u);
+  }
+
+  // Build rows sorted by margin destroyed (most negative CM3 first)
   var rows=[];
-  // Build table from campaign drilldown — show campaigns relevant to this bucket
+  for(var msku in families){
+    var f=families[msku];
+    if(f.revenue<=0) continue;
+    var cm2=f.rev_cm2/f.revenue;
+    var cm3=f.rev_cm3/f.revenue;
+    var margin_destroyed=cm3<0?Math.round(f.revenue*Math.abs(cm3)/100):0;
+    rows.push({msku:msku,revenue:Math.round(f.revenue),units:Math.round(f.units),
+      cm2:Math.round(cm2*10)/10,cm3:Math.round(cm3*10)/10,
+      ad_spend:Math.round(f.ad_spend),margin_destroyed:margin_destroyed,
+      asin_count:f.asins.length,
+      health:cm3>10?'Profitable':cm3>0?'Marginal':'Unprofitable'});
+  }
+  rows.sort(function(a,b){return a.cm3-b.cm3});
+
+  var totalDestroyed=0;
+  for(var i=0;i<rows.length;i++) totalDestroyed+=rows[i].margin_destroyed;
+
+  document.getElementById('calcSummary').innerHTML='<strong>'+rows.length+' MSKU families</strong> | Margin destroyed by unprofitable families: \u20B9'+totalDestroyed.toLocaleString('en-IN')+'/period | CM2 = break-even ACoS, CM3 = profit after ads';
+
+  var html='<table class="calc-table"><thead><tr>'
+    +'<th>MSKU Family</th><th style="text-align:right">Revenue</th><th style="text-align:right">Units</th>'
+    +'<th style="text-align:right">CM2%</th><th style="text-align:right">CM3%</th>'
+    +'<th style="text-align:right">Ad Spend</th><th style="text-align:right">Margin Destroyed</th>'
+    +'<th>Health</th></tr></thead><tbody>';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    var hc=r.health==='Unprofitable'?'verdict-c':r.health==='Marginal'?'verdict-l':'verdict-j';
+    html+='<tr><td style="font-family:var(--sans)">'+r.msku+'</td>'
+      +'<td style="text-align:right">\u20B9'+r.revenue.toLocaleString('en-IN')+'</td>'
+      +'<td style="text-align:right">'+r.units+'</td>'
+      +'<td style="text-align:right">'+r.cm2+'%</td>'
+      +'<td style="text-align:right;'+(r.cm3<0?'color:var(--r);font-weight:600':'')+'">'+r.cm3+'%</td>'
+      +'<td style="text-align:right">\u20B9'+r.ad_spend.toLocaleString('en-IN')+'</td>'
+      +'<td style="text-align:right;'+(r.margin_destroyed>0?'color:var(--r);font-weight:600':'')+'">'+
+        (r.margin_destroyed>0?'\u20B9'+r.margin_destroyed.toLocaleString('en-IN'):'\u2014')+'</td>'
+      +'<td class="'+hc+'">'+r.health+'</td></tr>';
+  }
+  html+='</tbody></table>';
+
+  // Also show campaign bleeders (ACoS > 100%)
+  var campBleeders=(_agentCampaigns||[]).filter(function(c){return c.attr_sales>0&&c.spend/c.attr_sales>1});
+  if(campBleeders.length){
+    html+='<h4 style="margin:16px 0 8px;font-size:13px;color:var(--t1)">Campaign Bleeders (ACoS > 100%)</h4>';
+    html+='<table class="calc-table"><thead><tr><th>Campaign</th><th>Type</th><th style="text-align:right">Spend</th><th style="text-align:right">Sales</th><th style="text-align:right">ACoS</th><th style="text-align:right">Loss</th></tr></thead><tbody>';
+    for(var i=0;i<campBleeders.length;i++){
+      var c=campBleeders[i];
+      var acos=Math.round(c.spend/c.attr_sales*100);
+      var loss=Math.round(c.spend-c.attr_sales);
+      html+='<tr><td style="font-family:var(--sans)">'+c.name+'</td><td>'+c.ad_type+'</td>'
+        +'<td style="text-align:right">\u20B9'+Math.round(c.spend).toLocaleString('en-IN')+'</td>'
+        +'<td style="text-align:right">\u20B9'+Math.round(c.attr_sales).toLocaleString('en-IN')+'</td>'
+        +'<td style="text-align:right;color:var(--r);font-weight:600">'+acos+'%</td>'
+        +'<td style="text-align:right;color:var(--r)">\u20B9'+loss.toLocaleString('en-IN')+'</td></tr>';
+    }
+    html+='</tbody></table>';
+  }
+
+  document.getElementById('calcBody').innerHTML=html;
+}
+
+function _renderCalcLowStock(){
+  // Show ASINs with low stock + ad spend
+  var ue=_agentUnitEcon||[];
+  var rows=[];
+  for(var i=0;i<ue.length;i++){
+    var u=ue[i];
+    var cover=u.days_cover;
+    var stock=u.stock;
+    var adpu=u.sp_ad_spend_pu||0;
+    if(cover!=null&&cover<14&&adpu>0){
+      rows.push({asin:u.asin,name:(u.product_name||'').substring(0,40),msku:u.msku||'',
+        stock:stock!=null?Math.round(stock):'N/A',cover:cover!=null?Math.round(cover):'N/A',
+        ad_spend_pu:Math.round(adpu),units:Math.round(u.units_shipped||0),asp:Math.round(u.asp||0)});
+    }
+  }
+  rows.sort(function(a,b){return(a.cover||999)-(b.cover||999)});
+
+  document.getElementById('calcSummary').innerHTML='<strong>'+rows.length+' ASINs</strong> with <14 days cover and active ad spend | Advertising these wastes spend and risks organic rank on stockout';
+
+  var html='<table class="calc-table"><thead><tr>'
+    +'<th>ASIN</th><th>MSKU</th><th style="text-align:right">Stock</th><th style="text-align:right">Cover</th>'
+    +'<th style="text-align:right">Ad \u20B9/unit</th><th style="text-align:right">Units/30d</th><th style="text-align:right">ASP</th>'
+    +'</tr></thead><tbody>';
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    html+='<tr><td>'+r.asin+'</td><td style="font-family:var(--sans);font-size:10px">'+r.msku+'</td>'
+      +'<td style="text-align:right;'+(r.stock===0?'color:var(--r);font-weight:600':'')+'">'+r.stock+'</td>'
+      +'<td style="text-align:right;color:var(--r);font-weight:600">'+r.cover+'d</td>'
+      +'<td style="text-align:right">\u20B9'+r.ad_spend_pu+'</td>'
+      +'<td style="text-align:right">'+r.units+'</td>'
+      +'<td style="text-align:right">\u20B9'+r.asp.toLocaleString('en-IN')+'</td></tr>';
+  }
+  html+='</tbody></table>';
+  document.getElementById('calcBody').innerHTML=rows.length?html:'<p style="color:var(--t3);font-size:12px">No low-stock ASINs with active ad spend.</p>';
+}
+
+function _renderCalcKeywords(key){
+  // Keyword × campaign × organic rank table (for cannibalization, wasted spend, scalers)
+  var dd=_agentDrilldown||[];
+  var rows=[];
+
   for(var ci=0;ci<dd.length;ci++){
     var camp=dd[ci];
     var relevant=false;
-    // Filter by bucket type
     if(key==='cannibalization_risk' && (camp.cannibalization_spend>0||camp.likely_cannibalization_spend>0)) relevant=true;
     if(key==='wasted_spend') relevant=true;
     if(key==='scalers' && camp.acos && camp.acos<20) relevant=true;
-    if(key==='bleeders' && camp.acos && camp.acos>80) relevant=true;
-    if(!relevant && (key==='cannibalization_risk'||key==='bleeders'||key==='scalers')) continue;
+    if(!relevant) continue;
     if(!camp.top_keywords||!camp.top_keywords.length) continue;
 
     for(var ki=0;ki<camp.top_keywords.length;ki++){
       var kw=camp.top_keywords[ki];
-      // For cannibalization, only show cannibalizing keywords
       if(key==='cannibalization_risk' && kw.verdict!=='cannibalization' && kw.verdict!=='likely_cannibalization') continue;
-      // For wasted spend, only show zero-order keywords with >Rs 500 spend
       if(key==='wasted_spend' && (kw.orders>0 || kw.spend<500)) continue;
       rows.push({campaign:camp.campaign,ad_type:camp.ad_type,camp_spend:camp.total_spend,camp_acos:camp.acos,
         term:kw.term,spend:kw.spend,clicks:kw.clicks,orders:kw.orders,sales:kw.sales,
@@ -2561,12 +2693,11 @@ function openCalcModal(){
     }
   }
 
-  // Sort by spend desc
   rows.sort(function(a,b){return b.spend-a.spend});
 
   var totalSpend=0;
   for(var ri=0;ri<rows.length;ri++) totalSpend+=rows[ri].spend;
-  document.getElementById('calcSummary').innerHTML='<strong>'+rows.length+' keyword\u00D7campaign rows</strong> | Total spend: \u20B9'+totalSpend.toLocaleString('en-IN')+' | Source: search term harvest \u00D7 SERP organic rank cross-reference';
+  document.getElementById('calcSummary').innerHTML='<strong>'+rows.length+' keyword\u00D7campaign rows</strong> | Total spend: \u20B9'+totalSpend.toLocaleString('en-IN')+' | Source: search term harvest \u00D7 SERP organic rank';
 
   var verdictClass={cannibalization:'verdict-c',likely_cannibalization:'verdict-l',justified:'verdict-j',no_serp_data:'verdict-n'};
   var verdictLabel={cannibalization:'Cannibal',likely_cannibalization:'Likely',justified:'Justified',no_serp_data:'No SERP'};
@@ -2590,7 +2721,6 @@ function openCalcModal(){
   }
   html+='</tbody></table>';
   document.getElementById('calcBody').innerHTML=rows.length?html:'<p style="color:var(--t3);font-size:12px">No keyword-level detail available for this bucket.</p>';
-  document.getElementById('calcModal').style.display='flex';
 }
 function closeCalcModal(){ document.getElementById('calcModal').style.display='none'; }
 
@@ -2743,9 +2873,14 @@ function loadAgentMarketing(){
       document.getElementById('ag-mkt-buckets').innerHTML='';
       _renderRecs(document.getElementById('ag-mkt-recs'), o.recommendations||[]);
     }
-    // Fetch campaign drilldown for "View Calculations"
+    // Fetch full drilldown data for "View Calculations"
     api('/v1/agents/marketing/drilldown').then(function(dd){
-      if(dd&&dd.campaign_drilldown) _agentDrilldown=dd.campaign_drilldown;
+      if(dd){
+        _agentDrilldown=dd.campaign_drilldown||[];
+        _agentUnitEcon=dd.unit_economics||[];
+        _agentImpact=dd.impact_summary||{};
+        _agentCampaigns=dd.campaigns||[];
+      }
     }).catch(function(){});
   }).catch(()=>{});
 }
