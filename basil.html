@@ -499,7 +499,7 @@
       </div>
       <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <label style="font-size:12px;color:var(--t2);user-select:none;cursor:pointer;margin-right:8px">
-          <input type="checkbox" id="lhActiveOnly" style="margin-right:4px;vertical-align:middle" onchange="_lhRerender()" />Active only
+          <input type="checkbox" id="lhActiveOnly" checked style="margin-right:4px;vertical-align:middle" onchange="_lhRerender()" />Hide fully inactive
         </label>
         <div class="pills" id="lhFilterPills">
           <button data-f="all" class="a" onclick="_lhFilter('all',this)">All</button>
@@ -1518,7 +1518,7 @@ function _renderLhTable(d){
     +'<th class="r">Score</th>'
     +'</tr></thead><tbody>';
 
-  for(const r of d.data){
+  for(const r of rows){
     const img = r.image_url ? `<img src="${r.image_url}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;background:#f8f7f4" loading="lazy" onerror="this.style.display='none'"/>` : '';
     const name = (r.product_name||'').length>45 ? (r.product_name||'').slice(0,45)+'...' : (r.product_name||'--');
     const bothInactive = r.amz_status!=='Active' && r.shp_status!=='Active';
