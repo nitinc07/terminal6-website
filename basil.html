@@ -1405,7 +1405,7 @@ function renderProductMaster(c){
     +'<th style="width:16px"></th>'
     +'<th style="width:44px"></th>'
     +'<th style="text-align:left">Product</th>'
-    +'<th style="text-align:left">ASIN</th>'
+    +'<th style="text-align:left">Variant ID</th>'
     +'<th style="text-align:center;width:50px">AMZ</th>'
     +'<th style="text-align:center;width:60px">Shopify</th>'
     +'<th style="text-align:left;width:70px">Fulfillment</th>'
@@ -1436,6 +1436,11 @@ function renderProductMaster(c){
     const vs = r.variants||[];
     const mrpP = r.mrp!=null ? _pmCur(r.mrp) : '<span style="color:var(--t3)">&mdash;</span>';
     const cogsP = r.cogs!=null ? _pmCur(r.cogs) : '<span style="color:var(--neg)">&mdash;</span>';
+    const _chTag=(ch)=>{
+      const m={AMAZON_IN:['AMZ','#ff9900'],SHOPIFY:['SHP','#96bf48'],FLIPKART_IN:['FK','#2874f0'],MYNTRA:['MYN','#ff3f6c']};
+      const [l,c]=m[ch]||[ch,'#999'];
+      return `<span style="font-size:9px;font-weight:600;color:#fff;background:${c};padding:1px 5px;border-radius:3px;margin-right:4px">${l}</span>`;
+    };
     for(const v of vs){
       const ful = v.fulfilment_method || '&mdash;';
       const title = v.product_title || r.msku_name || '&mdash;';
@@ -1447,7 +1452,7 @@ function renderProductMaster(c){
         <td>${pmImg(vImg)}</td>
         <td style="text-align:left;padding-left:4px"><span style="font-size:12px;font-weight:500">${v.seller_sku||'&mdash;'}</span>
           <div style="font-size:11px;color:var(--t3);margin-top:1px" title="${(v.product_title||'').replace(/"/g,'&quot;')}">${titleTrim}</div></td>
-        <td class="mn2 hi" style="text-align:left">${v.asin||'&mdash;'}</td>
+        <td class="mn2" style="text-align:left">${_chTag(v.channel)}<span class="hi" style="font-size:11.5px">${v.variant_id||'&mdash;'}</span></td>
         <td></td><td></td>
         <td class="mn2" style="text-align:left"><span style="font-size:11.5px;color:${ful==='FBA'?'var(--t1)':'var(--t2)'}">${ful}</span></td>
         <td class="mn2 r">${mrpP}</td>
