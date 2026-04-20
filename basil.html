@@ -902,19 +902,20 @@ function renderAmazonKPIs(r){
 }
 
 /* --- Transposed trend table: metrics as rows, time periods as columns --- */
+// th: 'pct' = relative % change threshold, 'pp' = absolute percentage-point threshold
 var _azMetrics=[
-  {label:'Revenue',  key:'revenue',        fn:function(v){return cur(v)}},
-  {label:'Units',    key:'units',           fn:function(v){return fmt(v)}},
-  {label:'Orders',   key:'orders',          fn:function(v){return fmt(v)}},
-  {label:'AOV',      key:'aov',             fn:function(v){return v?cur(v):'--'}},
-  {label:'Ad Spend', key:'ad_spend',        fn:function(v){return cur(v)}},
-  {label:'ACoS',     key:'acos_pct',        fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true},
-  {label:'TACoS',    key:'tacos_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true},
-  {label:'ROAS',     key:'roas',            fn:function(v){return v!=null?v.toFixed(1)+'x':'--'}},
-  {label:'Sessions', key:'sessions',        fn:function(v){return v?fmt(v):'--'}},
-  {label:'Paid %',   key:'paid_share_pct',  fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true},
-  {label:'Conv %',   key:'conversion_pct',  fn:function(v){return v!=null?v.toFixed(2)+'%':'--'}},
-  {label:'BB %',     key:'buy_box_pct',     fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}}
+  {label:'Revenue',  key:'revenue',        fn:function(v){return cur(v)},           th:'pct', tv:15},
+  {label:'Units',    key:'units',           fn:function(v){return fmt(v)},           th:'pct', tv:15},
+  {label:'Orders',   key:'orders',          fn:function(v){return fmt(v)},           th:'pct', tv:15},
+  {label:'AOV',      key:'aov',             fn:function(v){return v?cur(v):'--'},    th:'pct', tv:10},
+  {label:'Ad Spend', key:'ad_spend',        fn:function(v){return cur(v)},           th:'pct', tv:15},
+  {label:'ACoS',     key:'acos_pct',        fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2},
+  {label:'TACoS',    key:'tacos_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2},
+  {label:'ROAS',     key:'roas',            fn:function(v){return v!=null?v.toFixed(1)+'x':'--'},           th:'pct', tv:15},
+  {label:'Sessions', key:'sessions',        fn:function(v){return v?fmt(v):'--'},    th:'pct', tv:15},
+  {label:'Paid %',   key:'paid_share_pct',  fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2},
+  {label:'Conv %',   key:'conversion_pct',  fn:function(v){return v!=null?v.toFixed(2)+'%':'--'},           th:'pp', tv:2},
+  {label:'BB %',     key:'buy_box_pct',     fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},           th:'pp', tv:2}
 ];
 
 function _renderAzTrend(granData, gran, monthData){
@@ -952,15 +953,20 @@ function _renderAzTrend(granData, gran, monthData){
     html+='<tr><td class="hi">'+met.label+'</td>';
     for(var c2=0;c2<cols.length;c2++){
       var val=cols[c2].data[met.key];
-      // Compare to next column (previous period) for color coding
+      // Color only significant deviations vs previous period
       var bg='';
       if(c2<cols.length-1){
         var prev=cols[c2+1].data[met.key];
         if(val!=null && prev!=null && prev!==0){
-          var diff=val-prev;
-          if(met.inv) diff=-diff; // lower is better for ACoS/TACoS/Paid%
-          if(diff>0) bg='background:var(--gl)';
-          else if(diff<0) bg='background:var(--rl)';
+          var sig=false;
+          if(met.th==='pp') sig=Math.abs(val-prev)>=met.tv;        // absolute pp change
+          else              sig=Math.abs((val-prev)/prev*100)>=met.tv; // relative % change
+          if(sig){
+            var diff=val-prev;
+            if(met.inv) diff=-diff;
+            if(diff>0) bg='background:var(--gl)';
+            else if(diff<0) bg='background:var(--rl)';
+          }
         }
       }
       var borderL2=cols[c2].cls==='az-mtd'?'border-left:2px solid var(--border);':'';
