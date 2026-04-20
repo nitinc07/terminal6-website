@@ -1388,46 +1388,47 @@ function loadCatalog(){
   api('/v1/amazon/catalogue-health?days='+catDays).then(renderCatHealth).catch(()=>{});
   api('/v1/amazon/product-master').then(c=>{ pmMasterCache = c; renderProductMaster(c); }).catch(showErr('pm-table'));
 }
+function _pmCur(n){ return n==null?'--':'\u20B9'+Math.round(n).toLocaleString('en-IN'); }
 function renderProductMaster(c){
   const el = document.getElementById('pm-table');
   if(!c || !c.data || !c.data.length){ el.innerHTML='<div class="empty">No MSKUs</div>'; return; }
   const activeOnly = document.getElementById('pmActiveOnly')?.checked;
   const rows = activeOnly ? c.data.filter(r => r.active > 0) : c.data;
   if(!rows.length){ el.innerHTML='<div class="empty">No active MSKUs</div>'; return; }
-  const chBadge=(ch,label)=>{
-    const d=ch||{};const a=d.active||0;const t=d.total||0;
-    if(!t) return '<span style="color:var(--t3);font-size:11px">&mdash;</span>';
+  const chBadge=(ch)=>{
+    const d=ch||{};const a=d.active||0;
+    if(!d.total) return '<span style="color:var(--t3);font-size:11px">&mdash;</span>';
     return `<span style="font-size:11px;color:${a>0?'var(--pos)':'var(--t3)'};font-weight:500">${a}</span>`;
   };
+  const pmImg=(url)=> url ? `<img src="${url}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;background:#f8f7f4" loading="lazy" onerror="this.style.display='none'"/>` : '<div style="width:36px;height:36px;border-radius:4px;background:var(--bg-cream);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--t3)">&#128230;</div>';
   let html='<table class="tbl"><thead><tr>'
-    +'<th style="width:18px"></th>'
+    +'<th style="width:16px"></th>'
     +'<th style="width:44px"></th>'
-    +'<th>Product</th>'
-    +'<th>ASIN</th>'
-    +'<th style="text-align:center">AMZ</th>'
-    +'<th style="text-align:center">Shopify</th>'
-    +'<th>Fulfillment</th>'
-    +'<th class="r">MRP</th>'
-    +'<th class="r">COGS '+T6.tip('COGS is set at MSKU level. Every child listing inherits.')+'</th>'
-    +'<th class="r">Status</th>'
+    +'<th style="text-align:left">Product</th>'
+    +'<th style="text-align:left">ASIN</th>'
+    +'<th style="text-align:center;width:50px">AMZ</th>'
+    +'<th style="text-align:center;width:60px">Shopify</th>'
+    +'<th style="text-align:left;width:70px">Fulfillment</th>'
+    +'<th class="r" style="width:80px">MRP</th>'
+    +'<th class="r" style="width:80px">COGS '+T6.tip('COGS is set at MSKU level. Every child listing inherits.')+'</th>'
+    +'<th class="r" style="width:60px">Status</th>'
     +'</tr></thead><tbody>';
   for(const r of rows){
     const rid = 'pmr-' + (r.msku_id||'').replace(/[^a-z0-9]/gi,'');
-    const cogsCell = r.cogs==null ? '<span style="color:var(--neg);font-weight:500">&mdash;</span>' : cur(r.cogs);
-    const mrpCell = r.mrp==null ? '<span style="color:var(--t3)">&mdash;</span>' : cur(r.mrp);
-    const img = r.image_url ? `<img src="${r.image_url}" style="width:40px;height:40px;object-fit:contain;border-radius:4px;background:#f8f7f4" loading="lazy" onerror="this.style.display='none'"/>` : '<div style="width:40px;height:40px;border-radius:4px;background:var(--bg-cream);display:flex;align-items:center;justify-content:center;font-size:16px">&#128230;</div>';
+    const cogsCell = r.cogs==null ? '<span style="color:var(--neg);font-weight:500">&mdash;</span>' : _pmCur(r.cogs);
+    const mrpCell = r.mrp==null ? '<span style="color:var(--t3)">&mdash;</span>' : _pmCur(r.mrp);
     const varSub = `<div style="font-size:10.5px;color:var(--t3);font-family:var(--mono);margin-top:2px">${r.msku_code} &middot; ${r.asins} ASIN${r.asins===1?'':'s'}</div>`;
     const fulMix = (r.fba>0 && r.fbm>0) ? 'Mixed' : (r.fba>0 ? 'FBA' : (r.fbm>0 ? 'FBM' : '—'));
     const ch = r.channels||{};
     const activeMix = r.active>0 ? `<span style="color:var(--pos)">${r.active}/${r.listings}</span>` : `<span style="color:var(--t3)">0/${r.listings}</span>`;
     html += `<tr class="pm-row" onclick="togglePm('${rid}')" style="cursor:pointer;background:var(--bg-cream)">
       <td style="color:var(--t3);font-family:var(--mono);font-size:11px" id="${rid}-tri">&#9656;</td>
-      <td>${img}</td>
-      <td><strong style="font-size:12.5px">${(r.msku_name||'--').length>65?(r.msku_name||'').slice(0,65)+'...':r.msku_name||'--'}</strong>${varSub}</td>
-      <td class="mn2 hi">${r.parent_asin||'&mdash;'}</td>
-      <td class="mn2" style="text-align:center">${chBadge(ch.AMAZON_IN,'AMZ')}</td>
-      <td class="mn2" style="text-align:center">${chBadge(ch.SHOPIFY,'SHP')}</td>
-      <td class="mn2"><span style="font-size:11.5px;color:var(--t2)">${fulMix}</span></td>
+      <td>${pmImg(r.image_url)}</td>
+      <td style="text-align:left"><strong style="font-size:12.5px">${(r.msku_name||'--').length>55?(r.msku_name||'').slice(0,55)+'...':r.msku_name||'--'}</strong>${varSub}</td>
+      <td class="mn2 hi" style="text-align:left">${r.parent_asin||'&mdash;'}</td>
+      <td class="mn2" style="text-align:center">${chBadge(ch.AMAZON_IN)}</td>
+      <td class="mn2" style="text-align:center">${chBadge(ch.SHOPIFY)}</td>
+      <td class="mn2" style="text-align:left"><span style="font-size:11.5px;color:var(--t2)">${fulMix}</span></td>
       <td class="mn2 r">${mrpCell}</td>
       <td class="mn2 r">${cogsCell}</td>
       <td class="mn2 r">${activeMix}</td>
@@ -1444,24 +1445,24 @@ function renderProductMaster(c){
     if(!body) continue;
     const vs = r.variants || [];
     if(!vs.length){ body.innerHTML='<div class="empty" style="padding:8px;font-size:12px">No variants</div>'; continue; }
-    const mrpParent = r.mrp!=null ? cur(r.mrp) : '<span style="color:var(--t3)">&mdash;</span>';
-    const cogsParent = r.cogs!=null ? cur(r.cogs) : '<span style="color:var(--neg)">&mdash;</span>';
+    const mrpP = r.mrp!=null ? _pmCur(r.mrp) : '<span style="color:var(--t3)">&mdash;</span>';
+    const cogsP = r.cogs!=null ? _pmCur(r.cogs) : '<span style="color:var(--neg)">&mdash;</span>';
     let h='<table class="tbl" style="margin:0;border:none"><tbody>';
     for(const v of vs){
       const ful = v.fulfilment_method || '&mdash;';
       const title = v.product_title || r.msku_name || '&mdash;';
-      const titleTrim = title.length>80 ? title.slice(0,80)+'...' : title;
+      const titleTrim = title.length>70 ? title.slice(0,70)+'...' : title;
       const statusTxt = v.is_active ? '<span style="color:var(--pos)">Active</span>' : '<span style="color:var(--t3)">Inactive</span>';
       h+=`<tr style="background:var(--bg-white)">
-        <td style="width:18px"></td>
-        <td style="width:44px"></td>
-        <td class="mn2" style="padding-left:8px"><span style="font-size:12px">${v.seller_sku||'&mdash;'}</span>
+        <td style="width:16px"></td>
+        <td style="width:44px">${pmImg(r.image_url)}</td>
+        <td style="text-align:left;padding-left:4px"><span style="font-size:12px;font-weight:500">${v.seller_sku||'&mdash;'}</span>
           <div style="font-size:11px;color:var(--t3);margin-top:1px" title="${(v.product_title||'').replace(/"/g,'&quot;')}">${titleTrim}</div></td>
-        <td class="mn2 hi">${v.asin||'&mdash;'}</td>
+        <td class="mn2 hi" style="text-align:left">${v.asin||'&mdash;'}</td>
         <td></td><td></td>
-        <td class="mn2"><span style="font-size:11.5px;color:${ful==='FBA'?'var(--t1)':'var(--t2)'}">${ful}</span></td>
-        <td class="mn2 r">${mrpParent}</td>
-        <td class="mn2 r">${cogsParent}</td>
+        <td class="mn2" style="text-align:left"><span style="font-size:11.5px;color:${ful==='FBA'?'var(--t1)':'var(--t2)'}">${ful}</span></td>
+        <td class="mn2 r">${mrpP}</td>
+        <td class="mn2 r">${cogsP}</td>
         <td class="mn2 r">${statusTxt}</td>
       </tr>`;
     }
