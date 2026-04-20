@@ -466,11 +466,6 @@
       <div class="cd"><div class="kl">Top-10 Revenue Share</div><div class="kv" id="ct-top10">--</div><div class="kd n">concentration</div></div>
     </div>
 
-    <div class="sec" style="margin-bottom:18px">
-      <div class="sec-h"><h3>Cross-Channel Catalog <span class="note">listing coverage across all connected channels</span></h3></div>
-      <div id="ch-summary-table" class="loading">Loading...</div>
-    </div>
-
     <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
       <input type="text" id="ctSearch" placeholder="Search by ASIN or product name..." style="flex:1;padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--sans);font-size:12.5px;background:var(--bg-white);outline:none" />
       <button onclick="loadCatalog()" style="padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg-white);font-family:var(--sans);font-size:12px;cursor:pointer">Search</button>
@@ -1392,19 +1387,6 @@ function loadCatalog(){
   api(qs).then(renderCatalog).catch(showErr('ct-table'));
   api('/v1/amazon/catalogue-health?days='+catDays).then(renderCatHealth).catch(()=>{});
   api('/v1/amazon/product-master').then(c=>{ pmMasterCache = c; renderProductMaster(c); }).catch(showErr('pm-table'));
-  api('/v1/skucatalog/channel-summary').then(renderChannelSummary).catch(showErr('ch-summary-table'));
-}
-function renderChannelSummary(d){
-  const el=document.getElementById('ch-summary-table');
-  if(!d||!d.channels||!d.channels.length){el.innerHTML='<div class="empty">No channel data</div>';return;}
-  const pct=(n,t)=>t>0?Math.round(n/t*100)+'%':'—';
-  let h='<table class="t6"><thead><tr><th>Channel</th><th>Total Listings</th><th>Active</th><th>Unique MSKUs</th><th>Category %</th><th>MRP %</th><th>COGS %</th></tr></thead><tbody>';
-  d.channels.forEach(c=>{
-    h+='<tr><td style="font-weight:600">'+c.name+'</td><td>'+c.total.toLocaleString()+'</td><td>'+c.active.toLocaleString()+'</td><td>'+c.unique_mskus.toLocaleString()+'</td>';
-    h+='<td>'+pct(c.enrichment.category,c.total)+'</td><td>'+pct(c.enrichment.mrp,c.total)+'</td><td>'+pct(c.enrichment.cogs,c.total)+'</td></tr>';
-  });
-  h+='</tbody><tfoot><tr style="font-weight:600"><td>Total</td><td>'+d.totals.listings.toLocaleString()+'</td><td>'+d.totals.active.toLocaleString()+'</td><td>'+d.totals.master_skus.toLocaleString()+' MSKUs</td><td colspan="3"></td></tr></tfoot></table>';
-  el.innerHTML=h;
 }
 function renderProductMaster(c){
   const el = document.getElementById('pm-table');
@@ -1412,41 +1394,50 @@ function renderProductMaster(c){
   const activeOnly = document.getElementById('pmActiveOnly')?.checked;
   const rows = activeOnly ? c.data.filter(r => r.active > 0) : c.data;
   if(!rows.length){ el.innerHTML='<div class="empty">No active MSKUs</div>'; return; }
-  // Unified column layout — same headers for parent and variant rows.
+  const chBadge=(ch,label)=>{
+    const d=ch||{};const a=d.active||0;const t=d.total||0;
+    if(!t) return '<span style="color:var(--t3);font-size:11px">&mdash;</span>';
+    return `<span style="font-size:11px;color:${a>0?'var(--pos)':'var(--t3)'};font-weight:500">${a}</span>`;
+  };
   let html='<table class="tbl"><thead><tr>'
     +'<th style="width:18px"></th>'
-    +'<th>MSKU / Channel SKU</th>'
-    +'<th>Product Name</th>'
+    +'<th style="width:44px"></th>'
+    +'<th>Product</th>'
     +'<th>ASIN</th>'
+    +'<th style="text-align:center">AMZ</th>'
+    +'<th style="text-align:center">Shopify</th>'
     +'<th>Fulfillment</th>'
     +'<th class="r">MRP</th>'
-    +'<th class="r">COGS '+T6.tip('COGS is set at MSKU level (rolled up from variants). Every child listing inherits the MSKU value.')+'</th>'
+    +'<th class="r">COGS '+T6.tip('COGS is set at MSKU level. Every child listing inherits.')+'</th>'
     +'<th class="r">Status</th>'
     +'</tr></thead><tbody>';
   for(const r of rows){
     const rid = 'pmr-' + (r.msku_id||'').replace(/[^a-z0-9]/gi,'');
     const cogsCell = r.cogs==null ? '<span style="color:var(--neg);font-weight:500">&mdash;</span>' : cur(r.cogs);
     const mrpCell = r.mrp==null ? '<span style="color:var(--t3)">&mdash;</span>' : cur(r.mrp);
-    const varSub = `<div style="font-size:10.5px;color:var(--t3);font-family:var(--mono);margin-top:3px">${r.asins} ASIN${r.asins===1?'':'s'} &middot; <span style="color:${r.active>0?'var(--pos)':'var(--t3)'}">${r.active}</span>/${r.listings} active &middot; <span style="color:var(--t2)">${r.fba}</span>F / <span style="color:var(--t3)">${r.fbm}</span>M</div>`;
+    const img = r.image_url ? `<img src="${r.image_url}" style="width:40px;height:40px;object-fit:contain;border-radius:4px;background:#f8f7f4" loading="lazy" onerror="this.style.display='none'"/>` : '<div style="width:40px;height:40px;border-radius:4px;background:var(--bg-cream);display:flex;align-items:center;justify-content:center;font-size:16px">&#128230;</div>';
+    const varSub = `<div style="font-size:10.5px;color:var(--t3);font-family:var(--mono);margin-top:2px">${r.msku_code} &middot; ${r.asins} ASIN${r.asins===1?'':'s'}</div>`;
     const fulMix = (r.fba>0 && r.fbm>0) ? 'Mixed' : (r.fba>0 ? 'FBA' : (r.fbm>0 ? 'FBM' : '—'));
-    const activeMix = r.active>0 ? `<span style="color:var(--pos)">${r.active}/${r.listings} active</span>` : `<span style="color:var(--t3)">0/${r.listings}</span>`;
+    const ch = r.channels||{};
+    const activeMix = r.active>0 ? `<span style="color:var(--pos)">${r.active}/${r.listings}</span>` : `<span style="color:var(--t3)">0/${r.listings}</span>`;
     html += `<tr class="pm-row" onclick="togglePm('${rid}')" style="cursor:pointer;background:var(--bg-cream)">
       <td style="color:var(--t3);font-family:var(--mono);font-size:11px" id="${rid}-tri">&#9656;</td>
-      <td class="mn2 hi"><strong>${r.msku_code||'--'}</strong>${varSub}</td>
-      <td><strong style="font-size:12.5px">${r.msku_name||'--'}</strong></td>
+      <td>${img}</td>
+      <td><strong style="font-size:12.5px">${(r.msku_name||'--').length>65?(r.msku_name||'').slice(0,65)+'...':r.msku_name||'--'}</strong>${varSub}</td>
       <td class="mn2 hi">${r.parent_asin||'&mdash;'}</td>
+      <td class="mn2" style="text-align:center">${chBadge(ch.AMAZON_IN,'AMZ')}</td>
+      <td class="mn2" style="text-align:center">${chBadge(ch.SHOPIFY,'SHP')}</td>
       <td class="mn2"><span style="font-size:11.5px;color:var(--t2)">${fulMix}</span></td>
       <td class="mn2 r">${mrpCell}</td>
       <td class="mn2 r">${cogsCell}</td>
       <td class="mn2 r">${activeMix}</td>
     </tr>
-    <tr class="pm-children" id="${rid}-ch" style="display:none"><td colspan="8" style="padding:0">
+    <tr class="pm-children" id="${rid}-ch" style="display:none"><td colspan="10" style="padding:0">
       <div id="${rid}-ch-body"></div>
     </td></tr>`;
   }
   html+='</tbody></table>';
   el.innerHTML=html;
-  // Pre-render child rows — match parent column widths by reusing the same table shell.
   for(const r of rows){
     const rid = 'pmr-' + (r.msku_id||'').replace(/[^a-z0-9]/gi,'');
     const body = document.getElementById(rid+'-ch-body');
@@ -1459,13 +1450,15 @@ function renderProductMaster(c){
     for(const v of vs){
       const ful = v.fulfilment_method || '&mdash;';
       const title = v.product_title || r.msku_name || '&mdash;';
-      const titleTrim = title.length>90 ? title.slice(0,90)+'...' : title;
+      const titleTrim = title.length>80 ? title.slice(0,80)+'...' : title;
       const statusTxt = v.is_active ? '<span style="color:var(--pos)">Active</span>' : '<span style="color:var(--t3)">Inactive</span>';
       h+=`<tr style="background:var(--bg-white)">
         <td style="width:18px"></td>
-        <td class="mn2" style="padding-left:24px"><span style="font-size:12px">${v.seller_sku||'&mdash;'}</span></td>
-        <td style="font-size:11.5px;color:var(--t2)" title="${(v.product_title||'').replace(/"/g,'&quot;')}">${titleTrim}</td>
+        <td style="width:44px"></td>
+        <td class="mn2" style="padding-left:8px"><span style="font-size:12px">${v.seller_sku||'&mdash;'}</span>
+          <div style="font-size:11px;color:var(--t3);margin-top:1px" title="${(v.product_title||'').replace(/"/g,'&quot;')}">${titleTrim}</div></td>
         <td class="mn2 hi">${v.asin||'&mdash;'}</td>
+        <td></td><td></td>
         <td class="mn2"><span style="font-size:11.5px;color:${ful==='FBA'?'var(--t1)':'var(--t2)'}">${ful}</span></td>
         <td class="mn2 r">${mrpParent}</td>
         <td class="mn2 r">${cogsParent}</td>
