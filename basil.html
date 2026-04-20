@@ -239,6 +239,8 @@
     <div class="sl">Amazon IN</div>
     <div class="si act" onclick="sw('overview',this)"><div class="ic">&#128202;</div><span>Amazon Summary</span></div>
     <div class="si" onclick="sw('amzads',this)"><div class="ic">&#127344;</div><span>Amazon Ads</span></div>
+    <div class="si sb-sub" onclick="swSub('amzads','data',this)"><span>Performance</span></div>
+    <div class="si sb-sub" onclick="swSub('amzads','agent',this)"><span>Analysis Agent</span></div>
     <div class="si" onclick="sw('gads',this)"><div class="ic">&#128269;</div><span>Google Ads</span></div>
     <div class="si" onclick="sw('serp',this)"><div class="ic">&#128208;</div><span>SERP Rank</span></div>
     <div class="si" onclick="sw('catalog',this)"><div class="ic">&#128230;</div><span>Catalogue</span></div>
@@ -247,6 +249,7 @@
     <div class="si sb-sub" onclick="swSub('inventory','restock',this)"><span>Restock Planner</span></div>
     <div class="si sb-sub" onclick="swSub('inventory','stock',this)"><span>Stock Health</span></div>
     <div class="si sb-sub" onclick="swSub('inventory','returns',this)"><span>Returns</span></div>
+    <div class="si sb-sub" onclick="swSub('inventory','agent',this)"><span>Analysis Agent</span></div>
     <div class="si" onclick="sw('pnl',this)"><div class="ic">&#128176;</div><span>P&amp;L</span></div>
     <div class="si sb-sub" onclick="swSub('pnl','realtime',this)"><span>Real-time</span></div>
     <div class="si sb-sub" onclick="swSub('pnl','settlement',this)"><span>Settlement</span></div>
@@ -327,55 +330,66 @@
       <div><h2>Amazon Ads &middot; IN</h2><p class="sub">Sponsored Products / Brands / Display &mdash; spend, impressions, CTR, ACoS, ROAS.</p></div>
     </div>
 
-    <!-- AGENT: Marketing Strategist -->
-    <div id="agent-marketing" class="ag-inline" style="display:none">
-      <div class="ag-ihead">
-        <span class="ag-icon">&#127919;</span>
-        <span class="ag-name">Marketing Strategist</span>
-        <button class="ag-run-btn" id="ag-mkt-run" onclick="streamAgent('marketing','ag-mkt-stream','marketing')">&#9654; Run Live</button>
-        <button class="ag-run-btn" id="ag-mkt-stop" onclick="stopAgent('marketing')" style="display:none;border-color:var(--r);color:var(--r)">&#9632; Stop</button>
-        <button class="ag-run-btn" id="ag-mkt-reset" onclick="resetAgent('marketing')" style="display:none;border-color:var(--t3);color:var(--t3)">&#8634; Reset</button>
-        <span class="ag-score" id="ag-mkt-score">--</span>
-      </div>
-      <div id="ag-mkt-stream"></div>
-      <div id="ag-mkt-trace" style="display:none"></div>
-      <div class="ag-summary" id="ag-mkt-summary"></div>
-      <div class="ag-buckets" id="ag-mkt-buckets"></div>
-      <div class="ag-recs" id="ag-mkt-recs"></div>
+    <!-- Sub-tab nav -->
+    <div class="subtabs" id="adsSubPills">
+      <button data-sub="data" class="a">Performance</button>
+      <button data-sub="agent">Analysis Agent</button>
     </div>
 
-    <!-- AUDIT INSIGHTS — replaced by agent bucket cards above. Kept hidden for fallback. -->
-    <div class="sec" id="az-audit-sec" style="display:none">
-      <div class="sec-h">
-        <h3>Audit &middot; where money's working or wasted
-          <span class="note" id="az-audit-window">last 14 days</span>
-        </h3>
+    <!-- SUB-TAB: Performance (data) -->
+    <div class="iv-sub act" id="adss-data">
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd"><div class="kl">Total Spend</div><div class="kv" id="az-spend">--</div><div class="kd n" id="az-spend-sub">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Attributed Sales</div><div class="kv" id="az-sales">--</div><div class="kd n">SP: 1d &middot; SB/SD: 7d</div></div>
+        <div class="cd"><div class="kl">Blended ACoS</div><div class="kv" id="az-acos">--</div><div class="kd n">spend / attributed sales</div></div>
+        <div class="cd"><div class="kl">Blended ROAS</div><div class="kv" id="az-roas">--</div><div class="kd n">attributed / spend</div></div>
       </div>
-      <div id="az-audit-cards" class="loading">Loading audit...</div>
-      <div class="ph2" style="margin-top:8px;font-size:11.5px;border-left-color:var(--tm)">
-        <strong>How this works:</strong> rules scan every campaign's last-14d fact sheet &mdash;
-        spend, ACoS (SP: 1-day &middot; SB/SD: 7-day), ROAS, days active, 7d velocity.
-        Each card shows its exact trigger rule and the campaigns / ASINs behind it.
-        Nothing changes automatically &mdash; these are flags for you to act on.
-        <em>(COGS per ASIN not yet uploaded &mdash; "grey zone" campaigns need that to confirm profitability.)</em>
+
+      <div class="sec">
+        <div class="sec-h"><h3>By Ad Type</h3></div>
+        <div id="az-byType" class="loading">Loading...</div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Daily Totals</h3></div>
+        <div id="az-daily" class="loading">Loading...</div>
       </div>
     </div>
 
-    <div class="g4" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Total Spend</div><div class="kv" id="az-spend">--</div><div class="kd n" id="az-spend-sub">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Attributed Sales</div><div class="kv" id="az-sales">--</div><div class="kd n">SP: 1d &middot; SB/SD: 7d</div></div>
-      <div class="cd"><div class="kl">Blended ACoS</div><div class="kv" id="az-acos">--</div><div class="kd n">spend / attributed sales</div></div>
-      <div class="cd"><div class="kl">Blended ROAS</div><div class="kv" id="az-roas">--</div><div class="kd n">attributed / spend</div></div>
-    </div>
+    <!-- SUB-TAB: Analysis Agent (Marketing Strategist) -->
+    <div class="iv-sub" id="adss-agent">
+      <div id="agent-marketing" class="ag-inline" style="display:none">
+        <div class="ag-ihead">
+          <span class="ag-icon">&#127919;</span>
+          <span class="ag-name">Marketing Strategist</span>
+          <button class="ag-run-btn" id="ag-mkt-run" onclick="streamAgent('marketing','ag-mkt-stream','marketing')">&#9654; Run Live</button>
+          <button class="ag-run-btn" id="ag-mkt-stop" onclick="stopAgent('marketing')" style="display:none;border-color:var(--r);color:var(--r)">&#9632; Stop</button>
+          <button class="ag-run-btn" id="ag-mkt-reset" onclick="resetAgent('marketing')" style="display:none;border-color:var(--t3);color:var(--t3)">&#8634; Reset</button>
+          <span class="ag-score" id="ag-mkt-score">--</span>
+        </div>
+        <div id="ag-mkt-stream"></div>
+        <div id="ag-mkt-trace" style="display:none"></div>
+        <div class="ag-summary" id="ag-mkt-summary"></div>
+        <div class="ag-buckets" id="ag-mkt-buckets"></div>
+        <div class="ag-recs" id="ag-mkt-recs"></div>
+      </div>
 
-    <div class="sec">
-      <div class="sec-h"><h3>By Ad Type</h3></div>
-      <div id="az-byType" class="loading">Loading...</div>
-    </div>
-
-    <div class="sec">
-      <div class="sec-h"><h3>Daily Totals</h3></div>
-      <div id="az-daily" class="loading">Loading...</div>
+      <!-- AUDIT INSIGHTS — rule-based fallback -->
+      <div class="sec" id="az-audit-sec" style="display:none">
+        <div class="sec-h">
+          <h3>Audit &middot; where money's working or wasted
+            <span class="note" id="az-audit-window">last 14 days</span>
+          </h3>
+        </div>
+        <div id="az-audit-cards" class="loading">Loading audit...</div>
+        <div class="ph2" style="margin-top:8px;font-size:11.5px;border-left-color:var(--tm)">
+          <strong>How this works:</strong> rules scan every campaign's last-14d fact sheet &mdash;
+          spend, ACoS (SP: 1-day &middot; SB/SD: 7-day), ROAS, days active, 7d velocity.
+          Each card shows its exact trigger rule and the campaigns / ASINs behind it.
+          Nothing changes automatically &mdash; these are flags for you to act on.
+          <em>(COGS per ASIN not yet uploaded &mdash; "grey zone" campaigns need that to confirm profitability.)</em>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -477,26 +491,13 @@
       </div>
     </div>
 
-    <!-- AGENT: Inventory Watchdog -->
-    <div id="agent-inventory" class="ag-inline" style="display:none">
-      <div class="ag-ihead">
-        <span class="ag-icon">&#128230;</span>
-        <span class="ag-name">Inventory Watchdog</span>
-        <button class="ag-run-btn" onclick="streamAgent('inventory','ag-inv-stream','inventory')">&#9654; Run Live</button>
-        <span class="ag-score" id="ag-inv-score">--</span>
-      </div>
-      <div id="ag-inv-stream"></div>
-      <div class="ag-summary" id="ag-inv-summary"></div>
-      <div class="ag-recs" id="ag-inv-recs"></div>
-      <div id="ag-inv-trace" style="display:none"></div>
-    </div>
-
     <!-- Sub-tab nav -->
     <div class="subtabs" id="ivSubPills">
       <button data-sub="overview" class="a">Overview</button>
       <button data-sub="restock">Restock Planner <span class="cnt" id="sub-restock-cnt"></span></button>
       <button data-sub="stock">Stock Health <span class="cnt" id="sub-stock-cnt"></span></button>
       <button data-sub="returns">Returns <span class="cnt" id="sub-returns-cnt"></span></button>
+      <button data-sub="agent">Analysis Agent</button>
     </div>
 
     <!-- =============== SUB-TAB: OVERVIEW =============== -->
@@ -597,6 +598,22 @@
           <em>DEFECTIVE / QUALITY_UNACCEPTABLE / DAMAGED_BY_FC</em> dominant &rarr; <strong>product-quality signal</strong> (supplier, QC, or packaging).
           <em>UNDELIVERABLE_REFUSED / MISSED_ESTIMATED_DELIVERY</em> dominant &rarr; <strong>fulfilment signal</strong> (ship speed, address data, logistics).
         </div>
+      </div>
+    </div>
+
+    <!-- SUB-TAB: Analysis Agent (Inventory Watchdog) -->
+    <div class="iv-sub" id="ivs-agent">
+      <div id="agent-inventory" class="ag-inline" style="display:none">
+        <div class="ag-ihead">
+          <span class="ag-icon">&#128230;</span>
+          <span class="ag-name">Inventory Watchdog</span>
+          <button class="ag-run-btn" onclick="streamAgent('inventory','ag-inv-stream','inventory')">&#9654; Run Live</button>
+          <span class="ag-score" id="ag-inv-score">--</span>
+        </div>
+        <div id="ag-inv-stream"></div>
+        <div class="ag-summary" id="ag-inv-summary"></div>
+        <div class="ag-recs" id="ag-inv-recs"></div>
+        <div id="ag-inv-trace" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -826,6 +843,7 @@ function swSub(viewId, subId, el){
   // Switch sub-tab within the view
   if(viewId==='inventory') ivSub(subId);
   if(viewId==='pnl') switchPnlSub(subId);
+  if(viewId==='amzads') adsSub(subId);
 }
 function sw(id,el){
   const target=document.getElementById('v-'+id);
@@ -841,11 +859,11 @@ function sw(id,el){
   document.getElementById('rangePills').style.display=showPills?'flex':'none';
 
   if(id==='overview'){ loadAmazon(); loadAgentBrief(); }
-  if(id==='amzads'){ loadAds('amazon'); loadAgentMarketing(); }
+  if(id==='amzads') loadAds('amazon');
   if(id==='gads') loadAds('google');
   if(id==='serp') loadSERP();
   if(id==='catalog') loadCatalog();
-  if(id==='inventory'){ loadInventory(); loadAgentInventory(); }
+  if(id==='inventory') loadInventory();
   if(id==='pnl') loadPnL();
 }
 
@@ -1010,14 +1028,18 @@ function _renderAzTrend(granData, gran, monthData){
 }
 
 /* ========== ADS (Amazon + Google share markup) ========== */
+var _adsSubCurrent='data';
+function adsSub(id){
+  _adsSubCurrent=id;
+  document.querySelectorAll('#adss-data,#adss-agent').forEach(el=>el.classList.toggle('act',el.id==='adss-'+id));
+  document.querySelectorAll('#adsSubPills button').forEach(b=>b.classList.toggle('a',b.dataset.sub===id));
+  if(id==='agent') loadAgentMarketing();
+}
 function loadAds(platform){
   document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
+  adsSub(_adsSubCurrent);
   api('/v1/amazon/ads-summary?days='+range.days).then(r=>renderAdsSummary(r,platform));
   api('/v1/amazon/ads-daily?days='+range.days+'&platform='+platform).then(r=>renderAdsDaily(r,platform));
-  // Audit only applies to Amazon — Google has its own signals; not wired yet.
-  if(platform==='amazon'){
-    api('/v1/amazon/audit?days=14').then(renderAudit).catch(showErr('az-audit-cards'));
-  }
 }
 
 /* ========== AUDIT INSIGHTS (Amazon) ========== */
@@ -1414,6 +1436,7 @@ function ivSub(id){
     api('/v1/amazon/inventory/restock').then(renderRestock).catch(showErr('restock-tbody'));
     window._rsLoaded = true;
   }
+  if(id==='agent') loadAgentInventory();
 }
 
 function loadInventory(){
@@ -1947,6 +1970,12 @@ document.getElementById('ivSubPills').addEventListener('click', e=>{
   if(!b) return;
   const s = b.dataset.sub;
   if(s) ivSub(s);
+});
+document.getElementById('adsSubPills').addEventListener('click', e=>{
+  const b = e.target.closest('button');
+  if(!b) return;
+  const s = b.dataset.sub;
+  if(s) adsSub(s);
 });
 
 /* ========== RANGE PILLS ========== */
