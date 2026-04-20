@@ -232,7 +232,7 @@
   </div>
   <div class="ss">
     <div class="sl">Amazon IN</div>
-    <div class="si act" onclick="sw('overview',this)"><div class="ic">&#128202;</div><span>Amazon</span></div>
+    <div class="si act" onclick="sw('overview',this)"><div class="ic">&#128202;</div><span>Amazon Summary</span></div>
     <div class="si" onclick="sw('amzads',this)"><div class="ic">&#127344;</div><span>Amazon Ads</span></div>
     <div class="si" onclick="sw('gads',this)"><div class="ic">&#128269;</div><span>Google Ads</span></div>
     <div class="si" onclick="sw('serp',this)"><div class="ic">&#128208;</div><span>SERP Rank</span></div>
@@ -793,7 +793,7 @@ let catDays=30;
 
 /* ========== VIEW SWITCHING ========== */
 const viewTitles={
-  overview:'&#128202; Amazon',
+  overview:'&#128202; Amazon Summary',
   amzads:'&#127344; Amazon Ads',
   gads:'&#128269; Google Ads',
   serp:'&#128208; SERP Rank',
@@ -908,11 +908,11 @@ var _azMetrics=[
   {label:'Orders',   key:'orders',          fn:function(v){return fmt(v)}},
   {label:'AOV',      key:'aov',             fn:function(v){return v?cur(v):'--'}},
   {label:'Ad Spend', key:'ad_spend',        fn:function(v){return cur(v)}},
-  {label:'ACoS',     key:'acos_pct',        fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}},
-  {label:'TACoS',    key:'tacos_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}},
+  {label:'ACoS',     key:'acos_pct',        fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true},
+  {label:'TACoS',    key:'tacos_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true},
   {label:'ROAS',     key:'roas',            fn:function(v){return v!=null?v.toFixed(1)+'x':'--'}},
   {label:'Sessions', key:'sessions',        fn:function(v){return v?fmt(v):'--'}},
-  {label:'Paid %',   key:'paid_share_pct',  fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}},
+  {label:'Paid %',   key:'paid_share_pct',  fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true},
   {label:'Conv %',   key:'conversion_pct',  fn:function(v){return v!=null?v.toFixed(2)+'%':'--'}},
   {label:'BB %',     key:'buy_box_pct',     fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}}
 ];
@@ -952,8 +952,20 @@ function _renderAzTrend(granData, gran, monthData){
     html+='<tr><td class="hi">'+met.label+'</td>';
     for(var c2=0;c2<cols.length;c2++){
       var val=cols[c2].data[met.key];
-      var borderL2=cols[c2].cls==='az-mtd'?' style="border-left:2px solid var(--border)"':'';
-      html+='<td class="mn2 r"'+borderL2+'>'+met.fn(val)+'</td>';
+      // Compare to next column (previous period) for color coding
+      var bg='';
+      if(c2<cols.length-1){
+        var prev=cols[c2+1].data[met.key];
+        if(val!=null && prev!=null && prev!==0){
+          var diff=val-prev;
+          if(met.inv) diff=-diff; // lower is better for ACoS/TACoS/Paid%
+          if(diff>0) bg='background:var(--gl)';
+          else if(diff<0) bg='background:var(--rl)';
+        }
+      }
+      var borderL2=cols[c2].cls==='az-mtd'?'border-left:2px solid var(--border);':'';
+      var style=(borderL2||bg)?' style="'+borderL2+bg+'"':'';
+      html+='<td class="mn2 r"'+style+'>'+met.fn(val)+'</td>';
     }
     html+='</tr>';
   }
