@@ -351,7 +351,13 @@
       </div>
 
       <div class="sec">
-        <div class="sec-h"><h3>Daily Totals</h3></div>
+        <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <h3>Trend</h3>
+          <div class="pills ads-gran-pills" data-target="az">
+            <button class="a" data-gran="day">Day</button>
+            <button data-gran="week">Week</button>
+          </div>
+        </div>
         <div id="az-daily" class="loading">Loading...</div>
       </div>
     </div>
@@ -413,7 +419,13 @@
     </div>
 
     <div class="sec">
-      <div class="sec-h"><h3>Daily Totals</h3></div>
+      <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <h3>Trend</h3>
+        <div class="pills ads-gran-pills" data-target="gd">
+          <button class="a" data-gran="day">Day</button>
+          <button data-gran="week">Week</button>
+        </div>
+      </div>
       <div id="gd-daily" class="loading">Loading...</div>
     </div>
   </div>
@@ -1035,11 +1047,18 @@ function adsSub(id){
   document.querySelectorAll('#adsSubPills button').forEach(b=>b.classList.toggle('a',b.dataset.sub===id));
   if(id==='agent') loadAgentMarketing();
 }
+var _adsGran={az:'day',gd:'day'};  // per-platform granularity
+var _adsRawCache={};               // cache daily data for gran switching
 function loadAds(platform){
   document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
-  adsSub(_adsSubCurrent);
+  if(platform==='amazon') adsSub(_adsSubCurrent);
   api('/v1/amazon/ads-summary?days='+range.days).then(r=>renderAdsSummary(r,platform));
-  api('/v1/amazon/ads-daily?days='+range.days+'&platform='+platform).then(r=>renderAdsDaily(r,platform));
+  // Fetch 120 days for transposed table (7 days/weeks + MTD + 3 months)
+  api('/v1/amazon/ads-daily?days=120&platform='+platform).then(function(r){
+    var prefix=platform==='amazon'?'az':'gd';
+    _adsRawCache[prefix]=r.data||[];
+    _renderAdsTransposed(prefix);
+  }).catch(showErr(platform==='amazon'?'az-daily':'gd-daily'));
 }
 
 /* ========== AUDIT INSIGHTS (Amazon) ========== */
@@ -1192,41 +1211,139 @@ function renderAdsSummary(r,platform){
   html+='</tbody></table>';
   byType.innerHTML=html;
 }
-function renderAdsDaily(r,platform){
-  const prefix=platform==='amazon'?'az':'gd';
-  const el=document.getElementById(prefix+'-daily');
-  if(!r.data||!r.data.length){el.innerHTML='<div class="empty">No daily data</div>';return;}
-  // Group by date, summing across ad_types
-  const byDate={};
-  for(const x of r.data){
-    const d=x.date;
-    if(!byDate[d]) byDate[d]={spend:0,impressions:0,clicks:0,sales:0,orders:0};
-    byDate[d].spend+=x.spend||0;
-    byDate[d].impressions+=x.impressions||0;
-    byDate[d].clicks+=x.clicks||0;
-    byDate[d].sales+=x.attributed_sales||0;
-    byDate[d].orders+=x.attributed_orders||0;
+/* --- Ads transposed table (shared between Amazon + Google) --- */
+var _adsMetricsAz=[
+  {label:'Spend',      key:'spend',       fn:function(v){return cur(v)},                          th:'pct',tv:15},
+  {label:'Impressions',key:'impressions',  fn:function(v){return fmt(v)},                          th:'pct',tv:15},
+  {label:'Clicks',     key:'clicks',       fn:function(v){return fmt(v)},                          th:'pct',tv:15},
+  {label:'CTR',        key:'ctr_pct',      fn:function(v){return v!=null?v.toFixed(2)+'%':'--'},    th:'pp',tv:0.5},
+  {label:'Attr. Sales',key:'attr_sales',   fn:function(v){return cur(v)},                          th:'pct',tv:15},
+  {label:'ACoS',       key:'acos_pct',     fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},    th:'pp',tv:2, inv:true},
+  {label:'ROAS',       key:'roas',         fn:function(v){return v!=null?v.toFixed(2)+'x':'--'},    th:'pct',tv:15}
+];
+var _adsMetricsGd=[
+  {label:'Spend',      key:'spend',       fn:function(v){return cur(v)},                          th:'pct',tv:15},
+  {label:'Impressions',key:'impressions',  fn:function(v){return fmt(v)},                          th:'pct',tv:15},
+  {label:'Clicks',     key:'clicks',       fn:function(v){return fmt(v)},                          th:'pct',tv:15},
+  {label:'CTR',        key:'ctr_pct',      fn:function(v){return v!=null?v.toFixed(2)+'%':'--'},    th:'pp',tv:0.5},
+  {label:'CPC',        key:'cpc',          fn:function(v){return v!=null?'\u20B9'+v.toFixed(1):'--'}, th:'pct',tv:15, inv:true}
+];
+
+function _aggAdsByDate(rows){
+  var byDate={};
+  rows.forEach(function(x){
+    var d=x.date;
+    if(!byDate[d]) byDate[d]={spend:0,impressions:0,clicks:0,attr_sales:0};
+    byDate[d].spend+=(x.spend||0);
+    byDate[d].impressions+=(x.impressions||0);
+    byDate[d].clicks+=(x.clicks||0);
+    byDate[d].attr_sales+=(x.attributed_sales||0);
+  });
+  // Compute derived metrics
+  Object.keys(byDate).forEach(function(d){
+    var r=byDate[d];
+    r.ctr_pct=r.impressions?r.clicks/r.impressions*100:null;
+    r.acos_pct=r.attr_sales?r.spend/r.attr_sales*100:null;
+    r.roas=r.spend?r.attr_sales/r.spend:null;
+    r.cpc=r.clicks?r.spend/r.clicks:null;
+  });
+  return byDate;
+}
+
+function _sumAdsRows(rows){
+  var s={spend:0,impressions:0,clicks:0,attr_sales:0};
+  rows.forEach(function(r){s.spend+=r.spend;s.impressions+=r.impressions;s.clicks+=r.clicks;s.attr_sales+=r.attr_sales;});
+  s.ctr_pct=s.impressions?s.clicks/s.impressions*100:null;
+  s.acos_pct=s.attr_sales?s.spend/s.attr_sales*100:null;
+  s.roas=s.spend?s.attr_sales/s.spend:null;
+  s.cpc=s.clicks?s.spend/s.clicks:null;
+  return s;
+}
+
+function _buildAdsCols(byDate, gran){
+  var dates=Object.keys(byDate).sort().reverse();
+  var cols=[];
+
+  if(gran==='day'){
+    for(var i=0;i<Math.min(7,dates.length);i++){
+      cols.push({label:shortD(dates[i]), data:byDate[dates[i]]});
+    }
+  } else {
+    // Group by ISO week
+    var weeks={};
+    dates.forEach(function(d){
+      var dt=new Date(d+'T00:00:00');
+      var jan1=new Date(dt.getFullYear(),0,1);
+      var wk=Math.ceil(((dt-jan1)/86400000+jan1.getDay()+1)/7);
+      var key=dt.getFullYear()+'-W'+String(wk).padStart(2,'0');
+      if(!weeks[key]) weeks[key]=[];
+      weeks[key].push(byDate[d]);
+    });
+    var wkKeys=Object.keys(weeks).sort().reverse().slice(0,7);
+    wkKeys.forEach(function(k){
+      cols.push({label:k.split('-')[1], data:_sumAdsRows(weeks[k])});
+    });
   }
-  const dates=Object.keys(byDate).sort().reverse();
-  let html='<table class="tbl"><thead><tr>'
-    +'<th>Date</th><th class="r">Spend</th><th class="r">Impressions</th><th class="r">Clicks</th>'
-    +'<th class="r">CTR '+T6.tip({formula: 'clicks ÷ impressions × 100', note:'Click-through rate.'})+'</th>'
-    +'<th class="r">Sales (attr) '+T6.tip('Platform-attributed revenue. SP 1d, SB/SD 7d for Amazon; Google Ads conversions_value.')+'</th>'
-    +'<th class="r">ACoS '+T6.tip({formula: 'spend ÷ attributed sales × 100', note:'Lower is better.'}, {rightAlign:true})+'</th>'
-    +'</tr></thead><tbody>';
-  for(const d of dates){
-    const x=byDate[d];
-    const ctr=x.impressions?x.clicks/x.impressions*100:null;
-    const acos=x.sales?x.spend/x.sales*100:null;
-    html+=`<tr>
-      <td class="hi">${shortD(d)}</td>
-      <td class="mn2 r">${cur(x.spend)}</td>
-      <td class="mn2 r">${fmt(x.impressions)}</td>
-      <td class="mn2 r">${fmt(x.clicks)}</td>
-      <td class="mn2 r">${ctr!=null?pct(ctr):'--'}</td>
-      <td class="mn2 r">${cur(x.sales)}</td>
-      <td class="mn2 r">${acos!=null?pct(acos):'--'}</td>
-    </tr>`;
+
+  // MTD
+  var now=new Date();
+  var curMo=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var mtdRows=dates.filter(function(d){return d.startsWith(curMo)}).map(function(d){return byDate[d]});
+  if(mtdRows.length) cols.push({label:'MTD', data:_sumAdsRows(mtdRows), cls:'az-mtd'});
+
+  // 3 prior months
+  for(var m=1;m<=3;m++){
+    var mo=new Date(now.getFullYear(), now.getMonth()-m, 1);
+    var moKey=mo.getFullYear()+'-'+String(mo.getMonth()+1).padStart(2,'0');
+    var moRows=dates.filter(function(d){return d.startsWith(moKey)}).map(function(d){return byDate[d]});
+    if(moRows.length){
+      var moLabel=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo.getMonth()];
+      cols.push({label:moLabel, data:_sumAdsRows(moRows), cls:'az-mo'});
+    }
+  }
+  return cols;
+}
+
+function _renderAdsTransposed(prefix){
+  var rows=_adsRawCache[prefix]||[];
+  var el=document.getElementById(prefix+'-daily');
+  if(!rows.length){el.innerHTML='<div class="empty">No data</div>';return;}
+  var gran=_adsGran[prefix]||'day';
+  var metrics=prefix==='az'?_adsMetricsAz:_adsMetricsGd;
+  var byDate=_aggAdsByDate(rows);
+  var cols=_buildAdsCols(byDate, gran);
+
+  var html='<table class="tbl"><thead><tr><th>Metric</th>';
+  for(var c=0;c<cols.length;c++){
+    var bl=cols[c].cls==='az-mtd'?' style="border-left:2px solid var(--border)"':'';
+    html+='<th class="r"'+bl+'>'+cols[c].label+'</th>';
+  }
+  html+='</tr></thead><tbody>';
+  for(var m=0;m<metrics.length;m++){
+    var met=metrics[m];
+    html+='<tr><td class="hi">'+met.label+'</td>';
+    for(var c2=0;c2<cols.length;c2++){
+      var val=cols[c2].data[met.key];
+      var bg='';
+      if(c2<cols.length-1){
+        var prev=cols[c2+1].data[met.key];
+        if(val!=null && prev!=null && prev!==0){
+          var sig=false;
+          if(met.th==='pp') sig=Math.abs(val-prev)>=met.tv;
+          else sig=Math.abs((val-prev)/prev*100)>=met.tv;
+          if(sig){
+            var diff=val-prev;
+            if(met.inv) diff=-diff;
+            if(diff>0) bg='background:var(--gl)';
+            else if(diff<0) bg='background:var(--rl)';
+          }
+        }
+      }
+      var bl2=cols[c2].cls==='az-mtd'?'border-left:2px solid var(--border);':'';
+      var style=(bl2||bg)?' style="'+bl2+bg+'"':'';
+      html+='<td class="mn2 r"'+style+'>'+met.fn(val)+'</td>';
+    }
+    html+='</tr>';
   }
   html+='</tbody></table>';
   el.innerHTML=html;
@@ -1976,6 +2093,17 @@ document.getElementById('adsSubPills').addEventListener('click', e=>{
   if(!b) return;
   const s = b.dataset.sub;
   if(s) adsSub(s);
+});
+// Ads trend granularity pills (Day/Week per platform)
+document.querySelectorAll('.ads-gran-pills').forEach(function(pills){
+  pills.addEventListener('click', function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.gran) return;
+    var prefix=pills.dataset.target;
+    _adsGran[prefix]=btn.dataset.gran;
+    pills.querySelectorAll('button').forEach(function(b){b.classList.toggle('a',b===btn)});
+    _renderAdsTransposed(prefix);
+  });
 });
 
 /* ========== RANGE PILLS ========== */
