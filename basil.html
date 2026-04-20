@@ -1432,30 +1432,19 @@ function renderProductMaster(c){
       <td class="mn2 r">${mrpCell}</td>
       <td class="mn2 r">${cogsCell}</td>
       <td class="mn2 r">${activeMix}</td>
-    </tr>
-    <tr class="pm-children" id="${rid}-ch" style="display:none"><td colspan="10" style="padding:0">
-      <div id="${rid}-ch-body"></div>
-    </td></tr>`;
-  }
-  html+='</tbody></table>';
-  el.innerHTML=html;
-  for(const r of rows){
-    const rid = 'pmr-' + (r.msku_id||'').replace(/[^a-z0-9]/gi,'');
-    const body = document.getElementById(rid+'-ch-body');
-    if(!body) continue;
-    const vs = r.variants || [];
-    if(!vs.length){ body.innerHTML='<div class="empty" style="padding:8px;font-size:12px">No variants</div>'; continue; }
+    </tr>`;
+    const vs = r.variants||[];
     const mrpP = r.mrp!=null ? _pmCur(r.mrp) : '<span style="color:var(--t3)">&mdash;</span>';
     const cogsP = r.cogs!=null ? _pmCur(r.cogs) : '<span style="color:var(--neg)">&mdash;</span>';
-    let h='<table class="tbl" style="margin:0;border:none"><tbody>';
     for(const v of vs){
       const ful = v.fulfilment_method || '&mdash;';
       const title = v.product_title || r.msku_name || '&mdash;';
-      const titleTrim = title.length>70 ? title.slice(0,70)+'...' : title;
+      const titleTrim = title.length>60 ? title.slice(0,60)+'...' : title;
       const statusTxt = v.is_active ? '<span style="color:var(--pos)">Active</span>' : '<span style="color:var(--t3)">Inactive</span>';
-      h+=`<tr style="background:var(--bg-white)">
-        <td style="width:16px"></td>
-        <td style="width:44px">${pmImg(r.image_url)}</td>
+      const vImg = v.image_url || r.image_url;
+      html+=`<tr class="pm-child ${rid}-ch" style="display:none;background:var(--bg-white)">
+        <td></td>
+        <td>${pmImg(vImg)}</td>
         <td style="text-align:left;padding-left:4px"><span style="font-size:12px;font-weight:500">${v.seller_sku||'&mdash;'}</span>
           <div style="font-size:11px;color:var(--t3);margin-top:1px" title="${(v.product_title||'').replace(/"/g,'&quot;')}">${titleTrim}</div></td>
         <td class="mn2 hi" style="text-align:left">${v.asin||'&mdash;'}</td>
@@ -1466,16 +1455,16 @@ function renderProductMaster(c){
         <td class="mn2 r">${statusTxt}</td>
       </tr>`;
     }
-    h+='</tbody></table>';
-    body.innerHTML=h;
   }
+  html+='</tbody></table>';
+  el.innerHTML=html;
 }
 function togglePm(rid){
   const tri = document.getElementById(rid+'-tri');
-  const ch = document.getElementById(rid+'-ch');
-  if(!ch) return;
-  const open = ch.style.display !== 'none';
-  ch.style.display = open ? 'none' : '';
+  const kids = document.querySelectorAll('.'+rid+'-ch');
+  if(!kids.length) return;
+  const open = kids[0].style.display !== 'none';
+  kids.forEach(k => k.style.display = open ? 'none' : '');
   tri.innerHTML = open ? '&#9656;' : '&#9662;';
 }
 function renderCatHealth(c){
