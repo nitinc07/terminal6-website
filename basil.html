@@ -232,8 +232,7 @@
   </div>
   <div class="ss">
     <div class="sl">Amazon IN</div>
-    <div class="si act" onclick="sw('overview',this)"><div class="ic">&#127968;</div><span>Overview</span></div>
-    <div class="si" onclick="sw('revenue',this)"><div class="ic">&#128202;</div><span>Revenue &amp; Traffic</span></div>
+    <div class="si act" onclick="sw('overview',this)"><div class="ic">&#128202;</div><span>Amazon</span></div>
     <div class="si" onclick="sw('amzads',this)"><div class="ic">&#127344;</div><span>Amazon Ads</span></div>
     <div class="si" onclick="sw('gads',this)"><div class="ic">&#128269;</div><span>Google Ads</span></div>
     <div class="si" onclick="sw('serp',this)"><div class="ic">&#128208;</div><span>SERP Rank</span></div>
@@ -271,96 +270,84 @@
     <div class="tb-note" id="dataFreshness"></div>
   </div>
 
-  <!-- ========== OVERVIEW (WBR) ========== -->
+  <!-- ========== AMAZON CHANNEL SUMMARY ========== -->
   <div class="vw act" id="v-overview">
     <!-- AGENT: Daily Brief -->
     <div id="agent-brief" class="ag-brief" style="display:none"></div>
     <div style="text-align:right;margin-bottom:8px"><button class="ag-run-btn" onclick="streamAgent('daily-brief','agent-brief-stream','daily_brief')">&#9654; Run Live Analysis</button></div>
     <div id="agent-brief-stream"></div>
 
-    <!-- Granularity Switcher -->
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-      <div class="pills" id="granPills">
-        <button class="a" data-gran="day">Day</button>
-        <button data-gran="week">Week</button>
-        <button data-gran="month">Month</button>
-      </div>
-      <span id="wbr-window" style="font-size:11px;color:var(--t3)"></span>
-    </div>
-
-    <!-- Row 1: Revenue KPIs -->
-    <div class="g4" style="margin-bottom:12px">
-      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="wbr-revenue">--</div><div class="kd n" id="wbr-revenue-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Units</div><div class="kv" id="wbr-units">--</div><div class="kd n" id="wbr-units-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Orders</div><div class="kv" id="wbr-orders">--</div><div class="kd n" id="wbr-orders-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">AOV</div><div class="kv" id="wbr-aov">--</div><div class="kd n">&nbsp;</div></div>
-    </div>
-
-    <!-- Row 2: Ads KPIs -->
-    <div class="g4" style="margin-bottom:12px">
-      <div class="cd"><div class="kl">Ad Spend</div><div class="kv" id="wbr-spend">--</div><div class="kd n" id="wbr-spend-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">ACoS</div><div class="kv" id="wbr-acos">--</div><div class="kd n">spend / attributed sales</div></div>
-      <div class="cd"><div class="kl">TACoS</div><div class="kv" id="wbr-tacos">--</div><div class="kd n">spend / total revenue</div></div>
-      <div class="cd"><div class="kl">ROAS</div><div class="kv" id="wbr-roas">--</div><div class="kd n">attributed / spend</div></div>
-    </div>
-
-    <!-- Row 3: Traffic & Health KPIs -->
-    <div class="g4" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Sessions</div><div class="kv" id="wbr-sessions">--</div><div class="kd n" id="wbr-sessions-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Paid Share</div><div class="kv" id="wbr-paidshare">--</div><div class="kd n">ad clicks / sessions</div></div>
-      <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="wbr-bb">--</div><div class="kd n">sessions-weighted</div></div>
-      <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="wbr-return">--</div><div class="kd n">cohort-aligned (14-28d)</div></div>
-    </div>
-
-    <!-- WBR Trend Table -->
+    <!-- Section 1: Revenue & Units -->
     <div class="sec">
-      <div class="sec-h"><h3>Amazon WBR Trend <span class="note" id="wbr-trend-note"></span></h3></div>
-      <div id="wbr-trend-table" class="loading">Loading...</div>
+      <div class="sec-h"><h3>Revenue &amp; Units</h3></div>
+      <div class="g4">
+        <div class="cd"><div class="kl">Revenue</div><div class="kv" id="az-revenue">--</div><div class="kd n" id="az-revenue-d">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Units</div><div class="kv" id="az-units">--</div><div class="kd n" id="az-units-d">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Orders</div><div class="kv" id="az-orders">--</div><div class="kd n" id="az-orders-d">&nbsp;</div></div>
+        <div class="cd"><div class="kl">AOV</div><div class="kv" id="az-aov">--</div><div class="kd n" id="az-aov-d">&nbsp;</div></div>
+      </div>
     </div>
 
-    <!-- Inventory Health -->
+    <!-- Section 2: Ads -->
     <div class="sec">
-      <div class="sec-h"><h3>Inventory Health <span class="note">latest snapshot</span></h3></div>
-      <div class="g4" style="margin-bottom:0">
-        <div class="cd"><div class="kl">OOS ASINs</div><div class="kv" id="wbr-oos">--</div><div class="kd n">zero fulfillable stock</div></div>
-        <div class="cd"><div class="kl">Low Cover (&lt;14d)</div><div class="kv" id="wbr-lowcover">--</div><div class="kd n">ASINs at risk of stockout</div></div>
-        <div class="cd"><div class="kl">FBA Inventory</div><div class="kv" id="wbr-fba">--</div><div class="kd n">total fulfillable units</div></div>
-        <div class="cd"><div class="kl">Days of Cover</div><div class="kv" id="wbr-doh">--</div><div class="kd n">median across ASINs</div></div>
+      <div class="sec-h"><h3>Ads</h3></div>
+      <div class="g4" style="margin-bottom:12px">
+        <div class="cd"><div class="kl">Total Ad Spend</div><div class="kv" id="az-spend">--</div><div class="kd n" id="az-spend-d">&nbsp;</div></div>
+        <div class="cd"><div class="kl">ACoS</div><div class="kv" id="az-acos">--</div><div class="kd n">spend / attributed sales</div></div>
+        <div class="cd"><div class="kl">TACoS</div><div class="kv" id="az-tacos">--</div><div class="kd n">spend / total revenue</div></div>
+        <div class="cd"><div class="kl">ROAS</div><div class="kv" id="az-roas">--</div><div class="kd n">attributed / spend</div></div>
       </div>
+      <div id="az-ads-type"></div>
+    </div>
+
+    <!-- Section 3: Traffic & Conversion -->
+    <div class="sec">
+      <div class="sec-h"><h3>Traffic &amp; Conversion</h3></div>
+      <div class="g4">
+        <div class="cd"><div class="kl">Sessions</div><div class="kv" id="az-sessions">--</div><div class="kd n" id="az-sessions-d">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Paid Share</div><div class="kv" id="az-paidshare">--</div><div class="kd n">ad clicks / sessions</div></div>
+        <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="az-bb">--</div><div class="kd n">sessions-weighted</div></div>
+        <div class="cd"><div class="kl">Conversion</div><div class="kv" id="az-conv">--</div><div class="kd n">units / sessions</div></div>
+      </div>
+    </div>
+
+    <!-- Section 4: Catalog & Rank -->
+    <div class="sec">
+      <div class="sec-h"><h3>Catalog &amp; Rank</h3></div>
+      <div class="g4">
+        <div class="cd"><div class="kl">Active ASINs</div><div class="kv" id="az-active">--</div><div class="kd n">with sales in window</div></div>
+        <div class="cd"><div class="kl">OOS ASINs</div><div class="kv" id="az-oos">--</div><div class="kd n">zero fulfillable stock</div></div>
+        <div class="cd"><div class="kl">Keywords Tracked</div><div class="kv" id="az-kw-tracked">--</div><div class="kd n">DataForSEO SERP</div></div>
+        <div class="cd"><div class="kl">Ranking Organic</div><div class="kv" id="az-kw-ranking">--</div><div class="kd n">of tracked keywords</div></div>
+      </div>
+    </div>
+
+    <!-- Section 5: Returns & Ops -->
+    <div class="sec">
+      <div class="sec-h"><h3>Returns &amp; Ops</h3></div>
+      <div class="g4">
+        <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="az-return">--</div><div class="kd n">14-28d cohort</div></div>
+        <div class="cd"><div class="kl">FBA Inventory</div><div class="kv" id="az-fba">--</div><div class="kd n">fulfillable units</div></div>
+        <div class="cd"><div class="kl">Days of Cover</div><div class="kv" id="az-doh">--</div><div class="kd n">median across ASINs</div></div>
+        <div class="cd"><div class="kl">SKUs &lt;14d Cover</div><div class="kv" id="az-lowcover">--</div><div class="kd n">at risk of stockout</div></div>
+      </div>
+    </div>
+
+    <!-- Trend Table -->
+    <div class="sec">
+      <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <h3>Trend <span class="note" id="az-trend-note"></span></h3>
+        <div class="pills" id="granPills">
+          <button class="a" data-gran="day">Day</button>
+          <button data-gran="week">Week</button>
+          <button data-gran="month">Month</button>
+        </div>
+      </div>
+      <div id="az-trend-table" class="loading">Loading...</div>
     </div>
   </div>
 
-  <!-- ========== REVENUE & TRAFFIC ========== -->
-  <div class="vw" id="v-revenue">
-    <div class="head">
-      <div class="icon">&#128202;</div>
-      <div><h2>Revenue &amp; Traffic</h2><p class="sub">Daily Amazon IN revenue + traffic + conversion. Sourced from daily_item_sales + daily_product_page_views.</p></div>
-    </div>
-
-    <div class="g5" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Sessions <span id="tip-rv-sessions"></span></div><div class="kv" id="rv-sessions">--</div><div class="kd n" id="rv-sessions-sub">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Paid Share <span id="tip-rv-paid-share"></span></div><div class="kv" id="rv-paid-share">--</div><div class="kd n" id="rv-paid-share-sub">paid clicks / sessions</div></div>
-      <div class="cd"><div class="kl">Buy Box % <span id="tip-rv-bb"></span></div><div class="kv" id="rv-bb">--</div><div class="kd n">sessions-weighted</div></div>
-      <div class="cd"><div class="kl">Units <span id="tip-rv-units"></span></div><div class="kv" id="rv-units">--</div><div class="kd n" id="rv-conv-sub">conv <span id="rv-conv">--</span></div></div>
-      <div class="cd"><div class="kl">Revenue <span id="tip-rv-tot" class="rt-anchor"></span></div><div class="kv" id="rv-tot">--</div><div class="kd n" id="rv-tot-sub">paid (1d attr) <span id="rv-paid-rev">--</span></div></div>
-    </div>
-
-    <div class="sec">
-      <div class="sec-h">
-        <h3>Daily Funnel &middot; Sessions &rarr; Buy Box &rarr; Units &rarr; Revenue <span class="note">paid vs organic split; organic columns are estimates (see note below)</span></h3>
-      </div>
-      <div id="rv-funnelTable" class="loading">Loading...</div>
-      <div class="ph2" style="margin-top:10px;font-size:12px">
-        <strong>How to read:</strong>
-        <em>Sessions</em> is Amazon's total PDP sessions for the day.
-        <em>Paid</em> = clicks on our Amazon Ads (SP/SB/SD).
-        <em>Organic (est)</em> = Sessions &minus; Paid Clicks &mdash; directional; Amazon's session bucketing is not 1:1 with ad clicks.
-        <em>Buy Box %</em> is sessions-weighted &mdash; if we don't own BB, sessions don't convert.
-        <em>Units</em> and <em>Revenue</em> are today's totals; <em>Paid Rev (1d)</em> is Amazon Ads' 1-day last-click attribution — sales from clicks that converted within 24h. SB/SD ad types don't expose 1d in Amazon's API so they fall back to the 7d window; in practice this is a small slice for most brands.
-        No add-to-cart metric &mdash; Amazon's Sales &amp; Traffic report doesn't expose it.
-      </div>
-    </div>
-  </div>
+  <!-- (Revenue & Traffic view removed — absorbed into Amazon summary above) -->
 
   <!-- ========== AMAZON ADS ========== -->
   <div class="vw" id="v-amzads">
@@ -847,8 +834,7 @@ let catDays=30;
 
 /* ========== VIEW SWITCHING ========== */
 const viewTitles={
-  overview:'&#127968; Overview',
-  revenue:'&#128202; Revenue &amp; Traffic',
+  overview:'&#128202; Amazon',
   amzads:'&#127344; Amazon Ads',
   gads:'&#128269; Google Ads',
   serp:'&#128208; SERP Rank',
@@ -869,12 +855,11 @@ function sw(id,el){
   if(el) el.classList.add('act');
   document.getElementById('viewTitle').innerHTML=viewTitles[id]||id;
   currentView=id;
-  // Range pills visibility (overview uses granularity pills instead)
-  const showPills=['revenue','amzads','gads'].includes(id);
+  // Range pills visibility
+  const showPills=['overview','amzads','gads'].includes(id);
   document.getElementById('rangePills').style.display=showPills?'flex':'none';
 
-  if(id==='overview'){ loadOverview(); loadAgentBrief(); }
-  if(id==='revenue') loadRevenue();
+  if(id==='overview'){ loadAmazon(); loadAgentBrief(); }
   if(id==='amzads'){ loadAds('amazon'); loadAgentMarketing(); }
   if(id==='gads') loadAds('google');
   if(id==='serp') loadSERP();
@@ -883,87 +868,126 @@ function sw(id,el){
   if(id==='pnl') loadPnL();
 }
 
-/* ========== OVERVIEW (WBR) ========== */
-var _wbrGranularity='day';
-function loadOverview(){
-  // Hide range pills on overview (use granularity pills instead)
-  document.getElementById('rangePills').style.display='none';
-  document.querySelectorAll('#granPills button').forEach(b=>b.classList.toggle('a',b.dataset.gran===_wbrGranularity));
-  loadWBR(_wbrGranularity);
+/* ========== AMAZON CHANNEL SUMMARY ========== */
+var _azGran='day';
+
+function loadAmazon(){
+  document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
+  document.querySelectorAll('#granPills button').forEach(b=>b.classList.toggle('a',b.dataset.gran===_azGran));
+  var days=range.days, gran=_azGran;
+  var periods=gran==='day'?days:gran==='week'?Math.ceil(days/7):Math.ceil(days/30);
+  document.getElementById('az-trend-table').innerHTML='<div class="loading">Loading...</div>';
+  // Main data (KPIs + trend) — always fires
+  api('/v1/amazon/wbr-overview?granularity='+gran+'&periods='+periods).then(renderAmazonMain).catch(showErr('az-trend-table'));
+  // Supplementary data (parallel, independent — graceful fail)
+  api('/v1/amazon/ads-summary?days='+days).then(renderAmazonAdsType).catch(function(){});
+  api('/v1/amazon/catalogue-health?days='+days).then(renderAmazonCatalog).catch(function(){});
+  api('/v1/amazon/serp-overview').then(renderAmazonSERP).catch(function(){});
 }
 
-// Granularity pill handler
+// Granularity pill handler (trend table aggregation)
 document.addEventListener('DOMContentLoaded',function(){
   var gp=document.getElementById('granPills');
   if(gp) gp.addEventListener('click',function(e){
     var btn=e.target.closest('button');
     if(!btn||!btn.dataset.gran) return;
-    _wbrGranularity=btn.dataset.gran;
+    _azGran=btn.dataset.gran;
     gp.querySelectorAll('button').forEach(function(b){b.classList.toggle('a',b===btn)});
-    loadWBR(_wbrGranularity);
+    loadAmazon();
   });
 });
 
-function loadWBR(gran){
-  document.getElementById('wbr-trend-table').innerHTML='<div class="loading">Loading...</div>';
-  api('/v1/amazon/wbr-overview?granularity='+gran).then(renderWBR).catch(showErr('wbr-trend-table'));
+/* --- helpers --- */
+function _azSet(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function _azDelta(id,val){
+  var e=document.getElementById(id);
+  if(!e) return;
+  if(val==null){e.className='kd n';e.innerHTML='\xa0';return;}
+  e.className='kd '+(val>=0?'u':'d');
+  e.innerHTML=(val>=0?'\u2191':'\u2193')+' '+Math.abs(val).toFixed(1)+'% vs prior';
 }
 
-function renderWBR(r){
+/* --- Main renderer (wbr-overview) — populates all KPI sections + trend --- */
+function renderAmazonMain(r){
   if(!r||!r.summary) return;
   var s=r.summary, d=r.delta||{}, inv=r.inventory||{};
 
-  // Window label
-  document.getElementById('wbr-window').textContent=r.window_start+' to '+r.window_end+' ('+r.granularity+')';
-  document.getElementById('wbr-trend-note').textContent=r.periods+' '+r.granularity+'s, '+r.window_start+' to '+r.window_end;
+  // Revenue & Units
+  _azSet('az-revenue',cur(s.revenue));  _azDelta('az-revenue-d',d.revenue_pct);
+  _azSet('az-units',fmt(s.units));      _azDelta('az-units-d',d.units_pct);
+  _azSet('az-orders',fmt(s.orders));    _azDelta('az-orders-d',d.orders_pct);
+  _azSet('az-aov',s.aov?cur(s.aov):'--'); _azDelta('az-aov-d',d.aov_pct);
 
-  // Row 1: Revenue
-  document.getElementById('wbr-revenue').textContent=cur(s.revenue);
-  _wbrDelta('wbr-revenue-d', d.revenue_pct, 'vs prior');
-  document.getElementById('wbr-units').textContent=fmt(s.units);
-  _wbrDelta('wbr-units-d', d.units_pct, 'vs prior');
-  document.getElementById('wbr-orders').textContent=fmt(s.orders);
-  _wbrDelta('wbr-orders-d', d.orders_pct, 'vs prior');
-  document.getElementById('wbr-aov').textContent=s.aov?cur(s.aov):'--';
+  // Ads
+  _azSet('az-spend',cur(s.ad_spend));   _azDelta('az-spend-d',d.ad_spend_pct);
+  _azSet('az-acos',s.acos_pct!=null?s.acos_pct.toFixed(1)+'%':'--');
+  _azSet('az-tacos',s.tacos_pct!=null?s.tacos_pct.toFixed(1)+'%':'--');
+  _azSet('az-roas',s.roas!=null?s.roas.toFixed(2)+'x':'--');
 
-  // Row 2: Ads
-  document.getElementById('wbr-spend').textContent=cur(s.ad_spend);
-  _wbrDelta('wbr-spend-d', d.ad_spend_pct, 'vs prior');
-  document.getElementById('wbr-acos').textContent=s.acos_pct!=null?s.acos_pct.toFixed(1)+'%':'--';
-  document.getElementById('wbr-tacos').textContent=s.tacos_pct!=null?s.tacos_pct.toFixed(1)+'%':'--';
-  document.getElementById('wbr-roas').textContent=s.roas!=null?s.roas.toFixed(2)+'x':'--';
+  // Traffic & Conversion
+  _azSet('az-sessions',fmt(s.sessions)); _azDelta('az-sessions-d',d.sessions_pct);
+  _azSet('az-paidshare',s.paid_share_pct!=null?s.paid_share_pct.toFixed(1)+'%':'--');
+  _azSet('az-bb',s.buy_box_pct!=null?s.buy_box_pct.toFixed(1)+'%':'--');
+  var conv=s.conversion_pct!=null?s.conversion_pct:(s.sessions>0?(s.units/s.sessions*100):null);
+  _azSet('az-conv',conv!=null?conv.toFixed(2)+'%':'--');
 
-  // Row 3: Traffic & Health
-  document.getElementById('wbr-sessions').textContent=fmt(s.sessions);
-  _wbrDelta('wbr-sessions-d', d.sessions_pct, 'vs prior');
-  document.getElementById('wbr-paidshare').textContent=s.paid_share_pct!=null?s.paid_share_pct.toFixed(1)+'%':'--';
-  document.getElementById('wbr-bb').textContent=s.buy_box_pct!=null?s.buy_box_pct.toFixed(1)+'%':'--';
-  document.getElementById('wbr-return').textContent=s.return_rate_pct!=null?s.return_rate_pct.toFixed(1)+'%':'--';
+  // Returns & Ops (return rate from summary, inventory from inventory obj)
+  _azSet('az-return',s.return_rate_pct!=null?s.return_rate_pct.toFixed(1)+'%':'--');
+  _azSet('az-fba',fmt(inv.total_fulfillable));
+  _azSet('az-doh',inv.median_days_cover!=null?inv.median_days_cover+'d':'--');
+  _azSet('az-lowcover',fmt(inv.low_cover_count));
+  _azSet('az-oos',fmt(inv.oos_count));
 
-  // Inventory
-  document.getElementById('wbr-oos').textContent=fmt(inv.oos_count);
-  document.getElementById('wbr-lowcover').textContent=fmt(inv.low_cover_count);
-  document.getElementById('wbr-fba').textContent=fmt(inv.total_fulfillable);
-  document.getElementById('wbr-doh').textContent=inv.median_days_cover!=null?inv.median_days_cover+'d':'--';
+  // Trend note
+  var noteEl=document.getElementById('az-trend-note');
+  if(noteEl) noteEl.textContent=r.window_start+' \u2014 '+r.window_end;
 
   // Trend table
-  _renderWBRTable(r.data||[], r.granularity);
+  _renderAzTrend(r.data||[], r.granularity);
 }
 
-function _wbrDelta(elId, pct_val, suffix){
-  var el=document.getElementById(elId);
+/* --- Ads by type (SP/SB/SD mini-table) --- */
+function renderAmazonAdsType(r){
+  var el=document.getElementById('az-ads-type');
   if(!el) return;
-  if(pct_val==null){el.className='kd n';el.innerHTML='\xa0';return;}
-  var cls=pct_val>=0?'u':'d';
-  var arrow=pct_val>=0?'\u2191':'\u2193';
-  el.className='kd '+cls;
-  el.innerHTML=arrow+' '+Math.abs(pct_val).toFixed(1)+'% '+(suffix||'');
+  var rows=(r.data||[]).filter(function(d){return d.platform==='amazon'});
+  if(!rows.length){el.innerHTML='';return;}
+  var h='<table class="tbl" style="font-size:13px"><thead><tr>'
+    +'<th>Type</th><th class="r">Spend</th><th class="r">Impressions</th>'
+    +'<th class="r">Clicks</th><th class="r">CTR</th>'
+    +'<th class="r">Attr. Sales</th><th class="r">ACoS</th><th class="r">ROAS</th>'
+    +'</tr></thead><tbody>';
+  rows.forEach(function(d){
+    h+='<tr><td class="hi">'+d.label+'</td>'
+      +'<td class="mn2 r">'+cur(d.spend)+'</td>'
+      +'<td class="mn2 r">'+fmt(d.impressions)+'</td>'
+      +'<td class="mn2 r">'+fmt(d.clicks)+'</td>'
+      +'<td class="mn2 r">'+(d.ctr_pct!=null?d.ctr_pct.toFixed(2)+'%':'--')+'</td>'
+      +'<td class="mn2 r">'+cur(d.attributed_sales)+'</td>'
+      +'<td class="mn2 r">'+(d.acos_pct!=null?d.acos_pct.toFixed(1)+'%':'--')+'</td>'
+      +'<td class="mn2 r">'+(d.roas!=null?d.roas.toFixed(2)+'x':'--')+'</td></tr>';
+  });
+  h+='</tbody></table>';
+  el.innerHTML=h;
 }
 
-function _renderWBRTable(data, gran){
-  var el=document.getElementById('wbr-trend-table');
-  if(!data.length){el.innerHTML='<div class="empty">No data for this period</div>';return;}
+/* --- Catalog (active SKUs) --- */
+function renderAmazonCatalog(r){
+  if(!r) return;
+  _azSet('az-active',fmt(r.amazon_listings));
+}
 
+/* --- SERP (keyword tracking) --- */
+function renderAmazonSERP(r){
+  if(!r) return;
+  _azSet('az-kw-tracked',fmt(r.keywords_tracked));
+  _azSet('az-kw-ranking',fmt(r.keywords_ranking));
+}
+
+/* --- Trend table --- */
+function _renderAzTrend(data, gran){
+  var el=document.getElementById('az-trend-table');
+  if(!data.length){el.innerHTML='<div class="empty">No data for this period</div>';return;}
   var periodLabel=gran==='day'?'Date':gran==='week'?'Week':'Month';
   var html='<table class="tbl"><thead><tr>'
     +'<th>'+periodLabel+'</th>'
@@ -980,7 +1004,6 @@ function _renderWBRTable(data, gran){
     +'<th class="r">Conv %</th>'
     +'<th class="r">BB %</th>'
     +'</tr></thead><tbody>';
-
   for(var i=data.length-1;i>=0;i--){
     var row=data[i];
     html+='<tr>'
@@ -1001,74 +1024,6 @@ function _renderWBRTable(data, gran){
   }
   html+='</tbody></table>';
   el.innerHTML=html;
-}
-
-/* ========== REVENUE & TRAFFIC — daily funnel ========== */
-function loadRevenue(){
-  document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
-  api('/v1/amazon/funnel?days='+range.days).then(renderFunnelView).catch(showErr('rv-funnelTable'));
-}
-
-/* Single-table daily funnel renderer. Columns:
- *   Date | Sessions | Paid clicks | Organic (est) | Paid % | BB % | Units | Conv % | Revenue | Paid rev (1d) | Organic rev (est)
- * The "Organic *" columns are server-computed as max(0, total − paid). On
- * short windows paid_revenue can exceed total revenue because Amazon's
- * 7-day last-click attribution looks forward — organic_rev_est clamps to 0
- * in those cases; the footnote on the page explains. */
-function renderFunnelView(f){
-  if(f && f.totals){
-    const t = f.totals;
-    document.getElementById('rv-sessions').textContent = fmt(t.sessions);
-    document.getElementById('rv-paid-share').textContent = t.paid_share_pct!=null ? pct(t.paid_share_pct,1) : '--';
-    document.getElementById('rv-bb').textContent = t.buy_box_pct!=null ? pct(t.buy_box_pct,2) : '--';
-    document.getElementById('rv-units').textContent = fmt(t.units);
-    document.getElementById('rv-conv').textContent = t.conversion_rate!=null ? pct(t.conversion_rate,2) : '--';
-    document.getElementById('rv-tot').textContent = cur(t.revenue);
-    document.getElementById('rv-paid-rev').textContent = cur(t.paid_revenue);
-    const d = document.getElementById('rv-sessions-sub');
-    if(f.tiles && f.tiles.sessions_wow_pct!=null){
-      const v = f.tiles.sessions_wow_pct;
-      const cls = v>=0 ? 'u' : 'd';
-      const arrow = v>=0 ? '\u2191' : '\u2193';
-      d.className = 'kd '+cls;
-      d.innerHTML = arrow+' '+Math.abs(v).toFixed(1)+'% 7d WoW';
-    }
-  }
-
-  const el = document.getElementById('rv-funnelTable');
-  if(!f || !f.data || !f.data.length){ el.innerHTML = '<div class="empty">No data in window</div>'; return; }
-
-  let html = '<table class="tbl"><thead><tr>'
-    + '<th>Date</th>'
-    + '<th class="r">Sessions '+T6.tip('Amazon PDP sessions that day across all Basil ASINs. From daily_product_page_views.')+'</th>'
-    + '<th class="r">Paid clicks '+T6.tip('Clicks on Amazon Ads (SP+SB+SD) that day.')+'</th>'
-    + '<th class="r">Organic (est) '+T6.tip({formula: 'max(0, sessions − paid clicks)', note:'Directional only. Amazon\u2019s sessions aren\u2019t strictly 1:1 with ad clicks, so this can underestimate.'})+'</th>'
-    + '<th class="r">Paid % '+T6.tip({formula: 'paid clicks ÷ sessions', note:'Share of traffic driven by paid ads.'})+'</th>'
-    + '<th class="r">BB % '+T6.tip('Sessions-weighted Buy-Box ownership that day. Low BB → sessions don\u2019t convert.')+'</th>'
-    + '<th class="r">Units</th>'
-    + '<th class="r">Conv % '+T6.tip({formula: 'units ÷ sessions', note:'Unit Session Percentage in Amazon\u2019s terms.'})+'</th>'
-    + '<th class="r">Revenue '+T6.tip('Gross revenue that day. Pre-GST retail.')+'</th>'
-    + '<th class="r">Paid rev (1d) '+T6.tip({formula: 'SP 1-day attributed + SB/SD 7-day', note:'SP uses 1d (last-click within 24h). SB/SD fall back to 7d — Amazon\u2019s API doesn\u2019t expose 1d for those types.'})+'</th>'
-    + '<th class="r">Organic rev (est) '+T6.tip({formula: 'max(0, revenue − paid_rev)', note:'Clamped to 0 because paid_rev on short windows can exceed total revenue (attribution looks forward).'}, {rightAlign:true})+'</th>'
-    + '</tr></thead><tbody>';
-
-  for(const row of f.data.slice().reverse()){
-    html += `<tr>
-      <td class="hi">${shortD(row.date)}</td>
-      <td class="mn2 r">${fmt(row.sessions)}</td>
-      <td class="mn2 r">${fmt(row.paid_clicks)}</td>
-      <td class="mn2 r">${fmt(row.organic_sessions_est)}</td>
-      <td class="mn2 r">${row.paid_share_pct!=null?pct(row.paid_share_pct,1):'--'}</td>
-      <td class="mn2 r">${row.buy_box_pct!=null?pct(row.buy_box_pct,1):'--'}</td>
-      <td class="mn2 r">${fmt(row.units)}</td>
-      <td class="mn2 r">${row.conversion_rate!=null?pct(row.conversion_rate,2):'--'}</td>
-      <td class="mn2 r">${cur(row.revenue)}</td>
-      <td class="mn2 r">${cur(row.paid_revenue)}</td>
-      <td class="mn2 r">${cur(row.organic_revenue_est)}</td>
-    </tr>`;
-  }
-  html += '</tbody></table>';
-  el.innerHTML = html;
 }
 
 /* ========== ADS (Amazon + Google share markup) ========== */
@@ -1435,33 +1390,8 @@ function renderCatalog(c){
 /* ========== INVENTORY & FULFILLMENT ========== */
 let currentIvSub = 'overview';
 
-/* Tile tooltips for non-Inventory tabs (Overview + Revenue & Traffic). */
-function installOtherTileTips(){
-  const T = T6.tip;
-  const setR = (id, content) => {
-    const el = document.getElementById(id); if(!el) return;
-    el.innerHTML = T(content, {rightAlign: el.classList.contains('rt-anchor')});
-  };
-  // Overview tab
-  setR('tip-ov-mtd-rev', {formula: 'sum(gross_revenue) of AMAZON_IN rows this month', note: 'From daily_item_sales. Includes DISPATCHED + ORDERED + DELIVERED + RTO + RVP (all customer-ordered). Excludes CANCELLED. Pre-GST retail.'});
-  setR('tip-ov-mtd-units', 'Sum of units_ordered across all customer-ordered lines month-to-date. Excludes cancellations.');
-  setR('tip-ov-7d-spend', {formula: 'sum(spend) across all ad platforms, last 7 days', note: 'Amazon Ads (SP+SB+SD) + Google Ads (Search + PMax + Shopping). Platform mix shown below the number.'});
-  setR('tip-ov-7d-roas', {formula: 'attributed sales ÷ ad spend', note: 'Blended across all platforms. TACoS = total ad cost ÷ total brand sales (not just attributed). ROAS uses each platform\u2019s native attribution window (1d for SP, 7d last-click for SB/SD + Google).'});
-  setR('tip-ov-kw', 'Keywords tracked via DataForSEO SERP (Amazon IN). "Ranking" = any position where our ASIN appeared.');
-  setR('tip-ov-listings', 'Distinct active Amazon IN ChannelListings. One per ASIN.');
-  setR('tip-ov-gap', {formula: 'ASINs with ad_spend > 0 AND revenue = 0, last 30d', note: 'Gap signal — paying for traffic but not converting. Check listing quality, price, or buy-box eligibility.'});
-  setR('tip-ov-bb', {formula: 'sessions-weighted average buy_box_pct', note: 'From Amazon S&T report. When our seller holds the Buy Box, sessions can convert. Otherwise traffic is wasted.'});
-  setR('tip-ov-fn-sessions', 'Total Amazon PDP sessions in last 7 days (from S&T report). Unique visitor sessions that viewed any Basil ASIN.');
-  setR('tip-ov-fn-paid', {formula: 'paid clicks ÷ total sessions', note: 'Paid clicks from Amazon Ads. Directional — Amazon\u2019s session bucketing isn\u2019t strictly 1:1 with ad clicks.'});
-  setR('tip-ov-fn-bb', 'Sessions-weighted buy-box %. Drop in BB = sessions stop converting.');
-  setR('tip-ov-fn-conv', {formula: 'units ÷ sessions', note: 'Unit Session Percentage in Amazon\u2019s terminology. Higher is better.'});
-  // Revenue & Traffic tab
-  setR('tip-rv-sessions', 'Total sessions over the selected range. Same source as Overview funnel.');
-  setR('tip-rv-paid-share', {formula: 'paid clicks ÷ sessions', note: 'Higher paid share = more reliance on ads to drive traffic.'});
-  setR('tip-rv-bb', 'Sessions-weighted Buy Box ownership %.');
-  setR('tip-rv-units', 'Sum of units ordered. Conversion shown below = units ÷ sessions.');
-  setR('tip-rv-tot', {formula: 'sum(gross_revenue) over window', note: 'Pre-GST retail. Paid revenue (1d attr) shown below — sales from ad clicks that converted within 24h (SP 1d, SB/SD fall back to 7d since Amazon\u2019s API doesn\u2019t expose 1d for them).'});
-}
+/* Tile tooltips — placeholder for Amazon summary (tooltips added inline as needed). */
+function installOtherTileTips(){}
 
 /* Tile tooltips — injected once on page init. Kept out of renderInvTiles so
  * they don't get rebuilt every refresh. */
@@ -2445,8 +2375,7 @@ document.getElementById('rangePills').addEventListener('click',e=>{
   const d=+b.dataset.days; if(!d) return;
   range.days=d;
   document.querySelectorAll('#rangePills button').forEach(x=>x.classList.toggle('a',x===b));
-  if(currentView==='overview') loadOverview();
-  else if(currentView==='revenue') loadRevenue();
+  if(currentView==='overview') loadAmazon();
   else if(currentView==='amzads') loadAds('amazon');
   else if(currentView==='gads') loadAds('google');
 });
@@ -3132,7 +3061,7 @@ function agAct(btn, action){
 T6.initUserChrome();
 installInvTileTips();
 installOtherTileTips();
-loadOverview();
+loadAmazon();
 loadAgentBrief();
 loadBugs();
 </script>
