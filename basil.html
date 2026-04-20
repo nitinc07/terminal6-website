@@ -277,60 +277,20 @@
     <div style="text-align:right;margin-bottom:8px"><button class="ag-run-btn" onclick="streamAgent('daily-brief','agent-brief-stream','daily_brief')">&#9654; Run Live Analysis</button></div>
     <div id="agent-brief-stream"></div>
 
-    <!-- Section 1: Revenue & Units -->
-    <div class="sec">
-      <div class="sec-h"><h3>Revenue &amp; Units</h3></div>
-      <div class="g4">
-        <div class="cd"><div class="kl">Revenue</div><div class="kv" id="az-revenue">--</div><div class="kd n" id="az-revenue-d">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Units</div><div class="kv" id="az-units">--</div><div class="kd n" id="az-units-d">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Orders</div><div class="kv" id="az-orders">--</div><div class="kd n" id="az-orders-d">&nbsp;</div></div>
-        <div class="cd"><div class="kl">AOV</div><div class="kv" id="az-aov">--</div><div class="kd n" id="az-aov-d">&nbsp;</div></div>
+    <!-- Top KPIs: Revenue, Units, AOV, TACoS -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div class="pills" id="azKpiPills">
+        <button data-days="1">Yesterday</button>
+        <button data-days="7">7D</button>
+        <button data-days="30" class="a">30D</button>
+        <button data-days="90">90D</button>
       </div>
     </div>
-
-    <!-- Section 2: Ads -->
-    <div class="sec">
-      <div class="sec-h"><h3>Ads</h3></div>
-      <div class="g4" style="margin-bottom:12px">
-        <div class="cd"><div class="kl">Total Ad Spend</div><div class="kv" id="az-spend">--</div><div class="kd n" id="az-spend-d">&nbsp;</div></div>
-        <div class="cd"><div class="kl">ACoS</div><div class="kv" id="az-acos">--</div><div class="kd n">spend / attributed sales</div></div>
-        <div class="cd"><div class="kl">TACoS</div><div class="kv" id="az-tacos">--</div><div class="kd n">spend / total revenue</div></div>
-        <div class="cd"><div class="kl">ROAS</div><div class="kv" id="az-roas">--</div><div class="kd n">attributed / spend</div></div>
-      </div>
-      <div id="az-ads-type"></div>
-    </div>
-
-    <!-- Section 3: Traffic & Conversion -->
-    <div class="sec">
-      <div class="sec-h"><h3>Traffic &amp; Conversion</h3></div>
-      <div class="g4">
-        <div class="cd"><div class="kl">Sessions</div><div class="kv" id="az-sessions">--</div><div class="kd n" id="az-sessions-d">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Paid Share</div><div class="kv" id="az-paidshare">--</div><div class="kd n">ad clicks / sessions</div></div>
-        <div class="cd"><div class="kl">Buy Box %</div><div class="kv" id="az-bb">--</div><div class="kd n">sessions-weighted</div></div>
-        <div class="cd"><div class="kl">Conversion</div><div class="kv" id="az-conv">--</div><div class="kd n">units / sessions</div></div>
-      </div>
-    </div>
-
-    <!-- Section 4: Catalog & Rank -->
-    <div class="sec">
-      <div class="sec-h"><h3>Catalog &amp; Rank</h3></div>
-      <div class="g4">
-        <div class="cd"><div class="kl">Active ASINs</div><div class="kv" id="az-active">--</div><div class="kd n">with sales in window</div></div>
-        <div class="cd"><div class="kl">OOS ASINs</div><div class="kv" id="az-oos">--</div><div class="kd n">zero fulfillable stock</div></div>
-        <div class="cd"><div class="kl">Keywords Tracked</div><div class="kv" id="az-kw-tracked">--</div><div class="kd n">DataForSEO SERP</div></div>
-        <div class="cd"><div class="kl">Ranking Organic</div><div class="kv" id="az-kw-ranking">--</div><div class="kd n">of tracked keywords</div></div>
-      </div>
-    </div>
-
-    <!-- Section 5: Returns & Ops -->
-    <div class="sec">
-      <div class="sec-h"><h3>Returns &amp; Ops</h3></div>
-      <div class="g4">
-        <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="az-return">--</div><div class="kd n">14-28d cohort</div></div>
-        <div class="cd"><div class="kl">FBA Inventory</div><div class="kv" id="az-fba">--</div><div class="kd n">fulfillable units</div></div>
-        <div class="cd"><div class="kl">Days of Cover</div><div class="kv" id="az-doh">--</div><div class="kd n">median across ASINs</div></div>
-        <div class="cd"><div class="kl">SKUs &lt;14d Cover</div><div class="kv" id="az-lowcover">--</div><div class="kd n">at risk of stockout</div></div>
-      </div>
+    <div class="g4" style="margin-bottom:28px">
+      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="az-revenue">--</div><div class="kd n" id="az-revenue-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Units</div><div class="kv" id="az-units">--</div><div class="kd n" id="az-units-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">AOV</div><div class="kv" id="az-aov">--</div><div class="kd n" id="az-aov-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">TACoS</div><div class="kv" id="az-tacos">--</div><div class="kd n" id="az-tacos-d">ad spend / total revenue</div></div>
     </div>
 
     <!-- Trend Table -->
@@ -856,7 +816,7 @@ function sw(id,el){
   document.getElementById('viewTitle').innerHTML=viewTitles[id]||id;
   currentView=id;
   // Range pills visibility
-  const showPills=['overview','amzads','gads'].includes(id);
+  const showPills=['amzads','gads'].includes(id);
   document.getElementById('rangePills').style.display=showPills?'flex':'none';
 
   if(id==='overview'){ loadAmazon(); loadAgentBrief(); }
@@ -869,31 +829,53 @@ function sw(id,el){
 }
 
 /* ========== AMAZON CHANNEL SUMMARY ========== */
-var _azGran='day';
+var _azKpiDays=30;   // controls top KPI tiles only
+var _azGran='day';   // controls trend table granularity
 
-function loadAmazon(){
-  document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
+/* --- Load top KPI tiles (Revenue, Units, AOV, TACoS) --- */
+function loadAmazonKPIs(){
+  document.querySelectorAll('#azKpiPills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===_azKpiDays));
+  api('/v1/amazon/wbr-overview?granularity=day&periods='+_azKpiDays).then(renderAmazonKPIs).catch(function(){});
+}
+
+/* --- Load trend table --- */
+function loadAmazonTrend(){
   document.querySelectorAll('#granPills button').forEach(b=>b.classList.toggle('a',b.dataset.gran===_azGran));
   var days=range.days, gran=_azGran;
   var periods=gran==='day'?days:gran==='week'?Math.ceil(days/7):Math.ceil(days/30);
   document.getElementById('az-trend-table').innerHTML='<div class="loading">Loading...</div>';
-  // Main data (KPIs + trend) — always fires
-  api('/v1/amazon/wbr-overview?granularity='+gran+'&periods='+periods).then(renderAmazonMain).catch(showErr('az-trend-table'));
-  // Supplementary data (parallel, independent — graceful fail)
-  api('/v1/amazon/ads-summary?days='+days).then(renderAmazonAdsType).catch(function(){});
-  api('/v1/amazon/catalogue-health?days='+days).then(renderAmazonCatalog).catch(function(){});
-  api('/v1/amazon/serp-overview').then(renderAmazonSERP).catch(function(){});
+  api('/v1/amazon/wbr-overview?granularity='+gran+'&periods='+periods).then(function(r){
+    if(!r) return;
+    var noteEl=document.getElementById('az-trend-note');
+    if(noteEl) noteEl.textContent=r.window_start+' \u2014 '+r.window_end;
+    _renderAzTrend(r.data||[], r.granularity);
+  }).catch(showErr('az-trend-table'));
 }
 
-// Granularity pill handler (trend table aggregation)
+/* --- Load everything on the Amazon tab --- */
+function loadAmazon(){
+  loadAmazonKPIs();
+  loadAmazonTrend();
+}
+
+// KPI pill handler (Yesterday/7D/30D/90D — tiles only)
 document.addEventListener('DOMContentLoaded',function(){
+  var kp=document.getElementById('azKpiPills');
+  if(kp) kp.addEventListener('click',function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.days) return;
+    _azKpiDays=+btn.dataset.days;
+    kp.querySelectorAll('button').forEach(function(b){b.classList.toggle('a',b===btn)});
+    loadAmazonKPIs();
+  });
+  // Granularity pill handler (trend table only)
   var gp=document.getElementById('granPills');
   if(gp) gp.addEventListener('click',function(e){
     var btn=e.target.closest('button');
     if(!btn||!btn.dataset.gran) return;
     _azGran=btn.dataset.gran;
     gp.querySelectorAll('button').forEach(function(b){b.classList.toggle('a',b===btn)});
-    loadAmazon();
+    loadAmazonTrend();
   });
 });
 
@@ -907,81 +889,15 @@ function _azDelta(id,val){
   e.innerHTML=(val>=0?'\u2191':'\u2193')+' '+Math.abs(val).toFixed(1)+'% vs prior';
 }
 
-/* --- Main renderer (wbr-overview) — populates all KPI sections + trend --- */
-function renderAmazonMain(r){
+/* --- KPI renderer (4 tiles: Revenue, Units, AOV, TACoS) --- */
+function renderAmazonKPIs(r){
   if(!r||!r.summary) return;
-  var s=r.summary, d=r.delta||{}, inv=r.inventory||{};
-
-  // Revenue & Units
+  var s=r.summary, d=r.delta||{};
   _azSet('az-revenue',cur(s.revenue));  _azDelta('az-revenue-d',d.revenue_pct);
   _azSet('az-units',fmt(s.units));      _azDelta('az-units-d',d.units_pct);
-  _azSet('az-orders',fmt(s.orders));    _azDelta('az-orders-d',d.orders_pct);
   _azSet('az-aov',s.aov?cur(s.aov):'--'); _azDelta('az-aov-d',d.aov_pct);
-
-  // Ads
-  _azSet('az-spend',cur(s.ad_spend));   _azDelta('az-spend-d',d.ad_spend_pct);
-  _azSet('az-acos',s.acos_pct!=null?s.acos_pct.toFixed(1)+'%':'--');
   _azSet('az-tacos',s.tacos_pct!=null?s.tacos_pct.toFixed(1)+'%':'--');
-  _azSet('az-roas',s.roas!=null?s.roas.toFixed(2)+'x':'--');
-
-  // Traffic & Conversion
-  _azSet('az-sessions',fmt(s.sessions)); _azDelta('az-sessions-d',d.sessions_pct);
-  _azSet('az-paidshare',s.paid_share_pct!=null?s.paid_share_pct.toFixed(1)+'%':'--');
-  _azSet('az-bb',s.buy_box_pct!=null?s.buy_box_pct.toFixed(1)+'%':'--');
-  var conv=s.conversion_pct!=null?s.conversion_pct:(s.sessions>0?(s.units/s.sessions*100):null);
-  _azSet('az-conv',conv!=null?conv.toFixed(2)+'%':'--');
-
-  // Returns & Ops (return rate from summary, inventory from inventory obj)
-  _azSet('az-return',s.return_rate_pct!=null?s.return_rate_pct.toFixed(1)+'%':'--');
-  _azSet('az-fba',fmt(inv.total_fulfillable));
-  _azSet('az-doh',inv.median_days_cover!=null?inv.median_days_cover+'d':'--');
-  _azSet('az-lowcover',fmt(inv.low_cover_count));
-  _azSet('az-oos',fmt(inv.oos_count));
-
-  // Trend note
-  var noteEl=document.getElementById('az-trend-note');
-  if(noteEl) noteEl.textContent=r.window_start+' \u2014 '+r.window_end;
-
-  // Trend table
-  _renderAzTrend(r.data||[], r.granularity);
-}
-
-/* --- Ads by type (SP/SB/SD mini-table) --- */
-function renderAmazonAdsType(r){
-  var el=document.getElementById('az-ads-type');
-  if(!el) return;
-  var rows=(r.data||[]).filter(function(d){return d.platform==='amazon'});
-  if(!rows.length){el.innerHTML='';return;}
-  var h='<table class="tbl" style="font-size:13px"><thead><tr>'
-    +'<th>Type</th><th class="r">Spend</th><th class="r">Impressions</th>'
-    +'<th class="r">Clicks</th><th class="r">CTR</th>'
-    +'<th class="r">Attr. Sales</th><th class="r">ACoS</th><th class="r">ROAS</th>'
-    +'</tr></thead><tbody>';
-  rows.forEach(function(d){
-    h+='<tr><td class="hi">'+d.label+'</td>'
-      +'<td class="mn2 r">'+cur(d.spend)+'</td>'
-      +'<td class="mn2 r">'+fmt(d.impressions)+'</td>'
-      +'<td class="mn2 r">'+fmt(d.clicks)+'</td>'
-      +'<td class="mn2 r">'+(d.ctr_pct!=null?d.ctr_pct.toFixed(2)+'%':'--')+'</td>'
-      +'<td class="mn2 r">'+cur(d.attributed_sales)+'</td>'
-      +'<td class="mn2 r">'+(d.acos_pct!=null?d.acos_pct.toFixed(1)+'%':'--')+'</td>'
-      +'<td class="mn2 r">'+(d.roas!=null?d.roas.toFixed(2)+'x':'--')+'</td></tr>';
-  });
-  h+='</tbody></table>';
-  el.innerHTML=h;
-}
-
-/* --- Catalog (active SKUs) --- */
-function renderAmazonCatalog(r){
-  if(!r) return;
-  _azSet('az-active',fmt(r.amazon_listings));
-}
-
-/* --- SERP (keyword tracking) --- */
-function renderAmazonSERP(r){
-  if(!r) return;
-  _azSet('az-kw-tracked',fmt(r.keywords_tracked));
-  _azSet('az-kw-ranking',fmt(r.keywords_ranking));
+  _azDelta('az-tacos-d',d.tacos_pct);
 }
 
 /* --- Trend table --- */
@@ -2375,8 +2291,7 @@ document.getElementById('rangePills').addEventListener('click',e=>{
   const d=+b.dataset.days; if(!d) return;
   range.days=d;
   document.querySelectorAll('#rangePills button').forEach(x=>x.classList.toggle('a',x===b));
-  if(currentView==='overview') loadAmazon();
-  else if(currentView==='amzads') loadAds('amazon');
+  if(currentView==='amzads') loadAds('amazon');
   else if(currentView==='gads') loadAds('google');
 });
 document.getElementById('catPills').addEventListener('click',e=>{
