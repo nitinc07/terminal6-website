@@ -300,7 +300,6 @@
         <div class="pills" id="granPills">
           <button class="a" data-gran="day">Day</button>
           <button data-gran="week">Week</button>
-          <button data-gran="month">Month</button>
         </div>
       </div>
       <div id="az-trend-table" class="loading">Loading...</div>
@@ -838,17 +837,19 @@ function loadAmazonKPIs(){
   api('/v1/amazon/wbr-overview?granularity=day&periods='+_azKpiDays).then(renderAmazonKPIs).catch(function(){});
 }
 
-/* --- Load trend table --- */
+/* --- Load trend table (granular + monthly in parallel) --- */
 function loadAmazonTrend(){
   document.querySelectorAll('#granPills button').forEach(b=>b.classList.toggle('a',b.dataset.gran===_azGran));
-  var days=range.days, gran=_azGran;
-  var periods=gran==='day'?days:gran==='week'?Math.ceil(days/7):Math.ceil(days/30);
+  var gran=_azGran;
+  var periods=gran==='day'?7:7;
   document.getElementById('az-trend-table').innerHTML='<div class="loading">Loading...</div>';
-  api('/v1/amazon/wbr-overview?granularity='+gran+'&periods='+periods).then(function(r){
-    if(!r) return;
-    var noteEl=document.getElementById('az-trend-note');
-    if(noteEl) noteEl.textContent=r.window_start+' \u2014 '+r.window_end;
-    _renderAzTrend(r.data||[], r.granularity);
+  // Fetch granular (7 days or 7 weeks) + monthly (4 months = MTD + 3 prior) in parallel
+  var pGran=api('/v1/amazon/wbr-overview?granularity='+gran+'&periods='+periods);
+  var pMonth=api('/v1/amazon/wbr-overview?granularity=month&periods=4');
+  Promise.all([pGran,pMonth]).then(function(res){
+    var granData=(res[0]&&res[0].data)||[];
+    var monthData=(res[1]&&res[1].data)||[];
+    _renderAzTrend(granData, gran, monthData);
   }).catch(showErr('az-trend-table'));
 }
 
@@ -900,45 +901,71 @@ function renderAmazonKPIs(r){
   _azDelta('az-tacos-d',d.tacos_pct);
 }
 
-/* --- Trend table --- */
-function _renderAzTrend(data, gran){
+/* --- Transposed trend table: metrics as rows, time periods as columns --- */
+var _azMetrics=[
+  {label:'Revenue',  key:'revenue',        fn:function(v){return cur(v)}},
+  {label:'Units',    key:'units',           fn:function(v){return fmt(v)}},
+  {label:'Orders',   key:'orders',          fn:function(v){return fmt(v)}},
+  {label:'AOV',      key:'aov',             fn:function(v){return v?cur(v):'--'}},
+  {label:'Ad Spend', key:'ad_spend',        fn:function(v){return cur(v)}},
+  {label:'ACoS',     key:'acos_pct',        fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}},
+  {label:'TACoS',    key:'tacos_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}},
+  {label:'ROAS',     key:'roas',            fn:function(v){return v!=null?v.toFixed(1)+'x':'--'}},
+  {label:'Sessions', key:'sessions',        fn:function(v){return v?fmt(v):'--'}},
+  {label:'Paid %',   key:'paid_share_pct',  fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}},
+  {label:'Conv %',   key:'conversion_pct',  fn:function(v){return v!=null?v.toFixed(2)+'%':'--'}},
+  {label:'BB %',     key:'buy_box_pct',     fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}}
+];
+
+function _renderAzTrend(granData, gran, monthData){
   var el=document.getElementById('az-trend-table');
-  if(!data.length){el.innerHTML='<div class="empty">No data for this period</div>';return;}
-  var periodLabel=gran==='day'?'Date':gran==='week'?'Week':'Month';
-  var html='<table class="tbl"><thead><tr>'
-    +'<th>'+periodLabel+'</th>'
-    +'<th class="r">Revenue</th>'
-    +'<th class="r">Units</th>'
-    +'<th class="r">Orders</th>'
-    +'<th class="r">AOV</th>'
-    +'<th class="r">Ad Spend</th>'
-    +'<th class="r">ACoS</th>'
-    +'<th class="r">TACoS</th>'
-    +'<th class="r">ROAS</th>'
-    +'<th class="r">Sessions</th>'
-    +'<th class="r">Paid %</th>'
-    +'<th class="r">Conv %</th>'
-    +'<th class="r">BB %</th>'
-    +'</tr></thead><tbody>';
-  for(var i=data.length-1;i>=0;i--){
-    var row=data[i];
-    html+='<tr>'
-      +'<td class="hi">'+(row.label||row.period)+'</td>'
-      +'<td class="mn2 r">'+cur(row.revenue)+'</td>'
-      +'<td class="mn2 r">'+fmt(row.units)+'</td>'
-      +'<td class="mn2 r">'+fmt(row.orders)+'</td>'
-      +'<td class="mn2 r">'+(row.aov?cur(row.aov):'--')+'</td>'
-      +'<td class="mn2 r">'+cur(row.ad_spend)+'</td>'
-      +'<td class="mn2 r">'+(row.acos_pct!=null?row.acos_pct.toFixed(1)+'%':'--')+'</td>'
-      +'<td class="mn2 r">'+(row.tacos_pct!=null?row.tacos_pct.toFixed(1)+'%':'--')+'</td>'
-      +'<td class="mn2 r">'+(row.roas!=null?row.roas.toFixed(1)+'x':'--')+'</td>'
-      +'<td class="mn2 r">'+(row.sessions?fmt(row.sessions):'<span style="color:var(--t3)">--</span>')+'</td>'
-      +'<td class="mn2 r">'+(row.paid_share_pct!=null?row.paid_share_pct.toFixed(1)+'%':'--')+'</td>'
-      +'<td class="mn2 r">'+(row.conversion_pct!=null?row.conversion_pct.toFixed(2)+'%':'--')+'</td>'
-      +'<td class="mn2 r">'+(row.buy_box_pct!=null?row.buy_box_pct.toFixed(1)+'%':'--')+'</td>'
-      +'</tr>';
+  if(!granData.length && !monthData.length){el.innerHTML='<div class="empty">No data</div>';return;}
+
+  // Columns: granular periods (chronological) | MTD | prior 3 months (newest first)
+  // monthData is chronological: oldest first → last element is current month (MTD)
+  var mtd=monthData.length?monthData[monthData.length-1]:null;
+  var priorMonths=monthData.slice(0,-1).reverse(); // newest first
+
+  // Build column headers
+  var cols=[];
+  // Granular columns (days or weeks)
+  for(var i=0;i<granData.length;i++){
+    cols.push({label:granData[i].label||granData[i].period, data:granData[i], cls:''});
+  }
+  // MTD
+  if(mtd) cols.push({label:'MTD', data:mtd, cls:'az-mtd'});
+  // Prior months
+  for(var j=0;j<priorMonths.length;j++){
+    cols.push({label:priorMonths[j].label||priorMonths[j].period, data:priorMonths[j], cls:'az-mo'});
+  }
+
+  // Render transposed table
+  var html='<table class="tbl"><thead><tr><th>Metric</th>';
+  for(var c=0;c<cols.length;c++){
+    var borderL=cols[c].cls==='az-mtd'?' style="border-left:2px solid var(--border)"':'';
+    html+='<th class="r"'+borderL+'>'+cols[c].label+'</th>';
+  }
+  html+='</tr></thead><tbody>';
+
+  for(var m=0;m<_azMetrics.length;m++){
+    var met=_azMetrics[m];
+    html+='<tr><td class="hi">'+met.label+'</td>';
+    for(var c2=0;c2<cols.length;c2++){
+      var val=cols[c2].data[met.key];
+      var borderL2=cols[c2].cls==='az-mtd'?' style="border-left:2px solid var(--border)"':'';
+      html+='<td class="mn2 r"'+borderL2+'>'+met.fn(val)+'</td>';
+    }
+    html+='</tr>';
   }
   html+='</tbody></table>';
+
+  // Update note
+  var noteEl=document.getElementById('az-trend-note');
+  if(noteEl){
+    var lbl=gran==='day'?'7 days':'7 weeks';
+    noteEl.textContent=lbl+' + MTD + 3 months';
+  }
+
   el.innerHTML=html;
 }
 
