@@ -497,6 +497,16 @@
         <div class="cd"><div class="kl">Content Score</div><div class="kv" id="lh-content">--</div><div class="kd n">avg across Amazon ASINs</div></div>
         <div class="cd"><div class="kl">Needs Attention</div><div class="kv" id="lh-attention">--</div><div class="kd n">active ASINs, content &lt; 67%</div></div>
       </div>
+      <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="pills" id="lhFilterPills">
+          <button data-f="all" class="a" onclick="_lhFilter('all',this)">All</button>
+          <button data-f="active" onclick="_lhFilter('active',this)">Active (any)</button>
+          <button data-f="hide-inactive" onclick="_lhFilter('hide-inactive',this)">Hide Fully Inactive</button>
+          <button data-f="amz-not-shp" onclick="_lhFilter('amz-not-shp',this)">AMZ only</button>
+          <button data-f="shp-not-amz" onclick="_lhFilter('shp-not-amz',this)">Shopify only</button>
+          <button data-f="content-fix" onclick="_lhFilter('content-fix',this)">Content &lt; 67%</button>
+        </div>
+      </div>
       <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
         <input type="text" id="lhSearch" placeholder="Search by SKU, ASIN, or product name..." style="flex:1;padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--sans);font-size:12.5px;background:var(--bg-white);outline:none" />
         <button onclick="loadListingHealth()" style="padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg-white);font-family:var(--sans);font-size:12px;cursor:pointer">Search</button>
@@ -1426,10 +1436,20 @@ function catalogSub(subId){
   }
 }
 
+let _lhCache = null;
+let _lhActiveFilter = 'all';
+
+function _lhFilter(f, btn){
+  _lhActiveFilter = f;
+  document.querySelectorAll('#lhFilterPills button').forEach(b=>b.classList.remove('a'));
+  if(btn) btn.classList.add('a');
+  if(_lhCache) _renderLhTable(_lhCache);
+}
+
 function loadListingHealth(){
   const search = document.getElementById('lhSearch').value.trim();
   const qs = '/v1/skucatalog/listing-health' + (search ? '?search='+encodeURIComponent(search) : '');
-  api(qs).then(renderListingHealth).catch(showErr('lh-table'));
+  api(qs).then(d=>{ _lhCache=d; renderListingHealth(d); }).catch(showErr('lh-table'));
 }
 
 function renderListingHealth(d){
@@ -1440,11 +1460,23 @@ function renderListingHealth(d){
   document.getElementById('lh-both').textContent = fmt(k.on_both);
   document.getElementById('lh-content').textContent = k.avg_content_score != null ? k.avg_content_score+'%' : '--';
   document.getElementById('lh-attention').textContent = fmt(k.needs_attention);
+  _renderLhTable(d);
+}
 
-  // Table
+function _renderLhTable(d){
   const el = document.getElementById('lh-table');
-  document.getElementById('lhCount').textContent = (d.count||0)+' SKUs';
-  if(!d.data||!d.data.length){ el.innerHTML='<div class="empty">No listings</div>'; return; }
+  let rows = d.data || [];
+
+  // Apply filter
+  const f = _lhActiveFilter;
+  if(f==='active') rows = rows.filter(r => r.amz_status==='Active' || r.shp_status==='Active');
+  if(f==='hide-inactive') rows = rows.filter(r => !(r.amz_status!=='Active' && r.shp_status!=='Active'));
+  if(f==='amz-not-shp') rows = rows.filter(r => r.amz_asin && !r.shp_variant_id);
+  if(f==='shp-not-amz') rows = rows.filter(r => r.shp_variant_id && !r.amz_asin);
+  if(f==='content-fix') rows = rows.filter(r => r.content_score!=null && r.content_score<67 && r.amz_status==='Active');
+
+  document.getElementById('lhCount').textContent = rows.length+' SKUs';
+  if(!rows.length){ el.innerHTML='<div class="empty">No listings match filter</div>'; return; }
 
   const _st=(s)=> s==='Active' ? '<span style="color:var(--pos);font-weight:500">Active</span>' : (s==='Inactive' ? '<span style="color:var(--neg)">Inactive</span>' : '<span style="color:var(--t3)">&mdash;</span>');
   const _ful=(arr)=> arr.length ? arr.map(f=>'<span style="font-size:10px;background:var(--bg-cream);padding:1px 4px;border-radius:3px;margin-right:2px">'+f+'</span>').join('') : '&mdash;';
