@@ -1520,7 +1520,7 @@ function _renderLhTable(d){
       <td class="mn2 hi" style="text-align:left">${r.amz_asin?`<a href="https://www.amazon.in/dp/${r.amz_asin}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.amz_asin}</a>`:'<span style="color:var(--t3)">&mdash;</span>'}</td>
       <td class="mn2" style="text-align:center">${_st(r.amz_status)}</td>
       <td class="mn2" style="text-align:center">${_ful(r.amz_fulfillment||[])}</td>
-      <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id?`<a href="https://shareyourbasil.myshopify.com/admin/products/${r.shp_product_id||''}/variants/${r.shp_variant_id}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:'<span style="color:var(--t3)">&mdash;</span>'}</td>
+      <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id?(r.shp_handle?`<a href="https://shareyourbasil.com/products/${r.shp_handle}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:`${r.shp_variant_id}`):'<span style="color:var(--t3)">&mdash;</span>'}</td>
       <td class="mn2" style="text-align:center">${_st(r.shp_status)}</td>
       <td class="mn2 r">${r.mrp!=null?_pmCur(r.mrp):'--'}</td>
       <td class="mn2 r">${r.shp_price!=null?_pmCur(r.shp_price):'--'}</td>
