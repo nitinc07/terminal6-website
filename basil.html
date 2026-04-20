@@ -244,6 +244,8 @@
     <div class="si" onclick="sw('gads',this)"><div class="ic">&#128269;</div><span>Google Ads</span></div>
     <div class="si" onclick="sw('serp',this)"><div class="ic">&#128208;</div><span>SERP Rank</span></div>
     <div class="si" onclick="sw('catalog',this)"><div class="ic">&#128230;</div><span>Catalogue</span></div>
+    <div class="si sb-sub" onclick="swSub('catalog','master',this)"><span>Product Master</span></div>
+    <div class="si sb-sub" onclick="swSub('catalog','listing-health',this)"><span>Listing Health</span></div>
     <div class="si" onclick="sw('inventory',this)"><div class="ic">&#128230;</div><span>Inventory &amp; Fulfillment</span></div>
     <div class="si sb-sub" onclick="swSub('inventory','overview',this)"><span>Overview</span></div>
     <div class="si sb-sub" onclick="swSub('inventory','restock',this)"><span>Restock Planner</span></div>
@@ -485,6 +487,25 @@
     <div class="sec">
       <div class="sec-h"><h3>Variants &middot; ASIN-level <span class="note">flat list of every ChannelListing (fulfillment-level granularity)</span></h3></div>
       <div id="ct-table" class="loading">Loading...</div>
+    </div>
+
+    <!-- Listing Health sub-view (hidden by default, shown via swSub) -->
+    <div id="catalog-sub-listing-health" style="display:none">
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd"><div class="kl">Total SKUs</div><div class="kv" id="lh-total">--</div><div class="kd n" id="lh-total-sub">&nbsp;</div></div>
+        <div class="cd"><div class="kl">On Both Channels</div><div class="kv" id="lh-both">--</div><div class="kd n">Amazon + Shopify</div></div>
+        <div class="cd"><div class="kl">Content Score</div><div class="kv" id="lh-content">--</div><div class="kd n">avg across Amazon ASINs</div></div>
+        <div class="cd"><div class="kl">Needs Attention</div><div class="kv" id="lh-attention">--</div><div class="kd n">active ASINs, content &lt; 67%</div></div>
+      </div>
+      <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+        <input type="text" id="lhSearch" placeholder="Search by SKU, ASIN, or product name..." style="flex:1;padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);font-family:var(--sans);font-size:12.5px;background:var(--bg-white);outline:none" />
+        <button onclick="loadListingHealth()" style="padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);background:var(--bg-white);font-family:var(--sans);font-size:12px;cursor:pointer">Search</button>
+        <span id="lhCount" style="font-size:11px;color:var(--t3);white-space:nowrap"></span>
+      </div>
+      <div class="sec">
+        <div class="sec-h"><h3>Listing Health <span class="note">one row per seller SKU &middot; Amazon + Shopify side by side</span></h3></div>
+        <div id="lh-table" class="loading">Loading...</div>
+      </div>
     </div>
   </div>
 
@@ -851,6 +872,7 @@ function swSub(viewId, subId, el){
   if(viewId==='inventory') ivSub(subId);
   if(viewId==='pnl') switchPnlSub(subId);
   if(viewId==='amzads') adsSub(subId);
+  if(viewId==='catalog') catalogSub(subId);
 }
 function sw(id,el){
   const target=document.getElementById('v-'+id);
@@ -1379,7 +1401,106 @@ function renderSERP(s){
 }
 
 /* ========== CATALOGUE ========== */
-let pmMasterCache = null;  // cached /product-master payload (variants embedded)
+let pmMasterCache = null;
+let _catalogSubActive = 'master'; // track which sub-tab
+
+function catalogSub(subId){
+  _catalogSubActive = subId;
+  // Hide all sub-views, show default content for 'master', or listing-health
+  const lhDiv = document.getElementById('catalog-sub-listing-health');
+  // Elements that belong to the "master" sub-view (default catalog content)
+  const masterEls = document.querySelectorAll('#v-catalog > .g4, #v-catalog > div:not(.sec):not([id]), #v-catalog > .sec');
+  if(subId === 'listing-health'){
+    // Hide master sections
+    document.querySelectorAll('#v-catalog > .g4, #v-catalog > .sec, #v-catalog > div[style*="margin-bottom:14px"]').forEach(e=>{
+      if(e.id !== 'catalog-sub-listing-health') e.style.display='none';
+    });
+    lhDiv.style.display='';
+    loadListingHealth();
+  } else {
+    // Show master sections
+    document.querySelectorAll('#v-catalog > .g4, #v-catalog > .sec, #v-catalog > div[style*="margin-bottom:14px"]').forEach(e=>{
+      if(e.id !== 'catalog-sub-listing-health') e.style.display='';
+    });
+    lhDiv.style.display='none';
+  }
+}
+
+function loadListingHealth(){
+  const search = document.getElementById('lhSearch').value.trim();
+  const qs = '/v1/skucatalog/listing-health' + (search ? '?search='+encodeURIComponent(search) : '');
+  api(qs).then(renderListingHealth).catch(showErr('lh-table'));
+}
+
+function renderListingHealth(d){
+  // KPIs
+  const k = d.kpis || {};
+  document.getElementById('lh-total').textContent = fmt(k.total_skus);
+  document.getElementById('lh-total-sub').textContent = (k.amz_active||0)+' AMZ active, '+(k.shp_active||0)+' SHP active';
+  document.getElementById('lh-both').textContent = fmt(k.on_both);
+  document.getElementById('lh-content').textContent = k.avg_content_score != null ? k.avg_content_score+'%' : '--';
+  document.getElementById('lh-attention').textContent = fmt(k.needs_attention);
+
+  // Table
+  const el = document.getElementById('lh-table');
+  document.getElementById('lhCount').textContent = (d.count||0)+' SKUs';
+  if(!d.data||!d.data.length){ el.innerHTML='<div class="empty">No listings</div>'; return; }
+
+  const _st=(s)=> s==='Active' ? '<span style="color:var(--pos);font-weight:500">Active</span>' : (s==='Inactive' ? '<span style="color:var(--neg)">Inactive</span>' : '<span style="color:var(--t3)">&mdash;</span>');
+  const _ful=(arr)=> arr.length ? arr.map(f=>'<span style="font-size:10px;background:var(--bg-cream);padding:1px 4px;border-radius:3px;margin-right:2px">'+f+'</span>').join('') : '&mdash;';
+  const _cc=(val,target)=>{
+    if(val==null) return '<span style="color:var(--t3)">&mdash;</span>';
+    const ok = val >= target;
+    return `<span style="color:${ok?'var(--pos)':'var(--neg)'};font-weight:500">${val}</span>`;
+  };
+  const _desc=(v)=>{
+    if(v==null) return '<span style="color:var(--t3)">&mdash;</span>';
+    return v ? '<span style="color:var(--pos)">Yes</span>' : '<span style="color:var(--neg)">No</span>';
+  };
+  const _score=(v)=>{
+    if(v==null) return '<span style="color:var(--t3)">&mdash;</span>';
+    const c = v>=67?'var(--pos)':v>=34?'#c87800':'var(--neg)';
+    return `<span style="color:${c};font-weight:600">${v}%</span>`;
+  };
+
+  let h='<table class="tbl"><thead><tr>'
+    +'<th style="width:40px"></th>'
+    +'<th style="text-align:left">Product / SKU</th>'
+    +'<th style="text-align:left">Amazon ASIN</th>'
+    +'<th>AMZ Status</th>'
+    +'<th>Fulfillment</th>'
+    +'<th style="text-align:left">Shopify Variant</th>'
+    +'<th>SHP Status</th>'
+    +'<th class="r">AMZ Price</th>'
+    +'<th class="r">SHP Price</th>'
+    +'<th class="r">Images</th>'
+    +'<th class="r">Bullets</th>'
+    +'<th>Desc</th>'
+    +'<th class="r">Score</th>'
+    +'</tr></thead><tbody>';
+
+  for(const r of d.data){
+    const img = r.image_url ? `<img src="${r.image_url}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;background:#f8f7f4" loading="lazy" onerror="this.style.display='none'"/>` : '';
+    const name = (r.product_name||'').length>45 ? (r.product_name||'').slice(0,45)+'...' : (r.product_name||'--');
+    h+=`<tr>
+      <td>${img}</td>
+      <td style="text-align:left"><strong style="font-size:12px">${name}</strong><div style="font-size:10.5px;color:var(--t3);font-family:var(--mono)">${r.seller_sku}</div></td>
+      <td class="mn2 hi" style="text-align:left">${r.amz_asin||'<span style="color:var(--t3)">&mdash;</span>'}</td>
+      <td class="mn2" style="text-align:center">${_st(r.amz_status)}</td>
+      <td class="mn2" style="text-align:center">${_ful(r.amz_fulfillment||[])}</td>
+      <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id||'<span style="color:var(--t3)">&mdash;</span>'}</td>
+      <td class="mn2" style="text-align:center">${_st(r.shp_status)}</td>
+      <td class="mn2 r">${r.mrp!=null?_pmCur(r.mrp):'--'}</td>
+      <td class="mn2 r">${r.shp_price!=null?_pmCur(r.shp_price):'--'}</td>
+      <td class="mn2 r">${_cc(r.image_count,5)}</td>
+      <td class="mn2 r">${_cc(r.bullet_count,5)}</td>
+      <td class="mn2" style="text-align:center">${_desc(r.has_description)}</td>
+      <td class="mn2 r">${_score(r.content_score)}</td>
+    </tr>`;
+  }
+  h+='</tbody></table>';
+  el.innerHTML=h;
+}
 
 function loadCatalog(){
   const search=document.getElementById('ctSearch').value.trim();
@@ -2526,6 +2647,7 @@ document.getElementById('catPills').addEventListener('click',e=>{
   loadCatalog();
 });
 document.getElementById('ctSearch').addEventListener('keydown',e=>{ if(e.key==='Enter') loadCatalog(); });
+document.getElementById('lhSearch').addEventListener('keydown',e=>{ if(e.key==='Enter') loadListingHealth(); });
 document.getElementById('pmActiveOnly').addEventListener('change',()=>{ if(pmMasterCache) renderProductMaster(pmMasterCache); });
 
 /* ========== BUG REPORTS ========== */
