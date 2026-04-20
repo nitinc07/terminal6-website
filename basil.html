@@ -1480,7 +1480,7 @@ function _renderLhTable(d){
   if(f==='shp-not-amz') rows = rows.filter(r => r.shp_variant_id && !r.amz_asin);
   if(f==='both') rows = rows.filter(r => r.amz_asin && r.shp_variant_id);
   if(f==='content-fix') rows = rows.filter(r => r.content_score!=null && r.content_score<67 && r.amz_status==='Active');
-  if(f==='price-gap') rows = rows.filter(r => r.mrp && r.shp_price && Math.abs(r.mrp-r.shp_price)/r.mrp > 0.1);
+  if(f==='price-gap') rows = rows.filter(r => r.amz_price && r.shp_price && Math.abs(r.amz_price-r.shp_price)/r.amz_price > 0.1);
 
   document.getElementById('lhCount').textContent = rows.length+' SKUs';
   if(!rows.length){ el.innerHTML='<div class="empty">No listings match filter</div>'; return; }
@@ -1530,7 +1530,7 @@ function _renderLhTable(d){
       <td class="mn2" style="text-align:center">${_ful(r.amz_fulfillment||[])}</td>
       <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id?(r.shp_handle?`<a href="https://yourbasil.com/products/${r.shp_handle}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:`${r.shp_variant_id}`):'<span style="color:var(--t3)">&mdash;</span>'}</td>
       <td class="mn2" style="text-align:center">${_st(r.shp_status)}</td>
-      <td class="mn2 r">${r.mrp!=null?_pmCur(r.mrp):'--'}</td>
+      <td class="mn2 r">${r.amz_price!=null?_pmCur(r.amz_price):'--'}</td>
       <td class="mn2 r">${r.shp_price!=null?_pmCur(r.shp_price):'--'}</td>
       <td class="mn2 r">${_cc(r.image_count,5)}</td>
       <td class="mn2 r">${_cc(r.bullet_count,5)}</td>
