@@ -501,6 +501,9 @@
         <label style="font-size:12px;color:var(--t2);user-select:none;cursor:pointer;margin-right:8px">
           <input type="checkbox" id="lhActiveOnly" checked style="margin-right:4px;vertical-align:middle" onchange="_lhRerender()" />Hide fully inactive
         </label>
+        <label style="font-size:12px;color:var(--t2);user-select:none;cursor:pointer;margin-right:8px">
+          <input type="checkbox" id="lhHideCustom" checked style="margin-right:4px;vertical-align:middle" onchange="_lhRerender()" />Hide Shopify-only variants (personalisation, customisation)
+        </label>
         <div class="pills" id="lhFilterPills">
           <button data-f="all" class="a" onclick="_lhFilter('all',this)">All</button>
           <button data-f="amz-not-shp" onclick="_lhFilter('amz-not-shp',this)">AMZ only</button>
@@ -1458,23 +1461,43 @@ function loadListingHealth(){
 
 function renderListingHealth(d){
   const k = d.kpis || {};
+  // Count customisation variants from structured option data
+  const customCount = (d.data||[]).filter(r => !r.amz_asin && r.shp_variant_id && _isShpCustomVariant(r)).length;
   document.getElementById('lh-total').textContent = fmt(k.total_skus);
-  document.getElementById('lh-total-sub').textContent = (k.amz_active||0)+' AMZ active, '+(k.shp_active||0)+' SHP active';
+  document.getElementById('lh-total-sub').textContent = (k.amz_active||0)+' AMZ active, '+(k.shp_active||0)+' SHP active'+(customCount ? ', '+customCount+' custom variants' : '');
   document.getElementById('lh-both').textContent = fmt(k.on_both);
   document.getElementById('lh-content').textContent = k.avg_content_score != null ? k.avg_content_score+'%' : '--';
   document.getElementById('lh-attention').textContent = fmt(k.needs_attention);
   _renderLhTable(d);
 }
 
+// Check if a Shopify variant is a customisation-only variant (personalisation, customization, etc.)
+// Uses the brand's own Shopify product option names — no hardcoded rules.
+function _isShpCustomVariant(r){
+  const opts = r.shp_option_values || {};
+  for(const [name, val] of Object.entries(opts)){
+    const nl = name.toLowerCase(), vl = (val||'').toLowerCase();
+    if((nl.includes('personali') || nl.includes('customiz') || nl.includes('customis'))
+       && !vl.startsWith('no ') && vl !== 'none' && vl !== 'without'){
+      return true;
+    }
+  }
+  return false;
+}
+
 function _renderLhTable(d){
   const el = document.getElementById('lh-table');
   let rows = d.data || [];
   const activeOnly = document.getElementById('lhActiveOnly')?.checked;
+  const hideCustom = document.getElementById('lhHideCustom')?.checked;
 
   // Active-only checkbox: keep only rows where at least one channel is Active
   if(activeOnly) rows = rows.filter(r => r.amz_status==='Active' || r.shp_status==='Active');
 
-  // Pill filter (applied on top of active-only)
+  // Hide Shopify customisation variants: Shopify-only rows where the option is a customisation type
+  if(hideCustom) rows = rows.filter(r => !(!r.amz_asin && r.shp_variant_id && _isShpCustomVariant(r)));
+
+  // Pill filter (applied on top of checkboxes)
   const f = _lhActiveFilter;
   if(f==='amz-not-shp') rows = rows.filter(r => r.amz_asin && !r.shp_variant_id);
   if(f==='shp-not-amz') rows = rows.filter(r => r.shp_variant_id && !r.amz_asin);
@@ -1539,7 +1562,15 @@ function _renderLhTable(d){
       <td class="mn2 hi" style="text-align:left">${r.amz_asin?`<a href="https://www.amazon.in/dp/${r.amz_asin}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.amz_asin}</a>`:'<span style="color:var(--t3)">&mdash;</span>'}</td>
       <td class="mn2" style="text-align:center">${_stH(r.amz_status, shpMismatch)}</td>
       <td class="mn2" style="text-align:center">${_ful(r.amz_fulfillment||[])}</td>
-      <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id?(r.shp_handle?`<a href="https://yourbasil.com/products/${r.shp_handle}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:`${r.shp_variant_id}`):'<span style="color:var(--t3)">&mdash;</span>'}</td>
+      <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id?(()=>{
+        let s = r.shp_handle?`<a href="https://yourbasil.com/products/${r.shp_handle}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:`${r.shp_variant_id}`;
+        if(r.shp_variant_title && r.shp_variant_title!=='Default Title') s+=`<div style="font-size:10px;color:var(--t3);margin-top:1px">${r.shp_variant_title}</div>`;
+        const badges=Object.entries(r.shp_option_values||{}).filter(([n])=>n!=='Title').map(([n,v])=>`<span style="font-size:9px;background:var(--bg-cream);padding:1px 4px;border-radius:3px;margin-right:2px" title="${n}">${v}</span>`).join('');
+        if(badges) s+='<div style="margin-top:2px">'+badges+'</div>';
+        const tagBadges=(r.shp_tags||[]).filter(t=>['sd_preorder','bundle','imperfect','kwikcart-freebie'].includes(t)).map(t=>`<span style="font-size:9px;background:#e8eaf6;padding:1px 4px;border-radius:3px;margin-right:2px">${t.replace('sd_','')}</span>`).join('');
+        if(tagBadges) s+='<div style="margin-top:2px">'+tagBadges+'</div>';
+        return s;
+      })():'<span style="color:var(--t3)">&mdash;</span>'}</td>
       <td class="mn2" style="text-align:center">${_stH(r.shp_status, amzMismatch)}</td>
       <td class="mn2 r">${_prH(r.amz_price, hasPriceGap)}</td>
       <td class="mn2 r">${_prH(r.shp_price, hasPriceGap)}</td>
