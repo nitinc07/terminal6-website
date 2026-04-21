@@ -1553,14 +1553,17 @@ function _renderLhTable(d){
     const hasPriceGap = r.amz_price && r.shp_price && r.amz_status==='Active' && r.shp_status==='Active' && Math.abs(r.amz_price-r.shp_price)/Math.max(r.amz_price,r.shp_price) > 0.1;
     const rowStyle = bothInactive ? 'opacity:0.45' : (statusMismatch ? 'background:#fff3e0' : '');
     // Status cell highlighting
-    const _stH=(s,warn)=> s==='Active' ? '<span style="color:var(--pos);font-weight:500">Active</span>' : (s==='Inactive' ? `<span style="color:${warn?'#c62828':'var(--neg)'};font-weight:${warn?'600':'400'}">${warn?'⚠ ':''}Inactive</span>` : '<span style="color:var(--t3)">&mdash;</span>');
+    const _stH=(s,warn,suppressed)=> {
+      if(suppressed) return '<span style="color:#c62828;font-weight:600" title="Listing is Active but offer is suppressed — shows Currently Unavailable on Amazon">Suppressed</span>';
+      return s==='Active' ? '<span style="color:var(--pos);font-weight:500">Active</span>' : (s==='Inactive' ? `<span style="color:${warn?'#c62828':'var(--neg)'};font-weight:${warn?'600':'400'}">${warn?'⚠ ':''}Inactive</span>` : '<span style="color:var(--t3)">&mdash;</span>');
+    };
     // Price cell with mismatch highlight
     const _prH=(v,warn)=> v!=null ? `<span style="${warn?'color:#c62828;font-weight:600':''}">${_pmCur(v)}</span>` : '--';
     h+=`<tr style="${rowStyle}">
       <td>${img}</td>
       <td style="text-align:left"><strong style="font-size:12px">${name}</strong><div style="font-size:10.5px;color:var(--t3);font-family:var(--mono)">${r.seller_sku}</div></td>
       <td class="mn2 hi" style="text-align:left">${r.amz_asin?`<a href="https://www.amazon.in/dp/${r.amz_asin}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.amz_asin}</a>`:'<span style="color:var(--t3)">&mdash;</span>'}</td>
-      <td class="mn2" style="text-align:center">${_stH(r.amz_status, shpMismatch)}</td>
+      <td class="mn2" style="text-align:center">${_stH(r.amz_status, shpMismatch, r.amz_suppressed)}</td>
       <td class="mn2" style="text-align:center">${_ful(r.amz_fulfillment||[])}</td>
       <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id?(()=>{
         let s = r.shp_handle?`<a href="https://yourbasil.com/products/${r.shp_handle}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:`${r.shp_variant_id}`;
