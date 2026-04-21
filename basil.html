@@ -861,6 +861,11 @@ function productLink(name, mskuId, maxLen){
   if(!mskuId) return '<span title="'+escaped+'">'+trimmed+'</span>';
   return '<a href="/product.html?msku='+mskuId+'" title="'+escaped+'" onclick="event.stopPropagation()" style="color:var(--t1);text-decoration:none;border-bottom:1px dotted var(--t3)" onmouseover="this.style.color=\'var(--acc)\'" onmouseout="this.style.color=\'var(--t1)\'">'+trimmed+'</a>';
 }
+/* Makes seller_sku clickable — navigates to product.html?msku={id}&sku={seller_sku} for child view */
+function skuLink(sellerSku, mskuId){
+  if(!mskuId || !sellerSku) return '<span style="font-family:var(--mono)">'+sellerSku+'</span>';
+  return '<a href="/product.html?msku='+mskuId+'&sku='+encodeURIComponent(sellerSku)+'" onclick="event.stopPropagation()" style="font-family:var(--mono);color:var(--t2);text-decoration:none;border-bottom:1px dotted var(--t3)" onmouseover="this.style.color=\'var(--acc)\'" onmouseout="this.style.color=\'var(--t2)\'">'+sellerSku+'</a>';
+}
 
 /* ========== BASIL-SPECIFIC FORMATTERS ========== */
 function rkBadge(r){
@@ -1594,7 +1599,7 @@ function _renderLhTable(d){
     const _prH=(v,warn)=> v!=null ? `<span style="${warn?'color:#c62828;font-weight:600':''}">${_pmCur(v)}</span>` : '--';
     h+=`<tr style="${rowStyle}">
       <td>${img}</td>
-      <td style="text-align:left"><strong style="font-size:12px">${nameHtml}</strong><div style="font-size:10.5px;color:var(--t3);font-family:var(--mono)">${r.seller_sku}</div></td>
+      <td style="text-align:left"><strong style="font-size:12px">${nameHtml}</strong><div style="font-size:10.5px;color:var(--t3)">${skuLink(r.seller_sku, r.msku_id)}</div></td>
       <td class="mn2 hi" style="text-align:left">${r.amz_asin?`<a href="https://www.amazon.in/dp/${r.amz_asin}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.amz_asin}</a>`:'<span style="color:var(--t3)">&mdash;</span>'}</td>
       <td class="mn2" style="text-align:center">${_stH(r.amz_status, shpMismatch, r.amz_suppressed)}</td>
       <td class="mn2" style="text-align:center">${_ful(r.amz_fulfillment||[])}</td>

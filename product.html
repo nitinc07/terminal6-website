@@ -299,6 +299,7 @@
   'use strict';
   var params = new URLSearchParams(location.search);
   var mskuId = params.get('msku');
+  var skuFilter = params.get('sku') || '';
   var days = parseInt(params.get('days') || '30', 10);
   var slug = window.T6_BRAND_SLUG || 'basil';
   document.getElementById('backLink').href = '/' + slug + '.html';
@@ -321,7 +322,10 @@
     });
   });
 
-  api('/v1/products/'+mskuId+'?days='+days).then(render).catch(function(e){
+  var apiUrl = '/v1/products/'+mskuId+'?days='+days;
+  if(skuFilter) apiUrl += '&sku='+encodeURIComponent(skuFilter);
+
+  api(apiUrl).then(render).catch(function(e){
     document.getElementById('pd-loading').style.display='none';
     document.getElementById('pd-error').style.display='block';
     document.getElementById('pd-error').innerHTML='<div class="error">'+(e.message||e)+'</div>';
