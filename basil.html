@@ -1460,6 +1460,7 @@ function loadListingHealth(){
 }
 
 function renderListingHealth(d){
+  _detectCustomOpts(d);
   const k = d.kpis || {};
   // Count customisation variants from structured option data
   const customCount = (d.data||[]).filter(r => !r.amz_asin && r.shp_variant_id && _isShpCustomVariant(r)).length;
@@ -1471,16 +1472,38 @@ function renderListingHealth(d){
   _renderLhTable(d);
 }
 
-// Check if a Shopify variant is a customisation-only variant (personalisation, customization, etc.)
-// Uses the brand's own Shopify product option names — no hardcoded rules.
+// Check if a Shopify variant is a customisation-only variant.
+// Uses the brand's own Shopify option names from the API (shp_option_names on the response)
+// to identify which option dimensions are customisation dimensions.
+// _lhCustomOpts is populated from the API response — no hardcoded keywords.
+let _lhCustomOpts = new Set();
+
+function _detectCustomOpts(d){
+  // Option names that have both a "yes" and "no" variant value across the dataset
+  // are customisation dimensions (e.g., Personalisation: "No Personalisation" vs "Personalisation")
+  const optVals = {};  // optName → Set of values
+  for(const r of (d.data||[])){
+    for(const [name, val] of Object.entries(r.shp_option_values||{})){
+      if(!optVals[name]) optVals[name] = new Set();
+      optVals[name].add((val||'').toLowerCase());
+    }
+  }
+  _lhCustomOpts = new Set();
+  for(const [name, vals] of Object.entries(optVals)){
+    // If any value starts with "no " or is "none"/"without", this is a yes/no customisation option
+    const hasNeg = [...vals].some(v => v.startsWith('no ') || v === 'none' || v === 'without');
+    const hasPos = [...vals].some(v => !v.startsWith('no ') && v !== 'none' && v !== 'without' && v !== 'default title');
+    if(hasNeg && hasPos) _lhCustomOpts.add(name);
+  }
+}
+
 function _isShpCustomVariant(r){
+  if(!_lhCustomOpts.size) return false;
   const opts = r.shp_option_values || {};
   for(const [name, val] of Object.entries(opts)){
-    const nl = name.toLowerCase(), vl = (val||'').toLowerCase();
-    if((nl.includes('personali') || nl.includes('customiz') || nl.includes('customis'))
-       && !vl.startsWith('no ') && vl !== 'none' && vl !== 'without'){
-      return true;
-    }
+    if(!_lhCustomOpts.has(name)) continue;
+    const vl = (val||'').toLowerCase();
+    if(!vl.startsWith('no ') && vl !== 'none' && vl !== 'without') return true;
   }
   return false;
 }
