@@ -1567,8 +1567,7 @@ function _renderLhTable(d){
         if(r.shp_variant_title && r.shp_variant_title!=='Default Title') s+=`<div style="font-size:10px;color:var(--t3);margin-top:1px">${r.shp_variant_title}</div>`;
         const badges=Object.entries(r.shp_option_values||{}).filter(([n])=>n!=='Title').map(([n,v])=>`<span style="font-size:9px;background:var(--bg-cream);padding:1px 4px;border-radius:3px;margin-right:2px" title="${n}">${v}</span>`).join('');
         if(badges) s+='<div style="margin-top:2px">'+badges+'</div>';
-        const tagBadges=(r.shp_tags||[]).filter(t=>['bundle','imperfect'].includes(t)).map(t=>`<span style="font-size:9px;background:#e8eaf6;padding:1px 4px;border-radius:3px;margin-right:2px">${t}</span>`).join('');
-        if(tagBadges) s+='<div style="margin-top:2px">'+tagBadges+'</div>';
+        if(r.shp_is_preorder) s+='<div style="margin-top:2px"><span style="font-size:9px;background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:3px;font-weight:500">Pre-order</span></div>';
         return s;
       })():'<span style="color:var(--t3)">&mdash;</span>'}</td>
       <td class="mn2" style="text-align:center">${_stH(r.shp_status, amzMismatch)}</td>
