@@ -1606,7 +1606,7 @@ function _renderLhTable(d){
       <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id?(()=>{
         let s = r.shp_handle?`<a href="https://yourbasil.com/products/${r.shp_handle}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:`${r.shp_variant_id}`;
         if(r.shp_variant_title && r.shp_variant_title!=='Default Title') s+=`<div style="font-size:10px;color:var(--t3);margin-top:1px">${r.shp_variant_title}</div>`;
-        const badges=Object.entries(r.shp_option_values||{}).filter(([n])=>n!=='Title').map(([n,v])=>`<span style="font-size:9px;background:var(--bg-cream);padding:1px 4px;border-radius:3px;margin-right:2px" title="${n}">${v}</span>`).join('');
+        const badges=Object.entries(r.shp_option_values||{}).filter(([n])=>n!=='Title'&&n!=='Personalisation').map(([n,v])=>`<span style="font-size:9px;background:var(--bg-cream);padding:1px 4px;border-radius:3px;margin-right:2px" title="${n}">${v}</span>`).join('');
         if(badges) s+='<div style="margin-top:2px">'+badges+'</div>';
         if(r.shp_is_preorder) s+='<div style="margin-top:2px"><span style="font-size:9px;background:#fff3e0;color:#e65100;padding:1px 5px;border-radius:3px;font-weight:500">Pre-order</span></div>';
         return s;
