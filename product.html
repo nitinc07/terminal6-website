@@ -462,7 +462,7 @@
     document.getElementById('sales-sub').textContent = d.listing_snapshot && d.listing_snapshot.snapshot_date
       ? 'Last updated: '+d.listing_snapshot.snapshot_date : '';
 
-    // Multi-period KPI grid
+    // Multi-period KPI grid (combined across channels)
     if(sk['7d'] || sk['30d'] || sk['90d']){
       var html = '<div class="kpi-periods">';
       ['7d','30d','90d'].forEach(function(period){
@@ -480,6 +480,9 @@
       document.getElementById('sales-kpis').innerHTML = html;
     }
 
+    // Channel breakdown (below the combined KPIs)
+    renderChannelBreakdown(d.sales_trend);
+
     // BSR
     var snap = d.listing_snapshot || {};
     if(snap.bsr){
@@ -489,18 +492,68 @@
         '<span class="bsr-badge">#'+fmt(snap.bsr)+(cat ? ' in '+esc(cat) : '')+'</span>';
     }
 
-    // Sales chart (simple SVG line)
+    // Sales chart
     renderSalesChart(d.sales_trend);
 
-    // Sales table (last 14 days)
-    renderSalesTable(d.sales_trend);
+    // Hide the table container (no daily table)
+    document.getElementById('sales-table').style.display = 'none';
+  }
+
+  function renderChannelBreakdown(trend){
+    if(!trend || !trend.length) return;
+    // Aggregate by channel
+    var byCh = {};
+    trend.forEach(function(r){
+      if(!byCh[r.channel]) byCh[r.channel] = {revenue:0, units:0, orders:0};
+      byCh[r.channel].revenue += r.revenue||0;
+      byCh[r.channel].units += r.units||0;
+      byCh[r.channel].orders += r.orders||0;
+    });
+    var channels = Object.keys(byCh);
+    if(channels.length <= 1) return; // no breakdown needed for single channel
+
+    var totalRev = channels.reduce(function(a,ch){ return a + byCh[ch].revenue; }, 0);
+    var chNames = {AMAZON_IN:'Amazon',SHOPIFY:'Shopify',FLIPKART_IN:'Flipkart',MYNTRA:'Myntra'};
+    var chColors = {AMAZON_IN:'#FF9900',SHOPIFY:'#96bf48',FLIPKART_IN:'#2874f0',MYNTRA:'#ff3f6c'};
+
+    var html = '<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bg-cream)">';
+    html += '<div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;font-weight:600;margin-bottom:10px">Channel Breakdown</div>';
+
+    // Stacked bar
+    if(totalRev > 0){
+      html += '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:10px">';
+      channels.forEach(function(ch){
+        var pctW = byCh[ch].revenue / totalRev * 100;
+        if(pctW > 0) html += '<div style="width:'+pctW.toFixed(1)+'%;background:'+(chColors[ch]||'#999')+'"></div>';
+      });
+      html += '</div>';
+    }
+
+    // Per-channel row
+    html += '<div style="display:grid;grid-template-columns:repeat('+Math.min(channels.length,4)+',1fr);gap:12px">';
+    channels.forEach(function(ch){
+      var c = byCh[ch];
+      var share = totalRev > 0 ? (c.revenue/totalRev*100).toFixed(0)+'%' : '--';
+      html += '<div style="font-size:12px">';
+      html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">';
+      html += '<span style="width:8px;height:8px;border-radius:2px;background:'+(chColors[ch]||'#999')+'"></span>';
+      html += '<span style="font-weight:600;color:var(--t1)">'+(chNames[ch]||ch)+'</span>';
+      html += '<span style="font-size:10px;color:var(--t3)">'+share+'</span>';
+      html += '</div>';
+      html += '<div style="color:var(--t2)">'+cur(c.revenue)+' &middot; '+fmt(c.units)+' units</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+
+    // Append after the KPIs
+    document.getElementById('sales-kpis').innerHTML += html;
   }
 
   function renderSalesChart(trend){
     var el = document.getElementById('sales-chart');
     if(!trend || !trend.length){ el.style.display='none'; return; }
 
-    // Aggregate by date
+    // Aggregate by date (combined)
     var byDate = {};
     trend.forEach(function(r){
       if(!byDate[r.date]) byDate[r.date] = 0;
@@ -519,43 +572,19 @@
       return x.toFixed(1)+','+y.toFixed(1);
     });
     var polyline = points.join(' ');
-    // Area fill
     var area = padX+','+h+' '+polyline+' '+(padX + ((vals.length-1)/Math.max(vals.length-1,1))*(w-2*padX)).toFixed(1)+','+h;
 
     var svg = '<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">';
     svg += '<polygon points="'+area+'" fill="rgba(59,130,246,0.08)" />';
     svg += '<polyline points="'+polyline+'" fill="none" stroke="#3B82F6" stroke-width="0.5" />';
-    // Latest value label
-    var lastVal = vals[vals.length-1];
     svg += '<circle cx="'+points[points.length-1].split(',')[0]+'" cy="'+points[points.length-1].split(',')[1]+'" r="1" fill="#3B82F6" />';
     svg += '</svg>';
-    // Axis labels
     svg += '<div style="display:flex;justify-content:space-between;padding:4px 8px;font-size:10px;color:var(--t3)">';
     svg += '<span>'+shortD(dates[0])+'</span>';
-    svg += '<span style="color:var(--t1);font-weight:600">'+cur(lastVal)+'</span>';
+    svg += '<span style="color:var(--t1);font-weight:600">'+cur(vals[vals.length-1])+'</span>';
     svg += '<span>'+shortD(dates[dates.length-1])+'</span>';
     svg += '</div>';
     el.innerHTML = svg;
-  }
-
-  function renderSalesTable(trend){
-    var el = document.getElementById('sales-table');
-    if(!trend || !trend.length){ el.innerHTML='<div class="empty">No sales data</div>'; return; }
-    var byDate = {};
-    trend.forEach(function(r){
-      if(!byDate[r.date]) byDate[r.date] = {date:r.date,revenue:0,units:0,orders:0};
-      byDate[r.date].revenue += r.revenue||0;
-      byDate[r.date].units += r.units||0;
-      byDate[r.date].orders += r.orders||0;
-    });
-    var dates = Object.keys(byDate).sort().slice(-14);
-    var h = '<table class="dt" style="font-size:12px"><thead><tr><th>Date</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th></tr></thead><tbody>';
-    dates.forEach(function(d){
-      var r = byDate[d];
-      h += '<tr><td>'+shortD(d)+'</td><td class="r">'+cur(r.revenue)+'</td><td class="r">'+fmt(r.units)+'</td><td class="r">'+fmt(r.orders)+'</td></tr>';
-    });
-    h += '</tbody></table>';
-    el.innerHTML = h;
   }
 
   /* ─────────── PRICING ─────────── */
