@@ -1567,7 +1567,7 @@ function _renderLhTable(d){
         if(r.shp_variant_title && r.shp_variant_title!=='Default Title') s+=`<div style="font-size:10px;color:var(--t3);margin-top:1px">${r.shp_variant_title}</div>`;
         const badges=Object.entries(r.shp_option_values||{}).filter(([n])=>n!=='Title').map(([n,v])=>`<span style="font-size:9px;background:var(--bg-cream);padding:1px 4px;border-radius:3px;margin-right:2px" title="${n}">${v}</span>`).join('');
         if(badges) s+='<div style="margin-top:2px">'+badges+'</div>';
-        const tagBadges=(r.shp_tags||[]).filter(t=>['sd_preorder','bundle','imperfect','kwikcart-freebie'].includes(t)).map(t=>`<span style="font-size:9px;background:#e8eaf6;padding:1px 4px;border-radius:3px;margin-right:2px">${t.replace('sd_','')}</span>`).join('');
+        const tagBadges=(r.shp_tags||[]).filter(t=>['bundle','imperfect'].includes(t)).map(t=>`<span style="font-size:9px;background:#e8eaf6;padding:1px 4px;border-radius:3px;margin-right:2px">${t}</span>`).join('');
         if(tagBadges) s+='<div style="margin-top:2px">'+tagBadges+'</div>';
         return s;
       })():'<span style="color:var(--t3)">&mdash;</span>'}</td>
