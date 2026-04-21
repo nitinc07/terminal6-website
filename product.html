@@ -12,81 +12,120 @@
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css?v=2026-04-21a">
+<link rel="stylesheet" href="/shared.css?v=2026-04-21b">
 <style>
-/* Product detail page — minimal additions on top of shared.css */
+/* ── Seller Central-inspired product detail page ── */
 
-.pd-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--tm);text-decoration:none;margin-bottom:18px;font-weight:500}
+/* Layout: left sidebar + right content */
+.pd-layout{display:grid;grid-template-columns:240px 1fr;gap:0;min-height:100vh}
+@media(max-width:900px){.pd-layout{grid-template-columns:1fr;}}
+
+/* ── LEFT SIDEBAR ── */
+.pd-side{background:var(--bg-white);border-right:1px solid var(--border);padding:24px 20px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.pd-back{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--tm);text-decoration:none;margin-bottom:16px;font-weight:500}
 .pd-back:hover{text-decoration:underline}
+.pd-side-img{width:120px;height:120px;border-radius:var(--rad);border:1px solid var(--border-s);object-fit:contain;background:var(--bg-cream);display:block;margin:0 auto 14px}
+.pd-side-img-ph{width:120px;height:120px;border-radius:var(--rad);border:1px solid var(--border);background:var(--bg-cream);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:32px;margin:0 auto 14px}
 
-/* Hero section */
-.pd-hero{display:flex;gap:24px;align-items:flex-start;margin-bottom:28px}
-.pd-img{width:160px;height:160px;border-radius:var(--rad);border:1px solid var(--border-s);object-fit:contain;background:var(--bg-white);flex-shrink:0}
-.pd-img-placeholder{width:160px;height:160px;border-radius:var(--rad);border:1px solid var(--border);background:var(--bg-cream);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:32px;flex-shrink:0}
-.pd-meta{flex:1;min-width:0}
-.pd-title{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--t1);margin:0 0 6px;line-height:1.3}
-.pd-sku{font-family:var(--mono);font-size:12px;color:var(--t3);margin-bottom:10px}
-.pd-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-.pd-tag{font-size:11px;padding:3px 10px;border-radius:12px;background:var(--bg-cream);color:var(--t2);font-weight:500}
-.pd-tag.parent{background:var(--gl);color:var(--g)}
-.pd-tag.active{background:var(--gl);color:var(--g)}
-.pd-tag.inactive{background:var(--al);color:var(--a)}
-.pd-prices{display:flex;gap:20px;font-size:13px;color:var(--t2)}
-.pd-prices strong{color:var(--t1)}
+/* Status badge */
+.pd-status{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:4px;margin-bottom:10px}
+.pd-status.active{background:var(--gl);color:var(--g)}
+.pd-status.inactive{background:var(--al);color:var(--a)}
+.pd-status.suppressed{background:var(--rl);color:var(--r)}
 
-/* Anomaly banners */
-.pd-alerts{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+/* SKU/ASIN identifiers */
+.pd-ids{font-size:11.5px;color:var(--t2);line-height:1.8;margin-bottom:16px}
+.pd-ids .lbl{color:var(--t3);font-size:10px;text-transform:uppercase;letter-spacing:.3px}
+.pd-ids .val{font-family:var(--mono);font-weight:500;color:var(--t1)}
+.pd-ids a{color:var(--acc-t);text-decoration:none}
+.pd-ids a:hover{text-decoration:underline}
+
+/* Sidebar nav */
+.pd-nav{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
+.pd-nav a{display:block;padding:7px 10px;font-size:13px;color:var(--tm);text-decoration:none;border-radius:var(--rs);font-weight:500;margin-bottom:2px}
+.pd-nav a:hover{background:var(--bg-cream)}
+.pd-nav a.act{background:var(--bg-cream);color:var(--t1);font-weight:600;border-left:3px solid var(--acc)}
+
+/* Channel tags in sidebar */
+.pd-ch-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+.pd-ch-tag{font-size:9px;font-weight:600;color:#fff;padding:2px 7px;border-radius:3px}
+.pd-ch-tag.amz{background:#FF9900}
+.pd-ch-tag.shp{background:#96bf48}
+.pd-ch-tag.fk{background:#2874f0}
+.pd-ch-tag.myn{background:#ff3f6c}
+.pd-ch-tag.other{background:#999}
+
+/* ── RIGHT CONTENT ── */
+.pd-main{padding:24px 32px;max-width:900px}
+
+/* Product title bar */
+.pd-title-bar{margin-bottom:24px}
+.pd-title{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--t1);line-height:1.3;margin:0 0 6px}
+
+/* Anomaly alerts */
+.pd-alerts{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
 .pd-alert{padding:10px 14px;border-radius:var(--rad);font-size:12.5px;display:flex;align-items:center;gap:8px}
 .pd-alert.red{background:var(--rl);color:var(--r);border:1px solid var(--r)}
 .pd-alert.amber{background:#FFF4E5;color:#B8860B;border:1px solid #E8C547}
 
-/* Channel cards */
-.ch-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:28px}
-.ch-card{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:14px 16px;box-shadow:var(--sh)}
-.ch-card-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.ch-card-ch{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--t2)}
-.ch-card-status{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600}
-.ch-card-status.active{background:var(--gl);color:var(--g)}
-.ch-card-status.inactive{background:var(--al);color:var(--a)}
-.ch-card-status.suppressed{background:var(--rl);color:var(--r)}
-.ch-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid var(--bg-cream)}
-.ch-row:last-child{border:none}
-.ch-row .lbl{color:var(--t3)}
-.ch-row .val{font-family:var(--mono);color:var(--t1);font-weight:500}
+/* Section container — matches Seller Central card style */
+.pd-card{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:20px 22px;margin-bottom:20px;box-shadow:var(--sh)}
+.pd-card-h{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--t1);margin:0 0 4px;display:flex;align-items:center;justify-content:space-between}
+.pd-card-sub{font-size:11px;color:var(--t3);margin-bottom:16px}
 
-/* Content score bar */
-.cs-bar{height:6px;border-radius:3px;background:var(--bg-cream);overflow:hidden;margin-top:4px}
-.cs-fill{height:100%;border-radius:3px;transition:width .3s}
+/* Multi-period KPI grid (like Seller Central sales header) */
+.kpi-periods{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--rad);overflow:hidden;margin-bottom:16px}
+.kpi-period{padding:12px 16px;border-right:1px solid var(--border);text-align:center}
+.kpi-period:last-child{border-right:none}
+.kpi-period .per-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px}
+.kpi-period .per-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px}
+.kpi-period .per-row .lbl{color:var(--t3)}
+.kpi-period .per-row .val{font-family:var(--mono);font-weight:600;color:var(--t1)}
 
-/* Section cards (sales, P&L, etc.) */
-.pd-sec{margin-bottom:28px}
-.pd-sec-h{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--t1);margin:0 0 14px;display:flex;align-items:center;gap:10px}
-.pd-sec-h .note{font-family:var(--sans);font-size:11px;color:var(--t3);font-weight:400}
+/* BSR badge */
+.bsr-badge{display:inline-block;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--t1);padding:4px 12px;border:1px solid var(--border);border-radius:var(--rad);background:var(--bg-cream)}
 
-/* P&L waterfall */
-.wf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px}
-.wf-item{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:10px 12px;text-align:center}
-.wf-item .wf-label{font-size:10.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
-.wf-item .wf-val{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--t1)}
-.wf-item .wf-pct{font-size:10px;color:var(--t3);margin-top:2px}
-.wf-item.green .wf-val{color:var(--g)}
-.wf-item.red .wf-val{color:var(--r)}
+/* Sales chart area */
+.chart-area{position:relative;height:180px;margin:16px 0 8px;border:1px solid var(--bg-cream);border-radius:var(--rad);overflow:hidden;background:var(--bg-white)}
+.chart-svg{width:100%;height:100%}
 
-/* Inventory bar */
-.inv-bars{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
-.inv-bar-item{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:12px 16px;min-width:120px;text-align:center}
-.inv-bar-item .inv-label{font-size:10.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px}
-.inv-bar-item .inv-val{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--t1)}
+/* Pricing panel */
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.price-col h4{font-size:13px;font-weight:600;color:var(--t1);margin:0 0 10px}
+.price-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--bg-cream)}
+.price-row:last-child{border:none}
+.price-row .lbl{color:var(--t3)}
+.price-row .val{font-family:var(--mono);font-weight:600;color:var(--t1)}
+.price-row .val.green{color:var(--g)}
 
-/* Ads summary cards */
-.ads-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px}
-.ads-card{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:12px 14px}
-.ads-card .ad-type{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--t2);margin-bottom:6px}
-.ads-card .ad-row{display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0}
-.ads-card .ad-row .lbl{color:var(--t3)}
-.ads-card .ad-row .val{font-family:var(--mono);font-weight:500;color:var(--t1)}
+/* Inventory panel — matches Seller Central layout */
+.inv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.inv-col h4{font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.3px;margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.inv-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px}
+.inv-row .lbl{color:var(--t3)}
+.inv-row .val{font-family:var(--mono);font-weight:500;color:var(--t1)}
+.inv-row .val.zero{color:var(--t3)}
+.inv-row .val.warn{color:var(--r);font-weight:600}
 
-/* SERP table */
+/* P&L waterfall bar chart */
+.wf-bar{display:flex;align-items:flex-end;gap:4px;height:120px;padding:8px 0;margin-bottom:8px}
+.wf-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.wf-col .bar{width:100%;border-radius:3px 3px 0 0;min-height:2px;transition:height .3s}
+.wf-col .bar.pos{background:var(--g)}
+.wf-col .bar.neg{background:var(--r)}
+.wf-col .bar.neutral{background:var(--border)}
+.wf-col .wf-lbl{font-size:8.5px;color:var(--t3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.wf-col .wf-amt{font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--t1);text-align:center}
+
+/* Ads cards */
+.ads-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:14px}
+.ad-card{background:var(--bg-cream);border-radius:var(--rad);padding:12px 14px}
+.ad-card .ad-type{font-size:11px;font-weight:600;text-transform:uppercase;color:var(--t2);margin-bottom:8px;letter-spacing:.3px}
+.ad-card .ad-row{display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0}
+.ad-card .ad-row .lbl{color:var(--t3)}
+.ad-card .ad-row .val{font-family:var(--mono);font-weight:500;color:var(--t1)}
+
+/* SERP rank badges */
 .rk{display:inline-block;min-width:28px;text-align:center;padding:3px 8px;border-radius:6px;font-family:var(--mono);font-size:11px;font-weight:600}
 .rk.top{background:var(--gl);color:var(--g)}
 .rk.ok{background:#FFF8E1;color:#B8860B}
@@ -94,166 +133,175 @@
 .rk.none{background:var(--bg-cream);color:var(--t3);font-weight:400}
 
 /* Reviews */
-.rv-dist{display:flex;gap:8px;align-items:center;margin-bottom:14px}
-.rv-avg{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--t1)}
-.rv-bars{flex:1;max-width:260px}
+.rv-header{display:flex;gap:20px;align-items:center;margin-bottom:16px}
+.rv-avg{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--t1);line-height:1}
+.rv-avg-sub{font-size:11px;color:var(--t3);margin-top:4px}
+.rv-bars{flex:1;max-width:240px}
 .rv-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .rv-bar-row .star{font-size:11px;color:var(--t2);width:16px;text-align:right}
 .rv-bar-row .bar{flex:1;height:8px;background:var(--bg-cream);border-radius:4px;overflow:hidden}
 .rv-bar-row .bar .fill{height:100%;background:var(--a);border-radius:4px}
 .rv-bar-row .cnt{font-size:10px;color:var(--t3);width:24px;font-family:var(--mono)}
-.rv-card{background:var(--bg-white);border:1px solid var(--border-s);border-radius:var(--rad);padding:12px 14px;margin-bottom:8px}
-.rv-card-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.rv-card{background:var(--bg-cream);border-radius:var(--rad);padding:12px 14px;margin-bottom:8px}
+.rv-card-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .rv-stars{color:var(--a);font-size:12px;letter-spacing:1px}
 .rv-card-date{font-size:10.5px;color:var(--t3)}
-.rv-card-title{font-weight:600;font-size:13px;color:var(--t1);margin-bottom:4px}
+.rv-card-title{font-weight:600;font-size:13px;color:var(--t1);margin-bottom:3px}
 .rv-card-body{font-size:12px;color:var(--t2);line-height:1.5}
 .rv-themes{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.rv-theme{font-size:10px;padding:2px 8px;border-radius:8px;background:var(--bg-cream);color:var(--t2)}
+.rv-theme{font-size:10px;padding:2px 8px;border-radius:8px;background:var(--bg-white);color:var(--t2)}
 
-/* Returns table */
-.ret-row{display:grid;grid-template-columns:1fr 100px 80px 80px;gap:8px;padding:6px 0;border-bottom:1px solid var(--bg-cream);font-size:12px}
-.ret-row.header{font-weight:600;color:var(--t2);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+/* Content health bar */
+.cs-bar{height:6px;border-radius:3px;background:var(--bg-cream);overflow:hidden;margin-top:4px}
+.cs-fill{height:100%;border-radius:3px}
 
 /* Variants table */
-.var-table{width:100%;border-collapse:collapse;font-size:12px}
-.var-table th{text-align:left;font-size:10.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border-bottom:1px solid var(--border)}
-.var-table td{padding:6px 8px;border-bottom:1px solid var(--bg-cream);color:var(--t2)}
-.var-table .var-img{width:32px;height:32px;border-radius:4px;object-fit:contain;background:var(--bg-cream)}
+.var-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.var-tbl th{text-align:left;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border-bottom:1px solid var(--border)}
+.var-tbl td{padding:6px 8px;border-bottom:1px solid var(--bg-cream);color:var(--t2)}
+.var-tbl .vi{width:32px;height:32px;border-radius:4px;object-fit:contain;background:var(--bg-cream)}
 
-/* Mini sparkline via inline SVG */
-.spark{display:inline-block;vertical-align:middle}
-
-/* Responsive */
-@media(max-width:768px){
-  .pd-hero{flex-direction:column;align-items:center;text-align:center}
-  .pd-tags{justify-content:center}
-  .pd-prices{justify-content:center}
-  .ch-cards{grid-template-columns:1fr}
-  .wf-grid{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){
+  .pd-side{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .pd-main{padding:16px}
+  .kpi-periods{grid-template-columns:1fr}
+  .kpi-period{border-right:none;border-bottom:1px solid var(--border)}
+  .kpi-period:last-child{border-bottom:none}
+  .inv-grid{grid-template-columns:1fr}
+  .price-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 <script>
-/* Determine brand slug from subdomain or fallback */
 (function(){
-  var h = location.hostname;
-  var parts = h.split('.');
-  if(parts.length >= 3 && parts[1] === 'terminal6' && parts[0] !== 'www' && parts[0] !== 'dev'){
+  var h = location.hostname, parts = h.split('.');
+  if(parts.length >= 3 && parts[1] === 'terminal6' && parts[0] !== 'www' && parts[0] !== 'dev')
     window.T6_BRAND_SLUG = parts[0];
-  } else if(parts.length >= 4 && parts[0] === 'dev'){
+  else if(parts.length >= 4 && parts[0] === 'dev')
     window.T6_BRAND_SLUG = parts[1];
-  } else {
-    window.T6_BRAND_SLUG = 'basil'; // fallback for local dev
-  }
-  document.title = 'Terminal6 — ' + window.T6_BRAND_SLUG.charAt(0).toUpperCase() + window.T6_BRAND_SLUG.slice(1) + ' — Product';
+  else window.T6_BRAND_SLUG = 'basil';
 })();
 </script>
-<script src="/shared.js?v=2026-04-21a"></script>
+<script src="/shared.js?v=2026-04-21b"></script>
 
-<main style="max-width:960px;margin:0 auto;padding:28px 24px">
-  <!-- Back link -->
-  <a class="pd-back" id="backLink" href="javascript:history.back()">&larr; Back to dashboard</a>
+<div id="pd-loading" style="padding:60px;text-align:center" class="loading">Loading product...</div>
+<div id="pd-error" style="display:none;padding:60px"></div>
 
-  <!-- Loading state -->
-  <div id="pd-loading" class="loading">Loading product data...</div>
+<div class="pd-layout" id="pd-layout" style="display:none">
 
-  <!-- Error state -->
-  <div id="pd-error" style="display:none"></div>
+  <!-- LEFT SIDEBAR -->
+  <aside class="pd-side">
+    <a class="pd-back" id="backLink" href="javascript:history.back()">&larr; Back</a>
+    <div id="pd-side-img"></div>
+    <div id="pd-side-status"></div>
+    <div class="pd-ch-tags" id="pd-ch-tags"></div>
+    <div class="pd-ids" id="pd-ids"></div>
 
-  <!-- Content (hidden until loaded) -->
-  <div id="pd-content" style="display:none">
+    <nav class="pd-nav" id="pd-nav">
+      <a href="#sec-sales" class="act">Sales</a>
+      <a href="#sec-pricing">Pricing</a>
+      <a href="#sec-inventory">Inventory</a>
+      <a href="#sec-pnl">SKU Economics</a>
+      <a href="#sec-ads">Ads</a>
+      <a href="#sec-serp">SERP</a>
+      <a href="#sec-reviews">Reviews</a>
+      <a href="#sec-returns">Returns</a>
+      <a href="#sec-content">Content Health</a>
+    </nav>
+  </aside>
 
-    <!-- HERO -->
-    <div class="pd-hero">
-      <div id="pd-image"></div>
-      <div class="pd-meta">
-        <h1 class="pd-title" id="pd-name">--</h1>
-        <div class="pd-sku" id="pd-sku">--</div>
-        <div class="pd-tags" id="pd-tags"></div>
-        <div class="pd-prices" id="pd-prices"></div>
-      </div>
+  <!-- RIGHT CONTENT -->
+  <main class="pd-main">
+    <div class="pd-title-bar">
+      <h1 class="pd-title" id="pd-title">--</h1>
     </div>
 
-    <!-- ANOMALY ALERTS -->
     <div class="pd-alerts" id="pd-alerts"></div>
 
-    <!-- CHANNEL PRESENCE -->
-    <div class="pd-sec">
-      <h3 class="pd-sec-h">Channel Presence</h3>
-      <div class="ch-cards" id="pd-channels"></div>
+    <!-- SALES -->
+    <div class="pd-card" id="sec-sales">
+      <div class="pd-card-h">Sales</div>
+      <div class="pd-card-sub" id="sales-sub"></div>
+      <div id="sales-kpis"></div>
+      <div id="sales-bsr" style="margin-bottom:14px"></div>
+      <div class="chart-area" id="sales-chart"></div>
+      <div id="sales-table"></div>
     </div>
 
-    <!-- VARIANTS (if parent MSKU) -->
-    <div class="pd-sec" id="pd-variants-sec" style="display:none">
-      <h3 class="pd-sec-h">Variants</h3>
-      <div id="pd-variants"></div>
-    </div>
-
-    <!-- SALES TREND -->
-    <div class="pd-sec">
-      <h3 class="pd-sec-h">Sales Trend <span class="note" id="pd-sales-note"></span></h3>
-      <div id="pd-sales"></div>
-    </div>
-
-    <!-- TRAFFIC -->
-    <div class="pd-sec" id="pd-traffic-sec">
-      <h3 class="pd-sec-h">Traffic &amp; Conversion</h3>
-      <div id="pd-traffic"></div>
-    </div>
-
-    <!-- P&L WATERFALL -->
-    <div class="pd-sec" id="pd-pnl-sec">
-      <h3 class="pd-sec-h">P&amp;L Waterfall <span class="note" id="pd-pnl-note"></span></h3>
-      <div id="pd-pnl"></div>
+    <!-- PRICING -->
+    <div class="pd-card" id="sec-pricing">
+      <div class="pd-card-h">Pricing</div>
+      <div class="pd-card-sub" id="pricing-sub"></div>
+      <div id="pricing-content"></div>
     </div>
 
     <!-- INVENTORY -->
-    <div class="pd-sec" id="pd-inv-sec">
-      <h3 class="pd-sec-h">Inventory</h3>
-      <div id="pd-inventory"></div>
+    <div class="pd-card" id="sec-inventory">
+      <div class="pd-card-h">Inventory</div>
+      <div class="pd-card-sub" id="inv-sub"></div>
+      <div id="inv-content"></div>
     </div>
 
-    <!-- ADS PERFORMANCE -->
-    <div class="pd-sec" id="pd-ads-sec">
-      <h3 class="pd-sec-h">Ads Performance</h3>
-      <div id="pd-ads"></div>
+    <!-- SKU ECONOMICS / P&L -->
+    <div class="pd-card" id="sec-pnl">
+      <div class="pd-card-h">SKU Economics</div>
+      <div class="pd-card-sub" id="pnl-sub"></div>
+      <div id="pnl-content"></div>
     </div>
 
-    <!-- SERP RANKINGS -->
-    <div class="pd-sec" id="pd-serp-sec">
-      <h3 class="pd-sec-h">SERP Rankings</h3>
-      <div id="pd-serp"></div>
+    <!-- ADS -->
+    <div class="pd-card" id="sec-ads" style="display:none">
+      <div class="pd-card-h">Ads Performance</div>
+      <div class="pd-card-sub" id="ads-sub"></div>
+      <div id="ads-content"></div>
+    </div>
+
+    <!-- SERP -->
+    <div class="pd-card" id="sec-serp" style="display:none">
+      <div class="pd-card-h">SERP Rankings</div>
+      <div class="pd-card-sub"></div>
+      <div id="serp-content"></div>
     </div>
 
     <!-- REVIEWS -->
-    <div class="pd-sec" id="pd-reviews-sec">
-      <h3 class="pd-sec-h">Reviews</h3>
-      <div id="pd-reviews"></div>
+    <div class="pd-card" id="sec-reviews" style="display:none">
+      <div class="pd-card-h">Reviews</div>
+      <div class="pd-card-sub" id="reviews-sub"></div>
+      <div id="reviews-content"></div>
     </div>
 
     <!-- RETURNS -->
-    <div class="pd-sec" id="pd-returns-sec">
-      <h3 class="pd-sec-h">Returns</h3>
-      <div id="pd-returns"></div>
+    <div class="pd-card" id="sec-returns" style="display:none">
+      <div class="pd-card-h">Returns</div>
+      <div class="pd-card-sub" id="returns-sub"></div>
+      <div id="returns-content"></div>
     </div>
 
-  </div>
-</main>
+    <!-- CONTENT HEALTH -->
+    <div class="pd-card" id="sec-content" style="display:none">
+      <div class="pd-card-h">Content Health</div>
+      <div class="pd-card-sub"></div>
+      <div id="content-health"></div>
+    </div>
+
+    <!-- VARIANTS -->
+    <div class="pd-card" id="sec-variants" style="display:none">
+      <div class="pd-card-h">Variants</div>
+      <div id="variants-content"></div>
+    </div>
+
+  </main>
+</div>
 
 <script>
 (function(){
   'use strict';
-
   var params = new URLSearchParams(location.search);
   var mskuId = params.get('msku');
   var days = parseInt(params.get('days') || '30', 10);
-
-  // Set back link to the brand dashboard
   var slug = window.T6_BRAND_SLUG || 'basil';
-  var backEl = document.getElementById('backLink');
-  backEl.href = '/' + slug + '.html';
+  document.getElementById('backLink').href = '/' + slug + '.html';
 
   if(!mskuId){
     document.getElementById('pd-loading').style.display='none';
@@ -261,6 +309,17 @@
     document.getElementById('pd-error').innerHTML='<div class="error">No product specified. Use ?msku=&lt;id&gt;</div>';
     return;
   }
+
+  // Sidebar nav — smooth scroll + highlight
+  document.querySelectorAll('.pd-nav a').forEach(function(a){
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      var target = document.querySelector(this.getAttribute('href'));
+      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+      document.querySelectorAll('.pd-nav a').forEach(function(n){ n.classList.remove('act'); });
+      this.classList.add('act');
+    });
+  });
 
   api('/v1/products/'+mskuId+'?days='+days).then(render).catch(function(e){
     document.getElementById('pd-loading').style.display='none';
@@ -270,437 +329,436 @@
 
   function render(d){
     document.getElementById('pd-loading').style.display='none';
-    document.getElementById('pd-content').style.display='block';
+    document.getElementById('pd-layout').style.display='grid';
 
     var p = d.product;
-    document.title = 'Terminal6 — '+(p.product_name||p.sku_code);
+    document.title = 'Terminal6 \u2014 '+(p.product_name||p.sku_code);
 
-    // ── HERO ──
-    var imgEl = document.getElementById('pd-image');
-    if(p.image_url){
-      imgEl.innerHTML='<img class="pd-img" src="'+p.image_url+'" alt="Product">';
-    } else {
-      imgEl.innerHTML='<div class="pd-img-placeholder">&#128230;</div>';
-    }
-    document.getElementById('pd-name').textContent = p.product_name || p.sku_code;
-    document.getElementById('pd-sku').textContent = p.sku_code + (p.ean_code ? ' | EAN: '+p.ean_code : '');
+    // ── SIDEBAR ──
+    renderSidebar(d);
 
-    // Tags
-    var tags = '';
-    if(p.is_parent) tags += '<span class="pd-tag parent">Parent MSKU</span>';
-    if(p.category) tags += '<span class="pd-tag">'+esc(p.category)+'</span>';
-    if(p.status) tags += '<span class="pd-tag '+(p.status==='active'?'active':'inactive')+'">'+p.status+'</span>';
-    if(d.channels.length > 0){
-      var chSet = {};
-      d.channels.forEach(function(c){ chSet[c.channel]=true; });
-      Object.keys(chSet).forEach(function(ch){
-        tags += '<span class="pd-tag">'+chLabel(ch)+'</span>';
-      });
-    }
-    document.getElementById('pd-tags').innerHTML = tags;
+    // ── TITLE ──
+    document.getElementById('pd-title').textContent = p.product_name || p.sku_code;
 
-    // Prices
-    var prices = '';
-    if(p.mrp != null) prices += '<span><strong>MRP:</strong> '+cur(p.mrp)+'</span>';
-    if(p.cogs != null) prices += '<span><strong>COGS:</strong> '+cur(p.cogs)+'</span>';
-    if(p.weight_grams) prices += '<span><strong>Weight:</strong> '+p.weight_grams+'g</span>';
-    document.getElementById('pd-prices').innerHTML = prices;
+    // ── ALERTS ──
+    renderAlerts(d.anomalies);
 
-    // ── ANOMALIES ──
-    var alertsEl = document.getElementById('pd-alerts');
-    if(d.anomalies && d.anomalies.length){
-      alertsEl.innerHTML = d.anomalies.map(function(a){
-        return '<div class="pd-alert '+a.severity+'">'+sevIcon(a.severity)+' '+esc(a.message)+'</div>';
-      }).join('');
-    }
+    // ── SALES ──
+    renderSales(d);
 
-    // ── CHANNEL PRESENCE ──
-    renderChannels(d);
-
-    // ── VARIANTS ──
-    if(d.variants && d.variants.length > 0){
-      document.getElementById('pd-variants-sec').style.display='block';
-      renderVariants(d.variants);
-    }
-
-    // ── SALES TREND ──
-    document.getElementById('pd-sales-note').textContent = 'Last '+d.days+' days';
-    renderSalesTrend(d.sales_trend);
-
-    // ── TRAFFIC ──
-    if(d.traffic_trend && d.traffic_trend.length > 0){
-      renderTraffic(d.traffic_trend);
-    } else {
-      document.getElementById('pd-traffic-sec').style.display='none';
-    }
-
-    // ── P&L ──
-    if(d.pnl && d.pnl.net_revenue){
-      document.getElementById('pd-pnl-note').textContent = d.days+'d period';
-      renderPnL(d.pnl, d.pnl_trend);
-    } else {
-      document.getElementById('pd-pnl-sec').style.display='none';
-    }
+    // ── PRICING ──
+    renderPricing(d);
 
     // ── INVENTORY ──
-    if(d.inventory && d.inventory.length > 0){
-      renderInventory(d);
-    } else {
-      document.getElementById('pd-inv-sec').style.display='none';
-    }
+    renderInventory(d);
+
+    // ── P&L / SKU ECONOMICS ──
+    renderPnL(d);
 
     // ── ADS ──
     if(d.ads && d.ads.length > 0){
+      document.getElementById('sec-ads').style.display='block';
       renderAds(d);
-    } else {
-      document.getElementById('pd-ads-sec').style.display='none';
     }
 
     // ── SERP ──
     if(d.serp && d.serp.length > 0){
+      document.getElementById('sec-serp').style.display='block';
       renderSERP(d.serp);
-    } else {
-      document.getElementById('pd-serp-sec').style.display='none';
     }
 
     // ── REVIEWS ──
     if((d.reviews && d.reviews.length > 0) || (d.review_summary && d.review_summary.total > 0)){
+      document.getElementById('sec-reviews').style.display='block';
       renderReviews(d);
-    } else {
-      document.getElementById('pd-reviews-sec').style.display='none';
     }
 
     // ── RETURNS ──
     if(d.returns && d.returns.length > 0){
+      document.getElementById('sec-returns').style.display='block';
       renderReturns(d);
-    } else {
-      document.getElementById('pd-returns-sec').style.display='none';
-    }
-  }
-
-  /* ─────────────────── RENDERERS ─────────────────── */
-
-  function renderChannels(d){
-    var el = document.getElementById('pd-channels');
-    // Group listing_health by seller_sku for quick lookup
-    var lhMap = {};
-    (d.listing_health||[]).forEach(function(lh){ lhMap[lh.seller_sku] = lh; });
-
-    // Build a card per unique channel
-    var byChannel = {};
-    d.channels.forEach(function(c){
-      if(!byChannel[c.channel]) byChannel[c.channel] = [];
-      byChannel[c.channel].push(c);
-    });
-
-    var html = '';
-    Object.keys(byChannel).forEach(function(ch){
-      var items = byChannel[ch];
-      var first = items[0];
-      var lh = lhMap[first.seller_sku];
-
-      var statusLabel = first.is_active ? 'Active' : 'Inactive';
-      var statusCls = first.is_active ? 'active' : 'inactive';
-      if(ch === 'AMAZON_IN' && lh && lh.amz_suppressed){
-        statusLabel = 'Suppressed';
-        statusCls = 'suppressed';
-      }
-
-      html += '<div class="ch-card">';
-      html += '<div class="ch-card-head"><span class="ch-card-ch">'+chLabel(ch)+'</span>';
-      html += '<span class="ch-card-status '+statusCls+'">'+statusLabel+'</span></div>';
-
-      // Channel-specific details
-      if(ch === 'AMAZON_IN'){
-        html += row('ASIN', first.channel_sku_id || '--');
-        html += row('Seller SKU', first.seller_sku || '--');
-        html += row('Fulfillment', first.fulfilment || '--');
-        if(lh){
-          html += row('Price', lh.amz_price != null ? cur(lh.amz_price) : '--');
-          if(lh.content_score != null){
-            var csFill = lh.content_score;
-            var csColor = csFill >= 80 ? 'var(--g)' : csFill >= 50 ? 'var(--a)' : 'var(--r)';
-            html += '<div class="ch-row"><span class="lbl">Content</span><span class="val">'+csFill+'%</span></div>';
-            html += '<div class="cs-bar"><div class="cs-fill" style="width:'+csFill+'%;background:'+csColor+'"></div></div>';
-            html += '<div style="font-size:10px;color:var(--t3);margin-top:3px">'+
-                     (lh.image_count||0)+' img, '+(lh.bullet_count||0)+' bullets'+
-                     (lh.has_description?' + description':'')+'</div>';
-          }
-        }
-        if(items.length > 1){
-          html += '<div style="font-size:10.5px;color:var(--t3);margin-top:6px">+ '+(items.length-1)+' more listing(s)</div>';
-        }
-      } else if(ch === 'SHOPIFY'){
-        html += row('Variant ID', first.channel_sku_id || '--');
-        html += row('SKU', first.seller_sku || '--');
-        if(lh){
-          html += row('Price', lh.shp_price != null ? cur(lh.shp_price) : '--');
-          html += row('Status', lh.shp_status || '--');
-          if(lh.shp_is_preorder) html += row('Pre-order', 'Yes');
-        }
-      } else {
-        html += row('SKU', first.seller_sku || first.channel_sku_id || '--');
-        html += row('Listings', ''+items.length);
-      }
-
-      html += '</div>';
-    });
-
-    // Price mismatch callout
-    if(d.listing_health && d.listing_health.some(function(lh){ return lh.price_mismatch; })){
-      html += '<div style="grid-column:1/-1;font-size:12px;color:var(--a);padding:8px 12px;background:#FFF4E5;border-radius:var(--rad);border:1px solid #E8C547">';
-      html += 'Price mismatch detected between channels (&gt;10% difference)';
-      html += '</div>';
     }
 
-    el.innerHTML = html || '<div class="empty">No channel listings found</div>';
+    // ── CONTENT HEALTH ──
+    if(d.listing_health && d.listing_health.length > 0){
+      document.getElementById('sec-content').style.display='block';
+      renderContentHealth(d.listing_health);
+    }
+
+    // ── VARIANTS ──
+    if(d.variants && d.variants.length > 0){
+      document.getElementById('sec-variants').style.display='block';
+      renderVariants(d.variants);
+    }
+
+    // Hide empty nav items
+    if(!d.ads || !d.ads.length) hideNav('#sec-ads');
+    if(!d.serp || !d.serp.length) hideNav('#sec-serp');
+    if((!d.reviews || !d.reviews.length) && (!d.review_summary || !d.review_summary.total)) hideNav('#sec-reviews');
+    if(!d.returns || !d.returns.length) hideNav('#sec-returns');
+    if(!d.listing_health || !d.listing_health.length) hideNav('#sec-content');
   }
 
-  function renderVariants(variants){
-    var el = document.getElementById('pd-variants');
-    var html = '<table class="var-table"><thead><tr>';
-    html += '<th></th><th>Channel</th><th>Seller SKU</th><th>ASIN/ID</th><th>Fulfillment</th><th>Status</th>';
-    html += '</tr></thead><tbody>';
-    variants.forEach(function(v){
-      html += '<tr>';
-      html += '<td>'+(v.image_url ? '<img class="var-img" src="'+v.image_url+'">' : '')+'</td>';
-      html += '<td>'+chLabel(v.channel)+'</td>';
-      html += '<td style="font-family:var(--mono);font-size:11px">'+esc(v.seller_sku||'--')+'</td>';
-      html += '<td style="font-family:var(--mono);font-size:11px">'+esc(v.channel_sku_id||'--')+'</td>';
-      html += '<td>'+(v.fulfilment||'--')+'</td>';
-      html += '<td><span class="ch-card-status '+(v.is_active?'active':'inactive')+'">'+(v.is_active?'Active':'Inactive')+'</span></td>';
-      html += '</tr>';
+  function hideNav(href){
+    var a = document.querySelector('.pd-nav a[href="'+href+'"]');
+    if(a) a.style.display='none';
+  }
+
+  /* ─────────── SIDEBAR ─────────── */
+  function renderSidebar(d){
+    var p = d.product;
+    var imgEl = document.getElementById('pd-side-img');
+    if(p.image_url) imgEl.innerHTML='<img class="pd-side-img" src="'+p.image_url+'" alt="">';
+    else imgEl.innerHTML='<div class="pd-side-img-ph">&#128230;</div>';
+
+    // Status
+    var st = 'active', stLabel = 'ACTIVE';
+    if(d.listing_health && d.listing_health.length){
+      var lh0 = d.listing_health[0];
+      if(lh0.amz_suppressed){ st='suppressed'; stLabel='SUPPRESSED'; }
+      else if(lh0.amz_status==='Inactive'){ st='inactive'; stLabel='INACTIVE'; }
+    }
+    document.getElementById('pd-side-status').innerHTML='<span class="pd-status '+st+'">'+stLabel+'</span>';
+
+    // Channel tags
+    var chSet = {};
+    d.channels.forEach(function(c){ chSet[c.channel]=true; });
+    var tagMap = {AMAZON_IN:['AMZ','amz'],SHOPIFY:['SHP','shp'],FLIPKART_IN:['FK','fk'],MYNTRA:['MYN','myn']};
+    var tagsHtml = '';
+    Object.keys(chSet).forEach(function(ch){
+      var m = tagMap[ch] || [ch,'other'];
+      tagsHtml += '<span class="pd-ch-tag '+m[1]+'">'+m[0]+'</span>';
     });
-    html += '</tbody></table>';
-    el.innerHTML = html;
+    document.getElementById('pd-ch-tags').innerHTML = tagsHtml;
+
+    // Identifiers
+    var ids = '';
+    ids += '<div><span class="lbl">SKU</span> <span class="val">'+esc(p.sku_code)+'</span></div>';
+    var amzCl = d.channels.find(function(c){ return c.channel==='AMAZON_IN'; });
+    if(amzCl){
+      ids += '<div><span class="lbl">ASIN</span> <span class="val">'+esc(amzCl.channel_sku_id||'--')+'</span></div>';
+      ids += '<div><span class="lbl">Seller SKU</span> <span class="val">'+esc(amzCl.seller_sku||'--')+'</span></div>';
+      if(amzCl.parent_asin) ids += '<div><span class="lbl">Parent ASIN</span> <span class="val">'+esc(amzCl.parent_asin)+'</span></div>';
+      ids += '<div><a href="https://www.amazon.in/dp/'+(amzCl.channel_sku_id||'')+'" target="_blank">View on Amazon &rarr;</a></div>';
+    }
+    if(p.ean_code) ids += '<div><span class="lbl">EAN</span> <span class="val">'+esc(p.ean_code)+'</span></div>';
+    if(p.category) ids += '<div><span class="lbl">Category</span> <span class="val">'+esc(p.category)+'</span></div>';
+    if(p.is_parent) ids += '<div><span class="pd-status active" style="margin:6px 0 0">PARENT MSKU</span></div>';
+    document.getElementById('pd-ids').innerHTML = ids;
   }
 
-  function renderSalesTrend(trend){
-    var el = document.getElementById('pd-sales');
-    if(!trend || !trend.length){
-      el.innerHTML = '<div class="empty">No sales data for this period</div>';
+  /* ─────────── ALERTS ─────────── */
+  function renderAlerts(anomalies){
+    var el = document.getElementById('pd-alerts');
+    if(!anomalies || !anomalies.length){ el.style.display='none'; return; }
+    el.innerHTML = anomalies.map(function(a){
+      return '<div class="pd-alert '+a.severity+'">'+(a.severity==='red'?'&#9888;':'&#9432;')+' '+esc(a.message)+'</div>';
+    }).join('');
+  }
+
+  /* ─────────── SALES ─────────── */
+  function renderSales(d){
+    var sk = d.sales_kpis || {};
+    document.getElementById('sales-sub').textContent = d.listing_snapshot && d.listing_snapshot.snapshot_date
+      ? 'Last updated: '+d.listing_snapshot.snapshot_date : '';
+
+    // Multi-period KPI grid
+    if(sk['7d'] || sk['30d'] || sk['90d']){
+      var html = '<div class="kpi-periods">';
+      ['7d','30d','90d'].forEach(function(period){
+        var k = sk[period] || {};
+        var label = period === '7d' ? 'Last 7 days' : period === '30d' ? 'Last 30 days' : 'Last 90 days';
+        html += '<div class="kpi-period">';
+        html += '<div class="per-label">'+label+'</div>';
+        html += perRow('Units ordered', fmt(k.units));
+        html += perRow('Revenue', cur(k.revenue));
+        html += perRow('Orders', fmt(k.orders));
+        html += perRow('Avg selling price', k.asp != null ? cur(k.asp) : '--');
+        html += '</div>';
+      });
+      html += '</div>';
+      document.getElementById('sales-kpis').innerHTML = html;
+    }
+
+    // BSR
+    var snap = d.listing_snapshot || {};
+    if(snap.bsr){
+      var cat = d.product.category || d.product.category_normalised || '';
+      document.getElementById('sales-bsr').innerHTML =
+        '<div style="margin-bottom:4px;font-size:11px;color:var(--t3)">Best Sellers Rank</div>' +
+        '<span class="bsr-badge">#'+fmt(snap.bsr)+(cat ? ' in '+esc(cat) : '')+'</span>';
+    }
+
+    // Sales chart (simple SVG line)
+    renderSalesChart(d.sales_trend);
+
+    // Sales table (last 14 days)
+    renderSalesTable(d.sales_trend);
+  }
+
+  function renderSalesChart(trend){
+    var el = document.getElementById('sales-chart');
+    if(!trend || !trend.length){ el.style.display='none'; return; }
+
+    // Aggregate by date
+    var byDate = {};
+    trend.forEach(function(r){
+      if(!byDate[r.date]) byDate[r.date] = 0;
+      byDate[r.date] += r.revenue || 0;
+    });
+    var dates = Object.keys(byDate).sort();
+    var vals = dates.map(function(d){ return byDate[d]; });
+    if(!vals.length){ el.style.display='none'; return; }
+
+    var maxV = Math.max.apply(null, vals) || 1;
+    var w = 100, h = 100;
+    var padX = 2, padY = 10;
+    var points = vals.map(function(v, i){
+      var x = padX + (i / Math.max(vals.length-1, 1)) * (w - 2*padX);
+      var y = padY + (1 - v/maxV) * (h - 2*padY);
+      return x.toFixed(1)+','+y.toFixed(1);
+    });
+    var polyline = points.join(' ');
+    // Area fill
+    var area = padX+','+h+' '+polyline+' '+(padX + ((vals.length-1)/Math.max(vals.length-1,1))*(w-2*padX)).toFixed(1)+','+h;
+
+    var svg = '<svg class="chart-svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">';
+    svg += '<polygon points="'+area+'" fill="rgba(59,130,246,0.08)" />';
+    svg += '<polyline points="'+polyline+'" fill="none" stroke="#3B82F6" stroke-width="0.5" />';
+    // Latest value label
+    var lastVal = vals[vals.length-1];
+    svg += '<circle cx="'+points[points.length-1].split(',')[0]+'" cy="'+points[points.length-1].split(',')[1]+'" r="1" fill="#3B82F6" />';
+    svg += '</svg>';
+    // Axis labels
+    svg += '<div style="display:flex;justify-content:space-between;padding:4px 8px;font-size:10px;color:var(--t3)">';
+    svg += '<span>'+shortD(dates[0])+'</span>';
+    svg += '<span style="color:var(--t1);font-weight:600">'+cur(lastVal)+'</span>';
+    svg += '<span>'+shortD(dates[dates.length-1])+'</span>';
+    svg += '</div>';
+    el.innerHTML = svg;
+  }
+
+  function renderSalesTable(trend){
+    var el = document.getElementById('sales-table');
+    if(!trend || !trend.length){ el.innerHTML='<div class="empty">No sales data</div>'; return; }
+    var byDate = {};
+    trend.forEach(function(r){
+      if(!byDate[r.date]) byDate[r.date] = {date:r.date,revenue:0,units:0,orders:0};
+      byDate[r.date].revenue += r.revenue||0;
+      byDate[r.date].units += r.units||0;
+      byDate[r.date].orders += r.orders||0;
+    });
+    var dates = Object.keys(byDate).sort().slice(-14);
+    var h = '<table class="dt" style="font-size:12px"><thead><tr><th>Date</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th></tr></thead><tbody>';
+    dates.forEach(function(d){
+      var r = byDate[d];
+      h += '<tr><td>'+shortD(d)+'</td><td class="r">'+cur(r.revenue)+'</td><td class="r">'+fmt(r.units)+'</td><td class="r">'+fmt(r.orders)+'</td></tr>';
+    });
+    h += '</tbody></table>';
+    el.innerHTML = h;
+  }
+
+  /* ─────────── PRICING ─────────── */
+  function renderPricing(d){
+    var snap = d.listing_snapshot || {};
+    var p = d.product;
+    var lh = d.listing_health && d.listing_health[0];
+
+    document.getElementById('pricing-sub').textContent = snap.snapshot_date ? 'Last updated: '+snap.snapshot_date : '';
+
+    var html = '<div class="price-grid">';
+
+    // Left: current settings
+    html += '<div class="price-col"><h4>Current Settings</h4>';
+    html += priceRow('Your price today', snap.selling_price != null ? cur(snap.selling_price) : (lh && lh.amz_price != null ? cur(lh.amz_price) : '--'));
+    html += priceRow('MRP', p.mrp != null ? cur(p.mrp) : '--');
+    html += priceRow('COGS', p.cogs != null ? cur(p.cogs) : '--');
+    if(p.weight_grams) html += priceRow('Weight', p.weight_grams+'g');
+
+    // Shopify price if available
+    if(lh && lh.shp_price != null){
+      html += priceRow('Shopify price', cur(lh.shp_price));
+      if(lh.price_mismatch){
+        html += '<div style="font-size:11px;color:var(--a);margin-top:6px">&#9888; Price mismatch &gt;10% between channels</div>';
+      }
+    }
+    html += '</div>';
+
+    // Right: marketplace signals
+    html += '<div class="price-col"><h4>Marketplace Signals</h4>';
+    html += priceRow('Featured Offer (Buy Box)', snap.buy_box_pct != null ? '<span class="val green">'+pct(snap.buy_box_pct,0)+'</span>' : '--', true);
+    html += priceRow('Rating', snap.rating != null ? snap.rating+' / 5' : '--');
+    html += priceRow('Reviews', snap.review_count ? fmt(snap.review_count) : '--');
+    if(snap.bsr) html += priceRow('BSR', '#'+fmt(snap.bsr));
+    html += '</div>';
+
+    html += '</div>';
+    document.getElementById('pricing-content').innerHTML = html;
+  }
+
+  /* ─────────── INVENTORY ─────────── */
+  function renderInventory(d){
+    var inv = d.inventory || [];
+    var t = d.inventory_total || {};
+    if(!inv.length){
+      document.getElementById('inv-content').innerHTML = '<div class="empty">No inventory data</div>';
       return;
     }
 
-    // Aggregate by date (across channels)
-    var byDate = {};
-    trend.forEach(function(r){
-      if(!byDate[r.date]) byDate[r.date] = {date:r.date, revenue:0, units:0, orders:0, channels:{}};
-      byDate[r.date].revenue += r.revenue || 0;
-      byDate[r.date].units += r.units || 0;
-      byDate[r.date].orders += r.orders || 0;
-      byDate[r.date].channels[r.channel] = (byDate[r.date].channels[r.channel]||0) + (r.revenue||0);
-    });
-    var dates = Object.keys(byDate).sort();
+    document.getElementById('inv-sub').textContent = inv[0].snapshot_date ? 'Last updated: '+inv[0].snapshot_date : '';
 
-    // Summary KPIs
-    var totRev=0, totUnits=0, totOrders=0;
-    dates.forEach(function(d){ totRev+=byDate[d].revenue; totUnits+=byDate[d].units; totOrders+=byDate[d].orders; });
+    var html = '<div class="inv-grid">';
 
-    var html = '<div class="g4" style="margin-bottom:14px">';
-    html += kpi('Revenue', cur(totRev));
-    html += kpi('Units', fmt(totUnits));
-    html += kpi('Orders', fmt(totOrders));
-    html += kpi('AOV', totOrders > 0 ? cur(totRev/totOrders) : '--');
+    // Col 1: Product info
+    html += '<div class="inv-col"><h4>Product</h4>';
+    if(d.product.weight_grams) html += invRow('Weight', d.product.weight_grams+'g');
+    var totalStock = t.fulfillable + t.reserved + t.inbound + t.unfulfillable;
+    html += invRow('Total in FBA', fmt(totalStock));
+    // Rough days of supply from 7d sales
+    var sk7 = d.sales_kpis && d.sales_kpis['7d'];
+    if(sk7 && sk7.units > 0){
+      var dailyVel = sk7.units / 7;
+      var dos = Math.round(t.fulfillable / dailyVel);
+      html += invRow('Days of supply', dos+'d', dos < 14);
+    }
     html += '</div>';
 
-    // Table
-    html += '<div style="overflow-x:auto"><table class="dt"><thead><tr>';
-    html += '<th>Date</th><th class="r">Revenue</th><th class="r">Units</th><th class="r">Orders</th>';
-    html += '</tr></thead><tbody>';
-    dates.slice(-14).forEach(function(d){  // show last 14 days
-      var r = byDate[d];
-      html += '<tr><td>'+shortD(d)+'</td>';
-      html += '<td class="r">'+cur(r.revenue)+'</td>';
-      html += '<td class="r">'+fmt(r.units)+'</td>';
-      html += '<td class="r">'+fmt(r.orders)+'</td></tr>';
-    });
-    html += '</tbody></table></div>';
-    el.innerHTML = html;
-  }
-
-  function renderTraffic(trend){
-    var el = document.getElementById('pd-traffic');
-    // KPIs from latest 7d
-    var last7 = trend.slice(-7);
-    var totPV=0, totSess=0, avgBB=0, avgCR=0, bbCount=0, crCount=0;
-    last7.forEach(function(r){
-      totPV += r.page_views||0;
-      totSess += r.sessions||0;
-      if(r.buy_box_pct != null){ avgBB += r.buy_box_pct; bbCount++; }
-      if(r.conversion_rate != null){ avgCR += r.conversion_rate; crCount++; }
-    });
-
-    var html = '<div class="g4" style="margin-bottom:14px">';
-    html += kpi('Page Views (7d)', fmt(totPV));
-    html += kpi('Sessions (7d)', fmt(totSess));
-    html += kpi('Buy Box %', bbCount > 0 ? pct(avgBB/bbCount,1) : '--');
-    html += kpi('Conv. Rate', crCount > 0 ? pct(avgCR/crCount,2) : '--');
+    // Col 2: FBA breakdown
+    html += '<div class="inv-col"><h4>FBA Inventory Breakdown</h4>';
+    html += invRow('Total', fmt(totalStock));
+    html += invRow('Available', fmt(t.fulfillable), t.fulfillable === 0);
+    html += invRow('Inbound', fmt(t.inbound));
+    html += invRow('Reserved', fmt(t.reserved));
+    html += invRow('Unfulfillable', fmt(t.unfulfillable), t.unfulfillable > 0);
     html += '</div>';
 
-    // Table
-    html += '<div style="overflow-x:auto"><table class="dt"><thead><tr>';
-    html += '<th>Date</th><th class="r">Page Views</th><th class="r">Sessions</th><th class="r">Buy Box %</th><th class="r">Conv %</th>';
-    html += '</tr></thead><tbody>';
-    trend.slice(-14).forEach(function(r){
-      html += '<tr><td>'+shortD(r.date)+'</td>';
-      html += '<td class="r">'+fmt(r.page_views)+'</td>';
-      html += '<td class="r">'+fmt(r.sessions)+'</td>';
-      html += '<td class="r">'+(r.buy_box_pct!=null?pct(r.buy_box_pct,1):'--')+'</td>';
-      html += '<td class="r">'+(r.conversion_rate!=null?pct(r.conversion_rate,2):'--')+'</td></tr>';
-    });
-    html += '</tbody></table></div>';
-    el.innerHTML = html;
+    // Col 3: Per-ASIN (if multiple)
+    if(inv.length > 1){
+      html += '<div class="inv-col"><h4>Per ASIN</h4>';
+      inv.forEach(function(r){
+        html += invRow(r.asin||r.seller_sku, fmt(r.fulfillable)+' avail');
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="inv-col"><h4>Details</h4>';
+      html += invRow('ASIN', inv[0].asin||'--');
+      html += invRow('SKU', inv[0].seller_sku||'--');
+      html += invRow('FC', inv[0].fc_id||'--');
+      html += '</div>';
+    }
+
+    html += '</div>';
+    document.getElementById('inv-content').innerHTML = html;
   }
 
-  function renderPnL(pnl, trend){
-    var el = document.getElementById('pd-pnl');
-    var rev = pnl.net_revenue || 0;
+  /* ─────────── P&L / SKU ECONOMICS ─────────── */
+  function renderPnL(d){
+    var pnl = d.pnl;
+    if(!pnl || !pnl.net_revenue){
+      document.getElementById('pnl-content').innerHTML = '<div class="empty">No P&L data for this period</div>';
+      return;
+    }
+    document.getElementById('pnl-sub').textContent = 'Last '+d.days+' days';
 
-    // Waterfall
-    var html = '<div class="wf-grid">';
-    html += wfItem('Net Revenue', pnl.net_revenue, null, 'green');
-    html += wfItem('Commission', pnl.commission, pnl.commission_pct, 'red');
-    html += wfItem('Fulfillment', pnl.fulfilment_cost, pnl.fulfilment_pct, 'red');
-    html += wfItem('Shipping', pnl.shipping_cost);
-    html += wfItem('Ad Spend', pnl.ad_spend);
-    html += wfItem('COGS', pnl.cogs);
-    if(pnl.reimbursement && Math.abs(pnl.reimbursement) > 1) html += wfItem('Reimbursement', pnl.reimbursement, null, 'green');
-    html += wfItem('CM3', pnl.cm, null, pnl.cm > 0 ? 'green' : 'red');
+    // Waterfall bar chart
+    var items = [
+      {label:'Revenue', val:pnl.net_revenue, pos:true},
+      {label:'Commission', val:pnl.commission},
+      {label:'Fulfillment', val:pnl.fulfilment_cost},
+      {label:'Shipping', val:pnl.shipping_cost},
+      {label:'COGS', val:pnl.cogs},
+      {label:'Ad Spend', val:pnl.ad_spend},
+      {label:'CM3', val:pnl.cm, pos:pnl.cm > 0},
+    ];
+    var maxAbs = Math.max.apply(null, items.map(function(i){ return Math.abs(i.val||0); })) || 1;
+
+    var html = '<div class="wf-bar">';
+    items.forEach(function(i){
+      var v = Math.abs(i.val||0);
+      var h = Math.max(v / maxAbs * 100, 3);
+      var cls = i.pos ? 'pos' : (i.val > 0 ? 'pos' : 'neg');
+      if(i.label === 'CM3') cls = i.val >= 0 ? 'pos' : 'neg';
+      html += '<div class="wf-col"><div class="wf-amt">'+cur(i.val)+'</div><div class="bar '+cls+'" style="height:'+h+'%"></div><div class="wf-lbl">'+i.label+'</div></div>';
+    });
     html += '</div>';
 
     // KPI row
-    html += '<div class="g4" style="margin-bottom:14px">';
-    html += kpi('CM%', pnl.cm_pct != null ? pct(pnl.cm_pct,1) : '--');
-    html += kpi('TACoS', pnl.tacos != null ? pct(pnl.tacos,1) : '--');
-    html += kpi('Units Sold', fmt(pnl.units_sold));
-    html += kpi('Units Refunded', fmt(pnl.units_refunded));
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0">';
+    html += kpiTile('CM%', pnl.cm_pct != null ? pct(pnl.cm_pct,1) : '--', pnl.cm_pct >= 0 ? 'var(--g)' : 'var(--r)');
+    html += kpiTile('TACoS', pnl.tacos != null ? pct(pnl.tacos,1) : '--');
+    html += kpiTile('Units Sold', fmt(pnl.units_sold));
+    html += kpiTile('Refunded', fmt(pnl.units_refunded));
     html += '</div>';
 
-    // Daily CM% trend
-    if(trend && trend.length > 0){
-      html += '<div style="overflow-x:auto"><table class="dt"><thead><tr>';
-      html += '<th>Date</th><th class="r">Revenue</th><th class="r">CM</th><th class="r">CM%</th>';
-      html += '</tr></thead><tbody>';
-      trend.slice(-14).forEach(function(r){
-        html += '<tr><td>'+shortD(r.date)+'</td>';
-        html += '<td class="r">'+cur(r.revenue)+'</td>';
-        html += '<td class="r">'+cur(r.cm)+'</td>';
-        html += '<td class="r">'+(r.cm_pct!=null?pct(r.cm_pct,1):'--')+'</td></tr>';
+    // Trend table
+    if(d.pnl_trend && d.pnl_trend.length){
+      html += '<table class="dt" style="font-size:12px;margin-top:14px"><thead><tr><th>Date</th><th class="r">Revenue</th><th class="r">CM</th><th class="r">CM%</th></tr></thead><tbody>';
+      d.pnl_trend.slice(-14).forEach(function(r){
+        html += '<tr><td>'+shortD(r.date)+'</td><td class="r">'+cur(r.revenue)+'</td><td class="r">'+cur(r.cm)+'</td><td class="r">'+(r.cm_pct!=null?pct(r.cm_pct,1):'--')+'</td></tr>';
       });
-      html += '</tbody></table></div>';
+      html += '</tbody></table>';
     }
-    el.innerHTML = html;
+
+    document.getElementById('pnl-content').innerHTML = html;
   }
 
-  function renderInventory(d){
-    var el = document.getElementById('pd-inventory');
-    var t = d.inventory_total;
-
-    var html = '<div class="inv-bars">';
-    html += invItem('Fulfillable', t.fulfillable, t.fulfillable === 0 ? 'var(--r)' : 'var(--g)');
-    html += invItem('Reserved', t.reserved);
-    html += invItem('Inbound', t.inbound);
-    html += invItem('Unfulfillable', t.unfulfillable, t.unfulfillable > 0 ? 'var(--a)' : null);
-    html += '</div>';
-
-    // Per-ASIN if multiple
-    if(d.inventory.length > 1){
-      html += '<div style="overflow-x:auto"><table class="dt"><thead><tr>';
-      html += '<th>ASIN</th><th>SKU</th><th class="r">Fulfillable</th><th class="r">Reserved</th><th class="r">Inbound</th><th class="r">Unfulfillable</th>';
-      html += '</tr></thead><tbody>';
-      d.inventory.forEach(function(r){
-        html += '<tr><td style="font-family:var(--mono);font-size:11px">'+esc(r.asin||'--')+'</td>';
-        html += '<td style="font-family:var(--mono);font-size:11px">'+esc(r.seller_sku||'--')+'</td>';
-        html += '<td class="r">'+fmt(r.fulfillable)+'</td>';
-        html += '<td class="r">'+fmt(r.reserved)+'</td>';
-        html += '<td class="r">'+fmt(r.inbound)+'</td>';
-        html += '<td class="r">'+fmt(r.unfulfillable)+'</td></tr>';
-      });
-      html += '</tbody></table></div>';
-    }
-    el.innerHTML = html;
-  }
-
+  /* ─────────── ADS ─────────── */
   function renderAds(d){
-    var el = document.getElementById('pd-ads');
-    var html = '<div class="ads-cards">';
+    document.getElementById('ads-sub').textContent = 'Last '+d.days+' days';
+    var html = '<div class="ads-grid">';
     d.ads.forEach(function(a){
-      html += '<div class="ads-card">';
-      html += '<div class="ad-type">'+esc(a.ad_type)+'</div>';
+      html += '<div class="ad-card"><div class="ad-type">'+esc(a.ad_type)+'</div>';
       html += adRow('Spend', cur(a.spend));
       html += adRow('Clicks', fmt(a.clicks));
       html += adRow('Impressions', fmt(a.impressions));
-      html += adRow('CTR', a.ctr != null ? pct(a.ctr,2) : '--');
-      html += adRow('CPC', a.cpc != null ? cur(a.cpc) : '--');
+      html += adRow('CTR', a.ctr!=null?pct(a.ctr,2):'--');
+      html += adRow('ACoS', a.acos!=null?pct(a.acos,1):'--');
+      html += adRow('ROAS', a.roas!=null?a.roas.toFixed(2)+'x':'--');
       html += adRow('Attr. Sales', cur(a.attr_sales));
-      html += adRow('ACoS', a.acos != null ? pct(a.acos,1) : '--');
-      html += adRow('ROAS', a.roas != null ? a.roas.toFixed(2)+'x' : '--');
       html += '</div>';
     });
     html += '</div>';
 
-    // Ads daily trend
-    if(d.ads_trend && d.ads_trend.length > 0){
-      html += '<div style="overflow-x:auto;margin-top:14px"><table class="dt"><thead><tr>';
-      html += '<th>Date</th><th class="r">Spend</th><th class="r">Clicks</th><th class="r">Attr. Sales</th><th class="r">ACoS</th>';
-      html += '</tr></thead><tbody>';
+    if(d.ads_trend && d.ads_trend.length){
+      html += '<table class="dt" style="font-size:12px"><thead><tr><th>Date</th><th class="r">Spend</th><th class="r">Clicks</th><th class="r">Attr. Sales</th><th class="r">ACoS</th></tr></thead><tbody>';
       d.ads_trend.slice(-14).forEach(function(r){
-        var acos = (r.attr_sales && r.attr_sales > 0) ? (r.spend / r.attr_sales * 100).toFixed(1)+'%' : '--';
-        html += '<tr><td>'+shortD(r.date)+'</td>';
-        html += '<td class="r">'+cur(r.spend)+'</td>';
-        html += '<td class="r">'+fmt(r.clicks)+'</td>';
-        html += '<td class="r">'+cur(r.attr_sales)+'</td>';
-        html += '<td class="r">'+acos+'</td></tr>';
+        var acos = r.attr_sales > 0 ? (r.spend/r.attr_sales*100).toFixed(1)+'%' : '--';
+        html += '<tr><td>'+shortD(r.date)+'</td><td class="r">'+cur(r.spend)+'</td><td class="r">'+fmt(r.clicks)+'</td><td class="r">'+cur(r.attr_sales)+'</td><td class="r">'+acos+'</td></tr>';
       });
-      html += '</tbody></table></div>';
+      html += '</tbody></table>';
     }
-    el.innerHTML = html;
+    document.getElementById('ads-content').innerHTML = html;
   }
 
+  /* ─────────── SERP ─────────── */
   function renderSERP(serp){
-    var el = document.getElementById('pd-serp');
-    var html = '<div style="overflow-x:auto"><table class="dt"><thead><tr>';
-    html += '<th>Keyword</th><th class="r">Organic Rank</th><th class="r">Sponsored</th><th class="r">Rating</th><th class="r">Reviews</th><th>Updated</th>';
-    html += '</tr></thead><tbody>';
+    var h = '<table class="dt" style="font-size:12px"><thead><tr><th>Keyword</th><th class="r">Rank</th><th class="r">Sponsored</th><th class="r">Rating</th><th class="r">Reviews</th><th>Updated</th></tr></thead><tbody>';
     serp.forEach(function(r){
-      var cls = !r.position ? 'none' : r.position <= 3 ? 'top' : r.position <= 10 ? 'ok' : 'low';
-      html += '<tr><td>'+esc(r.keyword)+'</td>';
-      html += '<td class="r"><span class="rk '+cls+'">'+(r.position||'--')+'</span></td>';
-      html += '<td class="r">'+(r.is_sponsored?'Yes':'--')+'</td>';
-      html += '<td class="r">'+(r.rating!=null?r.rating.toFixed(1):'--')+'</td>';
-      html += '<td class="r">'+fmt(r.review_count)+'</td>';
-      html += '<td>'+shortD(r.date)+'</td></tr>';
+      var cls = !r.position?'none':r.position<=3?'top':r.position<=10?'ok':'low';
+      h += '<tr><td>'+esc(r.keyword)+'</td><td class="r"><span class="rk '+cls+'">'+(r.position||'--')+'</span></td><td class="r">'+(r.is_sponsored?'Yes':'--')+'</td><td class="r">'+(r.rating!=null?r.rating.toFixed(1):'--')+'</td><td class="r">'+fmt(r.review_count)+'</td><td style="font-size:11px;color:var(--t3)">'+shortD(r.date)+'</td></tr>';
     });
-    html += '</tbody></table></div>';
-    el.innerHTML = html;
+    h += '</tbody></table>';
+    document.getElementById('serp-content').innerHTML = h;
   }
 
+  /* ─────────── REVIEWS ─────────── */
   function renderReviews(d){
-    var el = document.getElementById('pd-reviews');
     var html = '';
-
-    // Rating distribution
     if(d.review_summary && d.review_summary.total > 0){
       var s = d.review_summary;
-      html += '<div class="rv-dist">';
-      html += '<div><div class="rv-avg">'+s.avg_rating.toFixed(1)+'</div><div style="font-size:11px;color:var(--t3)">'+s.total+' reviews</div></div>';
+      document.getElementById('reviews-sub').textContent = s.total+' reviews';
+      html += '<div class="rv-header">';
+      html += '<div><div class="rv-avg">'+s.avg_rating.toFixed(1)+'</div><div class="rv-avg-sub">out of 5</div></div>';
       html += '<div class="rv-bars">';
-      for(var i=5; i>=1; i--){
-        var cnt = s.distribution[i] || 0;
-        var pctW = s.total > 0 ? (cnt/s.total*100) : 0;
-        html += '<div class="rv-bar-row"><span class="star">'+i+'</span>';
-        html += '<div class="bar"><div class="fill" style="width:'+pctW+'%"></div></div>';
-        html += '<span class="cnt">'+cnt+'</span></div>';
+      for(var i=5;i>=1;i--){
+        var cnt=s.distribution[i]||0;
+        var pctW=s.total>0?(cnt/s.total*100):0;
+        html += '<div class="rv-bar-row"><span class="star">'+i+'</span><div class="bar"><div class="fill" style="width:'+pctW+'%"></div></div><span class="cnt">'+cnt+'</span></div>';
       }
       html += '</div></div>';
     }
-
-    // Recent reviews
     (d.reviews||[]).forEach(function(r){
-      html += '<div class="rv-card">';
-      html += '<div class="rv-card-head">';
-      html += '<span class="rv-stars">'+stars(r.rating)+'</span>';
+      html += '<div class="rv-card"><div class="rv-card-head"><span class="rv-stars">'+stars(r.rating)+'</span>';
       if(r.verified) html += '<span style="font-size:10px;color:var(--g);font-weight:500">Verified</span>';
       if(r.date) html += '<span class="rv-card-date">'+shortD(r.date)+'</span>';
       html += '</div>';
@@ -713,62 +771,74 @@
       }
       html += '</div>';
     });
-    el.innerHTML = html || '<div class="empty">No reviews</div>';
+    document.getElementById('reviews-content').innerHTML = html || '<div class="empty">No reviews</div>';
   }
 
+  /* ─────────── RETURNS ─────────── */
   function renderReturns(d){
-    var el = document.getElementById('pd-returns');
-    var html = '<div style="margin-bottom:8px;font-size:13px;color:var(--t2)">Total returned: <strong>'+fmt(d.returns_total_units)+'</strong> units</div>';
-    html += '<div style="overflow-x:auto"><table class="dt"><thead><tr>';
-    html += '<th>Reason</th><th>Type</th><th>Condition</th><th class="r">Units</th><th class="r">Refund</th>';
-    html += '</tr></thead><tbody>';
+    document.getElementById('returns-sub').textContent = d.returns_total_units+' units returned ('+d.days+'d)';
+    var h = '<table class="dt" style="font-size:12px"><thead><tr><th>Reason</th><th>Type</th><th>Condition</th><th class="r">Units</th><th class="r">Refund</th></tr></thead><tbody>';
     d.returns.forEach(function(r){
-      html += '<tr><td>'+esc(r.reason||'--')+'</td>';
-      html += '<td>'+esc(r.type||'--')+'</td>';
-      html += '<td>'+esc(r.condition||'--')+'</td>';
-      html += '<td class="r">'+fmt(r.units)+'</td>';
-      html += '<td class="r">'+cur(r.refund_amount)+'</td></tr>';
+      h += '<tr><td>'+esc(r.reason||'--')+'</td><td>'+esc(r.type||'--')+'</td><td>'+esc(r.condition||'--')+'</td><td class="r">'+fmt(r.units)+'</td><td class="r">'+cur(r.refund_amount)+'</td></tr>';
     });
-    html += '</tbody></table></div>';
-    el.innerHTML = html;
+    h += '</tbody></table>';
+    document.getElementById('returns-content').innerHTML = h;
   }
 
-  /* ─────────────────── HELPERS ──────��──────────── */
+  /* ─────────── CONTENT HEALTH ─────────── */
+  function renderContentHealth(lhList){
+    var html = '';
+    lhList.forEach(function(lh){
+      html += '<div style="margin-bottom:14px">';
+      if(lh.seller_sku) html += '<div style="font-family:var(--mono);font-size:11px;color:var(--t3);margin-bottom:6px">'+esc(lh.seller_sku)+(lh.amz_asin?' &middot; '+esc(lh.amz_asin):'')+'</div>';
+      if(lh.content_score != null){
+        var cs = lh.content_score;
+        var csColor = cs >= 80 ? 'var(--g)' : cs >= 50 ? 'var(--a)' : 'var(--r)';
+        html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">';
+        html += '<span style="font-family:var(--mono);font-size:18px;font-weight:700;color:'+csColor+'">'+cs+'%</span>';
+        html += '<div style="flex:1"><div class="cs-bar"><div class="cs-fill" style="width:'+cs+'%;background:'+csColor+'"></div></div></div>';
+        html += '</div>';
+      }
+      html += '<div style="display:flex;gap:20px;font-size:12px;color:var(--t2)">';
+      html += '<span>'+(lh.image_count||0)+' images</span>';
+      html += '<span>'+(lh.bullet_count||0)+' bullets</span>';
+      html += '<span>'+(lh.has_description?'Has description':'No description')+'</span>';
+      html += '</div>';
+      html += '</div>';
+    });
+    document.getElementById('content-health').innerHTML = html;
+  }
 
+  /* ─────────── VARIANTS ─────────── */
+  function renderVariants(variants){
+    var h = '<table class="var-tbl"><thead><tr><th></th><th>Channel</th><th>Seller SKU</th><th>ASIN/ID</th><th>Fulfillment</th><th>Status</th></tr></thead><tbody>';
+    variants.forEach(function(v){
+      h += '<tr>';
+      h += '<td>'+(v.image_url?'<img class="vi" src="'+v.image_url+'">':'')+'</td>';
+      h += '<td>'+chLabel(v.channel)+'</td>';
+      h += '<td style="font-family:var(--mono);font-size:11px">'+esc(v.seller_sku||'--')+'</td>';
+      h += '<td style="font-family:var(--mono);font-size:11px">'+esc(v.channel_sku_id||'--')+'</td>';
+      h += '<td>'+(v.fulfilment||'--')+'</td>';
+      h += '<td><span class="pd-status '+(v.is_active?'active':'inactive')+'">'+(v.is_active?'Active':'Inactive')+'</span></td>';
+      h += '</tr>';
+    });
+    h += '</tbody></table>';
+    document.getElementById('variants-content').innerHTML = h;
+  }
+
+  /* ─────────── HELPERS ─────────── */
   function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-  function chLabel(ch){
-    var m = {'AMAZON_IN':'Amazon IN','SHOPIFY':'Shopify','FLIPKART_IN':'Flipkart','MYNTRA':'Myntra','MEESHO':'Meesho'};
-    return m[ch] || ch;
+  function chLabel(ch){ return {AMAZON_IN:'Amazon IN',SHOPIFY:'Shopify',FLIPKART_IN:'Flipkart',MYNTRA:'Myntra',MEESHO:'Meesho'}[ch]||ch; }
+  function stars(n){ var s=''; for(var i=0;i<5;i++) s+=i<n?'&#9733;':'&#9734;'; return s; }
+  function perRow(lbl,val){ return '<div class="per-row"><span class="lbl">'+lbl+'</span><span class="val">'+val+'</span></div>'; }
+  function priceRow(lbl,val,raw){ return '<div class="price-row"><span class="lbl">'+lbl+'</span><span class="val">'+(raw?val:val)+'</span></div>'; }
+  function invRow(lbl,val,warn){ return '<div class="inv-row"><span class="lbl">'+lbl+'</span><span class="val'+(warn?' warn':'')+'">'+val+'</span></div>'; }
+  function adRow(lbl,val){ return '<div class="ad-row"><span class="lbl">'+lbl+'</span><span class="val">'+val+'</span></div>'; }
+  function kpiTile(label,val,color){
+    return '<div style="background:var(--bg-cream);border-radius:var(--rad);padding:10px 12px;text-align:center">'
+      +'<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:4px">'+label+'</div>'
+      +'<div style="font-family:var(--mono);font-size:16px;font-weight:600;'+(color?'color:'+color:'color:var(--t1)')+'">'+val+'</div></div>';
   }
-  function sevIcon(sev){ return sev==='red'?'&#9888;':'&#9432;'; }
-  function stars(n){
-    var s='';
-    for(var i=0;i<5;i++) s += i < n ? '&#9733;' : '&#9734;';
-    return s;
-  }
-  function row(label, val){
-    return '<div class="ch-row"><span class="lbl">'+label+'</span><span class="val">'+val+'</span></div>';
-  }
-  function kpi(label, val){
-    return '<div class="cd"><div class="kl">'+label+'</div><div class="kv">'+val+'</div></div>';
-  }
-  function wfItem(label, val, pctVal, cls){
-    return '<div class="wf-item '+(cls||'')+'">'
-      +'<div class="wf-label">'+label+'</div>'
-      +'<div class="wf-val">'+cur(val)+'</div>'
-      +(pctVal != null ? '<div class="wf-pct">'+pctVal.toFixed(1)+'% of revenue</div>' : '')
-      +'</div>';
-  }
-  function invItem(label, val, color){
-    return '<div class="inv-bar-item">'
-      +'<div class="inv-label">'+label+'</div>'
-      +'<div class="inv-val"'+(color?' style="color:'+color+'"':'')+'>'+fmt(val)+'</div>'
-      +'</div>';
-  }
-  function adRow(label, val){
-    return '<div class="ad-row"><span class="lbl">'+label+'</span><span class="val">'+val+'</span></div>';
-  }
-
 })();
 </script>
 </body>
