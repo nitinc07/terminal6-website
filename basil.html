@@ -243,6 +243,9 @@
     <div class="si sb-sub" onclick="swSub('amzads','agent',this)"><span>Analysis Agent</span></div>
     <div class="si" onclick="sw('gads',this)"><div class="ic">&#128269;</div><span>Google Ads</span></div>
     <div class="si" onclick="sw('serp',this)"><div class="ic">&#128208;</div><span>SERP Rank</span></div>
+    <div class="si" onclick="sw('kwi',this)"><div class="ic">&#127919;</div><span>Keyword Intelligence</span></div>
+    <div class="si sb-sub" onclick="swSub('kwi','cohorts',this)"><span>Cohort Overview</span></div>
+    <div class="si sb-sub" onclick="swSub('kwi','harvest',this)"><span>Harvest Queue</span></div>
     <div class="si" onclick="sw('catalog',this)"><div class="ic">&#128230;</div><span>Catalogue</span></div>
     <div class="si sb-sub" onclick="swSub('catalog','master',this)"><span>Product Master</span></div>
     <div class="si sb-sub" onclick="swSub('catalog','listing-health',this)"><span>Listing Health</span></div>
@@ -447,6 +450,47 @@
     </div>
 
     <div class="ph2"><strong>Next:</strong> rank trend over time (need multi-day history &mdash; DataForSEO crawl schedule kicking in), competitor ownership per keyword, share-of-voice.</div>
+  </div>
+
+  <!-- ========== KEYWORD INTELLIGENCE ========== -->
+  <div class="vw" id="v-kwi">
+    <div class="head">
+      <div class="icon" style="background:var(--acc)">&#127919;</div>
+      <div><h2>Keyword Intelligence &middot; Amazon IN</h2><p class="sub">MSKU &times; Cohort performance matrix + harvest/negate recommendations. Cohorts classified by AI.</p></div>
+    </div>
+
+    <!-- Sub-tab nav -->
+    <div class="subtabs" id="kwiSubtabs">
+      <button class="a" onclick="kwiSub('cohorts',this)">Cohort Overview</button>
+      <button onclick="kwiSub('harvest',this)">Harvest Queue</button>
+    </div>
+
+    <!-- Sub-tab 1: Cohort Overview -->
+    <div class="iv-sub act" id="kwis-cohorts">
+      <div class="g4" style="margin-bottom:20px" id="kwi-kpis">
+        <div class="cd"><div class="kl">Classified Keywords</div><div class="kv" id="kwi-total">--</div><div class="kd n">across all MSKUs</div></div>
+        <div class="cd"><div class="kl">Must-Win SOV</div><div class="kv" id="kwi-mw-sov">--</div><div class="kd n">position-weighted</div></div>
+        <div class="cd"><div class="kl">Branded SOV</div><div class="kv" id="kwi-br-sov">--</div><div class="kd n">position-weighted</div></div>
+        <div class="cd"><div class="kl">Must-Win ACoS</div><div class="kv" id="kwi-mw-acos">--</div><div class="kd n">vs Generic ACoS</div></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>MSKU &times; Cohort Matrix</h3></div>
+        <div id="kwi-matrix" class="loading">Loading...</div>
+      </div>
+
+      <div class="sec" id="kwi-drilldown-sec" style="display:none">
+        <div class="sec-h"><h3 id="kwi-dd-title">Keywords</h3>
+          <div class="pills" id="kwi-cohort-pills"></div>
+        </div>
+        <div id="kwi-drilldown" class="loading">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Sub-tab 2: Harvest Queue -->
+    <div class="iv-sub" id="kwis-harvest">
+      <div id="kwi-harvest-cards" class="loading">Loading...</div>
+    </div>
   </div>
 
   <!-- ========== CATALOGUE ========== -->
@@ -885,6 +929,7 @@ const viewTitles={
   amzads:'&#127344; Amazon Ads',
   gads:'&#128269; Google Ads',
   serp:'&#128208; SERP Rank',
+  kwi:'&#127919; Keyword Intelligence',
   catalog:'&#128230; Catalogue',
   inventory:'&#128230; Inventory &amp; Fulfillment',
   pnl:'&#128176; P&amp;L',
@@ -904,6 +949,7 @@ function swSub(viewId, subId, el){
   if(viewId==='pnl') switchPnlSub(subId);
   if(viewId==='amzads') adsSub(subId);
   if(viewId==='catalog') catalogSub(subId);
+  if(viewId==='kwi') kwiSub(subId);
 }
 function sw(id,el){
   const target=document.getElementById('v-'+id);
@@ -922,6 +968,7 @@ function sw(id,el){
   if(id==='amzads') loadAds('amazon');
   if(id==='gads') loadAds('google');
   if(id==='serp') loadSERP();
+  if(id==='kwi') loadKWI();
   if(id==='catalog') loadCatalog();
   if(id==='inventory') loadInventory();
   if(id==='pnl') loadPnL();
@@ -1429,6 +1476,171 @@ function renderSERP(s){
   }
   html+='</tbody></table>';
   el.innerHTML=html;
+}
+
+/* ========== KEYWORD INTELLIGENCE ========== */
+var _kwiData=null, _kwiSubActive='cohorts';
+
+function kwiSub(subId, btn){
+  _kwiSubActive=subId;
+  document.querySelectorAll('#v-kwi .iv-sub').forEach(el=>el.classList.remove('act'));
+  var target=document.getElementById('kwis-'+subId);
+  if(target) target.classList.add('act');
+  document.querySelectorAll('#kwiSubtabs button').forEach(b=>b.classList.remove('a'));
+  if(btn) btn.classList.add('a');
+  else document.querySelectorAll('#kwiSubtabs button').forEach(b=>{if(b.textContent.toLowerCase().includes(subId.substring(0,4))) b.classList.add('a');});
+  if(subId==='harvest' && !document.getElementById('kwis-harvest').dataset.loaded) loadKWIHarvest();
+}
+
+function loadKWI(){
+  if(_kwiData) return; // cache
+  api('/v1/keywords/cohorts?days=30').then(renderKWI).catch(showErr('kwi-matrix'));
+}
+
+function renderKWI(r){
+  _kwiData=r;
+  // KPIs
+  var totalKW=0, mwSovSum=0, mwSovCnt=0, brSovSum=0, brSovCnt=0, mwSpend=0, mwSales=0, genSpend=0, genSales=0;
+  for(var m of r.mskus){
+    for(var c in m.cohorts){
+      var d=m.cohorts[c];
+      totalKW+=d.keywords||0;
+      if(c==='Must-Win' && d.sov_pct!=null){mwSovSum+=d.sov_pct; mwSovCnt++; mwSpend+=d.spend||0; mwSales+=d.sales||0;}
+      if(c==='Branded' && d.sov_pct!=null){brSovSum+=d.sov_pct; brSovCnt++;}
+      if(c==='Generic'){genSpend+=d.spend||0; genSales+=d.sales||0;}
+    }
+  }
+  document.getElementById('kwi-total').textContent=fmt(totalKW);
+  document.getElementById('kwi-mw-sov').textContent=mwSovCnt?pct(mwSovSum/mwSovCnt,1):'--';
+  document.getElementById('kwi-br-sov').textContent=brSovCnt?pct(brSovSum/brSovCnt,1):'--';
+  var mwAcos=mwSales>0?(mwSpend/mwSales*100):0, genAcos=genSales>0?(genSpend/genSales*100):0;
+  document.getElementById('kwi-mw-acos').textContent=mwSales>0?pct(mwAcos,0):'--';
+  document.getElementById('kwi-mw-acos').parentElement.querySelector('.kd').textContent=genSales>0?'vs Generic '+pct(genAcos,0):'vs Generic --';
+
+  // Matrix table
+  var cohorts=['Branded','Must-Win','Generic','Competitor','Unclassified'];
+  var html='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>MSKU</th>';
+  for(var c of cohorts) html+='<th class="r" colspan="3" style="border-bottom:2px solid var(--border-s)">'+c+'</th>';
+  html+='</tr><tr><th></th>';
+  for(var i=0;i<cohorts.length;i++) html+='<th class="r" style="font-size:10px;color:var(--t3)">KW</th><th class="r" style="font-size:10px;color:var(--t3)">SOV%</th><th class="r" style="font-size:10px;color:var(--t3)">ACoS</th>';
+  html+='</tr></thead><tbody>';
+
+  for(var m of r.mskus){
+    html+='<tr style="cursor:pointer" onclick="loadKWIDrilldown(\''+m.msku_id+'\',\''+m.msku_name.replace(/'/g,"\\'")+'\')">';
+    html+='<td class="hi" style="white-space:nowrap">'+m.msku_name+'</td>';
+    for(var c of cohorts){
+      var d=m.cohorts[c];
+      if(d){
+        var sovStr=d.sov_pct!=null?pct(d.sov_pct,1):'-';
+        var acosStr=d.acos!=null?pct(d.acos,0):'-';
+        var acosColor=d.acos!=null?(d.acos<25?'var(--g)':d.acos>50?'var(--r)':'var(--a)'):'var(--t3)';
+        html+='<td class="mn2 r">'+fmt(d.keywords)+'</td>';
+        html+='<td class="mn2 r">'+sovStr+'</td>';
+        html+='<td class="mn2 r" style="color:'+acosColor+'">'+acosStr+'</td>';
+      } else {
+        html+='<td class="mn2 r" style="color:var(--t3)">-</td><td class="mn2 r" style="color:var(--t3)">-</td><td class="mn2 r" style="color:var(--t3)">-</td>';
+      }
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table></div>';
+  document.getElementById('kwi-matrix').innerHTML=html;
+}
+
+function loadKWIDrilldown(mskuId, mskuName, cohortFilter){
+  var sec=document.getElementById('kwi-drilldown-sec');
+  sec.style.display='';
+  document.getElementById('kwi-dd-title').textContent=mskuName+' — Keywords';
+  var el=document.getElementById('kwi-drilldown');
+  el.innerHTML='<div class="loading">Loading...</div>';
+
+  // Build cohort filter pills
+  var pills=document.getElementById('kwi-cohort-pills');
+  var cohorts=['All','Branded','Must-Win','Generic','Competitor'];
+  pills.innerHTML='';
+  for(var c of cohorts){
+    var btn=document.createElement('button');
+    btn.textContent=c;
+    btn.dataset.cohort=c==='All'?'':c;
+    if((cohortFilter||'')===(c==='All'?'':c)) btn.classList.add('a');
+    btn.onclick=function(){
+      pills.querySelectorAll('button').forEach(function(b){b.classList.remove('a');});
+      this.classList.add('a');
+      loadKWIDrilldown(mskuId, mskuName, this.dataset.cohort);
+    };
+    pills.appendChild(btn);
+  }
+
+  var url='/v1/keywords/cohorts/'+mskuId+'?days=30';
+  if(cohortFilter) url+='&cohort='+encodeURIComponent(cohortFilter);
+  api(url).then(function(r){
+    if(!r.data||!r.data.length){el.innerHTML='<div class="empty">No keywords found</div>';return;}
+    var html='<table class="tbl"><thead><tr>'
+      +'<th>Keyword</th><th>Cohort</th>'
+      +'<th class="r">Org Rank</th><th class="r">Spn Rank</th>'
+      +'<th class="r">Impressions</th><th class="r">Clicks</th>'
+      +'<th class="r">Spend</th><th class="r">Sales (1d)</th>'
+      +'<th class="r">Orders</th><th class="r">ACoS</th>'
+      +'</tr></thead><tbody>';
+    for(var kw of r.data){
+      var acosColor=kw.acos!=null?(kw.acos<25?'var(--g)':kw.acos>50?'var(--r)':'var(--a)'):'var(--t3)';
+      var cohortColor=kw.cohort==='Branded'?'var(--acc)':kw.cohort==='Must-Win'?'var(--g)':kw.cohort==='Competitor'?'var(--r)':'var(--t2)';
+      html+='<tr>'
+        +'<td class="hi">'+kw.keyword+'</td>'
+        +'<td style="color:'+cohortColor+';font-size:11px;font-weight:500">'+kw.cohort+'</td>'
+        +'<td class="r">'+rkBadge(kw.organic_rank)+'</td>'
+        +'<td class="r">'+rkBadge(kw.sponsored_rank)+'</td>'
+        +'<td class="mn2 r">'+fmt(kw.impressions)+'</td>'
+        +'<td class="mn2 r">'+fmt(kw.clicks)+'</td>'
+        +'<td class="mn2 r">'+cur(kw.spend)+'</td>'
+        +'<td class="mn2 r">'+cur(kw.sales)+'</td>'
+        +'<td class="mn2 r">'+fmt(kw.orders)+'</td>'
+        +'<td class="mn2 r" style="color:'+acosColor+'">'+(kw.acos!=null?pct(kw.acos,1):'-')+'</td>'
+        +'</tr>';
+    }
+    html+='</tbody></table>';
+    el.innerHTML=html;
+  }).catch(showErr('kwi-drilldown'));
+}
+
+function loadKWIHarvest(){
+  document.getElementById('kwis-harvest').dataset.loaded='1';
+  var el=document.getElementById('kwi-harvest-cards');
+  el.innerHTML='<div class="loading">Loading...</div>';
+  api('/v1/keywords/harvest-queue?days=30').then(function(r){
+    if(!r.insights||!r.insights.length){el.innerHTML='<div class="empty">No harvest recommendations</div>';return;}
+    var html='<div class="audit-grid">';
+    for(var ins of r.insights){
+      var sev=ins.severity;
+      html+='<div class="audit-card '+sev+'" onclick="this.classList.toggle(\'expanded\')">'
+        +'<div class="ac-head">'+sev.toUpperCase()+'</div>'
+        +'<div class="ac-title">'+ins.title+'</div>'
+        +'<div class="ac-body">'+ins.body+'</div>'
+        +'<div class="ac-more">'+ins.count+' candidates &middot; click to expand</div>'
+        +'<div class="ag-bucket-items">';
+      for(var c of (ins.candidates||[]).slice(0,10)){
+        var term=c.search_term||c.keyword||'';
+        var spend=c.spend!=null?cur(c.spend):'';
+        var sales=c.sales_1d!=null?cur(c.sales_1d):'';
+        var acos=c.acos!=null?pct(c.acos,1):'';
+        var orgRank=c.organic_rank!=null?'Org #'+c.organic_rank:'';
+        var msku=c.msku_name||'';
+        html+='<div class="ag-bucket-item">'
+          +'<div class="bi-entity">'+term+'</div>'
+          +'<div class="bi-numbers">'+(spend?'Spend: '+spend+' ':'')+(sales?'Sales: '+sales+' ':'')+(acos?'ACoS: '+acos+' ':'')+(orgRank?orgRank:'')+'</div>'
+          +(msku?'<div class="bi-reason">'+msku+'</div>':'')
+          +'</div>';
+      }
+      html+='</div></div>';
+    }
+    html+='</div>';
+    // Show rule transparency
+    html+='<div style="margin-top:14px;font-size:11px;color:var(--t3)">';
+    html+='<strong>Thresholds:</strong> ';
+    for(var k in r.thresholds) html+=k.replace(/_/g,' ')+': '+r.thresholds[k]+' &middot; ';
+    html+='</div>';
+    el.innerHTML=html;
+  }).catch(showErr('kwi-harvest-cards'));
 }
 
 /* ========== CATALOGUE ========== */
