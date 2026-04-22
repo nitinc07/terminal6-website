@@ -31,6 +31,13 @@ terminal6-website/
 ├── basil.html             — **LIVE BASIL DASHBOARD.** Amazon-only Phase 1. Reads
 │                            /shared.css + /shared.js; owns Basil-only CSS (SERP rank
 │                            badge, Phase-2 callout) + Basil tab renderers.
+├── product.html           — **PRODUCT DETAIL PAGE.** Per-SKU dossier opened by clicking
+│                            product name or seller_sku on any dashboard table. Seller
+│                            Central-inspired layout: left sidebar (product image, status
+│                            badge, SKU/ASIN IDs, section nav) + right content with
+│                            sectioned cards (sales, P&L, inventory, ads, SERP, reviews,
+│                            returns, content health). Reads `msku_id` + optional `sku`
+│                            from URL params. Calls `GET /v1/products/{msku_id}`.
 ├── funnel.html            — Standalone D2C funnel page (simpler entry point, same API).
 ├── app.html               — **DESIGN PROTOTYPE** (mock data). See PROTOTYPE.md.
 ├── architecture.html      — Investor-facing product architecture doc (mirrored from
