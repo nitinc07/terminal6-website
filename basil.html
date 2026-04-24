@@ -1141,8 +1141,8 @@ function renderMcChannelMix(d){
 var _mcMetrics=[
   {label:'Gross Revenue',key:'gross_revenue',  fn:function(v){return cur(v)},                          th:'pct', tv:15},
   {label:'Net Revenue',  key:'net_revenue',    fn:function(v){return cur(v)},                          th:'pct', tv:15},
-  {label:'Units',        key:'units',         fn:function(v){return fmt(v)},                          th:'pct', tv:15},
-  {label:'Orders',       key:'orders',        fn:function(v){return fmt(v)},                          th:'pct', tv:15},
+  {label:'Net Units',    key:'units',         fn:function(v){return fmt(v)},                          th:'pct', tv:15},
+  {label:'Net Orders',   key:'orders',        fn:function(v){return fmt(v)},                          th:'pct', tv:15},
   {label:'AOV',          key:'aov',           fn:function(v){return v?cur(v):'--'},                   th:'pct', tv:10},
   {label:'COD Items',    key:'cod_items',     fn:function(v){return fmt(v)},                          th:'pct', tv:15},
   {label:'Prepaid Items',key:'prepaid_items', fn:function(v){return fmt(v)},                          th:'pct', tv:15},
@@ -1320,8 +1320,8 @@ function renderAmazonKPIs(r){
 var _azMetrics=[
   {label:'Gross Revenue', key:'gross_revenue', fn:function(v){return cur(v)},        th:'pct', tv:15},
   {label:'Net Revenue',   key:'net_revenue',   fn:function(v){return cur(v)},        th:'pct', tv:15},
-  {label:'Units',    key:'units',           fn:function(v){return fmt(v)},           th:'pct', tv:15},
-  {label:'Orders',   key:'orders',          fn:function(v){return fmt(v)},           th:'pct', tv:15},
+  {label:'Net Units', key:'units',           fn:function(v){return fmt(v)},           th:'pct', tv:15},
+  {label:'Net Orders',key:'orders',          fn:function(v){return fmt(v)},           th:'pct', tv:15},
   {label:'AOV',      key:'aov',             fn:function(v){return v?cur(v):'--'},    th:'pct', tv:10},
   {label:'Ad Spend', key:'ad_spend',        fn:function(v){return cur(v)},           th:'pct', tv:15},
   {label:'ACoS',     key:'acos_pct',        fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2},
