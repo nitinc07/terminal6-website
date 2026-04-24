@@ -307,9 +307,9 @@
 
     <!-- KPI tiles -->
     <div class="g5" style="margin-bottom:28px">
-      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="mc-revenue">--</div><div class="kd n" id="mc-revenue-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Gross Revenue</div><div class="kv" id="mc-gross">--</div><div class="kd n" id="mc-gross-d">excl. cancelled</div></div>
+      <div class="cd"><div class="kl">Net Revenue</div><div class="kv" id="mc-net">--</div><div class="kd n" id="mc-net-d">excl. returns + GST</div></div>
       <div class="cd"><div class="kl">Orders</div><div class="kv" id="mc-orders">--</div><div class="kd n" id="mc-orders-d">&nbsp;</div></div>
-      <div class="cd"><div class="kl">AOV</div><div class="kv" id="mc-aov">--</div><div class="kd n" id="mc-aov-d">&nbsp;</div></div>
       <div class="cd"><div class="kl">COD %</div><div class="kv" id="mc-cod">--</div><div class="kd n" id="mc-cod-d">cash on delivery share</div></div>
       <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="mc-retrate">--</div><div class="kd n" id="mc-retrate-d">RTO + RVP / active</div></div>
     </div>
@@ -1097,11 +1097,12 @@ function _mcDelta(id,val){
 function renderMcKPIs(d){
   if(!d||!d.summary) return;
   var s=d.summary;
-  _mcSet('mc-revenue',cur(s.revenue));
-  _mcDelta('mc-revenue-d',s.delta?s.delta.revenue_pct:null);
+  _mcSet('mc-gross',cur(s.gross_revenue));
+  _mcDelta('mc-gross-d',s.delta?s.delta.gross_revenue_pct:null);
+  _mcSet('mc-net',cur(s.net_revenue));
+  _mcDelta('mc-net-d',s.delta?s.delta.net_revenue_pct:null);
   _mcSet('mc-orders',fmt(s.orders));
   _mcDelta('mc-orders-d',s.delta?s.delta.orders_pct:null);
-  _mcSet('mc-aov',s.aov?cur(s.aov):'--');
   _mcSet('mc-cod',s.cod_pct!=null?s.cod_pct.toFixed(1)+'%':'--');
   _mcSet('mc-retrate',s.return_rate_pct!=null?s.return_rate_pct.toFixed(1)+'%':'--');
 }
@@ -1124,10 +1125,10 @@ function renderMcChannelMix(d){
     html+='<span style="margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--acc);font-weight:600">'+c.share_pct+'%</span>';
     html+='</div>';
     html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">';
-    html+='<div><span class="kl" style="font-size:11px">Revenue</span><div style="font-family:var(--mono);font-weight:500">'+cur(c.revenue)+'</div></div>';
+    html+='<div><span class="kl" style="font-size:11px">Gross Rev</span><div style="font-family:var(--mono);font-weight:500">'+cur(c.gross_revenue)+'</div></div>';
+    html+='<div><span class="kl" style="font-size:11px">Net Rev</span><div style="font-family:var(--mono);font-weight:500">'+cur(c.net_revenue)+'</div></div>';
     html+='<div><span class="kl" style="font-size:11px">Orders</span><div style="font-family:var(--mono);font-weight:500">'+fmt(c.orders)+'</div></div>';
     html+='<div><span class="kl" style="font-size:11px">AOV</span><div style="font-family:var(--mono);font-weight:500">'+(c.aov?cur(c.aov):'--')+'</div></div>';
-    html+='<div><span class="kl" style="font-size:11px">COD %</span><div style="font-family:var(--mono);font-weight:500">'+(c.cod_pct!=null?c.cod_pct.toFixed(1)+'%':'--')+'</div></div>';
     if(c.return_rate_pct!=null){
       html+='<div><span class="kl" style="font-size:11px">Return Rate</span><div style="font-family:var(--mono);font-weight:500">'+c.return_rate_pct.toFixed(1)+'%</div></div>';
     }
@@ -1139,7 +1140,8 @@ function renderMcChannelMix(d){
 
 /* --- Transposed trend table (same pattern as Amazon tab) --- */
 var _mcMetrics=[
-  {label:'Revenue',      key:'revenue',       fn:function(v){return cur(v)},                          th:'pct', tv:15},
+  {label:'Gross Revenue',key:'gross_revenue',  fn:function(v){return cur(v)},                          th:'pct', tv:15},
+  {label:'Net Revenue',  key:'net_revenue',    fn:function(v){return cur(v)},                          th:'pct', tv:15},
   {label:'Units',        key:'units',         fn:function(v){return fmt(v)},                          th:'pct', tv:15},
   {label:'Orders',       key:'orders',        fn:function(v){return fmt(v)},                          th:'pct', tv:15},
   {label:'AOV',          key:'aov',           fn:function(v){return v?cur(v):'--'},                   th:'pct', tv:10},
