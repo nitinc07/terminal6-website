@@ -1139,17 +1139,17 @@ function renderMcChannelMix(d){
 
 /* --- Transposed trend table (same pattern as Amazon tab) --- */
 var _mcMetrics=[
-  {label:'Gross Revenue',key:'gross_revenue',  fn:function(v){return cur(v)},                          th:'pct', tv:15},
-  {label:'Net Revenue',  key:'net_revenue',    fn:function(v){return cur(v)},                          th:'pct', tv:15},
-  {label:'Net Units',    key:'units',         fn:function(v){return fmt(v)},                          th:'pct', tv:15},
-  {label:'Net Orders',   key:'orders',        fn:function(v){return fmt(v)},                          th:'pct', tv:15},
-  {label:'AOV',          key:'aov',           fn:function(v){return v?cur(v):'--'},                   th:'pct', tv:10},
+  {label:'Gross Revenue',key:'gross_revenue',  fn:function(v){return cur(v)},                          th:'pct', tv:15, tip:'All revenue excl. cancelled orders. Includes RTO + RVP (dispatched but returned).'},
+  {label:'Net Revenue',  key:'net_revenue',    fn:function(v){return cur(v)},                          th:'pct', tv:15, tip:'Revenue excl. cancelled + RTO + RVP, minus GST. Amazon: GST from settlement rates. UC: tax_amount from order.'},
+  {label:'Net Units',    key:'units',         fn:function(v){return fmt(v)},                          th:'pct', tv:15, tip:'Units excl. cancelled + RTO + RVP.'},
+  {label:'Net Orders',   key:'orders',        fn:function(v){return fmt(v)},                          th:'pct', tv:15, tip:'Distinct orders excl. cancelled + RTO + RVP.'},
+  {label:'AOV',          key:'aov',           fn:function(v){return v?cur(v):'--'},                   th:'pct', tv:10, tip:'Gross Revenue / Net Orders.'},
   {label:'COD Items',    key:'cod_items',     fn:function(v){return fmt(v)},                          th:'pct', tv:15},
   {label:'Prepaid Items',key:'prepaid_items', fn:function(v){return fmt(v)},                          th:'pct', tv:15},
-  {label:'COD %',        key:'cod_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},   inv:true, th:'pp', tv:3},
-  {label:'RTO',          key:'rto_items',     fn:function(v){return fmt(v)},                          inv:true, th:'pct', tv:20},
-  {label:'RVP',          key:'rvp_items',     fn:function(v){return fmt(v)},                          inv:true, th:'pct', tv:20},
-  {label:'Return Rate',  key:'return_rate_pct',fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},  inv:true, th:'pp', tv:2}
+  {label:'COD %',        key:'cod_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},   inv:true, th:'pp', tv:3, tip:'COD items / (COD + Prepaid items).'},
+  {label:'RTO',          key:'rto_items',     fn:function(v){return fmt(v)},                          inv:true, th:'pct', tv:20, tip:'Return to Origin \u2014 undelivered, sent back by courier.'},
+  {label:'RVP',          key:'rvp_items',     fn:function(v){return fmt(v)},                          inv:true, th:'pct', tv:20, tip:'Reverse Pickup \u2014 delivered, returned by customer.'},
+  {label:'Return Rate',  key:'return_rate_pct',fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},  inv:true, th:'pp', tv:2, tip:'(RTO + RVP) / active items. Active = all excl. cancelled.'}
 ];
 
 function renderMcTrend(d, gran, monthRes){
@@ -1187,7 +1187,7 @@ function renderMcTrend(d, gran, monthRes){
 
   for(var m=0;m<_mcMetrics.length;m++){
     var met=_mcMetrics[m];
-    html+='<tr><td class="hi">'+met.label+'</td>';
+    html+='<tr><td class="hi">'+met.label+(met.tip?(' '+tip(met.tip)):'')+'</td>';
     for(var c2=0;c2<cols.length;c2++){
       var val=cols[c2].data[met.key];
       var bg='';
@@ -1318,19 +1318,19 @@ function renderAmazonKPIs(r){
 /* --- Transposed trend table: metrics as rows, time periods as columns --- */
 // th: 'pct' = relative % change threshold, 'pp' = absolute percentage-point threshold
 var _azMetrics=[
-  {label:'Gross Revenue', key:'gross_revenue', fn:function(v){return cur(v)},        th:'pct', tv:15},
-  {label:'Net Revenue',   key:'net_revenue',   fn:function(v){return cur(v)},        th:'pct', tv:15},
-  {label:'Net Units', key:'units',           fn:function(v){return fmt(v)},           th:'pct', tv:15},
-  {label:'Net Orders',key:'orders',          fn:function(v){return fmt(v)},           th:'pct', tv:15},
-  {label:'AOV',      key:'aov',             fn:function(v){return v?cur(v):'--'},    th:'pct', tv:10},
+  {label:'Gross Revenue', key:'gross_revenue', fn:function(v){return cur(v)},        th:'pct', tv:15, tip:'All revenue excl. cancelled orders. Includes RTO + RVP.'},
+  {label:'Net Revenue',   key:'net_revenue',   fn:function(v){return cur(v)},        th:'pct', tv:15, tip:'Revenue excl. cancelled + RTO + RVP, minus GST (settlement-derived rate per SKU).'},
+  {label:'Net Units', key:'units',           fn:function(v){return fmt(v)},           th:'pct', tv:15, tip:'Units excl. cancelled + RTO + RVP.'},
+  {label:'Net Orders',key:'orders',          fn:function(v){return fmt(v)},           th:'pct', tv:15, tip:'Distinct orders excl. cancelled + RTO + RVP.'},
+  {label:'AOV',      key:'aov',             fn:function(v){return v?cur(v):'--'},    th:'pct', tv:10, tip:'Net Revenue / Net Orders.'},
   {label:'Ad Spend', key:'ad_spend',        fn:function(v){return cur(v)},           th:'pct', tv:15},
-  {label:'ACoS',     key:'acos_pct',        fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2},
-  {label:'TACoS',    key:'tacos_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2},
-  {label:'ROAS',     key:'roas',            fn:function(v){return v!=null?v.toFixed(1)+'x':'--'},           th:'pct', tv:15},
-  {label:'Sessions', key:'sessions',        fn:function(v){return v?fmt(v):'--'},    th:'pct', tv:15},
-  {label:'Paid %',   key:'paid_share_pct',  fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2},
-  {label:'Conv %',   key:'conversion_pct',  fn:function(v){return v!=null?v.toFixed(2)+'%':'--'},           th:'pp', tv:2},
-  {label:'BB %',     key:'buy_box_pct',     fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},           th:'pp', tv:2}
+  {label:'ACoS',     key:'acos_pct',        fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2, tip:'Ad spend / attributed sales. SP: 1-day, SB/SD: 7-day attribution.'},
+  {label:'TACoS',    key:'tacos_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2, tip:'Ad spend / Net Revenue. Total advertising cost of sale.'},
+  {label:'ROAS',     key:'roas',            fn:function(v){return v!=null?v.toFixed(1)+'x':'--'},           th:'pct', tv:15, tip:'Attributed sales / ad spend.'},
+  {label:'Sessions', key:'sessions',        fn:function(v){return v?fmt(v):'--'},    th:'pct', tv:15, tip:'Unique visitors from Business Reports (ASIN-level, deduplicated).'},
+  {label:'Paid %',   key:'paid_share_pct',  fn:function(v){return v!=null?v.toFixed(1)+'%':'--'}, inv:true, th:'pp', tv:2, tip:'Ad clicks / sessions. Higher = more traffic from ads.'},
+  {label:'Conv %',   key:'conversion_pct',  fn:function(v){return v!=null?v.toFixed(2)+'%':'--'},           th:'pp', tv:2, tip:'Net Units / sessions.'},
+  {label:'BB %',     key:'buy_box_pct',     fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},           th:'pp', tv:2, tip:'Session-weighted buy box ownership across ASINs.'}
 ];
 
 function _renderAzTrend(granData, gran, monthData){
@@ -1365,7 +1365,7 @@ function _renderAzTrend(granData, gran, monthData){
 
   for(var m=0;m<_azMetrics.length;m++){
     var met=_azMetrics[m];
-    html+='<tr><td class="hi">'+met.label+'</td>';
+    html+='<tr><td class="hi">'+met.label+(met.tip?(' '+tip(met.tip)):'')+'</td>';
     for(var c2=0;c2<cols.length;c2++){
       var val=cols[c2].data[met.key];
       // Color only significant deviations vs previous period
@@ -1684,7 +1684,7 @@ function _renderAdsTransposed(prefix){
   html+='</tr></thead><tbody>';
   for(var m=0;m<metrics.length;m++){
     var met=metrics[m];
-    html+='<tr><td class="hi">'+met.label+'</td>';
+    html+='<tr><td class="hi">'+met.label+(met.tip?(' '+tip(met.tip)):'')+'</td>';
     for(var c2=0;c2<cols.length;c2++){
       var val=cols[c2].data[met.key];
       var bg='';
