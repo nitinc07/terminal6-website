@@ -236,8 +236,12 @@
     <div class="bs"><span style="display:flex;align-items:center;gap:7px"><span class="bd"></span>Basil</span><span style="font-size:11px;color:var(--tm)">V1</span></div>
   </div>
   <div class="ss">
+    <div class="sl">All Channels</div>
+    <div class="si act" onclick="sw('mc',this)"><div class="ic">&#127760;</div><span>Multi-Channel</span></div>
+  </div>
+  <div class="ss">
     <div class="sl">Amazon IN</div>
-    <div class="si act" onclick="sw('overview',this)"><div class="ic">&#128202;</div><span>Amazon Summary</span></div>
+    <div class="si" onclick="sw('overview',this)"><div class="ic">&#128202;</div><span>Amazon Summary</span></div>
     <div class="si" onclick="sw('amzads',this)"><div class="ic">&#127344;</div><span>Amazon Ads</span></div>
     <div class="si sb-sub" onclick="swSub('amzads','data',this)"><span>Performance</span></div>
     <div class="si sb-sub" onclick="swSub('amzads','agent',this)"><span>Analysis Agent</span></div>
@@ -290,8 +294,47 @@
     <div class="tb-note" id="dataFreshness"></div>
   </div>
 
+  <!-- ========== MULTI-CHANNEL OVERVIEW ========== -->
+  <div class="vw act" id="v-mc">
+    <!-- Granularity pills -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div class="pills" id="mcGranPills">
+        <button class="a" data-gran="day">Day</button>
+        <button data-gran="week">Week</button>
+        <button data-gran="month">Month</button>
+      </div>
+    </div>
+
+    <!-- KPI tiles -->
+    <div class="g5" style="margin-bottom:28px">
+      <div class="cd"><div class="kl">Revenue</div><div class="kv" id="mc-revenue">--</div><div class="kd n" id="mc-revenue-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Orders</div><div class="kv" id="mc-orders">--</div><div class="kd n" id="mc-orders-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">AOV</div><div class="kv" id="mc-aov">--</div><div class="kd n" id="mc-aov-d">&nbsp;</div></div>
+      <div class="cd"><div class="kl">COD %</div><div class="kv" id="mc-cod">--</div><div class="kd n" id="mc-cod-d">cash on delivery share</div></div>
+      <div class="cd"><div class="kl">Return Rate</div><div class="kv" id="mc-retrate">--</div><div class="kd n" id="mc-retrate-d">RTO + RVP / active</div></div>
+    </div>
+
+    <!-- Channel Mix -->
+    <div class="sec">
+      <div class="sec-h"><h3>Channel Mix</h3></div>
+      <div id="mc-channel-mix" class="loading">Loading...</div>
+    </div>
+
+    <!-- Transposed Trend Table -->
+    <div class="sec">
+      <div class="sec-h"><h3>Trend <span class="note" id="mc-trend-note"></span></h3></div>
+      <div id="mc-trend-table" class="loading">Loading...</div>
+    </div>
+
+    <!-- Geo Breakdown -->
+    <div class="sec">
+      <div class="sec-h"><h3>Top States by Orders</h3></div>
+      <div id="mc-geo" class="loading">Loading...</div>
+    </div>
+  </div>
+
   <!-- ========== AMAZON CHANNEL SUMMARY ========== -->
-  <div class="vw act" id="v-overview">
+  <div class="vw" id="v-overview">
     <!-- Top KPIs: Revenue, Units, AOV, TACoS -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
       <div class="pills" id="azKpiPills">
@@ -946,6 +989,7 @@ let catDays=30;
 
 /* ========== VIEW SWITCHING ========== */
 const viewTitles={
+  mc:'&#127760; Multi-Channel Overview',
   overview:'&#128202; Amazon Summary',
   amzads:'&#127344; Amazon Ads',
   gads:'&#128269; Google Ads',
@@ -958,7 +1002,7 @@ const viewTitles={
   shopify:'&#128717; Shopify D2C',
   otherch:'&#128722; Other Channels',
 };
-let currentView='overview';
+let currentView='mc';
 function swSub(viewId, subId, el){
   // Navigate to parent view, then switch sub-tab
   sw(viewId);
@@ -985,6 +1029,7 @@ function sw(id,el){
   const showPills=['amzads','gads'].includes(id);
   document.getElementById('rangePills').style.display=showPills?'flex':'none';
 
+  if(id==='mc') loadMultiChannel();
   if(id==='overview') loadAmazon();
   if(id==='amzads') loadAds('amazon');
   if(id==='gads') loadAds('google');
@@ -993,6 +1038,205 @@ function sw(id,el){
   if(id==='catalog') loadCatalog();
   if(id==='inventory') loadInventory();
   if(id==='pnl') loadPnL();
+}
+
+/* ========== MULTI-CHANNEL OVERVIEW ========== */
+var _mcGran='day';
+var _mcCache=null;
+
+function loadMultiChannel(){
+  document.querySelectorAll('#mcGranPills button').forEach(function(b){b.classList.toggle('a',b.dataset.gran===_mcGran)});
+  var gran=_mcGran;
+  var periods=gran==='day'?7:(gran==='week'?8:6);
+  document.getElementById('mc-trend-table').innerHTML='<div class="loading">Loading...</div>';
+  document.getElementById('mc-channel-mix').innerHTML='<div class="loading">Loading...</div>';
+  document.getElementById('mc-geo').innerHTML='<div class="loading">Loading...</div>';
+
+  // Fetch granular + monthly in parallel (for MTD + prior months in trend table)
+  var pGran=api('/v1/multichannel/orders?granularity='+gran+'&periods='+periods);
+  var pMonth=(gran!=='month')?api('/v1/multichannel/orders?granularity=month&periods=4'):null;
+
+  var promises=pMonth?[pGran,pMonth]:[pGran];
+  Promise.all(promises).then(function(res){
+    var d=res[0];
+    var monthRes=res[1]||null;
+    _mcCache=d;
+    renderMcKPIs(d);
+    renderMcChannelMix(d);
+    renderMcTrend(d, gran, monthRes);
+    renderMcGeo(d);
+  }).catch(function(e){
+    showErr('mc-trend-table')(e);
+    showErr('mc-channel-mix')(e);
+    showErr('mc-geo')(e);
+  });
+}
+
+// Granularity pill handler
+document.addEventListener('DOMContentLoaded',function(){
+  var gp=document.getElementById('mcGranPills');
+  if(gp) gp.addEventListener('click',function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.gran) return;
+    _mcGran=btn.dataset.gran;
+    loadMultiChannel();
+  });
+});
+
+/* --- MC helpers --- */
+function _mcSet(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function _mcDelta(id,val){
+  var e=document.getElementById(id);
+  if(!e) return;
+  if(val==null){e.className='kd n';e.innerHTML='\xa0';return;}
+  e.className='kd '+(val>=0?'u':'d');
+  e.innerHTML=(val>=0?'\u2191':'\u2193')+' '+Math.abs(val).toFixed(1)+'% vs prior';
+}
+
+/* --- KPI tiles --- */
+function renderMcKPIs(d){
+  if(!d||!d.summary) return;
+  var s=d.summary;
+  _mcSet('mc-revenue',cur(s.revenue));
+  _mcDelta('mc-revenue-d',s.delta?s.delta.revenue_pct:null);
+  _mcSet('mc-orders',fmt(s.orders));
+  _mcDelta('mc-orders-d',s.delta?s.delta.orders_pct:null);
+  _mcSet('mc-aov',s.aov?cur(s.aov):'--');
+  _mcSet('mc-cod',s.cod_pct!=null?s.cod_pct.toFixed(1)+'%':'--');
+  _mcSet('mc-retrate',s.return_rate_pct!=null?s.return_rate_pct.toFixed(1)+'%':'--');
+}
+
+/* --- Channel Mix cards --- */
+function renderMcChannelMix(d){
+  var el=document.getElementById('mc-channel-mix');
+  if(!d||!d.channel_mix||!d.channel_mix.length){el.innerHTML='<div class="empty">No channel data</div>';return;}
+  var chNames={'AMAZON_IN':'Amazon IN','SHOPIFY':'Shopify','FLIPKART_IN':'Flipkart','MYNTRA':'Myntra','FIRSTCRY':'FirstCry'};
+  var chIcons={'AMAZON_IN':'&#128230;','SHOPIFY':'&#128717;','FLIPKART_IN':'&#128722;','MYNTRA':'&#128722;','FIRSTCRY':'&#128722;'};
+  var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">';
+  for(var i=0;i<d.channel_mix.length;i++){
+    var c=d.channel_mix[i];
+    var name=chNames[c.channel]||c.channel;
+    var icon=chIcons[c.channel]||'&#128722;';
+    html+='<div class="cd" style="padding:16px">';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">';
+    html+='<span style="font-size:18px">'+icon+'</span>';
+    html+='<span style="font-weight:600;font-size:14px">'+name+'</span>';
+    html+='<span style="margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--acc);font-weight:600">'+c.share_pct+'%</span>';
+    html+='</div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">';
+    html+='<div><span class="kl" style="font-size:11px">Revenue</span><div style="font-family:var(--mono);font-weight:500">'+cur(c.revenue)+'</div></div>';
+    html+='<div><span class="kl" style="font-size:11px">Orders</span><div style="font-family:var(--mono);font-weight:500">'+fmt(c.orders)+'</div></div>';
+    html+='<div><span class="kl" style="font-size:11px">AOV</span><div style="font-family:var(--mono);font-weight:500">'+(c.aov?cur(c.aov):'--')+'</div></div>';
+    html+='<div><span class="kl" style="font-size:11px">COD %</span><div style="font-family:var(--mono);font-weight:500">'+(c.cod_pct!=null?c.cod_pct.toFixed(1)+'%':'--')+'</div></div>';
+    if(c.return_rate_pct!=null){
+      html+='<div><span class="kl" style="font-size:11px">Return Rate</span><div style="font-family:var(--mono);font-weight:500">'+c.return_rate_pct.toFixed(1)+'%</div></div>';
+    }
+    html+='</div></div>';
+  }
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+/* --- Transposed trend table (same pattern as Amazon tab) --- */
+var _mcMetrics=[
+  {label:'Revenue',      key:'revenue',       fn:function(v){return cur(v)},                          th:'pct', tv:15},
+  {label:'Units',        key:'units',         fn:function(v){return fmt(v)},                          th:'pct', tv:15},
+  {label:'Orders',       key:'orders',        fn:function(v){return fmt(v)},                          th:'pct', tv:15},
+  {label:'AOV',          key:'aov',           fn:function(v){return v?cur(v):'--'},                   th:'pct', tv:10},
+  {label:'COD Items',    key:'cod_items',     fn:function(v){return fmt(v)},                          th:'pct', tv:15},
+  {label:'Prepaid Items',key:'prepaid_items', fn:function(v){return fmt(v)},                          th:'pct', tv:15},
+  {label:'COD %',        key:'cod_pct',       fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},   inv:true, th:'pp', tv:3},
+  {label:'RTO',          key:'rto_items',     fn:function(v){return fmt(v)},                          inv:true, th:'pct', tv:20},
+  {label:'RVP',          key:'rvp_items',     fn:function(v){return fmt(v)},                          inv:true, th:'pct', tv:20},
+  {label:'Return Rate',  key:'return_rate_pct',fn:function(v){return v!=null?v.toFixed(1)+'%':'--'},  inv:true, th:'pp', tv:2}
+];
+
+function renderMcTrend(d, gran, monthRes){
+  var el=document.getElementById('mc-trend-table');
+  var granData=(d&&d.trend)||[];
+  var monthData=(monthRes&&monthRes.trend)||[];
+
+  if(!granData.length && !monthData.length){el.innerHTML='<div class="empty">No data</div>';return;}
+
+  // For month granularity, we don't have separate monthly data
+  var mtd=null, priorMonths=[];
+  if(gran!=='month' && monthData.length){
+    mtd=monthData[monthData.length-1];
+    priorMonths=monthData.slice(0,-1).reverse();
+  }
+
+  // Build columns
+  var cols=[];
+  // Granular columns — newest first
+  for(var i=granData.length-1;i>=0;i--){
+    cols.push({label:granData[i].label||granData[i].period, data:granData[i], cls:''});
+  }
+  if(mtd) cols.push({label:'MTD', data:mtd, cls:'mc-mtd'});
+  for(var j=0;j<priorMonths.length;j++){
+    cols.push({label:priorMonths[j].label||priorMonths[j].period, data:priorMonths[j], cls:'mc-mo'});
+  }
+
+  // Render
+  var html='<table class="tbl"><thead><tr><th>Metric</th>';
+  for(var c=0;c<cols.length;c++){
+    var borderL=cols[c].cls==='mc-mtd'?' style="border-left:2px solid var(--border)"':'';
+    html+='<th class="r"'+borderL+'>'+cols[c].label+'</th>';
+  }
+  html+='</tr></thead><tbody>';
+
+  for(var m=0;m<_mcMetrics.length;m++){
+    var met=_mcMetrics[m];
+    html+='<tr><td class="hi">'+met.label+'</td>';
+    for(var c2=0;c2<cols.length;c2++){
+      var val=cols[c2].data[met.key];
+      var bg='';
+      if(c2<cols.length-1){
+        var prev=cols[c2+1].data[met.key];
+        if(val!=null && prev!=null && prev!==0){
+          var sig=false;
+          if(met.th==='pp') sig=Math.abs(val-prev)>=met.tv;
+          else              sig=Math.abs((val-prev)/prev*100)>=met.tv;
+          if(sig){
+            var diff=val-prev;
+            if(met.inv) diff=-diff;
+            if(diff>0) bg='background:var(--gl)';
+            else if(diff<0) bg='background:var(--rl)';
+          }
+        }
+      }
+      var borderL2=cols[c2].cls==='mc-mtd'?'border-left:2px solid var(--border);':'';
+      var style=(borderL2||bg)?' style="'+borderL2+bg+'"':'';
+      html+='<td class="mn2 r"'+style+'>'+met.fn(val)+'</td>';
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+
+  var noteEl=document.getElementById('mc-trend-note');
+  if(noteEl){
+    if(gran==='month') noteEl.textContent=d.periods+' months';
+    else{
+      var lbl=gran==='day'?'7 days':'8 weeks';
+      noteEl.textContent=lbl+' + MTD + '+(priorMonths.length)+' months';
+    }
+  }
+  el.innerHTML=html;
+}
+
+/* --- Geo breakdown table --- */
+function renderMcGeo(d){
+  var el=document.getElementById('mc-geo');
+  if(!d||!d.geo||!d.geo.length){el.innerHTML='<div class="empty">No geo data</div>';return;}
+  var totalOrders=0;
+  for(var i=0;i<d.geo.length;i++) totalOrders+=d.geo[i].orders;
+  var html='<table class="tbl"><thead><tr><th>State</th><th class="r">Orders</th><th class="r">Share %</th><th class="r">Revenue</th></tr></thead><tbody>';
+  for(var i=0;i<d.geo.length;i++){
+    var g=d.geo[i];
+    var share=totalOrders?((g.orders/totalOrders)*100).toFixed(1):'--';
+    html+='<tr><td>'+g.state+'</td><td class="mn2 r">'+fmt(g.orders)+'</td><td class="mn2 r">'+share+'%</td><td class="mn2 r">'+cur(g.revenue)+'</td></tr>';
+  }
+  html+='</tbody></table>';
+  el.innerHTML=html;
 }
 
 /* ========== AMAZON CHANNEL SUMMARY ========== */
@@ -3836,7 +4080,7 @@ function agAct(btn, action){
 T6.initUserChrome();
 installInvTileTips();
 installOtherTileTips();
-loadAmazon();
+loadMultiChannel();
 loadBugs();
 </script>
 </body>
