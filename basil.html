@@ -584,6 +584,7 @@
       <button data-sub="overview" class="a">Overview</button>
       <button data-sub="restock">Restock Planner <span class="cnt" id="sub-restock-cnt"></span></button>
       <button data-sub="stock">Stock Health <span class="cnt" id="sub-stock-cnt"></span></button>
+      <button data-sub="regional">Regional Instock <span class="cnt" id="sub-regional-cnt"></span></button>
       <button data-sub="returns">Returns <span class="cnt" id="sub-returns-cnt"></span></button>
       <button data-sub="agent">Analysis Agent</button>
     </div>
@@ -655,6 +656,26 @@
           <em>Capital tied up</em> = fulfillable × avg price for ASINs with &gt;90 days cover or zero velocity with stock.
           All estimates are pre-GST retail &mdash; a more precise net view will come when settlements + COGS are wired in.
         </div>
+      </div>
+    </div>
+
+    <!-- =============== SUB-TAB: REGIONAL INSTOCK =============== -->
+    <div class="iv-sub" id="ivs-regional">
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd"><div class="kl">Regional Fulfillment % (brand avg) <span id="tip-rf-brand"></span></div><div class="kv" id="rf-brand">--</div><div class="kd n">source region = dest region, weighted by units</div></div>
+        <div class="cd"><div class="kl">Cross-region units <span id="tip-rf-cross"></span></div><div class="kv" id="rf-cross">--</div><div class="kd n">National zone — higher WH fees</div></div>
+        <div class="cd"><div class="kl">MSKUs analysed <span id="tip-rf-mskus"></span></div><div class="kv" id="rf-mskus">--</div><div class="kd n">with ≥1 shipment in window</div></div>
+        <div class="cd"><div class="kl">Distinct destinations <span id="tip-rf-dests"></span></div><div class="kv" id="rf-dests">--</div><div class="kd n">states reached in window</div></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Regional Inventory &amp; Fulfillment by MSKU <span class="note" id="rf-hdr">&nbsp;</span></h3></div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:10px">
+          Click a row to expand the destination × source matrix + per-SKU breakdown.
+          <strong>RF %</strong> = shipments fulfilled from the same region as the destination. Higher = cheaper, faster delivery.
+          Stock / Sales shares &gt; 5pp apart flag imbalance (inventory placement vs actual demand).
+        </div>
+        <div id="rf-table" class="loading">Loading...</div>
       </div>
     </div>
 
@@ -2008,6 +2029,10 @@ function ivSub(id){
     api('/v1/amazon/inventory/restock').then(renderRestock).catch(showErr('restock-tbody'));
     window._rsLoaded = true;
   }
+  if(id==='regional' && !window._rfLoaded){
+    api('/v1/amazon/fulfillment/regional?days=30').then(renderRegional).catch(showErr('rf-table'));
+    window._rfLoaded = true;
+  }
   if(id==='agent') loadAgentInventory();
 }
 
@@ -2017,8 +2042,167 @@ function loadInventory(){
   api('/v1/amazon/inventory/per_asin').then(renderInvTables).catch(showErr('iv-riskTable'));
   window._rtLoaded = false;
   window._rsLoaded = false;
+  window._rfLoaded = false;
   if(currentIvSub==='returns'){ ivSub('returns'); }
   if(currentIvSub==='restock'){ ivSub('restock'); }
+  if(currentIvSub==='regional'){ ivSub('regional'); }
+}
+
+/* ───── Regional Instock sub-tab ───── */
+const _REGIONS = ['NORTH','WEST','SOUTH','EAST'];
+
+function rfBadge(pct){
+  if(pct===null||pct===undefined) return '<span style="color:var(--t3)">--</span>';
+  const c = pct>=85 ? '#1f8f40' : (pct>=70 ? '#b57200' : '#c52828');
+  return `<span style="color:${c};font-weight:600">${pct.toFixed(1)}%</span>`;
+}
+function _num(n){ return n==null ? '--' : n.toLocaleString('en-IN'); }
+function _cover(d){ if(d==null) return '--'; return d.toFixed(1)+'d'; }
+
+function rfRegionCell(r){
+  if(!r || r.dest_total===0) {
+    return '<div style="color:var(--t3);font-size:11px">no sales</div>';
+  }
+  const rfColor = r.rf_pct==null ? 'var(--t3)' :
+                  (r.rf_pct>=85 ? '#1f8f40' : r.rf_pct>=70 ? '#b57200' : '#c52828');
+  const mismatch = Math.abs((r.stock_share||0) - (r.sales_share||0));
+  const flag = mismatch >= 8 ? '<span title="stock share vs sales share gap ≥8pp" style="color:#c52828"> ⚠</span>' : '';
+  return `
+    <div style="line-height:1.35">
+      <div style="font-weight:600;color:${rfColor}">${r.rf_pct==null?'--':r.rf_pct.toFixed(0)+'%'} RF</div>
+      <div style="font-size:11px;color:var(--t2)">${_num(r.stock)}u / ${_num(r.dest_total)}u</div>
+      <div style="font-size:11px;color:var(--t3)">stk ${(r.stock_share||0).toFixed(0)}% · sold ${(r.sales_share||0).toFixed(0)}%${flag}</div>
+      <div style="font-size:11px;color:var(--t3)">${_cover(r.cover_days)} cover</div>
+    </div>`;
+}
+
+function renderRegional(resp){
+  const data = resp.data || [];
+  const totUnits = data.reduce((s,m)=>s+m.total_units, 0);
+  const totReg   = data.reduce((s,m)=>s+m.regional_units, 0);
+  const totCross = data.reduce((s,m)=>s+m.national_units, 0);
+  const destStates = new Set();
+  data.forEach(m => _REGIONS.forEach(r => {
+    if(m.per_region[r].dest_total > 0) destStates.add(r);
+  }));
+  document.getElementById('rf-brand').textContent = totUnits ? (totReg/totUnits*100).toFixed(1)+'%' : '--';
+  document.getElementById('rf-cross').textContent = _num(totCross);
+  document.getElementById('rf-mskus').textContent = data.length;
+  document.getElementById('rf-dests').textContent = destStates.size + '/4 regions';
+  document.getElementById('rf-hdr').textContent = `${resp.start} → ${resp.end} · ${data.length} MSKUs · ${_num(totUnits)} units shipped`;
+
+  if(data.length===0){
+    document.getElementById('rf-table').innerHTML = '<div class="muted">No shipment data in window.</div>';
+    return;
+  }
+
+  const rows = data.map(m => {
+    const rfCol = rfBadge(m.rf_pct);
+    return `
+      <tr class="rf-row" data-msku="${m.msku_id}" style="cursor:pointer">
+        <td style="font-weight:500">
+          <span style="color:var(--t3);margin-right:4px">▸</span>
+          ${m.product_name||m.internal_sku_code}
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${m.internal_sku_code}</div>
+        </td>
+        <td style="text-align:right">${_num(m.total_units)}</td>
+        <td style="text-align:right">${_num(m.total_stock)}</td>
+        <td style="text-align:center">${rfCol}</td>
+        <td>${rfRegionCell(m.per_region.NORTH)}</td>
+        <td>${rfRegionCell(m.per_region.WEST)}</td>
+        <td>${rfRegionCell(m.per_region.SOUTH)}</td>
+        <td>${rfRegionCell(m.per_region.EAST)}</td>
+      </tr>
+      <tr class="rf-drill" data-drill="${m.msku_id}" style="display:none">
+        <td colspan="8" style="background:var(--bg-cream);padding:14px 16px">
+          ${renderRegionalDrill(m)}
+        </td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('rf-table').innerHTML = `
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>MSKU</th>
+          <th style="text-align:right">Units 30d</th>
+          <th style="text-align:right">Stock</th>
+          <th style="text-align:center">RF %</th>
+          <th>NORTH</th><th>WEST</th><th>SOUTH</th><th>EAST</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  // Click-to-expand
+  document.querySelectorAll('.rf-row').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const id = tr.dataset.msku;
+      const drill = document.querySelector(`[data-drill="${id}"]`);
+      if(drill){
+        const open = drill.style.display !== 'none';
+        drill.style.display = open ? 'none' : 'table-row';
+        tr.querySelector('span').textContent = open ? '▸' : '▾';
+      }
+    });
+  });
+}
+
+function renderRegionalDrill(m){
+  // Destination × source matrix
+  const matrixRows = _REGIONS.map(dest => {
+    const r = m.per_region[dest];
+    if(!r || r.dest_total===0) return '';
+    const cells = _REGIONS.map(src => {
+      const v = r.by_source[src] || 0;
+      const isDiag = src === dest;
+      const bg = isDiag ? 'background:#dbeeD3' : (v>0 ? 'background:#fdf1df' : '');
+      const color = v>0 ? '' : 'color:var(--t3)';
+      return `<td style="text-align:right;padding:4px 10px;${bg};${color}">${v||'·'}</td>`;
+    }).join('');
+    return `<tr><td style="padding:4px 10px;font-weight:500">${dest}</td>${cells}<td style="text-align:right;padding:4px 10px;font-weight:500">${_num(r.dest_total)}</td><td style="text-align:right;padding:4px 10px">${rfBadge(r.rf_pct)}</td></tr>`;
+  }).join('');
+
+  // Per-SKU breakdown
+  const skuRows = (m.per_sku||[]).map(s => `
+    <tr><td style="padding:3px 10px;font-family:var(--mono);font-size:11px">${s.asin}</td>
+        <td style="padding:3px 10px">${s.seller_sku||'--'}</td>
+        <td style="text-align:right;padding:3px 10px">${_num(s.total)}</td>
+        <td style="text-align:right;padding:3px 10px">${_num(s.regional)}</td>
+        <td style="text-align:right;padding:3px 10px">${_num(s.national)}</td>
+        <td style="text-align:center;padding:3px 10px">${rfBadge(s.rf_pct)}</td></tr>
+  `).join('');
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div style="font-weight:500;margin-bottom:8px">Destination × Source matrix</div>
+        <table style="border-collapse:collapse;font-size:12px;width:100%">
+          <thead><tr style="color:var(--t3);border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 10px">Dest ↓ / Source →</th>
+            ${_REGIONS.map(s=>`<th style="text-align:right;padding:4px 10px">${s}</th>`).join('')}
+            <th style="text-align:right;padding:4px 10px">Total</th>
+            <th style="text-align:right;padding:4px 10px">RF%</th>
+          </tr></thead>
+          <tbody>${matrixRows || '<tr><td colspan="7" style="padding:6px 10px;color:var(--t3)">no shipment data</td></tr>'}</tbody>
+        </table>
+        <div style="font-size:11px;color:var(--t3);margin-top:6px">Green diagonal = in-region fulfillment. Orange off-diagonal = cross-region (higher zone fees).</div>
+      </div>
+      <div>
+        <div style="font-weight:500;margin-bottom:8px">Per child-ASIN (top 10)</div>
+        <table style="border-collapse:collapse;font-size:12px;width:100%">
+          <thead><tr style="color:var(--t3);border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 10px">ASIN</th>
+            <th style="text-align:left;padding:4px 10px">Seller SKU</th>
+            <th style="text-align:right;padding:4px 10px">Total</th>
+            <th style="text-align:right;padding:4px 10px">Regional</th>
+            <th style="text-align:right;padding:4px 10px">National</th>
+            <th style="text-align:center;padding:4px 10px">RF%</th>
+          </tr></thead>
+          <tbody>${skuRows || '<tr><td colspan="6" style="padding:6px 10px;color:var(--t3)">—</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
 }
 
 /* ───── Restock planner ───── */
