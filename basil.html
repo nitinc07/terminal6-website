@@ -243,10 +243,6 @@
     <div class="si act" onclick="sw('mc',this)"><div class="ic">&#127760;</div><span>Multi-Channel</span></div>
   </div>
   <div class="ss">
-    <div class="sl">Meta Ads</div>
-    <div class="si" onclick="sw('metaads',this)"><div class="ic">&#127912;</div><span>Creative Performance</span></div>
-  </div>
-  <div class="ss">
     <div class="sl">Amazon IN</div>
     <div class="si" onclick="sw('overview',this)"><div class="ic">&#128202;</div><span>Amazon Summary</span></div>
     <div class="si" onclick="sw('amzads',this)"><div class="ic">&#127344;</div><span>Amazon Ads</span></div>
@@ -865,61 +861,6 @@
     </div>
   </div>
 
-  <!-- ========== META ADS — CREATIVE PERFORMANCE ========== -->
-  <div class="vw" id="v-metaads">
-    <div class="head">
-      <div class="icon" style="background:#1877F2">&#127912;</div>
-      <div><h2>Meta Ads &middot; Creative Performance</h2><p class="sub">Ad-level ROAS, CPA, creative format mix, spend concentration. Attribution: 7d click + 1d view.</p></div>
-    </div>
-
-    <!-- KPI tiles -->
-    <div class="g4" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Total Spend</div><div class="kv" id="meta-spend">--</div><div class="kd n" id="meta-spend-sub">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Avg ROAS</div><div class="kv" id="meta-roas">--</div><div class="kd n">revenue / spend (7d attr)</div></div>
-      <div class="cd"><div class="kl">Avg CPA</div><div class="kv" id="meta-cpa">--</div><div class="kd n">spend / orders</div></div>
-      <div class="cd"><div class="kl">Active Ads</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
-    </div>
-
-    <!-- Format breakdown -->
-    <div class="sec" id="meta-fmt-sec">
-      <div class="sec-h"><h3>Format Breakdown</h3></div>
-      <div id="meta-fmt-bar" style="display:flex;gap:0;height:32px;border-radius:6px;overflow:hidden;margin-bottom:12px"></div>
-      <div id="meta-fmt-cards" style="display:flex;gap:12px;flex-wrap:wrap"></div>
-    </div>
-
-    <!-- Spend concentration -->
-    <div class="sec" id="meta-conc-sec">
-      <div class="sec-h"><h3>Spend Concentration</h3></div>
-      <p class="sub" id="meta-conc-headline" style="margin-bottom:12px"></p>
-      <div id="meta-conc-bars"></div>
-    </div>
-
-    <!-- Creative performance table -->
-    <div class="sec">
-      <div class="sec-h">
-        <h3>Creative Performance</h3>
-        <span class="note" id="meta-perf-note"></span>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="tbl" id="meta-perf-tbl">
-          <thead><tr>
-            <th style="width:50px"></th>
-            <th style="min-width:200px">Ad</th>
-            <th>Format</th>
-            <th>ROAS</th>
-            <th>CPA</th>
-            <th>CTR</th>
-            <th>Spend</th>
-            <th>Sales</th>
-            <th>Orders</th>
-            <th>Status</th>
-          </tr></thead>
-          <tbody id="meta-perf-body"><tr><td colspan="10" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
   <div class="vw" id="v-shopify">
     <div class="head"><div class="icon" style="background:#96BF48">&#128717;</div><div><h2>Shopify D2C</h2><p class="sub">shareyourbasil.myshopify.com</p></div></div>
     <div class="ph2"><strong>Pending:</strong> Shopify custom-app token install. Once connected, this tab picks up Shopify orders, sessions (GA4), and blended cross-channel revenue.</div>
@@ -1056,7 +997,6 @@ const viewTitles={
   agents:'&#129302; Growth Agents',
   shopify:'&#128717; Shopify D2C',
   otherch:'&#128722; Other Channels',
-  metaads:'&#127912; Meta Ads &mdash; Creative Performance',
 };
 let currentView='mc';
 function swSub(viewId, subId, el){
@@ -1094,7 +1034,6 @@ function sw(id,el){
   if(id==='catalog') loadCatalog();
   if(id==='inventory') loadInventory();
   if(id==='pnl') loadPnL();
-  if(id==='metaads') loadMetaAds();
 }
 
 /* ========== MULTI-CHANNEL OVERVIEW ========== */
@@ -4145,98 +4084,6 @@ function agAct(btn, action){
   btn.disabled=true; btn.style.opacity='.6';
   const other=btn.parentElement.querySelector(action==='approve'?'.rec-btn:not(.approve)':'.approve');
   if(other) other.style.display='none';
-}
-
-/* ========== META ADS — CREATIVE PERFORMANCE ========== */
-var _metaLoaded = false;
-async function loadMetaAds() {
-  if (_metaLoaded) return;
-  var days = 30;
-  try {
-    var [perf, fmtData, conc] = await Promise.all([
-      api('/v1/meta/creative-performance?days=' + days),
-      api('/v1/meta/format-breakdown?days=' + days),
-      api('/v1/meta/spend-concentration?days=' + days),
-    ]);
-
-    // KPI tiles
-    document.getElementById('meta-spend').textContent = cur(perf.total_spend);
-    document.getElementById('meta-spend-sub').textContent = days + '-day total';
-    document.getElementById('meta-roas').textContent = perf.avg_roas != null ? perf.avg_roas.toFixed(1) + 'x' : '--';
-    document.getElementById('meta-cpa').textContent = perf.avg_cpa != null ? cur(perf.avg_cpa) : '--';
-    var winners = (perf.data || []).filter(function(d) { return d.status === 'Winner'; }).length;
-    var losers = (perf.data || []).filter(function(d) { return d.status === 'Loser'; }).length;
-    document.getElementById('meta-adcount').textContent = perf.count || '--';
-    document.getElementById('meta-adcount-sub').innerHTML = '<span style="color:var(--g)">' + winners + ' winners</span> · <span style="color:var(--r)">' + losers + ' losers</span>';
-
-    // Format breakdown bar
-    var fmtColors = { VIDEO: '#9333ea', IMAGE: '#3b82f6', CAROUSEL: '#14b8a6' };
-    var barHtml = '';
-    var cardsHtml = '';
-    (fmtData.data || []).forEach(function(f) {
-      var color = fmtColors[f.format] || '#6b7280';
-      barHtml += '<div style="width:' + f.spend_share_pct + '%;background:' + color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;min-width:30px" title="' + f.format + ': ' + f.spend_share_pct + '%">' + (f.spend_share_pct >= 8 ? f.format + ' ' + f.spend_share_pct + '%' : '') + '</div>';
-      cardsHtml += '<div style="background:var(--c1);border-radius:8px;padding:12px 16px;flex:1;min-width:140px;border-left:4px solid ' + color + '">' +
-        '<div style="font-weight:600;font-size:13px;margin-bottom:6px">' + f.format + '</div>' +
-        '<div style="font-size:12px;color:var(--t2)">Ads: ' + f.ad_count + ' · ROAS: ' + (f.avg_roas != null ? f.avg_roas.toFixed(1) + 'x' : '--') + '</div>' +
-        '<div style="font-size:12px;color:var(--t2)">CTR: ' + (f.avg_ctr != null ? f.avg_ctr.toFixed(1) + '%' : '--') + ' · CPA: ' + (f.avg_cpa != null ? cur(f.avg_cpa) : '--') + '</div>' +
-        '<div style="font-size:12px;color:var(--t2)">Spend: ' + cur(f.total_spend) + '</div>' +
-      '</div>';
-    });
-    document.getElementById('meta-fmt-bar').innerHTML = barHtml || '<div style="flex:1;background:var(--c2);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:12px">No data</div>';
-    document.getElementById('meta-fmt-cards').innerHTML = cardsHtml;
-
-    // Spend concentration
-    document.getElementById('meta-conc-headline').innerHTML = 'Top ' + conc.top_n + ' creatives account for <strong>' + conc.concentration_pct + '%</strong> of total spend (' + cur(conc.total_spend) + ')';
-    var concHtml = '';
-    (conc.data || []).forEach(function(c, i) {
-      var barW = conc.total_spend > 0 ? Math.max(2, c.spend / conc.total_spend * 100) : 0;
-      var name = (c.ad_name || '').length > 40 ? c.ad_name.slice(0, 40) + '...' : (c.ad_name || '--');
-      concHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px">' +
-        '<span style="width:20px;text-align:right;color:var(--t3)">' + (i + 1) + '</span>' +
-        '<span style="width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (c.ad_name || '') + '">' + name + '</span>' +
-        '<div style="flex:1;background:var(--c2);border-radius:3px;height:18px;position:relative">' +
-          '<div style="width:' + barW + '%;background:' + (c.roas >= 2 ? 'var(--g)' : c.roas >= 1 ? 'var(--y)' : 'var(--r)') + ';height:100%;border-radius:3px;min-width:2px"></div>' +
-        '</div>' +
-        '<span style="width:70px;text-align:right">' + cur(c.spend) + '</span>' +
-        '<span style="width:50px;text-align:right">' + c.spend_share_pct + '%</span>' +
-        '<span style="width:50px;text-align:right;color:' + (c.roas >= 2 ? 'var(--g)' : c.roas >= 1 ? 'var(--t2)' : 'var(--r)') + '">' + (c.roas != null ? c.roas.toFixed(1) + 'x' : '--') + '</span>' +
-      '</div>';
-    });
-    document.getElementById('meta-conc-bars').innerHTML = concHtml || '<p class="sub">No data yet</p>';
-
-    // Creative performance table
-    var tbody = document.getElementById('meta-perf-body');
-    var statusColors = { Winner: 'var(--g)', Loser: 'var(--r)', Testing: 'var(--y)', Active: 'var(--t3)' };
-    var fmtPills = { VIDEO: '#9333ea', IMAGE: '#3b82f6', CAROUSEL: '#14b8a6' };
-    var rows = '';
-    (perf.data || []).forEach(function(d) {
-      var thumb = d.thumbnail_url ? '<img src="' + d.thumbnail_url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">' : '<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">' + (d.creative_type === 'VIDEO' ? '&#9654;' : '&#128444;') + '</div>';
-      var name = (d.ad_name || '').length > 45 ? d.ad_name.slice(0, 45) + '...' : (d.ad_name || '--');
-      var camp = (d.campaign_name || '').length > 30 ? d.campaign_name.slice(0, 30) + '...' : (d.campaign_name || '');
-      var sc = statusColors[d.status] || 'var(--t3)';
-      var fc = fmtPills[d.creative_type] || '#6b7280';
-      rows += '<tr>' +
-        '<td>' + thumb + '</td>' +
-        '<td><div style="font-weight:500;font-size:12.5px" title="' + (d.ad_name || '') + '">' + name + '</div><div style="font-size:11px;color:var(--t3)" title="' + (d.campaign_name || '') + '">' + camp + '</div></td>' +
-        '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + fc + '22;color:' + fc + '">' + (d.creative_type || 'IMAGE') + '</span></td>' +
-        '<td style="font-weight:600;color:' + (d.roas >= 2 ? 'var(--g)' : d.roas >= 1 ? 'inherit' : 'var(--r)') + '">' + (d.roas != null ? d.roas.toFixed(1) + 'x' : '--') + '</td>' +
-        '<td>' + (d.cpa != null ? cur(d.cpa) : '--') + '</td>' +
-        '<td>' + (d.ctr != null ? d.ctr.toFixed(1) + '%' : '--') + '</td>' +
-        '<td>' + cur(d.spend) + '</td>' +
-        '<td>' + cur(d.attributed_sales) + '</td>' +
-        '<td>' + fmt(d.attributed_orders) + '</td>' +
-        '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + sc + '22;color:' + sc + '">' + d.status + '</span></td>' +
-      '</tr>';
-    });
-    tbody.innerHTML = rows || '<tr><td colspan="10" style="text-align:center;color:var(--t3);padding:40px">No ad-level data yet. Run the creative backfill to populate.</td></tr>';
-    document.getElementById('meta-perf-note').textContent = perf.count + ' ads · last ' + days + ' days';
-
-    _metaLoaded = true;
-  } catch (e) {
-    console.error('Meta Ads load error:', e);
-    document.getElementById('meta-perf-body').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--r)">Failed to load: ' + e.message + '</td></tr>';
-  }
 }
 
 /* ========== INIT ========== */
