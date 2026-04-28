@@ -1074,6 +1074,13 @@
         <div style="overflow-x:auto">
           <table class="tbl" id="meta-hourly-tbl"></table>
         </div>
+        <!-- Top 10 creatives: today vs yesterday vs 7d -->
+        <div style="margin-top:20px">
+          <div class="sec-h"><h4 style="font-size:13px;margin:0">Top Creatives — Today vs Yesterday vs 7d Avg</h4></div>
+          <div style="overflow-x:auto">
+            <table class="tbl" id="meta-hourly-creative-tbl"></table>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -4872,6 +4879,43 @@ async function _loadHourlyTracker(){
       tbody+='</tr>';
     }
     document.getElementById('meta-hourly-tbl').innerHTML='<thead>'+hdr+'</thead><tbody>'+tbody+'</tbody>';
+
+    // Top 10 creatives: today vs yesterday vs 7d avg
+    var crs=d.top_creatives||[];
+    if(crs.length>0){
+      var cHdr='<tr><th style="width:40px"></th><th style="min-width:180px">Creative</th>';
+      cHdr+='<th colspan="4" style="text-align:center;border-bottom:2px solid var(--t1)">Today</th>';
+      cHdr+='<th colspan="2" style="text-align:center;border-bottom:2px solid var(--t3)">Yesterday</th>';
+      cHdr+='<th colspan="2" style="text-align:center;border-bottom:2px solid #8b5cf6">7d Avg/day</th>';
+      cHdr+='<th>vs Yday</th><th>vs 7d</th></tr>';
+      cHdr+='<tr><th></th><th></th><th>Spend</th><th>ROAS</th><th>Orders</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>Spend</th><th>ROAS</th><th></th><th></th></tr>';
+      var cBody='';
+      crs.forEach(function(c){
+        var t=c.today||{}, y=c.yesterday||{}, a=c.avg_7d||{};
+        var tRc=t.roas!=null?(t.roas>=(db&&db.account_roas||2)?'var(--g)':t.roas>=1?'':'var(--r)'):'';
+        var thumb=c.thumbnail_url?'<img src="'+c.thumbnail_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'';
+        var nm=(c.ad_name||'').length>35?c.ad_name.slice(0,35)+'...':c.ad_name||'--';
+        var cp=(c.campaign||'').slice(0,25);
+        var vyPct=c.spend_vs_yesterday_pct, vaPct=c.spend_vs_avg7_pct;
+        var vyC=vyPct!=null?(vyPct>15?'var(--r)':vyPct<-15?'var(--g)':'var(--t3)'):'';
+        var vaC=vaPct!=null?(vaPct>15?'var(--r)':vaPct<-15?'var(--g)':'var(--t3)'):'';
+        cBody+='<tr>';
+        cBody+='<td>'+thumb+'</td>';
+        cBody+='<td><div style="font-weight:500;font-size:12px" title="'+(c.ad_name||'')+'">'+nm+'</div><div style="font-size:10px;color:var(--t3)">'+cp+'</div></td>';
+        cBody+='<td style="font-weight:500">'+cur(t.spend||0)+'</td>';
+        cBody+='<td style="font-weight:600;color:'+tRc+'">'+(t.roas!=null?t.roas.toFixed(2)+'x':'--')+'</td>';
+        cBody+='<td>'+(t.orders||0)+'</td>';
+        cBody+='<td>'+(t.ctr!=null?t.ctr.toFixed(1)+'%':'--')+'</td>';
+        cBody+='<td style="color:var(--t3)">'+cur(y.spend||0)+'</td>';
+        cBody+='<td style="color:var(--t3)">'+(y.roas!=null?y.roas.toFixed(2)+'x':'--')+'</td>';
+        cBody+='<td style="color:#8b5cf6">'+cur(a.spend||0)+'</td>';
+        cBody+='<td style="color:#8b5cf6">'+(a.roas!=null?a.roas.toFixed(2)+'x':'--')+'</td>';
+        cBody+='<td style="font-weight:600;color:'+vyC+'">'+(vyPct!=null?(vyPct>=0?'+':'')+vyPct+'%':'--')+'</td>';
+        cBody+='<td style="font-weight:600;color:'+vaC+'">'+(vaPct!=null?(vaPct>=0?'+':'')+vaPct+'%':'--')+'</td>';
+        cBody+='</tr>';
+      });
+      document.getElementById('meta-hourly-creative-tbl').innerHTML='<thead>'+cHdr+'</thead><tbody>'+cBody+'</tbody>';
+    }
   }catch(e){
     console.warn('Hourly tracker:',e);
     document.getElementById('meta-hourly-note').textContent='No hourly data yet — run backfill first';
