@@ -4217,43 +4217,41 @@ function _fmtNarrative(raw){
 }
 function _renderDigest(d){
   document.getElementById('meta-digest-sec').style.display='';
-  // Narrative
   document.getElementById('meta-digest-narrative').innerHTML=_fmtNarrative(d.narrative||d.digest||'');
-  // Time
   document.getElementById('meta-digest-time').textContent=d.generated_at?shortD(d.generated_at.slice(0,10))+(d.cached?' (cached)':' (fresh)'):'';
 
-  // Action buckets as collapsible cards
+  // Action buckets — collapsible cards with LLM reasoning per item
   var b=d.buckets||{};
   var configs=[
-    {key:'scale',icon:'\uD83D\uDE80',color:'var(--g)',title:'Scale — Winners with headroom',
-     cols:['ROAS','Spend','Share','Orders','CPA'],
-     row:function(c){return '<td style="font-weight:600;color:var(--g)">'+(c.roas_7d||0).toFixed(1)+'x</td><td>'+cur(c.spend_7d)+'</td><td>'+( c.spend_share_7d||0).toFixed(1)+'%</td><td>'+fmt(c.orders_7d)+'</td><td>'+(c.cpa_7d?cur(c.cpa_7d):'--')+'</td>';}},
-    {key:'pause',icon:'\uD83D\uDED1',color:'var(--r)',title:'Pause — Bleeding',
-     cols:['ROAS','Spend','Orders','CPA'],
-     row:function(c){return '<td style="font-weight:600;color:var(--r)">'+(c.roas_7d!=null?c.roas_7d.toFixed(1)+'x':'0 orders')+'</td><td>'+cur(c.spend_7d)+'</td><td>'+fmt(c.orders_7d)+'</td><td>'+(c.cpa_7d?cur(c.cpa_7d):'--')+'</td>';}},
-    {key:'fatiguing',icon:'\u26A0\uFE0F',color:'#f97316',title:'Fatiguing — ROAS declining',
-     cols:['ROAS','Decay','Freq','Spend'],
-     row:function(c){return '<td>'+(c.roas_7d||0).toFixed(1)+'x</td><td style="color:var(--r)">'+Math.round(c.roas_decay_pct||0)+'%</td><td>'+(c.frequency||'--')+'</td><td>'+cur(c.spend_7d)+'</td>';}}
+    {key:'scale',icon:'\uD83D\uDE80',color:'var(--g)',title:'Scale'},
+    {key:'pause',icon:'\uD83D\uDED1',color:'var(--r)',title:'Pause'},
+    {key:'fatiguing',icon:'\u26A0\uFE0F',color:'#f97316',title:'Fatiguing'},
+    {key:'watch',icon:'\uD83D\uDC41',color:'var(--t3)',title:'Watch'},
   ];
   var bHtml='';
   configs.forEach(function(cfg){
-    var items=b[cfg.key]||[];
+    var raw=b[cfg.key];
+    var items=Array.isArray(raw)?raw:(raw&&raw.items?raw.items:[]);
     if(!items.length) return;
     var id='meta-bucket-'+cfg.key;
-    bHtml+='<div style="flex:1;min-width:280px;background:var(--c1);border-radius:8px;border-left:4px solid '+cfg.color+';overflow:hidden">';
-    bHtml+='<div onclick="document.getElementById(\''+id+'\').style.display=document.getElementById(\''+id+'\').style.display===\'none\'?\'\':(\'none\')" style="padding:12px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">';
+    bHtml+='<div style="flex:1;min-width:300px;background:var(--c1);border-radius:8px;border-left:4px solid '+cfg.color+';overflow:hidden">';
+    bHtml+='<div onclick="var el=document.getElementById(\''+id+'\');el.style.display=el.style.display===\'none\'?\'\':(\'none\')" style="padding:12px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">';
     bHtml+='<span style="font-weight:600;font-size:13px">'+cfg.icon+' '+cfg.title+' ('+items.length+')</span>';
-    bHtml+='<span style="color:var(--t3);font-size:11px">\u25BC</span></div>';
-    bHtml+='<div id="'+id+'" style="padding:0 16px 12px">';
-    bHtml+='<table class="tbl" style="font-size:12px"><thead><tr><th>Creative</th><th>Campaign</th>';
-    cfg.cols.forEach(function(c){bHtml+='<th>'+c+'</th>';});
-    bHtml+='</tr></thead><tbody>';
+    bHtml+='<span style="color:var(--t3);font-size:11px">\u25BC details</span></div>';
+    bHtml+='<div id="'+id+'" style="display:none;padding:0 16px 12px">';
     items.forEach(function(c){
-      var nm=(c.ad_name||'').length>30?c.ad_name.slice(0,30)+'...':c.ad_name||'--';
-      var cp=(c.campaign||'').length>25?c.campaign.slice(0,25)+'...':c.campaign||'';
-      bHtml+='<tr><td title="'+(c.ad_name||'')+'">'+nm+'</td><td style="color:var(--t3)" title="'+(c.campaign||'')+'">'+cp+'</td>'+cfg.row(c)+'</tr>';
+      var nm=c.ad_name||'--';
+      var cp=c.campaign||'';
+      var nums=c.numbers||(c.roas_7d!=null?(c.roas_7d+'x ROAS, '+cur(c.spend_7d)+' spend'):'');
+      var reason=c.reason||'';
+      bHtml+='<div style="border-bottom:1px solid var(--c2);padding:8px 0">';
+      bHtml+='<div style="font-weight:600;font-size:12.5px">'+nm+'</div>';
+      if(cp) bHtml+='<div style="font-size:11px;color:var(--t3)">'+cp+'</div>';
+      if(nums) bHtml+='<div style="font-size:12px;margin-top:4px"><span style="background:var(--c2);padding:2px 6px;border-radius:4px;font-family:monospace">'+nums+'</span></div>';
+      if(reason) bHtml+='<div style="font-size:12px;color:var(--t2);margin-top:4px;line-height:1.5">'+reason+'</div>';
+      bHtml+='</div>';
     });
-    bHtml+='</tbody></table></div></div>';
+    bHtml+='</div></div>';
   });
   document.getElementById('meta-digest-buckets').innerHTML=bHtml;
 
@@ -4262,7 +4260,8 @@ function _renderDigest(d){
   var plEl=document.getElementById('meta-digest-pipeline');
   if(pl.gap>0){
     plEl.style.display='';
-    plEl.innerHTML='\u26A0\uFE0F <strong>Creative pipeline:</strong> '+pl.winners+' winners active, need '+pl.needed+'. Gap of <strong>'+pl.gap+'</strong> — creative team needs to deliver more winning ads.';
+    var assess=pl.assessment||('Gap of '+pl.gap+' — creative team needs to deliver more winning ads.');
+    plEl.innerHTML='\u26A0\uFE0F <strong>Creative pipeline:</strong> '+(pl.winners_active||pl.winners)+' winners active, need '+pl.needed+'. '+assess;
   }else{plEl.style.display='none';}
 }
 async function _loadDigest(){
