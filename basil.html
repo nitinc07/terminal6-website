@@ -1063,6 +1063,12 @@
         </div>
         <!-- Pacing alert -->
         <div id="meta-hourly-pacing" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13px"></div>
+        <!-- Summary KPIs -->
+        <div id="meta-hourly-summary" style="display:none;margin-bottom:18px">
+          <div style="overflow-x:auto">
+            <table class="tbl" id="meta-hourly-summary-tbl"></table>
+          </div>
+        </div>
         <!-- Cumulative spend curve (line chart) -->
         <div class="sec-h"><h4 style="font-size:13px;margin:0">Cumulative Spend</h4></div>
         <div style="position:relative;margin-bottom:20px;background:var(--c1);border-radius:8px;padding:16px">
@@ -4760,6 +4766,43 @@ async function _loadHourlyTracker(){
       var pacIcons={overspend:'\u26A0\uFE0F Overspend',underspend:'\u26A0\uFE0F Underspend',on_track:'\u2705 On track'};
       pacEl.style.cssText='display:block;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13px;background:#'+pacColors[p.status];
       pacEl.innerHTML='<strong>'+pacIcons[p.status]+'</strong> — through '+hrLabel(p.hour-1)+', today spent '+cur(p.today_cum_spend)+' vs yesterday '+cur(p.yesterday_cum_spend)+' (<strong>'+(p.pacing_pct>=0?'+':'')+p.pacing_pct+'%</strong>)';
+    }
+
+    // Summary KPIs table (today vs yesterday paced vs same-day-LW paced)
+    var sm=d.summary;
+    if(sm&&sm.today){
+      var t=sm.today, yp=sm.yesterday_paced, lp=sm.same_day_lw_paced;
+      var thrHr=sm.through_hour||0;
+      var thrLbl=thrHr<23?'through '+hrLabel(thrHr):'Full day';
+      function pctD(cv,pv){if(!cv||!pv)return'';var p=Math.round((cv-pv)/pv*100);return' <span style="font-size:10px;color:'+(p>=0?'var(--g)':'var(--r)')+'">'+(p>=0?'+':'')+p+'%</span>';}
+      var sh='<thead><tr><th style="min-width:120px">'+thrLbl+'</th><th>Spend</th><th>Revenue</th><th>ROAS</th><th>Orders</th><th>CPM</th><th>CTR</th><th>CPA</th></tr></thead>';
+      sh+='<tbody>';
+      var tRc=t.roas!=null?(t.roas>=2?'var(--g)':t.roas>=1?'':'var(--r)'):'';
+      sh+='<tr style="font-weight:600"><td style="color:var(--t1)">Today</td>';
+      sh+='<td>'+cur(t.spend)+pctD(t.spend,yp.spend)+'</td>';
+      sh+='<td>'+cur(t.revenue)+pctD(t.revenue,yp.revenue)+'</td>';
+      sh+='<td style="color:'+tRc+'">'+(t.roas!=null?t.roas.toFixed(2)+'x':'--')+'</td>';
+      sh+='<td>'+fmt(t.orders)+pctD(t.orders,yp.orders)+'</td>';
+      sh+='<td>'+(t.cpm!=null?'\u20B9'+Math.round(t.cpm):'--')+'</td>';
+      sh+='<td>'+(t.ctr!=null?t.ctr.toFixed(2)+'%':'--')+'</td>';
+      sh+='<td>'+(t.cpa!=null?cur(t.cpa):'--')+'</td></tr>';
+      sh+='<tr style="color:var(--t3)"><td>Yesterday</td>';
+      sh+='<td>'+cur(yp.spend)+'</td><td>'+cur(yp.revenue)+'</td>';
+      sh+='<td>'+(yp.roas!=null?yp.roas.toFixed(2)+'x':'--')+'</td>';
+      sh+='<td>'+fmt(yp.orders)+'</td>';
+      sh+='<td>'+(yp.cpm!=null?'\u20B9'+Math.round(yp.cpm):'--')+'</td>';
+      sh+='<td>'+(yp.ctr!=null?yp.ctr.toFixed(2)+'%':'--')+'</td>';
+      sh+='<td>'+(yp.cpa!=null?cur(yp.cpa):'--')+'</td></tr>';
+      sh+='<tr style="color:#8b5cf6"><td>Same day LW</td>';
+      sh+='<td>'+cur(lp.spend)+'</td><td>'+cur(lp.revenue)+'</td>';
+      sh+='<td>'+(lp.roas!=null?lp.roas.toFixed(2)+'x':'--')+'</td>';
+      sh+='<td>'+fmt(lp.orders)+'</td>';
+      sh+='<td>'+(lp.cpm!=null?'\u20B9'+Math.round(lp.cpm):'--')+'</td>';
+      sh+='<td>'+(lp.ctr!=null?lp.ctr.toFixed(2)+'%':'--')+'</td>';
+      sh+='<td>'+(lp.cpa!=null?cur(lp.cpa):'--')+'</td></tr>';
+      sh+='</tbody>';
+      document.getElementById('meta-hourly-summary-tbl').innerHTML=sh;
+      document.getElementById('meta-hourly-summary').style.display='';
     }
 
     // Cumulative spend line chart (canvas)
