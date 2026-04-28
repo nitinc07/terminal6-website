@@ -4759,7 +4759,7 @@ async function _loadHourlyTracker(){
       var pacColors={overspend:'#fee2e2;border:1px solid #fca5a5;color:#991b1b',underspend:'#fef3c7;border:1px solid #fcd34d;color:#92400e',on_track:'#d1fae5;border:1px solid #6ee7b7;color:#065f46'};
       var pacIcons={overspend:'\u26A0\uFE0F Overspend',underspend:'\u26A0\uFE0F Underspend',on_track:'\u2705 On track'};
       pacEl.style.cssText='display:block;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13px;background:#'+pacColors[p.status];
-      pacEl.innerHTML='<strong>'+pacIcons[p.status]+'</strong> — as of '+p.hour+':00, today spent '+cur(p.today_cum_spend)+' vs yesterday '+cur(p.yesterday_cum_spend)+' (<strong>'+(p.pacing_pct>=0?'+':'')+p.pacing_pct+'%</strong>)';
+      pacEl.innerHTML='<strong>'+pacIcons[p.status]+'</strong> — through '+hrLabel(p.hour-1)+', today spent '+cur(p.today_cum_spend)+' vs yesterday '+cur(p.yesterday_cum_spend)+' (<strong>'+(p.pacing_pct>=0?'+':'')+p.pacing_pct+'%</strong>)';
     }
 
     // Cumulative spend line chart (canvas)
@@ -4780,6 +4780,12 @@ async function _loadHourlyTracker(){
     var cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
 
     // Chart starts at 6am (hours 6-23 = 18 data points)
+    // Format hour as range: 18 → "6-7pm", 9 → "9-10am"
+    function hrLabel(h){
+      var s=h%12||12, e=(h+1)%12||12, ap=h<12?'am':(h<23?'pm':'am');
+      var eap=(h+1)<12?'am':((h+1)===24?'am':'pm');
+      return s+(ap===eap?'':ap)+'-'+e+eap;
+    }
     var chartStartHour=6, chartHours=18;
 
     // Find max cumulative spend across all days (from hour 6 onwards)
@@ -4803,7 +4809,7 @@ async function _loadHourlyTracker(){
     ctx.fillStyle='#94a3b8'; ctx.font='10px system-ui'; ctx.textAlign='center';
     for(var xh=chartStartHour;xh<24;xh+=2){
       var xx=pad.l+cW*((xh-chartStartHour)/(chartHours-1));
-      ctx.fillText(xh+':00',xx,H-pad.b+16);
+      ctx.fillText(hrLabel(xh),xx,H-pad.b+16);
     }
 
     // Draw lines (6am onwards)
@@ -4867,7 +4873,7 @@ async function _loadHourlyTracker(){
       var spDelta=y.spend>0?Math.round((t.spend-y.spend)/y.spend*100):null;
       var spColor=spDelta!=null?(spDelta>15?'var(--r)':spDelta<-15?'var(--y)':''):'';
       tbody+='<tr>';
-      tbody+='<td style="font-weight:500">'+h+':00</td>';
+      tbody+='<td style="font-weight:500">'+hrLabel(h)+'</td>';
       tbody+='<td style="color:'+spColor+'">'+cur(t.spend||0)+(spDelta!=null?' <span style="font-size:10px">('+(spDelta>=0?'+':'')+spDelta+'%)</span>':'')+'</td>';
       tbody+='<td style="font-weight:600;color:'+tRc+'">'+(tRoas!=null?tRoas.toFixed(2)+'x':'--')+'</td>';
       tbody+='<td>'+(t.orders||0)+'</td>';
@@ -4884,12 +4890,12 @@ async function _loadHourlyTracker(){
     var crs=d.top_creatives||[];
     var pacRatio=d.pacing_ratio||1;
     var curHr=d.current_hour||23;
-    var paceNote=curHr<23?'Paced to '+curHr+':00 ('+Math.round(pacRatio*100)+'% of day)':'Full day';
+    var curHrLbl=curHr<23?'through '+hrLabel(curHr-1):'Full day';
     if(crs.length>0){
       var cHdr='<tr><th style="width:40px"></th><th style="min-width:180px">Creative</th>';
       cHdr+='<th colspan="4" style="text-align:center;border-bottom:2px solid var(--t1)">Today (live)</th>';
-      cHdr+='<th colspan="2" style="text-align:center;border-bottom:2px solid var(--t3)">Yday by '+curHr+':00</th>';
-      cHdr+='<th colspan="2" style="text-align:center;border-bottom:2px solid #8b5cf6">7d avg by '+curHr+':00</th>';
+      cHdr+='<th colspan="2" style="text-align:center;border-bottom:2px solid var(--t3)">Yday '+curHrLbl+'</th>';
+      cHdr+='<th colspan="2" style="text-align:center;border-bottom:2px solid #8b5cf6">7d avg '+curHrLbl+'</th>';
       cHdr+='<th>vs Yday</th><th>vs 7d</th></tr>';
       cHdr+='<tr><th></th><th></th><th>Spend</th><th>ROAS</th><th>Orders</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>Spend</th><th>ROAS</th><th></th><th></th></tr>';
       var cBody='';
