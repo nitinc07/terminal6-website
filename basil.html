@@ -5063,15 +5063,47 @@ async function _loadDemoPlacement(){
       var ages=['18-24','25-34','35-44','45-54','55-64','65+'];
       var lookup={};
       var maxSpend=0;
+      var totalSpendAll=0;
+      // Build lookup + compute totals per age and per gender
+      var ageTotals={}, genderTotals={};
+      ages.forEach(function(a){ageTotals[a]={spend:0,sales:0,orders:0,impressions:0,clicks:0};});
+      genders.forEach(function(g){genderTotals[g]={spend:0,sales:0,orders:0,impressions:0,clicks:0};});
+      var grandTotal={spend:0,sales:0,orders:0,impressions:0,clicks:0};
       demo.heatmap.forEach(function(r){
         var k=r.age+'|'+r.gender;
         lookup[k]=r;
         if(r.spend>maxSpend) maxSpend=r.spend;
+        totalSpendAll+=r.spend;
+        if(ageTotals[r.age]){ageTotals[r.age].spend+=r.spend;ageTotals[r.age].sales+=r.sales;ageTotals[r.age].orders+=r.orders;ageTotals[r.age].impressions+=r.impressions;ageTotals[r.age].clicks+=r.clicks;}
+        if(genderTotals[r.gender]){genderTotals[r.gender].spend+=r.spend;genderTotals[r.gender].sales+=r.sales;genderTotals[r.gender].orders+=r.orders;genderTotals[r.gender].impressions+=r.impressions;genderTotals[r.gender].clicks+=r.clicks;}
+        grandTotal.spend+=r.spend;grandTotal.sales+=r.sales;grandTotal.orders+=r.orders;
       });
-      var hdr='<thead><tr><th>Age</th>';
+
+      function _heatBg(spend,roas){
+        // Background: spend intensity (light orange for high spend)
+        var pct=maxSpend>0?spend/maxSpend:0;
+        var bg='rgba(251,191,36,'+Math.max(0.05,pct*0.35).toFixed(2)+')';
+        // Border-left: ROAS signal (green/red/blue)
+        return bg;
+      }
+      function _roasBadge(roas){
+        if(roas==null||roas===0) return '<span style="color:var(--t3);font-size:11px">—</span>';
+        var clr=roas>=2?'#16a34a':roas>=1?'#2563eb':'#dc2626';
+        var bg=roas>=2?'#dcfce7':roas>=1?'#dbeafe':'#fee2e2';
+        return '<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;color:'+clr+';background:'+bg+'">'+roas.toFixed(1)+'x</span>';
+      }
+      function _spendCell(spend,roas){
+        var bg=_heatBg(spend,roas);
+        var borderClr=roas>=2?'#16a34a':roas>=1?'#2563eb':(roas>0?'#dc2626':'#e5e7eb');
+        return 'text-align:right;font-size:12px;font-weight:500;padding:6px 10px;background:'+bg+';border-left:3px solid '+borderClr+';color:var(--t1)';
+      }
+
+      var hdr='<thead><tr><th style="min-width:60px">Age</th>';
       genders.forEach(function(g){hdr+='<th colspan="2" style="text-align:center;text-transform:capitalize">'+g+'</th>';});
+      hdr+='<th colspan="2" style="text-align:center;font-weight:700">Total</th>';
       hdr+='</tr><tr><th></th>';
-      genders.forEach(function(){hdr+='<th style="text-align:right;font-size:11px">Spend</th><th style="text-align:right;font-size:11px">ROAS</th>';});
+      genders.forEach(function(){hdr+='<th style="text-align:right;font-size:11px;color:var(--t3)">Spend</th><th style="text-align:right;font-size:11px;color:var(--t3)">ROAS</th>';});
+      hdr+='<th style="text-align:right;font-size:11px;color:var(--t3)">Spend</th><th style="text-align:right;font-size:11px;color:var(--t3)">ROAS</th>';
       hdr+='</tr></thead>';
       var body='';
       ages.forEach(function(age){
@@ -5079,15 +5111,31 @@ async function _loadDemoPlacement(){
         genders.forEach(function(g){
           var r=lookup[age+'|'+g];
           if(r){
-            var opacity=maxSpend>0?Math.max(0.15,r.spend/maxSpend):0.15;
-            body+='<td style="text-align:right;font-size:12px;background:rgba(99,102,241,'+opacity.toFixed(2)+');color:#fff;font-weight:500">'+cur(r.spend)+'</td>';
-            body+='<td style="text-align:right;font-size:12px;color:'+_roasClr(r.roas)+';font-weight:600">'+r.roas.toFixed(1)+'x</td>';
+            body+='<td style="'+_spendCell(r.spend,r.roas)+'">'+cur(r.spend)+'</td>';
+            body+='<td style="text-align:center;font-size:12px">'+_roasBadge(r.roas)+'</td>';
           }else{
-            body+='<td style="text-align:right;color:var(--t3);font-size:11px">—</td><td style="text-align:right;color:var(--t3);font-size:11px">—</td>';
+            body+='<td style="text-align:right;color:var(--t3);font-size:11px">—</td><td style="text-align:center;color:var(--t3);font-size:11px">—</td>';
           }
         });
+        // Age total
+        var at=ageTotals[age];
+        var atRoas=at.spend>0?at.sales/at.spend:0;
+        body+='<td style="text-align:right;font-size:12px;font-weight:600;background:var(--bg-cream);padding:6px 10px">'+cur(at.spend)+'</td>';
+        body+='<td style="text-align:center;font-size:12px;background:var(--bg-cream)">'+_roasBadge(atRoas)+'</td>';
         body+='</tr>';
       });
+      // Gender total row
+      body+='<tr style="border-top:2px solid var(--border);font-weight:600"><td style="font-size:12px">Total</td>';
+      genders.forEach(function(g){
+        var gt=genderTotals[g];
+        var gtRoas=gt.spend>0?gt.sales/gt.spend:0;
+        var sh=totalSpendAll>0?(gt.spend/totalSpendAll*100).toFixed(0)+'%':'';
+        body+='<td style="text-align:right;font-size:12px;background:var(--bg-cream);padding:6px 10px">'+cur(gt.spend)+' <span style="font-size:10px;color:var(--t3);font-weight:400">'+sh+'</span></td>';
+        body+='<td style="text-align:center;font-size:12px;background:var(--bg-cream)">'+_roasBadge(gtRoas)+'</td>';
+      });
+      var grRoas=grandTotal.spend>0?grandTotal.sales/grandTotal.spend:0;
+      body+='<td style="text-align:right;font-size:12px;font-weight:700;background:var(--bg-cream);padding:6px 10px">'+cur(grandTotal.spend)+'</td>';
+      body+='<td style="text-align:center;font-size:12px;background:var(--bg-cream)">'+_roasBadge(grRoas)+'</td></tr>';
       document.getElementById('meta-demo-heatmap-tbl').innerHTML=hdr+'<tbody>'+body+'</tbody>';
     }
 
