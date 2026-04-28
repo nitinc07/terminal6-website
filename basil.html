@@ -891,9 +891,6 @@
       <div id="meta-digest-body" style="font-size:13px;line-height:1.7"></div>
     </div>
 
-    <!-- Action cards (rule-based, ACTIVE ads only) -->
-    <div id="meta-actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px"></div>
-
     <!-- Funnel health -->
     <div class="sec" id="meta-funnel-sec">
       <div class="sec-h"><h3>Funnel Health</h3><span class="note">per ₹1K spent vs prior period</span></div>
@@ -4297,31 +4294,6 @@ async function loadMetaAds(){
     if(sc.Loser)scH+=(scH?' · ':'')+'<span style="color:var(--r)">'+sc.Loser+' losers</span>';
     document.getElementById('meta-adcount-sub').innerHTML=scH||'&nbsp;';
 
-    // ── Action cards ──
-    var acHtml='';
-    function actionCard(icon,color,title,items,fields){
-      if(!items||!items.length) return '';
-      var h='<div style="flex:1;min-width:260px;background:var(--c1);border-radius:8px;padding:14px 16px;border-left:4px solid '+color+'">';
-      h+='<div style="font-weight:600;font-size:13px;margin-bottom:8px">'+icon+' '+title+' ('+items.length+')</div>';
-      items.forEach(function(it){
-        var line='<div style="font-size:12px;color:var(--t2);margin-bottom:4px">';
-        var n=(it.ad_name||'').length>35?it.ad_name.slice(0,35)+'...':it.ad_name||'--';
-        line+='<span style="color:var(--t1)">'+n+'</span> &mdash; ';
-        fields.forEach(function(f){line+=f(it)+' ';});
-        line+='</div>';
-        h+=line;
-      });
-      return h+'</div>';
-    }
-    acHtml+=actionCard('\uD83D\uDED1','var(--r)','Pause — Bleeding',acts.pause,[
-      function(i){return cur(i.spend)+' spent'},function(i){return i.roas!=null?i.roas.toFixed(1)+'x ROAS':'no orders'}]);
-    acHtml+=actionCard('\uD83D\uDE80','var(--g)','Scale — Winners with headroom',acts.scale,[
-      function(i){return i.roas.toFixed(1)+'x ROAS'},function(i){return cur(i.spend)+' (low share)'}]);
-    acHtml+=actionCard('\u26A0\uFE0F','#f97316','Fatiguing — ROAS declining',acts.fatiguing,[
-      function(i){return i.roas_change_pct!=null?Math.round(i.roas_change_pct)+'% WoW':''},
-      function(i){return i.frequency?'freq '+i.frequency.toFixed(1):''}]);
-    document.getElementById('meta-actions').innerHTML=acHtml||'<div style="color:var(--t3);font-size:13px;padding:12px">No urgent actions</div>';
-
     // ── Funnel health ──
     var fc=fun.current||{}, fp=fun.prior||{};
     var stages=[
@@ -4413,7 +4385,7 @@ async function loadMetaAds(){
     _metaLoaded=true;
   }catch(e){
     console.error('Meta Ads error:',e);
-    document.getElementById('meta-actions').innerHTML='<div style="color:var(--r);padding:12px">Failed to load: '+e.message+'</div>';
+    document.getElementById('meta-perf-body').innerHTML='<tr><td colspan="11" style="color:var(--r)">Failed to load: '+e.message+'</td></tr>';
   }
 }
 
