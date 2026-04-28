@@ -4772,11 +4772,14 @@ async function _loadHourlyTracker(){
     var pad={t:20,r:20,b:35,l:60};
     var cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
 
-    // Find max cumulative spend across all days
+    // Chart starts at 6am (hours 6-23 = 18 data points)
+    var chartStartHour=6, chartHours=18;
+
+    // Find max cumulative spend across all days (from hour 6 onwards)
     var maxSpend=0;
     days.forEach(function(day){
       var curve=d.cumulative[day];
-      if(curve) curve.forEach(function(pt){if(pt.cum_spend>maxSpend) maxSpend=pt.cum_spend;});
+      if(curve) for(var h=chartStartHour;h<24;h++){var pt=curve[h]||{};if(pt.cum_spend>maxSpend) maxSpend=pt.cum_spend;}
     });
     if(maxSpend===0) maxSpend=100000;
 
@@ -4789,29 +4792,29 @@ async function _loadHourlyTracker(){
       ctx.fillStyle='#94a3b8'; ctx.font='10px system-ui'; ctx.textAlign='right';
       var lbl=maxSpend*(g/4); ctx.fillText(lbl>=100000?(lbl/100000).toFixed(1)+'L':lbl>=1000?(lbl/1000).toFixed(0)+'K':Math.round(lbl), pad.l-6, gy+3);
     }
-    // X-axis labels
+    // X-axis labels (6am to 23:00)
     ctx.fillStyle='#94a3b8'; ctx.font='10px system-ui'; ctx.textAlign='center';
-    for(var xh=0;xh<24;xh+=2){
-      var xx=pad.l+cW*(xh/23);
+    for(var xh=chartStartHour;xh<24;xh+=2){
+      var xx=pad.l+cW*((xh-chartStartHour)/(chartHours-1));
       ctx.fillText(xh+':00',xx,H-pad.b+16);
     }
 
-    // Draw lines
+    // Draw lines (6am onwards)
     days.forEach(function(day){
       var curve=d.cumulative[day]; if(!curve) return;
       ctx.strokeStyle=dayStroke[day]; ctx.lineWidth=dayWidth[day]; ctx.setLineDash(dayDash[day]);
       ctx.beginPath();
       var started=false;
-      for(var h=0;h<24;h++){
+      for(var h=chartStartHour;h<24;h++){
         var pt=curve[h]||{};
         if(pt.cum_spend===0&&!started) continue;
-        var x=pad.l+cW*(h/23);
+        var x=pad.l+cW*((h-chartStartHour)/(chartHours-1));
         var y=pad.t+cH-cH*(pt.cum_spend/maxSpend);
         if(!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y);
       }
       ctx.stroke(); ctx.setLineDash([]);
 
-      // End label
+      // End label for completed days
       var lastPt=curve[23]||curve[22]||{};
       if(lastPt.cum_spend>0&&day!=='today'){
         var lx=pad.l+cW;
@@ -4824,11 +4827,11 @@ async function _loadHourlyTracker(){
     // Today: draw dot at current hour
     var todayCurve=d.cumulative.today;
     if(todayCurve){
-      var lastH=0;
-      for(var h=23;h>=0;h--){if(todayCurve[h]&&todayCurve[h].cum_spend>0){lastH=h;break;}}
+      var lastH=chartStartHour;
+      for(var h=23;h>=chartStartHour;h--){if(todayCurve[h]&&todayCurve[h].cum_spend>0){lastH=h;break;}}
       var pt=todayCurve[lastH]||{};
       if(pt.cum_spend>0){
-        var cx=pad.l+cW*(lastH/23);
+        var cx=pad.l+cW*((lastH-chartStartHour)/(chartHours-1));
         var cy=pad.t+cH-cH*(pt.cum_spend/maxSpend);
         ctx.fillStyle='#3b82f6'; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
         ctx.fillStyle='#1e40af'; ctx.font='bold 11px system-ui'; ctx.textAlign='left';
