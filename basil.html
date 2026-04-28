@@ -880,6 +880,19 @@
       <div class="cd"><div class="kl">Active Ads</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
     </div>
 
+    <!-- Account health trend -->
+    <div class="sec" id="meta-trend-sec">
+      <div class="sec-h"><h3>Account Health Trend</h3><span class="note">Weekly</span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="meta-trend-tbl">
+          <thead><tr>
+            <th>Week</th><th>Spend</th><th>ROAS</th><th>CPM</th><th>CTR</th><th>CPA</th><th>Orders</th><th>Winners</th><th>Active Ads</th>
+          </tr></thead>
+          <tbody id="meta-trend-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Format breakdown -->
     <div class="sec" id="meta-fmt-sec">
       <div class="sec-h"><h3>Format Breakdown</h3></div>
@@ -892,6 +905,23 @@
       <div class="sec-h"><h3>Spend Concentration</h3></div>
       <p class="sub" id="meta-conc-headline" style="margin-bottom:12px"></p>
       <div id="meta-conc-bars"></div>
+    </div>
+
+    <!-- Campaign health -->
+    <div class="sec" id="meta-camp-sec">
+      <div class="sec-h"><h3>Campaign Health</h3><span class="note" id="meta-camp-note"></span></div>
+      <div class="g4" style="margin-bottom:14px">
+        <div class="cd"><div class="kl">Campaigns</div><div class="kv" id="meta-camp-count">--</div><div class="kd n" id="meta-camp-frag">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Above 2x ROAS</div><div class="kv" id="meta-camp-above">--</div><div class="kd n" id="meta-camp-above-sub">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Below 2x ROAS</div><div class="kv" id="meta-camp-below">--</div><div class="kd n" id="meta-camp-below-sub">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Bleeding (&lt;1x)</div><div class="kv" id="meta-camp-bleed">--</div><div class="kd n" id="meta-camp-bleed-sub">&nbsp;</div></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="meta-camp-tbl">
+          <thead><tr><th>Campaign</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Share</th><th>Orders</th><th>Ads</th><th>Freq</th></tr></thead>
+          <tbody id="meta-camp-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Creative performance table -->
@@ -4153,21 +4183,45 @@ async function loadMetaAds() {
   if (_metaLoaded) return;
   var days = 30;
   try {
-    var [perf, fmtData, conc] = await Promise.all([
+    var [perf, fmtData, conc, health, campHealth] = await Promise.all([
       api('/v1/meta/creative-performance?days=' + days),
       api('/v1/meta/format-breakdown?days=' + days),
       api('/v1/meta/spend-concentration?days=' + days),
+      api('/v1/meta/account-health?weeks=12'),
+      api('/v1/meta/campaign-health?days=14'),
     ]);
 
     // KPI tiles
+    var sc = perf.status_counts || {};
     document.getElementById('meta-spend').textContent = cur(perf.total_spend);
     document.getElementById('meta-spend-sub').textContent = days + '-day total';
     document.getElementById('meta-roas').textContent = perf.avg_roas != null ? perf.avg_roas.toFixed(1) + 'x' : '--';
     document.getElementById('meta-cpa').textContent = perf.avg_cpa != null ? cur(perf.avg_cpa) : '--';
-    var winners = (perf.data || []).filter(function(d) { return d.status === 'Winner'; }).length;
-    var losers = (perf.data || []).filter(function(d) { return d.status === 'Loser'; }).length;
     document.getElementById('meta-adcount').textContent = perf.count || '--';
-    document.getElementById('meta-adcount-sub').innerHTML = '<span style="color:var(--g)">' + winners + ' winners</span> · <span style="color:var(--r)">' + losers + ' losers</span>';
+    var scHtml = '';
+    if(sc.Winner) scHtml += '<span style="color:var(--g)">' + sc.Winner + ' winners</span>';
+    if(sc.Fatiguing) scHtml += (scHtml?' · ':'')+'<span style="color:#f97316">' + sc.Fatiguing + ' fatiguing</span>';
+    if(sc.Loser) scHtml += (scHtml?' · ':'')+'<span style="color:var(--r)">' + sc.Loser + ' losers</span>';
+    document.getElementById('meta-adcount-sub').innerHTML = scHtml || '&nbsp;';
+
+    // Account health trend table
+    var trendBody = document.getElementById('meta-trend-body');
+    var trendRows = '';
+    (health.data || []).reverse().forEach(function(w) {
+      var roasColor = w.roas >= 2.5 ? 'var(--g)' : w.roas >= 2.0 ? 'inherit' : 'var(--r)';
+      trendRows += '<tr>' +
+        '<td>' + shortD(w.week) + '</td>' +
+        '<td>' + cur(w.spend) + '</td>' +
+        '<td style="font-weight:600;color:' + roasColor + '">' + (w.roas != null ? w.roas.toFixed(2) + 'x' : '--') + '</td>' +
+        '<td>' + (w.cpm != null ? '₹' + w.cpm.toFixed(0) : '--') + '</td>' +
+        '<td>' + (w.ctr != null ? w.ctr.toFixed(2) + '%' : '--') + '</td>' +
+        '<td>' + (w.cpa != null ? cur(w.cpa) : '--') + '</td>' +
+        '<td>' + fmt(w.orders) + '</td>' +
+        '<td style="font-weight:600;color:' + (w.winner_count >= 5 ? 'var(--g)' : w.winner_count >= 2 ? 'inherit' : 'var(--r)') + '">' + w.winner_count + '</td>' +
+        '<td>' + w.active_ads + '</td>' +
+      '</tr>';
+    });
+    trendBody.innerHTML = trendRows || '<tr><td colspan="9" class="sub">No trend data</td></tr>';
 
     // Format breakdown bar
     var fmtColors = { VIDEO: '#9333ea', IMAGE: '#3b82f6', CAROUSEL: '#14b8a6' };
@@ -4205,28 +4259,70 @@ async function loadMetaAds() {
     });
     document.getElementById('meta-conc-bars').innerHTML = concHtml || '<p class="sub">No data yet</p>';
 
-    // Creative performance table
+    // Campaign health
+    var ch = campHealth;
+    var fragColors = {healthy:'var(--g)', moderate:'var(--y)', severe:'var(--r)'};
+    document.getElementById('meta-camp-count').textContent = ch.campaign_count;
+    document.getElementById('meta-camp-frag').innerHTML = '<span style="color:'+( fragColors[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</span> fragmentation';
+    document.getElementById('meta-camp-above').textContent = ch.above_target.count;
+    document.getElementById('meta-camp-above-sub').textContent = ch.above_target.spend_pct + '% of spend';
+    document.getElementById('meta-camp-below').textContent = ch.below_target.count;
+    document.getElementById('meta-camp-below-sub').textContent = ch.below_target.spend_pct + '% of spend';
+    document.getElementById('meta-camp-bleed').textContent = ch.bleeding.count;
+    document.getElementById('meta-camp-bleed-sub').textContent = ch.bleeding.count > 0 ? cur(ch.bleeding.spend) + ' wasted' : 'none';
+    document.getElementById('meta-camp-note').textContent = 'last ' + ch.days + ' days';
+
+    var campBody = document.getElementById('meta-camp-body');
+    var campRows = '';
+    (ch.campaigns || []).forEach(function(c) {
+      var rColor = c.roas >= 2 ? 'var(--g)' : c.roas >= 1 ? 'inherit' : 'var(--r)';
+      var name = (c.campaign_name||'').length > 45 ? c.campaign_name.slice(0,45)+'...' : (c.campaign_name||'--');
+      campRows += '<tr>' +
+        '<td style="font-size:12px" title="'+(c.campaign_name||'')+'">' + name + '</td>' +
+        '<td style="font-weight:600;color:'+rColor+'">' + (c.roas!=null?c.roas.toFixed(1)+'x':'--') + '</td>' +
+        '<td>' + (c.cpa!=null?cur(c.cpa):'--') + '</td>' +
+        '<td>' + (c.ctr!=null?c.ctr.toFixed(1)+'%':'--') + '</td>' +
+        '<td>' + cur(c.spend) + '</td>' +
+        '<td>' + c.spend_share_pct + '%</td>' +
+        '<td>' + fmt(c.orders) + '</td>' +
+        '<td>' + c.ad_count + '</td>' +
+        '<td>' + (c.avg_frequency||'--') + '</td>' +
+      '</tr>';
+    });
+    campBody.innerHTML = campRows || '<tr><td colspan="9">No data</td></tr>';
+
+    // Creative performance table (with fatigue indicators)
     var tbody = document.getElementById('meta-perf-body');
-    var statusColors = { Winner: 'var(--g)', Loser: 'var(--r)', Testing: 'var(--y)', Active: 'var(--t3)' };
-    var fmtPills = { VIDEO: '#9333ea', IMAGE: '#3b82f6', CAROUSEL: '#14b8a6' };
+    var statusColors = { Winner:'var(--g)', Loser:'var(--r)', Testing:'var(--y)', Fatiguing:'#f97316', Active:'var(--t3)' };
+    var fmtPills = { VIDEO:'#9333ea', IMAGE:'#3b82f6', CAROUSEL:'#14b8a6' };
     var rows = '';
     (perf.data || []).forEach(function(d) {
       var thumb = d.thumbnail_url ? '<img src="' + d.thumbnail_url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">' : '<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">' + (d.creative_type === 'VIDEO' ? '&#9654;' : '&#128444;') + '</div>';
       var name = (d.ad_name || '').length > 45 ? d.ad_name.slice(0, 45) + '...' : (d.ad_name || '--');
       var camp = (d.campaign_name || '').length > 30 ? d.campaign_name.slice(0, 30) + '...' : (d.campaign_name || '');
-      var sc = statusColors[d.status] || 'var(--t3)';
+      var scolor = statusColors[d.status] || 'var(--t3)';
       var fc = fmtPills[d.creative_type] || '#6b7280';
+      // ROAS change indicator
+      var rChange = '';
+      if(d.roas_change_pct != null) {
+        var arrow = d.roas_change_pct >= 0 ? '▲' : '▼';
+        var chgColor = d.roas_change_pct >= 0 ? 'var(--g)' : 'var(--r)';
+        rChange = '<div style="font-size:10px;color:'+chgColor+'">'+arrow+' '+Math.abs(d.roas_change_pct).toFixed(0)+'% WoW</div>';
+      }
+      // Frequency warning
+      var freqWarn = '';
+      if(d.recent_frequency && d.recent_frequency > 3.0) freqWarn = '<span title="High frequency: '+d.recent_frequency.toFixed(1)+'" style="color:#f97316;font-size:10px;margin-left:4px">freq '+d.recent_frequency.toFixed(1)+'</span>';
       rows += '<tr>' +
         '<td>' + thumb + '</td>' +
-        '<td><div style="font-weight:500;font-size:12.5px" title="' + (d.ad_name || '') + '">' + name + '</div><div style="font-size:11px;color:var(--t3)" title="' + (d.campaign_name || '') + '">' + camp + '</div></td>' +
+        '<td><div style="font-weight:500;font-size:12.5px" title="' + (d.ad_name || '') + '">' + name + freqWarn + '</div><div style="font-size:11px;color:var(--t3)" title="' + (d.campaign_name || '') + '">' + camp + '</div></td>' +
         '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + fc + '22;color:' + fc + '">' + (d.creative_type || 'IMAGE') + '</span></td>' +
-        '<td style="font-weight:600;color:' + (d.roas >= 2 ? 'var(--g)' : d.roas >= 1 ? 'inherit' : 'var(--r)') + '">' + (d.roas != null ? d.roas.toFixed(1) + 'x' : '--') + '</td>' +
+        '<td><div style="font-weight:600;color:' + (d.roas >= 2 ? 'var(--g)' : d.roas >= 1 ? 'inherit' : 'var(--r)') + '">' + (d.roas != null ? d.roas.toFixed(1) + 'x' : '--') + '</div>'+rChange+'</td>' +
         '<td>' + (d.cpa != null ? cur(d.cpa) : '--') + '</td>' +
         '<td>' + (d.ctr != null ? d.ctr.toFixed(1) + '%' : '--') + '</td>' +
         '<td>' + cur(d.spend) + '</td>' +
         '<td>' + cur(d.attributed_sales) + '</td>' +
         '<td>' + fmt(d.attributed_orders) + '</td>' +
-        '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + sc + '22;color:' + sc + '">' + d.status + '</span></td>' +
+        '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + scolor + '22;color:' + scolor + '">' + d.status + '</span></td>' +
       '</tr>';
     });
     tbody.innerHTML = rows || '<tr><td colspan="10" style="text-align:center;color:var(--t3);padding:40px">No ad-level data yet. Run the creative backfill to populate.</td></tr>';
