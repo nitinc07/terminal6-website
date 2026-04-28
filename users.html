@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Terminal6 — Users</title>
+<script>
+/* ACCESS GATE — needs a signed-in user. Admin-only access is enforced
+   server-side by the API (401/403 on /v1/users/list) and re-checked client-side
+   after /v1/users/permissions returns. */
+(function(){
+  var saved = sessionStorage.getItem('t6_user');
+  if(!saved){ location.replace('/home.html'); document.documentElement.style.display='none'; }
+})();
+/* Auto-detect the brand subdomain so X-Brand resolves on main-domain fallback
+   too. On the subdomain itself, nginx already injects X-Brand. */
+(function(){
+  var h = location.hostname.split('.')[0];
+  if(h && !['terminal6','www','dev','localhost','127','api'].includes(h)) {
+    window.T6_BRAND_SLUG = h;
+  }
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared.css?v=2026-04-29a">
+<style>
+.page { max-width: 1100px; margin: 0 auto; padding: 32px 32px 80px; }
+.page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px }
+.page-head h1 { font-family: var(--serif); font-size: 26px; font-weight: 700; }
+.page-head .sub { font-size: 13px; color: var(--tm); margin-top: 2px; }
+.back-link { font-size: 12px; color: var(--tm); text-decoration: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; background: var(--bg-white); }
+.back-link:hover { color: var(--text); border-color: var(--accent); }
+
+.card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 24px; }
+.card h2 { font-family: var(--serif); font-size: 18px; font-weight: 600; margin-bottom: 12px; }
+.card .note { font-size: 12px; color: var(--tm); margin-bottom: 14px; line-height: 1.6; }
+
+.add-form { display: grid; grid-template-columns: 2fr 1.4fr 1fr auto; gap: 10px; align-items: end; }
+.add-form label { display: block; font-size: 11px; font-weight: 500; color: var(--tm); margin-bottom: 3px; }
+.add-form input, .add-form select { font-family: var(--sans); font-size: 13px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-white); width: 100%; }
+.add-form input:focus, .add-form select:focus { outline: none; border-color: var(--accent); }
+.btn { font-family: var(--sans); font-size: 13px; font-weight: 500; padding: 9px 18px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.btn:hover { opacity: .92; }
+.btn.secondary { background: var(--bg-white); color: var(--accent); }
+.btn.danger { background: var(--bg-white); color: var(--r); border-color: var(--r); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+table.users { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.users th { text-align: left; padding: 10px 8px; font-weight: 600; font-size: 11px; color: var(--tm); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
+table.users td { padding: 12px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.users tr:last-child td { border-bottom: none; }
+table.users .email { font-weight: 500; }
+table.users .name { color: var(--tm); font-size: 12px; margin-top: 2px; }
+table.users select { font-family: var(--sans); font-size: 12px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg-white); }
+
+.sidebars-cell { min-width: 360px; }
+.sidebars-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px; margin-top: 6px; }
+.sb-grp { font-size: 10px; color: var(--tm); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 8px; grid-column: 1 / -1; }
+.sb-grp:first-child { margin-top: 0; }
+.sb-chk { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; user-select: none; }
+.sb-chk input { margin: 0; cursor: pointer; }
+.sb-chk.disabled { opacity: 0.5; cursor: not-allowed; }
+.sb-chk .hidden-tag { font-size: 9px; color: var(--tm); padding: 1px 4px; background: var(--bg); border-radius: 3px; margin-left: 4px; }
+
+.unrestricted-banner { font-size: 11px; color: var(--tm); padding: 6px 8px; background: var(--bg); border-radius: 5px; margin-bottom: 6px; display: inline-block; }
+.unrestricted-banner.warn { color: var(--accent); }
+
+.role-pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.role-pill.owner { background: rgba(194,65,12,.1); color: var(--accent); }
+.role-pill.admin { background: rgba(15,118,110,.1); color: #0F766E; }
+.role-pill.viewer { background: var(--bg); color: var(--tm); }
+.role-pill.platform_admin { background: rgba(21,101,192,.1); color: #1565C0; }
+
+.actions-cell { white-space: nowrap; }
+.row-status { font-size: 11px; color: var(--tm); margin-left: 8px; opacity: 0; transition: opacity .2s; }
+.row-status.show { opacity: 1; }
+.row-status.ok { color: #16a34a; }
+.row-status.err { color: var(--r); }
+
+.loading-row { padding: 24px; text-align: center; color: var(--tm); font-size: 13px; }
+.error-banner { background: #fef2f2; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Users &amp; Permissions</h1>
+      <div class="sub" id="brandLine">Loading...</div>
+    </div>
+    <a class="back-link" id="backLink" href="/">&larr; Back to dashboard</a>
+  </div>
+
+  <div id="errorBox"></div>
+
+  <div class="card" id="addCard" style="display:none">
+    <h2>Add user</h2>
+    <div class="note">Owners and admins always see every sidebar. Viewers see only the sidebars granted on their row below — leave the row's allowlist empty to give them full access.</div>
+    <form class="add-form" id="addForm" onsubmit="return addUser(event)">
+      <div>
+        <label>Email</label>
+        <input type="email" id="addEmail" placeholder="user@brand.com" required>
+      </div>
+      <div>
+        <label>Name (optional)</label>
+        <input type="text" id="addName" placeholder="Full name">
+      </div>
+      <div>
+        <label>Role</label>
+        <select id="addRole">
+          <option value="viewer">Viewer</option>
+          <option value="admin">Admin</option>
+          <option value="owner">Owner</option>
+        </select>
+      </div>
+      <button type="submit" class="btn">Add</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Brand users <span id="userCount" style="font-size:13px;color:var(--tm);font-weight:400"></span></h2>
+    <div class="note">Role changes and sidebar allowlists save on click. The Users sidebar is part of the registry — uncheck it to remove a viewer's access to this page.</div>
+    <div id="usersTableWrap">
+      <div class="loading-row">Loading users...</div>
+    </div>
+  </div>
+</div>
+
+<script src="/shared.js?v=2026-04-29a"></script>
+<script>
+var STATE = {
+  perms: null,        // /v1/users/permissions response
+  users: [],          // /v1/users/list response.users
+  myEmail: null,
+};
+
+function showError(msg){
+  var box = document.getElementById('errorBox');
+  box.innerHTML = '<div class="error-banner">' + escapeHtml(msg) + '</div>';
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]});
+}
+
+(async function init(){
+  try {
+    // Pull permissions and the user list together
+    var u = JSON.parse(sessionStorage.getItem('t6_user') || 'null');
+    STATE.myEmail = u && u.email ? u.email.toLowerCase() : null;
+
+    STATE.perms = await T6.api('/v1/users/permissions');
+
+    if(!STATE.perms.is_admin){
+      // Not an admin — bounce back to the dashboard
+      location.replace('/');
+      return;
+    }
+
+    document.getElementById('addCard').style.display = 'block';
+    document.getElementById('brandLine').textContent =
+      'Manage who can sign in and what they see. ' +
+      'You are signed in as ' + STATE.perms.email + ' (' + STATE.perms.role + ').';
+
+    var listResp = await T6.api('/v1/users/list');
+    STATE.users = listResp.users || [];
+    document.getElementById('userCount').textContent = '· ' + STATE.users.length + ' user' + (STATE.users.length === 1 ? '' : 's');
+    renderUsersTable();
+  } catch(e){
+    showError('Failed to load: ' + (e && e.message ? e.message : e));
+  }
+})();
+
+function renderUsersTable(){
+  var registry = STATE.perms.all_sidebars || [];
+  var groups = {};
+  registry.forEach(function(s){
+    if(!groups[s.group]) groups[s.group] = [];
+    groups[s.group].push(s);
+  });
+
+  var html = '<table class="users">';
+  html += '<thead><tr>';
+  html += '<th>User</th>';
+  html += '<th>Role</th>';
+  html += '<th>Visible sidebars</th>';
+  html += '<th>Actions</th>';
+  html += '</tr></thead><tbody>';
+
+  STATE.users.forEach(function(u, idx){
+    var role = u.role;
+    var isViewer = role === 'viewer';
+    var allowed = u.allowed_sidebars; // null = unrestricted, [] = none, [...] = explicit
+    var unrestricted = allowed === null || allowed === undefined;
+
+    html += '<tr data-email="' + escapeHtml(u.email) + '">';
+
+    // User cell
+    html += '<td>';
+    html += '<div class="email">' + escapeHtml(u.email);
+    if(u.email === STATE.myEmail) html += ' <span class="role-pill viewer">you</span>';
+    if(u.is_platform_admin) html += ' <span class="role-pill platform_admin">platform</span>';
+    html += '</div>';
+    if(u.name) html += '<div class="name">' + escapeHtml(u.name) + '</div>';
+    html += '</td>';
+
+    // Role cell
+    html += '<td>';
+    html += '<select class="role-select" onchange="onRoleChange(\'' + escapeHtml(u.email) + '\', this.value)">';
+    ['owner','admin','viewer'].forEach(function(r){
+      html += '<option value="' + r + '"' + (role === r ? ' selected' : '') + '>' + r.charAt(0).toUpperCase() + r.slice(1) + '</option>';
+    });
+    html += '</select>';
+    html += '</td>';
+
+    // Sidebars cell
+    html += '<td class="sidebars-cell">';
+    if(!isViewer){
+      html += '<span class="unrestricted-banner">Owners &amp; admins always see every sidebar.</span>';
+    } else {
+      var bannerCls = unrestricted ? 'unrestricted-banner warn' : 'unrestricted-banner';
+      var bannerText = unrestricted
+        ? 'No allowlist set — this viewer currently sees every sidebar.'
+        : 'Showing ' + allowed.length + ' / ' + registry.length + ' sidebars.';
+      html += '<span class="' + bannerCls + '">' + bannerText + '</span>';
+
+      html += '<div class="sidebars-grid">';
+      Object.keys(groups).forEach(function(grpName){
+        html += '<div class="sb-grp">' + escapeHtml(grpName) + '</div>';
+        groups[grpName].forEach(function(s){
+          var checked = unrestricted ? true : allowed.indexOf(s.key) !== -1;
+          html += '<label class="sb-chk">';
+          html += '<input type="checkbox" data-key="' + s.key + '"' + (checked ? ' checked' : '') + '>';
+          html += '<span>' + escapeHtml(s.label) + '</span>';
+          if(s.hidden) html += '<span class="hidden-tag">hidden</span>';
+          html += '</label>';
+        });
+      });
+      html += '</div>';
+    }
+    html += '</td>';
+
+    // Actions
+    html += '<td class="actions-cell">';
+    if(isViewer){
+      html += '<button class="btn secondary" onclick="saveUser(\'' + escapeHtml(u.email) + '\', this)">Save</button>';
+    }
+    if(u.email !== STATE.myEmail){
+      html += ' <button class="btn danger" onclick="removeUser(\'' + escapeHtml(u.email) + '\', this)" style="margin-left:6px">Remove</button>';
+    }
+    html += '<span class="row-status"></span>';
+    html += '</td>';
+
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('usersTableWrap').innerHTML = html;
+}
+
+function setRowStatus(email, msg, kind){
+  var row = document.querySelector('tr[data-email="' + email + '"]');
+  if(!row) return;
+  var el = row.querySelector('.row-status');
+  el.textContent = msg;
+  el.className = 'row-status show ' + (kind || '');
+  if(kind === 'ok'){
+    setTimeout(function(){ el.className = 'row-status ' + (kind || ''); }, 2500);
+  }
+}
+
+async function onRoleChange(email, newRole){
+  // Role change is a PATCH with no allowed_sidebars override (preserve existing)
+  setRowStatus(email, 'Saving...', '');
+  try {
+    var r = await fetch(T6.API_BASE + '/v1/users/' + encodeURIComponent(email) + '/permissions', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + T6.token(),
+        'Content-Type': 'application/json',
+        'X-Brand': window.T6_BRAND_SLUG || '',
+      },
+      body: JSON.stringify({ role: newRole }),
+    });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    // Refresh local state and re-render so the sidebar grid enables/disables
+    var listResp = await T6.api('/v1/users/list');
+    STATE.users = listResp.users || [];
+    renderUsersTable();
+    setRowStatus(email, 'Role updated', 'ok');
+  } catch(e){
+    setRowStatus(email, 'Failed: ' + (e.message || e), 'err');
+  }
+}
+
+async function saveUser(email, btn){
+  var row = document.querySelector('tr[data-email="' + email + '"]');
+  if(!row) return;
+  var checks = row.querySelectorAll('.sidebars-cell input[type=checkbox]');
+  var allowed = [];
+  checks.forEach(function(c){ if(c.checked) allowed.push(c.dataset.key); });
+
+  btn.disabled = true;
+  setRowStatus(email, 'Saving...', '');
+  try {
+    var r = await fetch(T6.API_BASE + '/v1/users/' + encodeURIComponent(email) + '/permissions', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + T6.token(),
+        'Content-Type': 'application/json',
+        'X-Brand': window.T6_BRAND_SLUG || '',
+      },
+      body: JSON.stringify({ allowed_sidebars: allowed }),
+    });
+    if(!r.ok){
+      var t = await r.text();
+      throw new Error('HTTP ' + r.status + ': ' + t);
+    }
+    // Update local state
+    STATE.users.forEach(function(u){ if(u.email === email) u.allowed_sidebars = allowed; });
+    setRowStatus(email, 'Sidebars saved', 'ok');
+    renderUsersTable();
+  } catch(e){
+    setRowStatus(email, 'Failed: ' + (e.message || e), 'err');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function removeUser(email, btn){
+  if(!confirm('Remove ' + email + ' from this brand?')) return;
+  btn.disabled = true;
+  try {
+    var r = await fetch(T6.API_BASE + '/v1/users/remove', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + T6.token(),
+        'Content-Type': 'application/json',
+        'X-Brand': window.T6_BRAND_SLUG || '',
+      },
+      body: JSON.stringify({ email: email }),
+    });
+    if(!r.ok){
+      var t = await r.text();
+      throw new Error('HTTP ' + r.status + ': ' + t);
+    }
+    STATE.users = STATE.users.filter(function(u){ return u.email !== email; });
+    document.getElementById('userCount').textContent = '· ' + STATE.users.length + ' user' + (STATE.users.length === 1 ? '' : 's');
+    renderUsersTable();
+  } catch(e){
+    showError('Remove failed: ' + (e.message || e));
+    btn.disabled = false;
+  }
+}
+
+async function addUser(ev){
+  ev.preventDefault();
+  var email = document.getElementById('addEmail').value.trim().toLowerCase();
+  var name = document.getElementById('addName').value.trim();
+  var role = document.getElementById('addRole').value;
+  if(!email) return false;
+
+  var body = { email: email, role: role };
+  if(name) body.name = name;
+  // New viewers start unrestricted (allowed_sidebars=null) — admins tighten
+  // afterwards in the table. Owners/admins ignore the column anyway.
+
+  try {
+    var r = await fetch(T6.API_BASE + '/v1/users/add', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + T6.token(),
+        'Content-Type': 'application/json',
+        'X-Brand': window.T6_BRAND_SLUG || '',
+      },
+      body: JSON.stringify(body),
+    });
+    if(!r.ok){
+      var t = await r.text();
+      throw new Error('HTTP ' + r.status + ': ' + t);
+    }
+    // Refresh
+    document.getElementById('addEmail').value = '';
+    document.getElementById('addName').value = '';
+    var listResp = await T6.api('/v1/users/list');
+    STATE.users = listResp.users || [];
+    document.getElementById('userCount').textContent = '· ' + STATE.users.length + ' user' + (STATE.users.length === 1 ? '' : 's');
+    renderUsersTable();
+  } catch(e){
+    showError('Add failed: ' + (e.message || e));
+  }
+  return false;
+}
+</script>
+</body>
+</html>

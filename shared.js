@@ -132,6 +132,82 @@
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  /* ========== PERMISSIONS ==========
+   * Per-user sidebar visibility. Backend gates /v1/* routes by sidebar key
+   * (see api/permissions.py). The frontend mirrors that gate by hiding sidebar
+   * items the user can't see. Admins (owner/admin/platform_admin) get the full
+   * registry back from the API and see every sidebar.
+   *
+   * Usage in a brand page (call before any sw() and before the first data load):
+   *     await T6.permissions.init();
+   *     T6.permissions.applyToSidebar();
+   *
+   * Per-page render gate:
+   *     if(!T6.permissions.canSee('users')) location.replace('/<brand>.html');
+   */
+  const _perm = {
+    role: null,
+    isAdmin: false,
+    visible: null,    // Set<string> of sidebar keys this user can see
+    all: [],          // full SIDEBAR_REGISTRY, with {key,label,group,hidden?}
+    loaded: false,
+  };
+
+  async function permInit(){
+    if(_perm.loaded) return _perm;
+    try {
+      const data = await api('/v1/users/permissions');
+      _perm.role = data.role;
+      _perm.isAdmin = !!data.is_admin;
+      _perm.visible = new Set(data.visible_sidebars || []);
+      _perm.all = data.all_sidebars || [];
+      _perm.loaded = true;
+    } catch(e) {
+      // Don't lock the user out on a transient failure — backend still gates
+      // every API call, so the worst case here is a sidebar the user can't
+      // actually open. Surface the error in the console for debugging.
+      console.warn('permissions: init failed', e);
+      _perm.loaded = true;       // mark loaded so we don't retry forever
+      _perm.visible = null;      // null = treat as unrestricted (show all)
+    }
+    return _perm;
+  }
+
+  function canSee(key){
+    if(!_perm.loaded || _perm.visible == null) return true;  // fail-open until loaded
+    return _perm.visible.has(key);
+  }
+
+  /* Hide every sidebar item whose onclick references a forbidden sw('<key>',...)
+   * or swSub('<key>',...). Also hides the section label (.sl) above an
+   * empty sub-list so we don't leave dangling group headers. */
+  function applyToSidebar(){
+    if(!_perm.loaded || _perm.visible == null) return;  // unrestricted
+    const items = document.querySelectorAll('.si');
+    items.forEach(el => {
+      const oc = el.getAttribute('onclick') || '';
+      const m = oc.match(/sw(?:Sub)?\(\s*['"]([\w-]+)['"]/);
+      if(!m) return;
+      const key = m[1];
+      if(!_perm.visible.has(key)) el.style.display = 'none';
+    });
+    // Hide group labels whose section has no visible .si children left
+    document.querySelectorAll('.ss').forEach(section => {
+      const visibleItem = Array.from(section.querySelectorAll('.si'))
+        .some(el => el.style.display !== 'none');
+      if(!visibleItem){
+        section.style.display = 'none';
+      }
+    });
+  }
+
+  /* Pick the first visible sidebar key matching a candidate list. Used by
+   * brand pages to pick the landing tab when the default is hidden. */
+  function firstVisible(candidates){
+    if(!_perm.loaded || _perm.visible == null) return candidates[0];
+    return candidates.find(k => _perm.visible.has(k)) || null;
+  }
+
   /* ========== EXPORTS ==========
    * Surface the helpers on window so per-brand <script> blocks can call them
    * directly without imports. This is deliberate — no build step, vanilla JS. */
@@ -144,6 +220,15 @@
     tip: tip,
     showErr: showErr,
     initUserChrome: initUserChrome,
+    permissions: {
+      init: permInit,
+      canSee: canSee,
+      applyToSidebar: applyToSidebar,
+      firstVisible: firstVisible,
+      get role(){ return _perm.role; },
+      get isAdmin(){ return _perm.isAdmin; },
+      get all(){ return _perm.all; },
+    },
   };
   // Also surface commonly-used helpers at top level for readability in
   // brand pages. These names were already used inline in sprig.html / basil.html.
