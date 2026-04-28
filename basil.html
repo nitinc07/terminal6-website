@@ -1063,10 +1063,11 @@
         </div>
         <!-- Pacing alert -->
         <div id="meta-hourly-pacing" style="display:none;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13px"></div>
-        <!-- Cumulative spend curve table -->
+        <!-- Cumulative spend curve (line chart) -->
         <div class="sec-h"><h4 style="font-size:13px;margin:0">Cumulative Spend</h4></div>
-        <div style="overflow-x:auto;margin-bottom:20px">
-          <table class="tbl" id="meta-hourly-cum-tbl"></table>
+        <div style="position:relative;margin-bottom:20px;background:var(--c1);border-radius:8px;padding:16px">
+          <canvas id="meta-hourly-chart" width="900" height="280" style="width:100%;height:280px"></canvas>
+          <div id="meta-hourly-legend" style="display:flex;gap:20px;justify-content:center;margin-top:8px;font-size:12px"></div>
         </div>
         <!-- Hourly breakdown table -->
         <div class="sec-h"><h4 style="font-size:13px;margin:0">Hourly Breakdown</h4></div>
@@ -4754,36 +4755,95 @@ async function _loadHourlyTracker(){
       pacEl.innerHTML='<strong>'+pacIcons[p.status]+'</strong> — as of '+p.hour+':00, today spent '+cur(p.today_cum_spend)+' vs yesterday '+cur(p.yesterday_cum_spend)+' (<strong>'+(p.pacing_pct>=0?'+':'')+p.pacing_pct+'%</strong>)';
     }
 
-    // Cumulative spend table (transposed: metric rows × hour columns)
+    // Cumulative spend line chart (canvas)
     var days=['today','yesterday','same_day_lw'];
     var dayLabels={today:'Today',yesterday:'Yesterday',same_day_lw:'Same day LW'};
-    var dayColors={today:'var(--t1)',yesterday:'var(--t3)',same_day_lw:'#8b5cf6'};
-    var hours=[0,2,4,6,8,10,12,14,16,18,20,22,23]; // sample hours for readability
-    var cumH='<tr><th style="min-width:100px">CUM. SPEND</th>';
-    hours.forEach(function(h){cumH+='<th>'+h+':00</th>'});
-    cumH+='</tr>';
-    var cumB='';
+    var dayStroke={today:'#3b82f6',yesterday:'#94a3b8',same_day_lw:'#8b5cf6'};
+    var dayDash={today:[],yesterday:[6,4],same_day_lw:[3,3]};
+    var dayWidth={today:2.5,yesterday:1.5,same_day_lw:1.5};
+
+    var canvas=document.getElementById('meta-hourly-chart');
+    var ctx=canvas.getContext('2d');
+    var dpr=window.devicePixelRatio||1;
+    canvas.width=canvas.offsetWidth*dpr;
+    canvas.height=280*dpr;
+    ctx.scale(dpr,dpr);
+    var W=canvas.offsetWidth,H=280;
+    var pad={t:20,r:20,b:35,l:60};
+    var cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+
+    // Find max cumulative spend across all days
+    var maxSpend=0;
     days.forEach(function(day){
-      var curve=d.cumulative[day];if(!curve) return;
-      cumB+='<tr><td style="font-weight:500;color:'+dayColors[day]+'">'+dayLabels[day]+'</td>';
-      hours.forEach(function(h){
-        var pt=curve[h]||{};
-        cumB+='<td>'+cur(pt.cum_spend||0)+'</td>';
-      });
-      cumB+='</tr>';
+      var curve=d.cumulative[day];
+      if(curve) curve.forEach(function(pt){if(pt.cum_spend>maxSpend) maxSpend=pt.cum_spend;});
     });
-    // Add cumulative ROAS row for today
+    if(maxSpend===0) maxSpend=100000;
+
+    // Background + grid
+    ctx.fillStyle='#f8fafc'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=0.5;
+    for(var g=0;g<=4;g++){
+      var gy=pad.t+cH-cH*(g/4);
+      ctx.beginPath(); ctx.moveTo(pad.l,gy); ctx.lineTo(W-pad.r,gy); ctx.stroke();
+      ctx.fillStyle='#94a3b8'; ctx.font='10px system-ui'; ctx.textAlign='right';
+      var lbl=maxSpend*(g/4); ctx.fillText(lbl>=100000?(lbl/100000).toFixed(1)+'L':lbl>=1000?(lbl/1000).toFixed(0)+'K':Math.round(lbl), pad.l-6, gy+3);
+    }
+    // X-axis labels
+    ctx.fillStyle='#94a3b8'; ctx.font='10px system-ui'; ctx.textAlign='center';
+    for(var xh=0;xh<24;xh+=2){
+      var xx=pad.l+cW*(xh/23);
+      ctx.fillText(xh+':00',xx,H-pad.b+16);
+    }
+
+    // Draw lines
+    days.forEach(function(day){
+      var curve=d.cumulative[day]; if(!curve) return;
+      ctx.strokeStyle=dayStroke[day]; ctx.lineWidth=dayWidth[day]; ctx.setLineDash(dayDash[day]);
+      ctx.beginPath();
+      var started=false;
+      for(var h=0;h<24;h++){
+        var pt=curve[h]||{};
+        if(pt.cum_spend===0&&!started) continue;
+        var x=pad.l+cW*(h/23);
+        var y=pad.t+cH-cH*(pt.cum_spend/maxSpend);
+        if(!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y);
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+
+      // End label
+      var lastPt=curve[23]||curve[22]||{};
+      if(lastPt.cum_spend>0&&day!=='today'){
+        var lx=pad.l+cW;
+        var ly=pad.t+cH-cH*(lastPt.cum_spend/maxSpend);
+        ctx.fillStyle=dayStroke[day]; ctx.font='bold 10px system-ui'; ctx.textAlign='left';
+        ctx.fillText(cur(lastPt.cum_spend),lx+4,ly+3);
+      }
+    });
+
+    // Today: draw dot at current hour
     var todayCurve=d.cumulative.today;
     if(todayCurve){
-      cumB+='<tr><td style="font-weight:500;color:var(--t1)">Today ROAS</td>';
-      hours.forEach(function(h){
-        var pt=todayCurve[h]||{};
-        var rc=pt.cum_roas>=2?'var(--g)':pt.cum_roas>=1?'':'var(--r)';
-        cumB+='<td style="font-weight:600;color:'+rc+'">'+(pt.cum_roas!=null?pt.cum_roas.toFixed(2)+'x':'--')+'</td>';
-      });
-      cumB+='</tr>';
+      var lastH=0;
+      for(var h=23;h>=0;h--){if(todayCurve[h]&&todayCurve[h].cum_spend>0){lastH=h;break;}}
+      var pt=todayCurve[lastH]||{};
+      if(pt.cum_spend>0){
+        var cx=pad.l+cW*(lastH/23);
+        var cy=pad.t+cH-cH*(pt.cum_spend/maxSpend);
+        ctx.fillStyle='#3b82f6'; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#1e40af'; ctx.font='bold 11px system-ui'; ctx.textAlign='left';
+        ctx.fillText(cur(pt.cum_spend)+(pt.cum_roas!=null?' · '+pt.cum_roas.toFixed(1)+'x':''),cx+8,cy-4);
+      }
     }
-    document.getElementById('meta-hourly-cum-tbl').innerHTML='<thead>'+cumH+'</thead><tbody>'+cumB+'</tbody>';
+
+    // Legend
+    var legH='';
+    days.forEach(function(day){
+      if(!d.cumulative[day]) return;
+      var dash=dayDash[day].length>0?'dashed':'solid';
+      legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px '+dash+' '+dayStroke[day]+'"></span>'+dayLabels[day]+'</span>';
+    });
+    document.getElementById('meta-hourly-legend').innerHTML=legH;
 
     // Hourly breakdown table (all 24 hours, today vs yesterday)
     var hdr='<tr><th>Hour</th><th colspan="4" style="text-align:center;border-bottom:2px solid var(--t1)">Today</th><th colspan="4" style="text-align:center;border-bottom:2px solid var(--t3)">Yesterday</th></tr>';
