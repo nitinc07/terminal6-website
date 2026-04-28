@@ -881,19 +881,31 @@
       <div class="cd"><div class="kl">Creatives</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
     </div>
 
-    <!-- Daily digest — narrative + structured action buckets -->
+    <!-- Daily digest — narrative + audit-style bucket cards -->
     <div class="sec" id="meta-digest-sec" style="display:none">
       <div class="sec-h" style="display:flex;align-items:center;gap:10px">
         <h3>Daily Digest</h3>
         <span class="note" id="meta-digest-time"></span>
         <button onclick="_refreshDigest()" style="border:1px solid var(--c3);background:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--t2)">Refresh</button>
       </div>
-      <!-- Narrative (Haiku) -->
       <div id="meta-digest-narrative" style="font-size:13px;line-height:1.7;margin-bottom:16px"></div>
-      <!-- Action buckets (Python rules, collapsible) -->
-      <div id="meta-digest-buckets" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px"></div>
+      <!-- Bucket cards (audit-style) -->
+      <div id="meta-digest-cards" class="audit-grid"></div>
       <!-- Pipeline alert -->
-      <div id="meta-digest-pipeline" style="display:none;font-size:12px;padding:8px 12px;background:#fef3c7;border-radius:6px;border-left:4px solid #f59e0b"></div>
+      <div id="meta-digest-pipeline" style="display:none;font-size:12px;padding:8px 12px;background:#fef3c7;border-radius:6px;border-left:4px solid #f59e0b;margin-top:12px"></div>
+    </div>
+
+    <!-- Meta digest drawer (modal) -->
+    <div id="metaDigestDrawer" style="display:none;position:fixed;top:0;right:0;width:min(600px,90vw);height:100vh;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.15);z-index:1000;overflow-y:auto;padding:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="mdDrawerSev" class="rf-sev"></span>
+          <h3 id="mdDrawerTitle" style="margin:0"></h3>
+        </div>
+        <button onclick="document.getElementById('metaDigestDrawer').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3)">&times;</button>
+      </div>
+      <div id="mdDrawerBody" style="font-size:13px;color:var(--t2);margin-bottom:16px"></div>
+      <div id="mdDrawerItems"></div>
     </div>
 
     <!-- Funnel health -->
@@ -4215,45 +4227,42 @@ function _fmtNarrative(raw){
   return (raw||'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
     .replace(/\n/g,'<br>');
 }
+var _metaDigestData=null;
 function _renderDigest(d){
+  _metaDigestData=d;
   document.getElementById('meta-digest-sec').style.display='';
   document.getElementById('meta-digest-narrative').innerHTML=_fmtNarrative(d.narrative||d.digest||'');
   document.getElementById('meta-digest-time').textContent=d.generated_at?shortD(d.generated_at.slice(0,10))+(d.cached?' (cached)':' (fresh)'):'';
 
-  // Action buckets — collapsible cards with LLM reasoning per item
+  // Audit-style bucket cards
   var b=d.buckets||{};
   var configs=[
-    {key:'scale',icon:'\uD83D\uDE80',color:'var(--g)',title:'Scale'},
-    {key:'pause',icon:'\uD83D\uDED1',color:'var(--r)',title:'Pause'},
-    {key:'fatiguing',icon:'\u26A0\uFE0F',color:'#f97316',title:'Fatiguing'},
-    {key:'watch',icon:'\uD83D\uDC41',color:'var(--t3)',title:'Watch'},
+    {key:'scale',sev:'green',icon:'\uD83D\uDE80',title:'Scale',
+     headline:function(items){var total=items.reduce(function(s,c){return s+(c.spend_7d||0)},0);return cur(total)+' in winners';}},
+    {key:'pause',sev:'red',icon:'\uD83D\uDD25',title:'Pause',
+     headline:function(items){var total=items.reduce(function(s,c){return s+(c.spend_7d||0)},0);return cur(total)+' wasted spend';}},
+    {key:'fatiguing',sev:'amber',icon:'\u26A0\uFE0F',title:'Fatiguing',
+     headline:function(items){return items.length+' declining';}},
+    {key:'watch',sev:'blue',icon:'\uD83D\uDC41',title:'Watch',
+     headline:function(items){return items.length+' too early to call';}},
   ];
-  var bHtml='';
+  var html='';
   configs.forEach(function(cfg){
     var raw=b[cfg.key];
     var items=Array.isArray(raw)?raw:(raw&&raw.items?raw.items:[]);
     if(!items.length) return;
-    var id='meta-bucket-'+cfg.key;
-    bHtml+='<div style="flex:1;min-width:300px;background:var(--c1);border-radius:8px;border-left:4px solid '+cfg.color+';overflow:hidden">';
-    bHtml+='<div onclick="var el=document.getElementById(\''+id+'\');el.style.display=el.style.display===\'none\'?\'\':(\'none\')" style="padding:12px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">';
-    bHtml+='<span style="font-weight:600;font-size:13px">'+cfg.icon+' '+cfg.title+' ('+items.length+')</span>';
-    bHtml+='<span style="color:var(--t3);font-size:11px">\u25BC details</span></div>';
-    bHtml+='<div id="'+id+'" style="display:none;padding:0 16px 12px">';
-    items.forEach(function(c){
-      var nm=c.ad_name||'--';
-      var cp=c.campaign||'';
-      var nums=c.numbers||(c.roas_7d!=null?(c.roas_7d+'x ROAS, '+cur(c.spend_7d)+' spend'):'');
-      var reason=c.reason||'';
-      bHtml+='<div style="border-bottom:1px solid var(--c2);padding:8px 0">';
-      bHtml+='<div style="font-weight:600;font-size:12.5px">'+nm+'</div>';
-      if(cp) bHtml+='<div style="font-size:11px;color:var(--t3)">'+cp+'</div>';
-      if(nums) bHtml+='<div style="font-size:12px;margin-top:4px"><span style="background:var(--c2);padding:2px 6px;border-radius:4px;font-family:monospace">'+nums+'</span></div>';
-      if(reason) bHtml+='<div style="font-size:12px;color:var(--t2);margin-top:4px;line-height:1.5">'+reason+'</div>';
-      bHtml+='</div>';
-    });
-    bHtml+='</div></div>';
+    var sevColors={green:'#16a34a',red:'#dc2626',amber:'#d97706',blue:'#2563eb'};
+    var bgColors={green:'#f0fdf4',red:'#fef2f2',amber:'#fffbeb',blue:'#eff6ff'};
+    var co=sevColors[cfg.sev]||'#666';
+    var bg=bgColors[cfg.sev]||'var(--c1)';
+    html+='<div class="audit-card '+cfg.sev+'" onclick="openMetaDrawer(\''+cfg.key+'\')" style="background:'+bg+';border-left:4px solid '+co+';border-radius:8px;padding:14px 18px;flex:1;min-width:200px;cursor:pointer">';
+    html+='<div style="font-size:11px;font-weight:700;color:'+co+';text-transform:uppercase;letter-spacing:.5px">'+cfg.icon+' '+cfg.title+'</div>';
+    html+='<div style="font-size:13px;font-weight:500;margin-top:2px">'+items.length+' item'+(items.length===1?'':'s')+'</div>';
+    html+='<div style="font-size:20px;font-weight:700;margin:6px 0">'+cfg.headline(items)+'</div>';
+    html+='<div style="font-size:11.5px;color:var(--t3)">'+items.length+' item'+(items.length===1?'':'s')+' &middot; see details &rarr;</div>';
+    html+='</div>';
   });
-  document.getElementById('meta-digest-buckets').innerHTML=bHtml;
+  document.getElementById('meta-digest-cards').innerHTML=html;
 
   // Pipeline alert
   var pl=d.pipeline||{};
@@ -4263,6 +4272,37 @@ function _renderDigest(d){
     var assess=pl.assessment||('Gap of '+pl.gap+' — creative team needs to deliver more winning ads.');
     plEl.innerHTML='\u26A0\uFE0F <strong>Creative pipeline:</strong> '+(pl.winners_active||pl.winners)+' winners active, need '+pl.needed+'. '+assess;
   }else{plEl.style.display='none';}
+}
+
+function openMetaDrawer(bucketKey){
+  if(!_metaDigestData) return;
+  var b=_metaDigestData.buckets||{};
+  var raw=b[bucketKey];
+  var items=Array.isArray(raw)?raw:(raw&&raw.items?raw.items:[]);
+  var labels={scale:'Scale — Winners with headroom',pause:'Pause — Bleeding',fatiguing:'Fatiguing — ROAS declining',watch:'Watch — Too early to call'};
+  var sevs={scale:'green',pause:'red',fatiguing:'amber',watch:'blue'};
+
+  var drawer=document.getElementById('metaDigestDrawer');
+  document.getElementById('mdDrawerSev').className='rf-sev '+sevs[bucketKey];
+  document.getElementById('mdDrawerSev').textContent=(sevs[bucketKey]||'').toUpperCase();
+  document.getElementById('mdDrawerTitle').textContent=labels[bucketKey]||bucketKey;
+  document.getElementById('mdDrawerBody').textContent=items.length+' creatives in this bucket (7d rolling data, ACTIVE only)';
+
+  var html='';
+  items.forEach(function(c,i){
+    var nm=c.ad_name||'--';
+    var cp=c.campaign||'';
+    var nums=c.numbers||(c.roas_7d!=null?c.roas_7d+'x ROAS, '+cur(c.spend_7d)+' spend':'');
+    var reason=c.reason||'';
+    html+='<div style="border-bottom:1px solid var(--c2);padding:16px 0">';
+    html+='<div style="display:flex;align-items:baseline;gap:8px"><span style="color:var(--t3);font-weight:600">'+(i+1)+'</span><span style="font-weight:700;font-size:14px">'+nm+'</span></div>';
+    if(cp) html+='<div style="font-size:12px;color:var(--t3);margin-top:2px">'+cp+'</div>';
+    if(nums) html+='<div style="font-size:13px;margin-top:8px;padding:6px 10px;background:var(--c1);border-radius:6px;font-family:monospace">'+nums+'</div>';
+    if(reason) html+='<div style="font-size:13px;color:var(--t2);margin-top:8px;line-height:1.6">'+reason+'</div>';
+    html+='</div>';
+  });
+  document.getElementById('mdDrawerItems').innerHTML=html||'<div style="color:var(--t3);padding:20px">No items in this bucket.</div>';
+  drawer.style.display='';
 }
 async function _loadDigest(){
   try{
