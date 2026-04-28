@@ -880,15 +880,19 @@
       <div class="cd"><div class="kl">Active Ads</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
     </div>
 
-    <!-- Account health trend -->
+    <!-- Account health trend (transposed) -->
     <div class="sec" id="meta-trend-sec">
-      <div class="sec-h"><h3>Account Health Trend</h3><span class="note">Weekly</span></div>
+      <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <h3>Trend</h3>
+        <div class="pills meta-gran-pills">
+          <button data-gran="day">Day</button>
+          <button class="a" data-gran="week">Week</button>
+          <button data-gran="month">Month</button>
+        </div>
+      </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="meta-trend-tbl">
-          <thead><tr>
-            <th>Week</th><th>Spend</th><th>ROAS</th><th>CPM</th><th>CTR</th><th>CPA</th><th>Orders</th><th>Winners</th><th>Active Ads</th>
-          </tr></thead>
-          <tbody id="meta-trend-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
+          <tbody id="meta-trend-body"><tr><td class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -898,13 +902,6 @@
       <div class="sec-h"><h3>Format Breakdown</h3></div>
       <div id="meta-fmt-bar" style="display:flex;gap:0;height:32px;border-radius:6px;overflow:hidden;margin-bottom:12px"></div>
       <div id="meta-fmt-cards" style="display:flex;gap:12px;flex-wrap:wrap"></div>
-    </div>
-
-    <!-- Spend concentration -->
-    <div class="sec" id="meta-conc-sec">
-      <div class="sec-h"><h3>Spend Concentration</h3></div>
-      <p class="sub" id="meta-conc-headline" style="margin-bottom:12px"></p>
-      <div id="meta-conc-bars"></div>
     </div>
 
     <!-- Campaign health -->
@@ -940,6 +937,7 @@
             <th>CPA</th>
             <th>CTR</th>
             <th>Spend</th>
+            <th>Share</th>
             <th>Sales</th>
             <th>Orders</th>
             <th>Status</th>
@@ -4178,18 +4176,67 @@ function agAct(btn, action){
 }
 
 /* ========== META ADS — CREATIVE PERFORMANCE ========== */
+var _metaGran = 'week';
 var _metaLoaded = false;
+
+// Granularity pills
+document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
+  b.addEventListener('click', function(){
+    _metaGran = b.dataset.gran;
+    document.querySelectorAll('.meta-gran-pills button').forEach(function(x){x.classList.toggle('a',x.dataset.gran===_metaGran)});
+    _loadMetaTrend();
+  });
+});
+
+async function _loadMetaTrend() {
+  var p = _metaGran === 'day' ? 7 : _metaGran === 'month' ? 6 : 12;
+  var data = await api('/v1/meta/account-health?granularity='+_metaGran+'&periods='+p);
+  var rows = (data.data || []).slice().reverse(); // newest first
+  if (!rows.length) { document.getElementById('meta-trend-body').innerHTML='<tr><td>No data</td></tr>'; return; }
+
+  // Transposed: metrics as rows, periods as columns
+  var metrics = [
+    {key:'spend', label:'Spend', fmt:function(v){return cur(v)}},
+    {key:'revenue', label:'Revenue', fmt:function(v){return cur(v)}},
+    {key:'roas', label:'ROAS', fmt:function(v){return v!=null?v.toFixed(2)+'x':'--'}, color:function(v){return v>=2.5?'var(--g)':v>=2?'':'var(--r)'}},
+    {key:'cpm', label:'CPM', fmt:function(v){return v!=null?'\u20B9'+Math.round(v):'--'}},
+    {key:'ctr', label:'CTR %', fmt:function(v){return v!=null?v.toFixed(2)+'%':'--'}},
+    {key:'cpc', label:'CPC', fmt:function(v){return v!=null?'\u20B9'+v.toFixed(0):'--'}},
+    {key:'cpa', label:'CPA', fmt:function(v){return v!=null?cur(v):'--'}},
+    {key:'orders', label:'Orders', fmt:function(v){return fmt(v)}},
+    {key:'active_ads', label:'Active Ads', fmt:function(v){return fmt(v)}},
+  ];
+
+  var header = '<tr><th style="min-width:120px">METRIC</th>';
+  rows.forEach(function(r){ header += '<th>'+shortD(r.period)+'</th>'; });
+  header += '</tr>';
+
+  var body = '';
+  metrics.forEach(function(m){
+    body += '<tr><td style="font-weight:500">'+m.label+'</td>';
+    rows.forEach(function(r){
+      var v = r[m.key];
+      var style = '';
+      if(m.color){ var c=m.color(v); if(c) style=' style="color:'+c+';font-weight:600"'; }
+      body += '<td'+style+'>'+m.fmt(v)+'</td>';
+    });
+    body += '</tr>';
+  });
+
+  var tbl = document.getElementById('meta-trend-tbl');
+  tbl.innerHTML = '<thead>'+header+'</thead><tbody>'+body+'</tbody>';
+}
+
 async function loadMetaAds() {
   if (_metaLoaded) return;
   var days = 30;
   try {
-    var [perf, fmtData, conc, health, campHealth] = await Promise.all([
+    var [perf, fmtData, campHealth] = await Promise.all([
       api('/v1/meta/creative-performance?days=' + days),
       api('/v1/meta/format-breakdown?days=' + days),
-      api('/v1/meta/spend-concentration?days=' + days),
-      api('/v1/meta/account-health?weeks=12'),
       api('/v1/meta/campaign-health?days=14'),
     ]);
+    _loadMetaTrend();
 
     // KPI tiles
     var sc = perf.status_counts || {};
@@ -4203,25 +4250,6 @@ async function loadMetaAds() {
     if(sc.Fatiguing) scHtml += (scHtml?' · ':'')+'<span style="color:#f97316">' + sc.Fatiguing + ' fatiguing</span>';
     if(sc.Loser) scHtml += (scHtml?' · ':'')+'<span style="color:var(--r)">' + sc.Loser + ' losers</span>';
     document.getElementById('meta-adcount-sub').innerHTML = scHtml || '&nbsp;';
-
-    // Account health trend table
-    var trendBody = document.getElementById('meta-trend-body');
-    var trendRows = '';
-    (health.data || []).reverse().forEach(function(w) {
-      var roasColor = w.roas >= 2.5 ? 'var(--g)' : w.roas >= 2.0 ? 'inherit' : 'var(--r)';
-      trendRows += '<tr>' +
-        '<td>' + shortD(w.week) + '</td>' +
-        '<td>' + cur(w.spend) + '</td>' +
-        '<td style="font-weight:600;color:' + roasColor + '">' + (w.roas != null ? w.roas.toFixed(2) + 'x' : '--') + '</td>' +
-        '<td>' + (w.cpm != null ? '₹' + w.cpm.toFixed(0) : '--') + '</td>' +
-        '<td>' + (w.ctr != null ? w.ctr.toFixed(2) + '%' : '--') + '</td>' +
-        '<td>' + (w.cpa != null ? cur(w.cpa) : '--') + '</td>' +
-        '<td>' + fmt(w.orders) + '</td>' +
-        '<td style="font-weight:600;color:' + (w.winner_count >= 5 ? 'var(--g)' : w.winner_count >= 2 ? 'inherit' : 'var(--r)') + '">' + w.winner_count + '</td>' +
-        '<td>' + w.active_ads + '</td>' +
-      '</tr>';
-    });
-    trendBody.innerHTML = trendRows || '<tr><td colspan="9" class="sub">No trend data</td></tr>';
 
     // Format breakdown bar
     var fmtColors = { VIDEO: '#9333ea', IMAGE: '#3b82f6', CAROUSEL: '#14b8a6' };
@@ -4240,30 +4268,11 @@ async function loadMetaAds() {
     document.getElementById('meta-fmt-bar').innerHTML = barHtml || '<div style="flex:1;background:var(--c2);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:12px">No data</div>';
     document.getElementById('meta-fmt-cards').innerHTML = cardsHtml;
 
-    // Spend concentration
-    document.getElementById('meta-conc-headline').innerHTML = 'Top ' + conc.top_n + ' creatives account for <strong>' + conc.concentration_pct + '%</strong> of total spend (' + cur(conc.total_spend) + ')';
-    var concHtml = '';
-    (conc.data || []).forEach(function(c, i) {
-      var barW = conc.total_spend > 0 ? Math.max(2, c.spend / conc.total_spend * 100) : 0;
-      var name = (c.ad_name || '').length > 40 ? c.ad_name.slice(0, 40) + '...' : (c.ad_name || '--');
-      concHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px">' +
-        '<span style="width:20px;text-align:right;color:var(--t3)">' + (i + 1) + '</span>' +
-        '<span style="width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (c.ad_name || '') + '">' + name + '</span>' +
-        '<div style="flex:1;background:var(--c2);border-radius:3px;height:18px;position:relative">' +
-          '<div style="width:' + barW + '%;background:' + (c.roas >= 2 ? 'var(--g)' : c.roas >= 1 ? 'var(--y)' : 'var(--r)') + ';height:100%;border-radius:3px;min-width:2px"></div>' +
-        '</div>' +
-        '<span style="width:70px;text-align:right">' + cur(c.spend) + '</span>' +
-        '<span style="width:50px;text-align:right">' + c.spend_share_pct + '%</span>' +
-        '<span style="width:50px;text-align:right;color:' + (c.roas >= 2 ? 'var(--g)' : c.roas >= 1 ? 'var(--t2)' : 'var(--r)') + '">' + (c.roas != null ? c.roas.toFixed(1) + 'x' : '--') + '</span>' +
-      '</div>';
-    });
-    document.getElementById('meta-conc-bars').innerHTML = concHtml || '<p class="sub">No data yet</p>';
-
-    // Campaign health
+    // Campaign health (budget containers)
     var ch = campHealth;
     var fragColors = {healthy:'var(--g)', moderate:'var(--y)', severe:'var(--r)'};
     document.getElementById('meta-camp-count').textContent = ch.campaign_count;
-    document.getElementById('meta-camp-frag').innerHTML = '<span style="color:'+( fragColors[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</span> fragmentation';
+    document.getElementById('meta-camp-frag').innerHTML = '<span style="color:'+(fragColors[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</span> fragmentation';
     document.getElementById('meta-camp-above').textContent = ch.above_target.count;
     document.getElementById('meta-camp-above-sub').textContent = ch.above_target.spend_pct + '% of spend';
     document.getElementById('meta-camp-below').textContent = ch.below_target.count;
@@ -4291,28 +4300,26 @@ async function loadMetaAds() {
     });
     campBody.innerHTML = campRows || '<tr><td colspan="9">No data</td></tr>';
 
-    // Creative performance table (with fatigue indicators)
+    // Creative performance table (with fatigue + spend share)
     var tbody = document.getElementById('meta-perf-body');
     var statusColors = { Winner:'var(--g)', Loser:'var(--r)', Testing:'var(--y)', Fatiguing:'#f97316', Active:'var(--t3)' };
     var fmtPills = { VIDEO:'#9333ea', IMAGE:'#3b82f6', CAROUSEL:'#14b8a6' };
-    var rows = '';
+    var tRows = '';
     (perf.data || []).forEach(function(d) {
       var thumb = d.thumbnail_url ? '<img src="' + d.thumbnail_url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">' : '<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">' + (d.creative_type === 'VIDEO' ? '&#9654;' : '&#128444;') + '</div>';
       var name = (d.ad_name || '').length > 45 ? d.ad_name.slice(0, 45) + '...' : (d.ad_name || '--');
       var camp = (d.campaign_name || '').length > 30 ? d.campaign_name.slice(0, 30) + '...' : (d.campaign_name || '');
       var scolor = statusColors[d.status] || 'var(--t3)';
       var fc = fmtPills[d.creative_type] || '#6b7280';
-      // ROAS change indicator
       var rChange = '';
       if(d.roas_change_pct != null) {
-        var arrow = d.roas_change_pct >= 0 ? '▲' : '▼';
+        var arrow = d.roas_change_pct >= 0 ? '\u25B2' : '\u25BC';
         var chgColor = d.roas_change_pct >= 0 ? 'var(--g)' : 'var(--r)';
         rChange = '<div style="font-size:10px;color:'+chgColor+'">'+arrow+' '+Math.abs(d.roas_change_pct).toFixed(0)+'% WoW</div>';
       }
-      // Frequency warning
       var freqWarn = '';
-      if(d.recent_frequency && d.recent_frequency > 3.0) freqWarn = '<span title="High frequency: '+d.recent_frequency.toFixed(1)+'" style="color:#f97316;font-size:10px;margin-left:4px">freq '+d.recent_frequency.toFixed(1)+'</span>';
-      rows += '<tr>' +
+      if(d.recent_frequency && d.recent_frequency > 3.0) freqWarn = '<span title="High frequency" style="color:#f97316;font-size:10px;margin-left:4px">freq '+d.recent_frequency.toFixed(1)+'</span>';
+      tRows += '<tr>' +
         '<td>' + thumb + '</td>' +
         '<td><div style="font-weight:500;font-size:12.5px" title="' + (d.ad_name || '') + '">' + name + freqWarn + '</div><div style="font-size:11px;color:var(--t3)" title="' + (d.campaign_name || '') + '">' + camp + '</div></td>' +
         '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + fc + '22;color:' + fc + '">' + (d.creative_type || 'IMAGE') + '</span></td>' +
@@ -4320,18 +4327,19 @@ async function loadMetaAds() {
         '<td>' + (d.cpa != null ? cur(d.cpa) : '--') + '</td>' +
         '<td>' + (d.ctr != null ? d.ctr.toFixed(1) + '%' : '--') + '</td>' +
         '<td>' + cur(d.spend) + '</td>' +
+        '<td>' + (d.spend_share_pct||0).toFixed(1) + '%</td>' +
         '<td>' + cur(d.attributed_sales) + '</td>' +
         '<td>' + fmt(d.attributed_orders) + '</td>' +
         '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + scolor + '22;color:' + scolor + '">' + d.status + '</span></td>' +
       '</tr>';
     });
-    tbody.innerHTML = rows || '<tr><td colspan="10" style="text-align:center;color:var(--t3);padding:40px">No ad-level data yet. Run the creative backfill to populate.</td></tr>';
+    tbody.innerHTML = tRows || '<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:40px">No ad-level data yet. Run the creative backfill to populate.</td></tr>';
     document.getElementById('meta-perf-note').textContent = perf.count + ' ads · last ' + days + ' days';
 
     _metaLoaded = true;
   } catch (e) {
     console.error('Meta Ads load error:', e);
-    document.getElementById('meta-perf-body').innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--r)">Failed to load: ' + e.message + '</td></tr>';
+    document.getElementById('meta-perf-body').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--r)">Failed to load: ' + e.message + '</td></tr>';
   }
 }
 
