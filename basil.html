@@ -881,14 +881,19 @@
       <div class="cd"><div class="kl">Creatives</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
     </div>
 
-    <!-- Daily digest (Haiku) — primary intelligence layer -->
+    <!-- Daily digest — narrative + structured action buckets -->
     <div class="sec" id="meta-digest-sec" style="display:none">
       <div class="sec-h" style="display:flex;align-items:center;gap:10px">
         <h3>Daily Digest</h3>
         <span class="note" id="meta-digest-time"></span>
         <button onclick="_refreshDigest()" style="border:1px solid var(--c3);background:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--t2)">Refresh</button>
       </div>
-      <div id="meta-digest-body" style="font-size:13px;line-height:1.7"></div>
+      <!-- Narrative (Haiku) -->
+      <div id="meta-digest-narrative" style="font-size:13px;line-height:1.7;margin-bottom:16px"></div>
+      <!-- Action buckets (Python rules, collapsible) -->
+      <div id="meta-digest-buckets" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px"></div>
+      <!-- Pipeline alert -->
+      <div id="meta-digest-pipeline" style="display:none;font-size:12px;padding:8px 12px;background:#fef3c7;border-radius:6px;border-left:4px solid #f59e0b"></div>
     </div>
 
     <!-- Funnel health -->
@@ -4206,30 +4211,72 @@ document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
     _loadMetaTrend();
   });
 });
-function _fmtDigest(raw){
-  // Convert markdown bold + bullets to HTML
+function _fmtNarrative(raw){
   return (raw||'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-    .replace(/^[-•] /gm,'<span style="color:var(--tm);margin-right:4px">&#8226;</span>')
-    .replace(/\n\n/g,'</p><p style="margin:8px 0">')
     .replace(/\n/g,'<br>');
+}
+function _renderDigest(d){
+  document.getElementById('meta-digest-sec').style.display='';
+  // Narrative
+  document.getElementById('meta-digest-narrative').innerHTML=_fmtNarrative(d.narrative||d.digest||'');
+  // Time
+  document.getElementById('meta-digest-time').textContent=d.generated_at?shortD(d.generated_at.slice(0,10))+(d.cached?' (cached)':' (fresh)'):'';
+
+  // Action buckets as collapsible cards
+  var b=d.buckets||{};
+  var configs=[
+    {key:'scale',icon:'\uD83D\uDE80',color:'var(--g)',title:'Scale — Winners with headroom',
+     cols:['ROAS','Spend','Share','Orders','CPA'],
+     row:function(c){return '<td style="font-weight:600;color:var(--g)">'+(c.roas_7d||0).toFixed(1)+'x</td><td>'+cur(c.spend_7d)+'</td><td>'+( c.spend_share_7d||0).toFixed(1)+'%</td><td>'+fmt(c.orders_7d)+'</td><td>'+(c.cpa_7d?cur(c.cpa_7d):'--')+'</td>';}},
+    {key:'pause',icon:'\uD83D\uDED1',color:'var(--r)',title:'Pause — Bleeding',
+     cols:['ROAS','Spend','Orders','CPA'],
+     row:function(c){return '<td style="font-weight:600;color:var(--r)">'+(c.roas_7d!=null?c.roas_7d.toFixed(1)+'x':'0 orders')+'</td><td>'+cur(c.spend_7d)+'</td><td>'+fmt(c.orders_7d)+'</td><td>'+(c.cpa_7d?cur(c.cpa_7d):'--')+'</td>';}},
+    {key:'fatiguing',icon:'\u26A0\uFE0F',color:'#f97316',title:'Fatiguing — ROAS declining',
+     cols:['ROAS','Decay','Freq','Spend'],
+     row:function(c){return '<td>'+(c.roas_7d||0).toFixed(1)+'x</td><td style="color:var(--r)">'+Math.round(c.roas_decay_pct||0)+'%</td><td>'+(c.frequency||'--')+'</td><td>'+cur(c.spend_7d)+'</td>';}}
+  ];
+  var bHtml='';
+  configs.forEach(function(cfg){
+    var items=b[cfg.key]||[];
+    if(!items.length) return;
+    var id='meta-bucket-'+cfg.key;
+    bHtml+='<div style="flex:1;min-width:280px;background:var(--c1);border-radius:8px;border-left:4px solid '+cfg.color+';overflow:hidden">';
+    bHtml+='<div onclick="document.getElementById(\''+id+'\').style.display=document.getElementById(\''+id+'\').style.display===\'none\'?\'\':(\'none\')" style="padding:12px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">';
+    bHtml+='<span style="font-weight:600;font-size:13px">'+cfg.icon+' '+cfg.title+' ('+items.length+')</span>';
+    bHtml+='<span style="color:var(--t3);font-size:11px">\u25BC</span></div>';
+    bHtml+='<div id="'+id+'" style="padding:0 16px 12px">';
+    bHtml+='<table class="tbl" style="font-size:12px"><thead><tr><th>Creative</th><th>Campaign</th>';
+    cfg.cols.forEach(function(c){bHtml+='<th>'+c+'</th>';});
+    bHtml+='</tr></thead><tbody>';
+    items.forEach(function(c){
+      var nm=(c.ad_name||'').length>30?c.ad_name.slice(0,30)+'...':c.ad_name||'--';
+      var cp=(c.campaign||'').length>25?c.campaign.slice(0,25)+'...':c.campaign||'';
+      bHtml+='<tr><td title="'+(c.ad_name||'')+'">'+nm+'</td><td style="color:var(--t3)" title="'+(c.campaign||'')+'">'+cp+'</td>'+cfg.row(c)+'</tr>';
+    });
+    bHtml+='</tbody></table></div></div>';
+  });
+  document.getElementById('meta-digest-buckets').innerHTML=bHtml;
+
+  // Pipeline alert
+  var pl=d.pipeline||{};
+  var plEl=document.getElementById('meta-digest-pipeline');
+  if(pl.gap>0){
+    plEl.style.display='';
+    plEl.innerHTML='\u26A0\uFE0F <strong>Creative pipeline:</strong> '+pl.winners+' winners active, need '+pl.needed+'. Gap of <strong>'+pl.gap+'</strong> — creative team needs to deliver more winning ads.';
+  }else{plEl.style.display='none';}
 }
 async function _loadDigest(){
   try{
     var d=await api('/v1/meta/daily-digest');
-    if(d.digest){
-      document.getElementById('meta-digest-sec').style.display='';
-      document.getElementById('meta-digest-body').innerHTML=_fmtDigest(d.digest);
-      document.getElementById('meta-digest-time').textContent=d.generated_at?shortD(d.generated_at.slice(0,10))+(d.cached?' (cached)':' (fresh)'):'';
-    }
+    if(d.narrative||d.digest) _renderDigest(d);
   }catch(e){console.log('Digest not available:',e.message);}
 }
 async function _refreshDigest(){
-  document.getElementById('meta-digest-body').innerHTML='<span style="color:var(--t3)">Generating (~10s)...</span>';
+  document.getElementById('meta-digest-narrative').innerHTML='<span style="color:var(--t3)">Generating (~10s)...</span>';
   try{
     var d=await api('/v1/meta/daily-digest?regenerate=true');
-    document.getElementById('meta-digest-body').innerHTML=_fmtDigest(d.digest||d.error||'No data');
-    document.getElementById('meta-digest-time').textContent='just now';
-  }catch(e){document.getElementById('meta-digest-body').innerHTML='<span style="color:var(--r)">Error: '+e.message+'</span>';}
+    _renderDigest(d);
+  }catch(e){document.getElementById('meta-digest-narrative').innerHTML='<span style="color:var(--r)">Error: '+e.message+'</span>';}
 }
 
 document.querySelectorAll('.meta-days-pills button').forEach(function(b){
