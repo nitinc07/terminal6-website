@@ -14,7 +14,7 @@
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css?v=2026-04-15c">
+<link rel="stylesheet" href="/shared.css?v=2026-04-29a">
 <style>
 /* Basil-specific styles only. Design tokens, layout, sidebar, cards, tables,
    pills, loading/error/empty states, delta pill, section header, placeholder
@@ -227,7 +227,7 @@
 @keyframes blink{50%{opacity:0}}
 </style>
 <script>window.T6_BRAND_SLUG = 'basil'; window.T6_SHOPIFY_DOMAIN = 'yourbasil.com';</script>
-<script src="/shared.js?v=2026-04-15c"></script>
+<script src="/shared.js?v=2026-04-29a"></script>
 </head>
 <body>
 <div class="app">
@@ -248,6 +248,7 @@
     <div class="si sb-sub" onclick="swSub('metaads','data',this)"><span>Dashboard</span></div>
     <!-- <div class="si sb-sub" onclick="swSub('metaads','weekly',this)"><span>Weekly Review</span></div> -->
     <div class="si sb-sub" onclick="swSub('metaads','hourly',this)"><span>Hourly Tracker</span></div>
+    <div class="si sb-sub" onclick="swSub('metaads','demo',this)"><span>Demographics & Placements</span></div>
   </div>
   <div class="ss">
     <div class="sl">Amazon IN</div>
@@ -277,6 +278,10 @@
     <div class="si" onclick="sw('agents',this)"><div class="ic">&#129302;</div><span>Growth Agents</span><span class="soon">Phase 2</span></div>
     <div class="si" onclick="sw('shopify',this)"><div class="ic">&#128717;</div><span>Shopify D2C</span><span class="soon">soon</span></div>
     <div class="si" onclick="sw('otherch',this)"><div class="ic">&#128722;</div><span>Other channels</span><span class="soon">soon</span></div>
+  </div>
+  <div class="ss">
+    <div class="sl">Admin</div>
+    <div class="si" onclick="sw('users',this)"><div class="ic">&#128101;</div><span>Users</span></div>
   </div>
   <div class="sb-b">
     <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:6px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:8px">
@@ -1090,6 +1095,56 @@
       </div>
     </div>
 
+    <!-- Sub-tab: Demographics & Placements -->
+    <div id="metas-demo" style="display:none">
+      <div class="sec">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+          <h3 style="margin:0">Demographics &amp; Placements</h3>
+          <div id="demo-days-pills" style="display:flex;gap:2px">
+            <button data-days="7" onclick="_setDemoDays(7)" style="font-size:11px;padding:2px 10px;border:1px solid var(--c3);border-radius:4px;background:none;cursor:pointer;color:var(--t2)">7d</button>
+            <button data-days="30" onclick="_setDemoDays(30)" style="font-size:11px;padding:2px 10px;border:1px solid var(--c3);border-radius:4px;background:var(--acc);color:#fff;cursor:pointer">30d</button>
+            <button data-days="90" onclick="_setDemoDays(90)" style="font-size:11px;padding:2px 10px;border:1px solid var(--c3);border-radius:4px;background:none;cursor:pointer;color:var(--t2)">90d</button>
+          </div>
+          <span class="note" id="meta-demo-note"></span>
+        </div>
+
+        <!-- Age × Gender Heatmap -->
+        <div style="margin-bottom:24px">
+          <h4 style="font-size:13px;margin:0 0 10px">Age &times; Gender — Spend &amp; ROAS</h4>
+          <div style="overflow-x:auto"><table class="tbl" id="meta-demo-heatmap-tbl"><tbody><tr><td class="loading">Loading...</td></tr></tbody></table></div>
+        </div>
+
+        <!-- By Age -->
+        <div style="margin-bottom:24px">
+          <h4 style="font-size:13px;margin:0 0 10px">By Age Bucket</h4>
+          <div style="overflow-x:auto"><table class="tbl" id="meta-demo-age-tbl"><tbody><tr><td class="loading">Loading...</td></tr></tbody></table></div>
+        </div>
+
+        <!-- By Gender -->
+        <div style="margin-bottom:24px">
+          <h4 style="font-size:13px;margin:0 0 10px">By Gender</h4>
+          <div style="overflow-x:auto"><table class="tbl" id="meta-demo-gender-tbl"><tbody><tr><td class="loading">Loading...</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- Placements -->
+      <div class="sec" style="margin-top:20px">
+        <h3 style="margin:0 0 16px">Placement Performance</h3>
+
+        <!-- By Platform -->
+        <div style="margin-bottom:24px">
+          <h4 style="font-size:13px;margin:0 0 10px">By Platform</h4>
+          <div style="overflow-x:auto"><table class="tbl" id="meta-place-platform-tbl"><tbody><tr><td class="loading">Loading...</td></tr></tbody></table></div>
+        </div>
+
+        <!-- By Position (platform × position) -->
+        <div style="margin-bottom:24px">
+          <h4 style="font-size:13px;margin:0 0 10px">By Position</h4>
+          <div style="overflow-x:auto"><table class="tbl" id="meta-place-position-tbl"><tbody><tr><td class="loading">Loading...</td></tr></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="vw" id="v-shopify">
@@ -1231,6 +1286,7 @@ const viewTitles={
   metaads:'&#127912; Meta Ads &mdash; Creative Performance',
   'metaads-weekly':'&#127912; Meta Ads &mdash; Weekly Review',
   'metaads-hourly':'&#127912; Meta Ads &mdash; Hourly Tracker',
+  'metaads-demo':'&#127912; Meta Ads &mdash; Demographics &amp; Placements',
 };
 let currentView='mc';
 function swSub(viewId, subId, el){
@@ -1248,6 +1304,8 @@ function swSub(viewId, subId, el){
   if(viewId==='metaads') metaSub(subId);
 }
 function sw(id,el){
+  // Users is its own page (admin-only view of brand_users + permissions).
+  if(id==='users'){ location.href='/users.html'; return; }
   const target=document.getElementById('v-'+id);
   if(!target) return;
   document.querySelectorAll('.vw').forEach(v=>v.classList.remove('act'));
@@ -4468,13 +4526,14 @@ async function _loadMetaTrend() {
 var _metaSubCurrent='data';
 function metaSub(id){
   _metaSubCurrent=id;
-  document.querySelectorAll('#metas-data,#metas-weekly,#metas-hourly').forEach(function(el){
+  document.querySelectorAll('#metas-data,#metas-weekly,#metas-hourly,#metas-demo').forEach(function(el){
     var match=el.id==='metas-'+id;
     el.style.display=match?'':'none';
     el.classList.toggle('act',match);
   });
   if(id==='weekly') _loadWeeklyReview();
   if(id==='hourly') _loadHourlyTracker();
+  if(id==='demo') _loadDemoPlacement();
   var titleKey=id==='data'?'metaads':('metaads-'+id);
   document.getElementById('viewTitle').innerHTML=viewTitles[titleKey]||viewTitles.metaads;
 }
@@ -4974,6 +5033,150 @@ async function _loadHourlyTracker(){
   }
 }
 
+/* ── Demographics & Placements loader ── */
+var _demoDays=30, _demoLoaded=0;
+function _setDemoDays(d){
+  _demoDays=d; _demoLoaded=0;
+  document.querySelectorAll('#demo-days-pills button').forEach(function(b){
+    var a=parseInt(b.dataset.days)===d;
+    b.style.background=a?'var(--acc)':'none';
+    b.style.color=a?'#fff':'var(--t2)';
+  });
+  _loadDemoPlacement();
+}
+function _roasClr(v){return v>=2?'var(--g)':v>=1?'#3b82f6':'var(--r)';}
+function _spendBar(v,mx){var p=mx>0?Math.round(v/mx*100):0;return '<div style="width:60px;height:6px;background:var(--c1);border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px"><div style="width:'+p+'%;height:100%;background:var(--acc);border-radius:3px"></div></div>';}
+
+async function _loadDemoPlacement(){
+  if(_demoLoaded===_demoDays) return;
+  try{
+    var [demo, place]=await Promise.all([
+      api('/v1/meta/demographics?days='+_demoDays),
+      api('/v1/meta/placements?days='+_demoDays),
+    ]);
+    _demoLoaded=_demoDays;
+    document.getElementById('meta-demo-note').textContent=_demoDays+'d window';
+
+    // ── Age × Gender heatmap ──
+    if(demo.heatmap && demo.heatmap.length){
+      var genders=['male','female','unknown'];
+      var ages=['18-24','25-34','35-44','45-54','55-64','65+'];
+      var lookup={};
+      var maxSpend=0;
+      demo.heatmap.forEach(function(r){
+        var k=r.age+'|'+r.gender;
+        lookup[k]=r;
+        if(r.spend>maxSpend) maxSpend=r.spend;
+      });
+      var hdr='<thead><tr><th>Age</th>';
+      genders.forEach(function(g){hdr+='<th colspan="2" style="text-align:center;text-transform:capitalize">'+g+'</th>';});
+      hdr+='</tr><tr><th></th>';
+      genders.forEach(function(){hdr+='<th style="text-align:right;font-size:11px">Spend</th><th style="text-align:right;font-size:11px">ROAS</th>';});
+      hdr+='</tr></thead>';
+      var body='';
+      ages.forEach(function(age){
+        body+='<tr><td style="font-weight:600;font-size:12px">'+age+'</td>';
+        genders.forEach(function(g){
+          var r=lookup[age+'|'+g];
+          if(r){
+            var opacity=maxSpend>0?Math.max(0.15,r.spend/maxSpend):0.15;
+            body+='<td style="text-align:right;font-size:12px;background:rgba(99,102,241,'+opacity.toFixed(2)+');color:#fff;font-weight:500">'+T6.inr(r.spend)+'</td>';
+            body+='<td style="text-align:right;font-size:12px;color:'+_roasClr(r.roas)+';font-weight:600">'+r.roas.toFixed(1)+'x</td>';
+          }else{
+            body+='<td style="text-align:right;color:var(--t3);font-size:11px">—</td><td style="text-align:right;color:var(--t3);font-size:11px">—</td>';
+          }
+        });
+        body+='</tr>';
+      });
+      document.getElementById('meta-demo-heatmap-tbl').innerHTML=hdr+'<tbody>'+body+'</tbody>';
+    }
+
+    // ── By Age table ──
+    if(demo.by_age && demo.by_age.length){
+      var totalSpend=0; demo.by_age.forEach(function(r){totalSpend+=r.spend;});
+      var h='<thead><tr><th>Age</th><th style="text-align:right">Spend</th><th>Share</th><th style="text-align:right">ROAS</th><th style="text-align:right">CTR</th><th style="text-align:right">CPM</th><th style="text-align:right">Orders</th><th style="text-align:right">Sales</th></tr></thead>';
+      var b=''; var mx=Math.max.apply(null,demo.by_age.map(function(r){return r.spend;}));
+      demo.by_age.forEach(function(r){
+        var sh=totalSpend>0?(r.spend/totalSpend*100).toFixed(1)+'%':'—';
+        b+='<tr><td style="font-weight:600;font-size:12px">'+r.age+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.spend)+_spendBar(r.spend,mx)+'</td>';
+        b+='<td style="font-size:12px">'+sh+'</td>';
+        b+='<td style="text-align:right;font-size:12px;color:'+_roasClr(r.roas)+';font-weight:600">'+r.roas.toFixed(2)+'x</td>';
+        b+='<td style="text-align:right;font-size:12px">'+r.ctr.toFixed(2)+'%</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.cpm)+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.num(r.orders)+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.sales)+'</td></tr>';
+      });
+      document.getElementById('meta-demo-age-tbl').innerHTML=h+'<tbody>'+b+'</tbody>';
+    }
+
+    // ── By Gender table ──
+    if(demo.by_gender && demo.by_gender.length){
+      var totalSpend=0; demo.by_gender.forEach(function(r){totalSpend+=r.spend;});
+      var h='<thead><tr><th>Gender</th><th style="text-align:right">Spend</th><th>Share</th><th style="text-align:right">ROAS</th><th style="text-align:right">CTR</th><th style="text-align:right">Orders</th><th style="text-align:right">Sales</th></tr></thead>';
+      var b='';
+      demo.by_gender.forEach(function(r){
+        var sh=totalSpend>0?(r.spend/totalSpend*100).toFixed(1)+'%':'—';
+        b+='<tr><td style="font-weight:600;font-size:12px;text-transform:capitalize">'+r.gender+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.spend)+'</td>';
+        b+='<td style="font-size:12px">'+sh+'</td>';
+        b+='<td style="text-align:right;font-size:12px;color:'+_roasClr(r.roas)+';font-weight:600">'+r.roas.toFixed(2)+'x</td>';
+        b+='<td style="text-align:right;font-size:12px">'+r.ctr.toFixed(2)+'%</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.num(r.orders)+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.sales)+'</td></tr>';
+      });
+      document.getElementById('meta-demo-gender-tbl').innerHTML=h+'<tbody>'+b+'</tbody>';
+    }
+
+    // ── Platform table ──
+    if(place.by_platform && place.by_platform.length){
+      var h='<thead><tr><th>Platform</th><th style="text-align:right">Spend</th><th>Share</th><th style="text-align:right">ROAS</th><th style="text-align:right">CTR</th><th style="text-align:right">CPM</th><th style="text-align:right">Orders</th><th style="text-align:right">Sales</th></tr></thead>';
+      var b=''; var mx=Math.max.apply(null,place.by_platform.map(function(r){return r.spend;}));
+      place.by_platform.forEach(function(r){
+        var name=r.platform.replace(/_/g,' ');
+        name=name.charAt(0).toUpperCase()+name.slice(1);
+        b+='<tr><td style="font-weight:600;font-size:12px">'+name+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.spend)+_spendBar(r.spend,mx)+'</td>';
+        b+='<td style="font-size:12px">'+r.spend_share+'%</td>';
+        b+='<td style="text-align:right;font-size:12px;color:'+_roasClr(r.roas)+';font-weight:600">'+r.roas.toFixed(2)+'x</td>';
+        b+='<td style="text-align:right;font-size:12px">'+r.ctr.toFixed(2)+'%</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.cpm)+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.num(r.orders)+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.sales)+'</td></tr>';
+      });
+      document.getElementById('meta-place-platform-tbl').innerHTML=h+'<tbody>'+b+'</tbody>';
+    }
+
+    // ── Position table (platform × position) ──
+    if(place.by_position && place.by_position.length){
+      var h='<thead><tr><th>Platform</th><th>Position</th><th style="text-align:right">Spend</th><th>Share</th><th style="text-align:right">ROAS</th><th style="text-align:right">CTR</th><th style="text-align:right">CPM</th><th style="text-align:right">Orders</th></tr></thead>';
+      var b=''; var lastPlat='';
+      place.by_position.forEach(function(r){
+        var platName=r.platform.replace(/_/g,' ');
+        platName=platName.charAt(0).toUpperCase()+platName.slice(1);
+        var showPlat=r.platform!==lastPlat;
+        lastPlat=r.platform;
+        var posName=r.position.replace(/_/g,' ');
+        posName=posName.charAt(0).toUpperCase()+posName.slice(1);
+        b+='<tr>';
+        b+='<td style="font-weight:'+(showPlat?'600':'400')+';font-size:12px;color:'+(showPlat?'var(--t1)':'var(--t3)')+'">'+(showPlat?platName:'')+'</td>';
+        b+='<td style="font-size:12px;padding-left:'+(showPlat?'0':'12')+'px">'+posName+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.spend)+'</td>';
+        b+='<td style="font-size:12px">'+r.spend_share+'%</td>';
+        b+='<td style="text-align:right;font-size:12px;color:'+_roasClr(r.roas)+';font-weight:600">'+r.roas.toFixed(2)+'x</td>';
+        b+='<td style="text-align:right;font-size:12px">'+r.ctr.toFixed(2)+'%</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.inr(r.cpm)+'</td>';
+        b+='<td style="text-align:right;font-size:12px">'+T6.num(r.orders)+'</td></tr>';
+      });
+      document.getElementById('meta-place-position-tbl').innerHTML=h+'<tbody>'+b+'</tbody>';
+    }
+
+  }catch(e){
+    console.warn('Demo/placement:',e);
+    document.getElementById('meta-demo-note').textContent='No demographic data yet';
+  }
+}
+
 async function loadMetaAds(){
   if(_metaLoaded) return;
   var days=_metaDays;
@@ -5157,11 +5360,28 @@ async function loadMetaAds(){
 }
 
 /* ========== INIT ========== */
-T6.initUserChrome();
-installInvTileTips();
-installOtherTileTips();
-loadMultiChannel();
-loadBugs();
+(async function(){
+  T6.initUserChrome();
+  // Resolve sidebar permissions before rendering: hide forbidden sidebar
+  // items, then pick the landing tab the user can actually see (defaults to
+  // Multi-Channel; falls through to the first visible key).
+  await T6.permissions.init();
+  T6.permissions.applyToSidebar();
+  installInvTileTips();
+  installOtherTileTips();
+  if(T6.permissions.canSee('mc')){
+    loadMultiChannel();
+  } else {
+    var first = T6.permissions.firstVisible(['mc','metaads','overview','amzads','gads','serp','catalog','inventory','pnl','agents','shopify','otherch']);
+    if(first){
+      document.querySelectorAll('.si').forEach(function(el){
+        var oc = el.getAttribute('onclick') || '';
+        if(oc.indexOf("sw('"+first+"'") !== -1) sw(first, el);
+      });
+    }
+  }
+  loadBugs();
+})();
 </script>
 </body>
 </html>
