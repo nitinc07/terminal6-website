@@ -921,8 +921,19 @@
 
     <!-- Audience Segments (New / Engaged / Existing Buyer) -->
     <div class="sec" id="meta-aud-sec" style="display:none">
-      <div class="sec-h"><h3>Audience Segments</h3><span class="note">from ad set targeting API: custom audiences, lookalikes, exclusions</span></div>
-      <div id="meta-aud-cards" class="g3" style="margin-bottom:8px"></div>
+      <div class="sec-h"><h3>Audience Segments</h3><span class="note" id="meta-aud-note">from ad set targeting API</span></div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="meta-aud-tbl">
+          <thead><tr><th>Segment</th><th>Spend</th><th>Share</th><th>ROAS</th><th>CPA</th><th>CPM</th><th>CTR</th><th>Orders</th><th>Ads</th></tr></thead>
+          <tbody id="meta-aud-body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:14px">
+        <div class="sec-h"><h4 style="font-size:13px;margin:0">Weekly Trend by Segment</h4></div>
+        <div style="overflow-x:auto">
+          <table class="tbl" id="meta-aud-trend-tbl"></table>
+        </div>
+      </div>
     </div>
 
     <!-- Trend (transposed) -->
@@ -4747,25 +4758,62 @@ async function loadMetaAds(){
     });
     document.getElementById('meta-funnel').innerHTML=funHtml;
 
-    // ── Audience segments ──
+    // ── Audience segments (table + weekly trend) ──
     var audSegs=db.audience_segments||{};
-    var audLabels={new_user:{label:'New Users',icon:'&#128100;',color:'#3b82f6',desc:'Prospecting / PP-CL excluded'},engaged:{label:'Engaged',icon:'&#128101;',color:'#8b5cf6',desc:'ASC / mixed audiences'},existing_buyer:{label:'Existing Buyers',icon:'&#128176;',color:'#14b8a6',desc:'Retargeting / warm audiences'}};
-    var audH='',hasAud=false;
+    var audLabels={new_user:{label:'New Users',color:'#3b82f6'},engaged:{label:'Engaged (ASC/Broad)',color:'#8b5cf6'},existing_buyer:{label:'Existing Buyers',color:'#14b8a6'}};
+    var audBody='',hasAud=false;
     ['new_user','engaged','existing_buyer'].forEach(function(k){
       var s=audSegs[k];if(!s||s.spend===0) return;
       hasAud=true;
       var al=audLabels[k];
-      var rc=s.roas>=2.5?'var(--g)':s.roas>=1.5?'inherit':'var(--r)';
-      audH+='<div class="cd" style="border-left:4px solid '+al.color+'">';
-      audH+='<div style="font-size:11px;color:var(--t3)">'+al.icon+' '+al.label+'</div>';
-      audH+='<div style="font-size:18px;font-weight:600;color:'+rc+'">'+(s.roas!=null?s.roas.toFixed(2)+'x':'--')+'</div>';
-      audH+='<div style="font-size:11px;color:var(--t2)">'+cur(s.spend)+' ('+s.spend_share_pct+'%) · '+(s.orders||0)+' orders · CPA '+(s.cpa!=null?cur(s.cpa):'--')+'</div>';
-      audH+='<div style="font-size:10px;color:var(--t3);margin-top:2px">'+s.campaigns+' campaigns · '+al.desc+'</div>';
-      audH+='</div>';
+      var rc=s.roas!=null?(s.roas>=(db.account_roas||2)?'var(--g)':s.roas>=1?'inherit':'var(--r)'):'';
+      audBody+='<tr>';
+      audBody+='<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+al.color+';margin-right:6px"></span><strong>'+al.label+'</strong></td>';
+      audBody+='<td>'+cur(s.spend)+'</td>';
+      audBody+='<td>'+s.spend_share_pct+'%</td>';
+      audBody+='<td style="font-weight:600;color:'+rc+'">'+(s.roas!=null?s.roas.toFixed(2)+'x':'--')+'</td>';
+      audBody+='<td>'+(s.cpa!=null?cur(s.cpa):'--')+'</td>';
+      audBody+='<td>'+(s.cpm!=null?'\u20B9'+Math.round(s.cpm):'--')+'</td>';
+      audBody+='<td>'+(s.ctr!=null?s.ctr.toFixed(2)+'%':'--')+'</td>';
+      audBody+='<td>'+fmt(s.orders)+'</td>';
+      audBody+='<td>'+(s.ads||'--')+'</td>';
+      audBody+='</tr>';
     });
     if(hasAud){
       document.getElementById('meta-aud-sec').style.display='';
-      document.getElementById('meta-aud-cards').innerHTML=audH;
+      document.getElementById('meta-aud-body').innerHTML=audBody;
+    }
+    // Weekly trend by audience type (transposed: metrics × weeks, per segment)
+    var audTrend=db.audience_trend||{};
+    var weeks=Object.keys(audTrend).sort();
+    if(weeks.length>1&&hasAud){
+      var segs=['new_user','engaged','existing_buyer'].filter(function(k){return audSegs[k]&&audSegs[k].spend>0});
+      var tMetrics=[
+        {key:'spend',label:'Spend',fmt:function(v){return cur(v||0)}},
+        {key:'roas',label:'ROAS',fmt:function(v){return v!=null?v.toFixed(2)+'x':'--'},color:function(v){return v>=(db.account_roas||2)?'var(--g)':v>=1?'':'var(--r)'}},
+        {key:'orders',label:'Orders',fmt:function(v){return fmt(v||0)}},
+        {key:'cpa',label:'CPA',fmt:function(v){return v!=null?cur(v):'--'}},
+      ];
+      var th='<tr><th style="min-width:130px">SEGMENT / METRIC</th>';
+      weeks.forEach(function(w){th+='<th>'+shortD(w)+'</th>'});
+      var tb='';
+      segs.forEach(function(seg){
+        var al=audLabels[seg];
+        // Segment header row
+        tb+='<tr style="background:var(--c1)"><td colspan="'+(weeks.length+1)+'" style="font-weight:600;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+al.color+';margin-right:6px"></span>'+al.label+'</td></tr>';
+        tMetrics.forEach(function(m){
+          tb+='<tr><td style="padding-left:20px;font-size:12px">'+m.label+'</td>';
+          weeks.forEach(function(w){
+            var d=(audTrend[w]||{})[seg]||{};
+            var v=d[m.key];
+            var s='';
+            if(m.color){var c=m.color(v);if(c)s=' style="color:'+c+';font-weight:600"';}
+            tb+='<td'+s+'>'+m.fmt(v)+'</td>';
+          });
+          tb+='</tr>';
+        });
+      });
+      document.getElementById('meta-aud-trend-tbl').innerHTML='<thead>'+th+'</thead><tbody>'+tb+'</tbody>';
     }
 
     // ── Format mix ──
