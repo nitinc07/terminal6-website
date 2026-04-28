@@ -869,18 +869,28 @@
   <div class="vw" id="v-metaads">
     <div class="head">
       <div class="icon" style="background:#1877F2">&#127912;</div>
-      <div><h2>Meta Ads &middot; Creative Performance</h2><p class="sub">Ad-level ROAS, CPA, creative format mix, spend concentration. Attribution: 7d click + 1d view.</p></div>
+      <div><h2>Meta Ads</h2><p class="sub">Creative performance, funnel health, action recommendations. Attribution: 7d click + 1d view.</p></div>
     </div>
 
-    <!-- KPI tiles -->
-    <div class="g4" style="margin-bottom:20px">
-      <div class="cd"><div class="kl">Total Spend</div><div class="kv" id="meta-spend">--</div><div class="kd n" id="meta-spend-sub">&nbsp;</div></div>
-      <div class="cd"><div class="kl">Avg ROAS</div><div class="kv" id="meta-roas">--</div><div class="kd n">revenue / spend (7d attr)</div></div>
-      <div class="cd"><div class="kl">Avg CPA</div><div class="kv" id="meta-cpa">--</div><div class="kd n">spend / orders</div></div>
-      <div class="cd"><div class="kl">Active Ads</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
+    <!-- Pulse KPIs -->
+    <div class="g5" style="margin-bottom:20px">
+      <div class="cd"><div class="kl">Spend</div><div class="kv" id="meta-spend">--</div><div class="kd n" id="meta-spend-sub">&nbsp;</div></div>
+      <div class="cd"><div class="kl">ROAS</div><div class="kv" id="meta-roas">--</div><div class="kd n" id="meta-roas-sub">&nbsp;</div></div>
+      <div class="cd"><div class="kl">CPM</div><div class="kv" id="meta-cpm">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">CPA</div><div class="kv" id="meta-cpa">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">Creatives</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
     </div>
 
-    <!-- Account health trend (transposed) -->
+    <!-- Action cards -->
+    <div id="meta-actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px"></div>
+
+    <!-- Funnel health -->
+    <div class="sec" id="meta-funnel-sec">
+      <div class="sec-h"><h3>Funnel Health</h3><span class="note">per ₹1K spent vs prior period</span></div>
+      <div id="meta-funnel" style="display:flex;gap:0;align-items:center;justify-content:center;flex-wrap:wrap;padding:16px 0"></div>
+    </div>
+
+    <!-- Trend (transposed) -->
     <div class="sec" id="meta-trend-sec">
       <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <h3>Trend</h3>
@@ -890,43 +900,19 @@
           <button data-gran="month">Month</button>
         </div>
       </div>
-      <div style="overflow-x:auto">
-        <table class="tbl" id="meta-trend-tbl">
-          <tbody id="meta-trend-body"><tr><td class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
+      <div style="overflow-x:auto"><table class="tbl" id="meta-trend-tbl"><tbody id="meta-trend-body"><tr><td class="loading">Loading...</td></tr></tbody></table></div>
     </div>
 
     <!-- Format breakdown -->
     <div class="sec" id="meta-fmt-sec">
-      <div class="sec-h"><h3>Format Breakdown</h3></div>
+      <div class="sec-h"><h3>Format Mix</h3></div>
       <div id="meta-fmt-bar" style="display:flex;gap:0;height:32px;border-radius:6px;overflow:hidden;margin-bottom:12px"></div>
       <div id="meta-fmt-cards" style="display:flex;gap:12px;flex-wrap:wrap"></div>
     </div>
 
-    <!-- Campaign health -->
-    <div class="sec" id="meta-camp-sec">
-      <div class="sec-h"><h3>Campaign Health</h3><span class="note" id="meta-camp-note"></span></div>
-      <div class="g4" style="margin-bottom:14px">
-        <div class="cd"><div class="kl">Campaigns</div><div class="kv" id="meta-camp-count">--</div><div class="kd n" id="meta-camp-frag">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Above 2x ROAS</div><div class="kv" id="meta-camp-above">--</div><div class="kd n" id="meta-camp-above-sub">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Below 2x ROAS</div><div class="kv" id="meta-camp-below">--</div><div class="kd n" id="meta-camp-below-sub">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Bleeding (&lt;1x)</div><div class="kv" id="meta-camp-bleed">--</div><div class="kd n" id="meta-camp-bleed-sub">&nbsp;</div></div>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="tbl" id="meta-camp-tbl">
-          <thead><tr><th>Campaign</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Share</th><th>Orders</th><th>Ads</th><th>Freq</th></tr></thead>
-          <tbody id="meta-camp-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
     <!-- Creative performance table -->
     <div class="sec">
-      <div class="sec-h">
-        <h3>Creative Performance</h3>
-        <span class="note" id="meta-perf-note"></span>
-      </div>
+      <div class="sec-h"><h3>All Creatives</h3><span class="note" id="meta-perf-note"></span></div>
       <div style="overflow-x:auto">
         <table class="tbl" id="meta-perf-tbl">
           <thead><tr>
@@ -938,11 +924,27 @@
             <th>CTR</th>
             <th>Spend</th>
             <th>Share</th>
-            <th>Sales</th>
             <th>Orders</th>
             <th>Status</th>
           </tr></thead>
           <tbody id="meta-perf-body"><tr><td colspan="10" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Campaign health (budget containers) -->
+    <div class="sec" id="meta-camp-sec">
+      <div class="sec-h"><h3>Campaigns (Budget Containers)</h3><span class="note" id="meta-camp-note"></span></div>
+      <div class="g4" style="margin-bottom:14px">
+        <div class="cd"><div class="kl">Campaigns</div><div class="kv" id="meta-camp-count">--</div><div class="kd n" id="meta-camp-frag">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Above 2x ROAS</div><div class="kv" id="meta-camp-above">--</div><div class="kd n" id="meta-camp-above-sub">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Below 2x ROAS</div><div class="kv" id="meta-camp-below">--</div><div class="kd n" id="meta-camp-below-sub">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Bleeding (&lt;1x)</div><div class="kv" id="meta-camp-bleed">--</div><div class="kd n" id="meta-camp-bleed-sub">&nbsp;</div></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="meta-camp-tbl">
+          <thead><tr><th>Campaign</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Share</th><th>Orders</th><th>Ads</th><th>Freq</th></tr></thead>
+          <tbody id="meta-camp-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -4179,7 +4181,6 @@ function agAct(btn, action){
 var _metaGran = 'week';
 var _metaLoaded = false;
 
-// Granularity pills
 document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
   b.addEventListener('click', function(){
     _metaGran = b.dataset.gran;
@@ -4189,157 +4190,172 @@ document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
 });
 
 async function _loadMetaTrend() {
-  var p = _metaGran === 'day' ? 7 : _metaGran === 'month' ? 6 : 12;
-  var data = await api('/v1/meta/account-health?granularity='+_metaGran+'&periods='+p);
-  var rows = (data.data || []).slice().reverse(); // newest first
-  if (!rows.length) { document.getElementById('meta-trend-body').innerHTML='<tr><td>No data</td></tr>'; return; }
-
-  // Transposed: metrics as rows, periods as columns
-  var metrics = [
-    {key:'spend', label:'Spend', fmt:function(v){return cur(v)}},
-    {key:'revenue', label:'Revenue', fmt:function(v){return cur(v)}},
-    {key:'roas', label:'ROAS', fmt:function(v){return v!=null?v.toFixed(2)+'x':'--'}, color:function(v){return v>=2.5?'var(--g)':v>=2?'':'var(--r)'}},
-    {key:'cpm', label:'CPM', fmt:function(v){return v!=null?'\u20B9'+Math.round(v):'--'}},
-    {key:'ctr', label:'CTR %', fmt:function(v){return v!=null?v.toFixed(2)+'%':'--'}},
-    {key:'cpc', label:'CPC', fmt:function(v){return v!=null?'\u20B9'+v.toFixed(0):'--'}},
-    {key:'cpa', label:'CPA', fmt:function(v){return v!=null?cur(v):'--'}},
-    {key:'orders', label:'Orders', fmt:function(v){return fmt(v)}},
-    {key:'active_ads', label:'Active Ads', fmt:function(v){return fmt(v)}},
+  var p = _metaGran==='day'?7:_metaGran==='month'?6:12;
+  var d = await api('/v1/meta/account-health?granularity='+_metaGran+'&periods='+p);
+  var rows = (d.data||[]).slice().reverse();
+  if(!rows.length){document.getElementById('meta-trend-tbl').innerHTML='<tbody><tr><td>No data</td></tr></tbody>';return;}
+  var metrics=[
+    {key:'spend',label:'Spend',fmt:function(v){return cur(v)}},
+    {key:'revenue',label:'Revenue',fmt:function(v){return cur(v)}},
+    {key:'roas',label:'ROAS',fmt:function(v){return v!=null?v.toFixed(2)+'x':'--'},color:function(v){return v>=2.5?'var(--g)':v>=2?'':'var(--r)'}},
+    {key:'cpm',label:'CPM',fmt:function(v){return v!=null?'\u20B9'+Math.round(v):'--'}},
+    {key:'ctr',label:'CTR %',fmt:function(v){return v!=null?v.toFixed(2)+'%':'--'}},
+    {key:'cpc',label:'CPC',fmt:function(v){return v!=null?'\u20B9'+v.toFixed(0):'--'}},
+    {key:'cpa',label:'CPA',fmt:function(v){return v!=null?cur(v):'--'}},
+    {key:'orders',label:'Orders',fmt:function(v){return fmt(v)}},
   ];
-
-  var header = '<tr><th style="min-width:120px">METRIC</th>';
-  rows.forEach(function(r){ header += '<th>'+shortD(r.period)+'</th>'; });
-  header += '</tr>';
-
-  var body = '';
+  var hdr='<tr><th style="min-width:100px">METRIC</th>';
+  rows.forEach(function(r){hdr+='<th>'+shortD(r.period)+'</th>';});
+  var body='';
   metrics.forEach(function(m){
-    body += '<tr><td style="font-weight:500">'+m.label+'</td>';
-    rows.forEach(function(r){
-      var v = r[m.key];
-      var style = '';
-      if(m.color){ var c=m.color(v); if(c) style=' style="color:'+c+';font-weight:600"'; }
-      body += '<td'+style+'>'+m.fmt(v)+'</td>';
-    });
-    body += '</tr>';
+    body+='<tr><td style="font-weight:500">'+m.label+'</td>';
+    rows.forEach(function(r){var v=r[m.key];var s='';if(m.color){var c=m.color(v);if(c)s=' style="color:'+c+';font-weight:600"';}body+='<td'+s+'>'+m.fmt(v)+'</td>';});
+    body+='</tr>';
   });
-
-  var tbl = document.getElementById('meta-trend-tbl');
-  tbl.innerHTML = '<thead>'+header+'</thead><tbody>'+body+'</tbody>';
+  document.getElementById('meta-trend-tbl').innerHTML='<thead>'+hdr+'</thead><tbody>'+body+'</tbody>';
 }
 
-async function loadMetaAds() {
-  if (_metaLoaded) return;
-  var days = 30;
-  try {
-    var [perf, fmtData, campHealth] = await Promise.all([
-      api('/v1/meta/creative-performance?days=' + days),
-      api('/v1/meta/format-breakdown?days=' + days),
+async function loadMetaAds(){
+  if(_metaLoaded) return;
+  var days=30;
+  try{
+    var [db, campHealth]=await Promise.all([
+      api('/v1/meta/dashboard?days='+days),
       api('/v1/meta/campaign-health?days=14'),
     ]);
     _loadMetaTrend();
+    var p=db.pulse, sc=db.status_counts||{}, acts=db.actions||{}, fun=db.funnel||{};
 
-    // KPI tiles
-    var sc = perf.status_counts || {};
-    document.getElementById('meta-spend').textContent = cur(perf.total_spend);
-    document.getElementById('meta-spend-sub').textContent = days + '-day total';
-    document.getElementById('meta-roas').textContent = perf.avg_roas != null ? perf.avg_roas.toFixed(1) + 'x' : '--';
-    document.getElementById('meta-cpa').textContent = perf.avg_cpa != null ? cur(perf.avg_cpa) : '--';
-    document.getElementById('meta-adcount').textContent = perf.count || '--';
-    var scHtml = '';
-    if(sc.Winner) scHtml += '<span style="color:var(--g)">' + sc.Winner + ' winners</span>';
-    if(sc.Fatiguing) scHtml += (scHtml?' · ':'')+'<span style="color:#f97316">' + sc.Fatiguing + ' fatiguing</span>';
-    if(sc.Loser) scHtml += (scHtml?' · ':'')+'<span style="color:var(--r)">' + sc.Loser + ' losers</span>';
-    document.getElementById('meta-adcount-sub').innerHTML = scHtml || '&nbsp;';
+    // ── Pulse KPIs ──
+    document.getElementById('meta-spend').textContent=cur(p.spend);
+    document.getElementById('meta-spend-sub').innerHTML=p.spend_change_pct!=null?chg(p.spend_change_pct)+' vs prior':'30-day';
+    var roasColor=p.roas>=2.5?'var(--g)':p.roas>=2?'inherit':'var(--r)';
+    document.getElementById('meta-roas').innerHTML='<span style="color:'+roasColor+'">'+( p.roas!=null?p.roas.toFixed(2)+'x':'--')+'</span>';
+    document.getElementById('meta-roas-sub').innerHTML=p.prior_roas!=null?'prior: '+p.prior_roas.toFixed(2)+'x':'';
+    document.getElementById('meta-cpm').textContent=p.cpm!=null?'\u20B9'+Math.round(p.cpm):'--';
+    document.getElementById('meta-cpa').textContent=p.cpa!=null?cur(p.cpa):'--';
+    document.getElementById('meta-adcount').textContent=p.active_ads||'--';
+    var scH='';
+    if(sc.Winner)scH+='<span style="color:var(--g)">'+sc.Winner+' winners</span>';
+    if(sc.Fatiguing)scH+=(scH?' · ':'')+'<span style="color:#f97316">'+sc.Fatiguing+' fatiguing</span>';
+    if(sc.Loser)scH+=(scH?' · ':'')+'<span style="color:var(--r)">'+sc.Loser+' losers</span>';
+    document.getElementById('meta-adcount-sub').innerHTML=scH||'&nbsp;';
 
-    // Format breakdown bar
-    var fmtColors = { VIDEO: '#9333ea', IMAGE: '#3b82f6', CAROUSEL: '#14b8a6' };
-    var barHtml = '';
-    var cardsHtml = '';
-    (fmtData.data || []).forEach(function(f) {
-      var color = fmtColors[f.format] || '#6b7280';
-      barHtml += '<div style="width:' + f.spend_share_pct + '%;background:' + color + ';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;min-width:30px" title="' + f.format + ': ' + f.spend_share_pct + '%">' + (f.spend_share_pct >= 8 ? f.format + ' ' + f.spend_share_pct + '%' : '') + '</div>';
-      cardsHtml += '<div style="background:var(--c1);border-radius:8px;padding:12px 16px;flex:1;min-width:140px;border-left:4px solid ' + color + '">' +
-        '<div style="font-weight:600;font-size:13px;margin-bottom:6px">' + f.format + '</div>' +
-        '<div style="font-size:12px;color:var(--t2)">Ads: ' + f.ad_count + ' · ROAS: ' + (f.avg_roas != null ? f.avg_roas.toFixed(1) + 'x' : '--') + '</div>' +
-        '<div style="font-size:12px;color:var(--t2)">CTR: ' + (f.avg_ctr != null ? f.avg_ctr.toFixed(1) + '%' : '--') + ' · CPA: ' + (f.avg_cpa != null ? cur(f.avg_cpa) : '--') + '</div>' +
-        '<div style="font-size:12px;color:var(--t2)">Spend: ' + cur(f.total_spend) + '</div>' +
-      '</div>';
+    // ── Action cards ──
+    var acHtml='';
+    function actionCard(icon,color,title,items,fields){
+      if(!items||!items.length) return '';
+      var h='<div style="flex:1;min-width:260px;background:var(--c1);border-radius:8px;padding:14px 16px;border-left:4px solid '+color+'">';
+      h+='<div style="font-weight:600;font-size:13px;margin-bottom:8px">'+icon+' '+title+' ('+items.length+')</div>';
+      items.forEach(function(it){
+        var line='<div style="font-size:12px;color:var(--t2);margin-bottom:4px">';
+        var n=(it.ad_name||'').length>35?it.ad_name.slice(0,35)+'...':it.ad_name||'--';
+        line+='<span style="color:var(--t1)">'+n+'</span> &mdash; ';
+        fields.forEach(function(f){line+=f(it)+' ';});
+        line+='</div>';
+        h+=line;
+      });
+      return h+'</div>';
+    }
+    acHtml+=actionCard('\uD83D\uDED1','var(--r)','Pause — Bleeding',acts.pause,[
+      function(i){return cur(i.spend)+' spent'},function(i){return i.roas!=null?i.roas.toFixed(1)+'x ROAS':'no orders'}]);
+    acHtml+=actionCard('\uD83D\uDE80','var(--g)','Scale — Winners with headroom',acts.scale,[
+      function(i){return i.roas.toFixed(1)+'x ROAS'},function(i){return cur(i.spend)+' (low share)'}]);
+    acHtml+=actionCard('\u26A0\uFE0F','#f97316','Fatiguing — ROAS declining',acts.fatiguing,[
+      function(i){return i.roas_change_pct!=null?Math.round(i.roas_change_pct)+'% WoW':''},
+      function(i){return i.frequency?'freq '+i.frequency.toFixed(1):''}]);
+    document.getElementById('meta-actions').innerHTML=acHtml||'<div style="color:var(--t3);font-size:13px;padding:12px">No urgent actions</div>';
+
+    // ── Funnel health ──
+    var fc=fun.current||{}, fp=fun.prior||{};
+    var stages=[
+      {key:'clicks',label:'Clicks'},{key:'lpv',label:'Landing Page'},{key:'atc',label:'Add to Cart'},
+      {key:'checkouts',label:'Checkout'},{key:'purchases',label:'Purchase'}
+    ];
+    var funHtml='';
+    stages.forEach(function(st,i){
+      var cv=fc[st.key], pv=fp[st.key];
+      var delta=cv!=null&&pv!=null&&pv>0?Math.round((cv-pv)/pv*100):null;
+      var dColor=delta!=null?(delta>=0?'var(--g)':'var(--r)'):'var(--t3)';
+      var isLeak=fun.biggest_leak===st.key;
+      funHtml+='<div style="text-align:center;padding:8px 14px;min-width:90px'+(isLeak?';background:#fee2e2;border-radius:8px':'')+'">';
+      funHtml+='<div style="font-size:11px;color:var(--t3)">'+st.label+'</div>';
+      funHtml+='<div style="font-size:18px;font-weight:600">'+(cv!=null?cv.toFixed(1):'--')+'</div>';
+      if(delta!=null)funHtml+='<div style="font-size:11px;color:'+dColor+'">'+(delta>=0?'\u25B2':'\u25BC')+' '+Math.abs(delta)+'%</div>';
+      funHtml+='</div>';
+      if(i<stages.length-1)funHtml+='<div style="font-size:18px;color:var(--t3);padding:0 4px">\u2192</div>';
     });
-    document.getElementById('meta-fmt-bar').innerHTML = barHtml || '<div style="flex:1;background:var(--c2);display:flex;align-items:center;justify-content:center;color:var(--t3);font-size:12px">No data</div>';
-    document.getElementById('meta-fmt-cards').innerHTML = cardsHtml;
+    document.getElementById('meta-funnel').innerHTML=funHtml;
 
-    // Campaign health (budget containers)
-    var ch = campHealth;
-    var fragColors = {healthy:'var(--g)', moderate:'var(--y)', severe:'var(--r)'};
-    document.getElementById('meta-camp-count').textContent = ch.campaign_count;
-    document.getElementById('meta-camp-frag').innerHTML = '<span style="color:'+(fragColors[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</span> fragmentation';
-    document.getElementById('meta-camp-above').textContent = ch.above_target.count;
-    document.getElementById('meta-camp-above-sub').textContent = ch.above_target.spend_pct + '% of spend';
-    document.getElementById('meta-camp-below').textContent = ch.below_target.count;
-    document.getElementById('meta-camp-below-sub').textContent = ch.below_target.spend_pct + '% of spend';
-    document.getElementById('meta-camp-bleed').textContent = ch.bleeding.count;
-    document.getElementById('meta-camp-bleed-sub').textContent = ch.bleeding.count > 0 ? cur(ch.bleeding.spend) + ' wasted' : 'none';
-    document.getElementById('meta-camp-note').textContent = 'last ' + ch.days + ' days';
-
-    var campBody = document.getElementById('meta-camp-body');
-    var campRows = '';
-    (ch.campaigns || []).forEach(function(c) {
-      var rColor = c.roas >= 2 ? 'var(--g)' : c.roas >= 1 ? 'inherit' : 'var(--r)';
-      var name = (c.campaign_name||'').length > 45 ? c.campaign_name.slice(0,45)+'...' : (c.campaign_name||'--');
-      campRows += '<tr>' +
-        '<td style="font-size:12px" title="'+(c.campaign_name||'')+'">' + name + '</td>' +
-        '<td style="font-weight:600;color:'+rColor+'">' + (c.roas!=null?c.roas.toFixed(1)+'x':'--') + '</td>' +
-        '<td>' + (c.cpa!=null?cur(c.cpa):'--') + '</td>' +
-        '<td>' + (c.ctr!=null?c.ctr.toFixed(1)+'%':'--') + '</td>' +
-        '<td>' + cur(c.spend) + '</td>' +
-        '<td>' + c.spend_share_pct + '%</td>' +
-        '<td>' + fmt(c.orders) + '</td>' +
-        '<td>' + c.ad_count + '</td>' +
-        '<td>' + (c.avg_frequency||'--') + '</td>' +
-      '</tr>';
+    // ── Format mix ──
+    var fmtColors={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
+    var barH='',cardsH='';
+    (db.formats||[]).forEach(function(f){
+      var co=fmtColors[f.format]||'#6b7280';
+      barH+='<div style="width:'+f.spend_share_pct+'%;background:'+co+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;min-width:30px" title="'+f.format+': '+f.spend_share_pct+'%">'+(f.spend_share_pct>=8?f.format+' '+f.spend_share_pct+'%':'')+'</div>';
+      cardsH+='<div style="background:var(--c1);border-radius:8px;padding:12px 16px;flex:1;min-width:140px;border-left:4px solid '+co+'"><div style="font-weight:600;font-size:13px;margin-bottom:6px">'+f.format+'</div><div style="font-size:12px;color:var(--t2)">'+f.ad_count+' ads · ROAS '+(f.roas!=null?f.roas.toFixed(1)+'x':'--')+' · CPA '+(f.cpa!=null?cur(f.cpa):'--')+'</div></div>';
     });
-    campBody.innerHTML = campRows || '<tr><td colspan="9">No data</td></tr>';
+    document.getElementById('meta-fmt-bar').innerHTML=barH||'<div style="flex:1;background:var(--c2);display:flex;align-items:center;justify-content:center;color:var(--t3)">No data</div>';
+    document.getElementById('meta-fmt-cards').innerHTML=cardsH;
 
-    // Creative performance table (with fatigue + spend share)
-    var tbody = document.getElementById('meta-perf-body');
-    var statusColors = { Winner:'var(--g)', Loser:'var(--r)', Testing:'var(--y)', Fatiguing:'#f97316', Active:'var(--t3)' };
-    var fmtPills = { VIDEO:'#9333ea', IMAGE:'#3b82f6', CAROUSEL:'#14b8a6' };
-    var tRows = '';
-    (perf.data || []).forEach(function(d) {
-      var thumb = d.thumbnail_url ? '<img src="' + d.thumbnail_url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">' : '<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">' + (d.creative_type === 'VIDEO' ? '&#9654;' : '&#128444;') + '</div>';
-      var name = (d.ad_name || '').length > 45 ? d.ad_name.slice(0, 45) + '...' : (d.ad_name || '--');
-      var camp = (d.campaign_name || '').length > 30 ? d.campaign_name.slice(0, 30) + '...' : (d.campaign_name || '');
-      var scolor = statusColors[d.status] || 'var(--t3)';
-      var fc = fmtPills[d.creative_type] || '#6b7280';
-      var rChange = '';
-      if(d.roas_change_pct != null) {
-        var arrow = d.roas_change_pct >= 0 ? '\u25B2' : '\u25BC';
-        var chgColor = d.roas_change_pct >= 0 ? 'var(--g)' : 'var(--r)';
-        rChange = '<div style="font-size:10px;color:'+chgColor+'">'+arrow+' '+Math.abs(d.roas_change_pct).toFixed(0)+'% WoW</div>';
-      }
-      var freqWarn = '';
-      if(d.recent_frequency && d.recent_frequency > 3.0) freqWarn = '<span title="High frequency" style="color:#f97316;font-size:10px;margin-left:4px">freq '+d.recent_frequency.toFixed(1)+'</span>';
-      tRows += '<tr>' +
-        '<td>' + thumb + '</td>' +
-        '<td><div style="font-weight:500;font-size:12.5px" title="' + (d.ad_name || '') + '">' + name + freqWarn + '</div><div style="font-size:11px;color:var(--t3)" title="' + (d.campaign_name || '') + '">' + camp + '</div></td>' +
-        '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + fc + '22;color:' + fc + '">' + (d.creative_type || 'IMAGE') + '</span></td>' +
-        '<td><div style="font-weight:600;color:' + (d.roas >= 2 ? 'var(--g)' : d.roas >= 1 ? 'inherit' : 'var(--r)') + '">' + (d.roas != null ? d.roas.toFixed(1) + 'x' : '--') + '</div>'+rChange+'</td>' +
-        '<td>' + (d.cpa != null ? cur(d.cpa) : '--') + '</td>' +
-        '<td>' + (d.ctr != null ? d.ctr.toFixed(1) + '%' : '--') + '</td>' +
-        '<td>' + cur(d.spend) + '</td>' +
-        '<td>' + (d.spend_share_pct||0).toFixed(1) + '%</td>' +
-        '<td>' + cur(d.attributed_sales) + '</td>' +
-        '<td>' + fmt(d.attributed_orders) + '</td>' +
-        '<td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:' + scolor + '22;color:' + scolor + '">' + d.status + '</span></td>' +
-      '</tr>';
+    // ── Creative table ──
+    var statusColors={Winner:'var(--g)',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Active:'var(--t3)'};
+    var fmtP={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
+    var tR='';
+    (db.creatives||[]).forEach(function(d){
+      var thumb=d.thumbnail_url?'<img src="'+d.thumbnail_url+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">'+(d.creative_type==='VIDEO'?'&#9654;':'&#128444;')+'</div>';
+      var nm=(d.ad_name||'').length>40?d.ad_name.slice(0,40)+'...':d.ad_name||'--';
+      var cp=(d.campaign_name||'').length>28?d.campaign_name.slice(0,28)+'...':d.campaign_name||'';
+      var sc2=statusColors[d.status]||'var(--t3)';
+      var fc2=fmtP[d.creative_type]||'#6b7280';
+      var rc='';
+      if(d.roas_change_pct!=null){var ar=d.roas_change_pct>=0?'\u25B2':'\u25BC';rc='<div style="font-size:10px;color:'+(d.roas_change_pct>=0?'var(--g)':'var(--r)')+'">'+ar+' '+Math.abs(d.roas_change_pct).toFixed(0)+'%</div>';}
+      var fw='';
+      if(d.recent_frequency&&d.recent_frequency>3)fw='<span style="color:#f97316;font-size:10px;margin-left:4px">f'+d.recent_frequency.toFixed(1)+'</span>';
+      tR+='<tr><td>'+thumb+'</td>'+
+        '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+'</div></td>'+
+        '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+fc2+'22;color:'+fc2+'">'+d.creative_type+'</span></td>'+
+        '<td><div style="font-weight:600;color:'+(d.roas>=2?'var(--g)':d.roas>=1?'inherit':'var(--r)')+'">'+(d.roas!=null?d.roas.toFixed(1)+'x':'--')+'</div>'+rc+'</td>'+
+        '<td>'+(d.cpa!=null?cur(d.cpa):'--')+'</td>'+
+        '<td>'+(d.ctr!=null?d.ctr.toFixed(1)+'%':'--')+'</td>'+
+        '<td>'+cur(d.spend)+'</td>'+
+        '<td>'+(d.spend_share_pct||0).toFixed(1)+'%</td>'+
+        '<td>'+fmt(d.attributed_orders)+'</td>'+
+        '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+d.status+'</span></td></tr>';
     });
-    tbody.innerHTML = tRows || '<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:40px">No ad-level data yet. Run the creative backfill to populate.</td></tr>';
-    document.getElementById('meta-perf-note').textContent = perf.count + ' ads · last ' + days + ' days';
+    document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="10" style="text-align:center;color:var(--t3);padding:40px">No data yet</td></tr>';
+    document.getElementById('meta-perf-note').textContent=(db.creatives||[]).length+' ads · last '+days+' days';
 
-    _metaLoaded = true;
-  } catch (e) {
-    console.error('Meta Ads load error:', e);
-    document.getElementById('meta-perf-body').innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--r)">Failed to load: ' + e.message + '</td></tr>';
+    // ── Campaign health ──
+    var ch=campHealth;
+    var fragC={healthy:'var(--g)',moderate:'var(--y)',severe:'var(--r)'};
+    document.getElementById('meta-camp-count').textContent=ch.campaign_count;
+    document.getElementById('meta-camp-frag').innerHTML='<span style="color:'+(fragC[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</span>';
+    document.getElementById('meta-camp-above').textContent=ch.above_target.count;
+    document.getElementById('meta-camp-above-sub').textContent=ch.above_target.spend_pct+'% of spend';
+    document.getElementById('meta-camp-below').textContent=ch.below_target.count;
+    document.getElementById('meta-camp-below-sub').textContent=ch.below_target.spend_pct+'% of spend';
+    document.getElementById('meta-camp-bleed').textContent=ch.bleeding.count;
+    document.getElementById('meta-camp-bleed-sub').textContent=ch.bleeding.count>0?cur(ch.bleeding.spend)+' wasted':'none';
+    document.getElementById('meta-camp-note').textContent='last '+ch.days+' days';
+    var cB='';
+    (ch.campaigns||[]).forEach(function(c){
+      var rc3=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
+      var cn=(c.campaign_name||'').length>45?c.campaign_name.slice(0,45)+'...':c.campaign_name||'--';
+      cB+='<tr><td style="font-size:12px" title="'+(c.campaign_name||'')+'">'+cn+'</td>'+
+        '<td style="font-weight:600;color:'+rc3+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
+        '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
+        '<td>'+(c.ctr!=null?c.ctr.toFixed(1)+'%':'--')+'</td>'+
+        '<td>'+cur(c.spend)+'</td><td>'+c.spend_share_pct+'%</td>'+
+        '<td>'+fmt(c.orders)+'</td><td>'+c.ad_count+'</td>'+
+        '<td>'+(c.avg_frequency||'--')+'</td></tr>';
+    });
+    document.getElementById('meta-camp-body').innerHTML=cB||'<tr><td colspan="9">No data</td></tr>';
+
+    _metaLoaded=true;
+  }catch(e){
+    console.error('Meta Ads error:',e);
+    document.getElementById('meta-actions').innerHTML='<div style="color:var(--r);padding:12px">Failed to load: '+e.message+'</div>';
   }
 }
 
