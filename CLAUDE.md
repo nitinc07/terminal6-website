@@ -21,7 +21,9 @@ terminal6-website/
 │                            placeholder view. Used by every <brand>.html.
 ├── shared.js              — Access-gate-friendly API client (X-Brand header driven by
 │                            window.T6_BRAND_SLUG), formatters (fmt, cur, pct, shortD,
-│                            chg, dp), showErr, initUserChrome. window.T6 namespace.
+│                            chg, dp), showErr, initUserChrome, **T6.permissions** (sidebar
+│                            allowlist gate — see "Sidebar permissions" below). window.T6
+│                            namespace.
 ├── index.html             — Public landing page. Sign-in button routes to /home.html.
 ├── home.html              — Sign-in + workspace hub. The ONLY entry point for gated pages.
 │                            Stores Google credential as `t6_token` in sessionStorage.
@@ -31,6 +33,11 @@ terminal6-website/
 ├── basil.html             — **LIVE BASIL DASHBOARD.** Amazon-only Phase 1. Reads
 │                            /shared.css + /shared.js; owns Basil-only CSS (SERP rank
 │                            badge, Phase-2 callout) + Basil tab renderers.
+├── users.html             — **ADMIN USER MANAGEMENT.** Generic across brands (auto-detects
+│                            brand from subdomain). Lists `brand_users` with role dropdown +
+│                            per-row collapsible sidebar checkbox grid. Admin-only —
+│                            non-admins are redirected back to `/`. PATCHes
+│                            `/v1/users/{email}/permissions` on save.
 ├── product.html           — **PRODUCT DETAIL PAGE.** Per-SKU dossier opened by clicking
 │                            product name or seller_sku on any dashboard table. Seller
 │                            Central-inspired layout: left sidebar (product image, status
@@ -55,6 +62,7 @@ When onboarding brand N:
 3. Change sidebar brand label + initials.
 4. Swap tab set + renderers to match what the brand actually has data for.
 5. Keep the `<link rel="stylesheet" href="/shared.css">` + `<script src="/shared.js">` refs — do NOT copy shared CSS/JS inline.
+6. **Wire the permissions gate.** The brand init must call `await T6.permissions.init()` then `T6.permissions.applyToSidebar()` *before* the first data load. Use `T6.permissions.canSee('<key>')` / `firstVisible([...])` to pick a landing tab the user can actually see. Every sidebar item must use `onclick="sw('<key>',this)"` so the gate matches it against the user's allowlist.
 
 Rule: **if a style or JS helper applies to more than one brand, it belongs in `shared.*`.** Fighting this rule causes drift; the whole point of extraction was to kill drift before it starts. If you find yourself reaching for copy-paste across brand files, extract instead.
 
@@ -108,6 +116,21 @@ Customer-facing dashboards. **Anyone can sign in** — the API enforces access v
 **Important:** If you regenerate `architecture.html` or `todos.html` from the main repo, you MUST re-inject this gate script.
 
 **Limitation:** GitHub Pages pages are client-side gated only — prevents casual access, not determined readers.
+
+### Tier 3: Sidebar permissions (per-user, inside a brand)
+
+On top of brand-level access, every `/v1/*` route is sidebar-gated server-side. Owners and admins always see everything; viewers see only the sidebar keys in their `brand_users.allowed_sidebars` list (`NULL` = unrestricted).
+
+The frontend mirrors that gate:
+
+- `T6.permissions.init()` — calls `GET /v1/users/permissions` once on load. Caches `role`, `is_admin`, `visible_sidebars` (Set of keys), and `all_sidebars` (full `SIDEBAR_REGISTRY`).
+- `T6.permissions.applyToSidebar()` — hides every `.si` whose `onclick="sw('<key>',...)"` (or `swSub`) references a forbidden key, then collapses any `.ss` group whose items are all hidden.
+- `T6.permissions.canSee(key)` / `firstVisible([...])` — used by per-brand init logic to pick a landing tab the user is allowed on.
+- Fail-open: if `/v1/users/permissions` errors, the sidebar renders unrestricted. The backend gate still applies, so a forbidden tab simply 403s on click.
+
+The sidebar registry lives in the **main repo** at `api/permissions.py` (`SIDEBAR_REGISTRY` + `PATH_SIDEBAR_MAP`). Adding a new sidebar item to a brand HTML requires a corresponding entry there. See `terminal6/api/CLAUDE.md` "Sidebar permissions" for the full procedure.
+
+The Users admin page is `users.html` — generic across brands, gated on the `users` sidebar key. Bump `?v=` cache-bust on `/shared.css` and `/shared.js` whenever this contract changes (last bump: `2026-04-29a`).
 
 ### Google OAuth client
 
