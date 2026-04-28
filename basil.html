@@ -226,7 +226,7 @@
 .ag-stream .cursor{display:inline-block;width:7px;height:14px;background:#58a6ff;animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-left:1px}
 @keyframes blink{50%{opacity:0}}
 </style>
-<script>window.T6_BRAND_SLUG = 'basil';</script>
+<script>window.T6_BRAND_SLUG = 'basil'; window.T6_SHOPIFY_DOMAIN = 'yourbasil.com';</script>
 <script src="/shared.js?v=2026-04-15c"></script>
 </head>
 <body>
@@ -2321,7 +2321,7 @@ function _renderLhTable(d){
       <td class="mn2" style="text-align:center">${_stH(r.amz_status, shpMismatch, r.amz_suppressed)}</td>
       <td class="mn2" style="text-align:center">${_ful(r.amz_fulfillment||[])}</td>
       <td class="mn2" style="text-align:left;font-size:11px">${r.shp_variant_id?(()=>{
-        let s = r.shp_handle?`<a href="https://yourbasil.com/products/${r.shp_handle}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:`${r.shp_variant_id}`;
+        let s = r.shp_handle?`<a href="https://${window.T6_SHOPIFY_DOMAIN||'shop.example.com'}/products/${r.shp_handle}" target="_blank" style="color:inherit;text-decoration:underline dotted">${r.shp_variant_id}</a>`:`${r.shp_variant_id}`;
         if(r.shp_variant_title && r.shp_variant_title!=='Default Title' && !/personalisation/i.test(r.shp_variant_title)) s+=`<div style="font-size:10px;color:var(--t3);margin-top:1px">${r.shp_variant_title}</div>`;
         const badges=Object.entries(r.shp_option_values||{}).filter(([n])=>n!=='Title'&&n!=='Personalisation').map(([n,v])=>`<span style="font-size:9px;background:var(--bg-cream);padding:1px 4px;border-radius:3px;margin-right:2px" title="${n}">${v}</span>`).join('');
         if(badges) s+='<div style="margin-top:2px">'+badges+'</div>';
