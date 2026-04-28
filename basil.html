@@ -912,7 +912,16 @@
 
     <!-- Creative performance table -->
     <div class="sec">
-      <div class="sec-h"><h3>All Creatives</h3><span class="note" id="meta-perf-note"></span></div>
+      <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <h3>Top Creatives</h3>
+        <div class="pills meta-days-pills">
+          <button class="a" data-days="7">7d</button>
+          <button data-days="14">14d</button>
+          <button data-days="30">30d</button>
+        </div>
+        <span class="note" id="meta-perf-note"></span>
+      </div>
+      <p class="sub" id="meta-fatigue-def" style="margin-bottom:8px;font-size:11px;color:var(--t3)"></p>
       <div style="overflow-x:auto">
         <table class="tbl" id="meta-perf-tbl">
           <thead><tr>
@@ -4179,6 +4188,7 @@ function agAct(btn, action){
 
 /* ========== META ADS — CREATIVE PERFORMANCE ========== */
 var _metaGran = 'week';
+var _metaDays = 7;
 var _metaLoaded = false;
 
 document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
@@ -4186,6 +4196,14 @@ document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
     _metaGran = b.dataset.gran;
     document.querySelectorAll('.meta-gran-pills button').forEach(function(x){x.classList.toggle('a',x.dataset.gran===_metaGran)});
     _loadMetaTrend();
+  });
+});
+document.querySelectorAll('.meta-days-pills button').forEach(function(b){
+  b.addEventListener('click', function(){
+    _metaDays = parseInt(b.dataset.days);
+    document.querySelectorAll('.meta-days-pills button').forEach(function(x){x.classList.toggle('a',parseInt(x.dataset.days)===_metaDays)});
+    _metaLoaded = false;
+    loadMetaAds();
   });
 });
 
@@ -4217,11 +4235,11 @@ async function _loadMetaTrend() {
 
 async function loadMetaAds(){
   if(_metaLoaded) return;
-  var days=30;
+  var days=_metaDays;
   try{
     var [db, campHealth]=await Promise.all([
-      api('/v1/meta/dashboard?days='+days),
-      api('/v1/meta/campaign-health?days=14'),
+      api('/v1/meta/dashboard?days='+days+'&limit=25'),
+      api('/v1/meta/campaign-health?days='+days),
     ]);
     _loadMetaTrend();
     var p=db.pulse, sc=db.status_counts||{}, acts=db.actions||{}, fun=db.funnel||{};
@@ -4324,7 +4342,8 @@ async function loadMetaAds(){
         '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+d.status+'</span></td></tr>';
     });
     document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="10" style="text-align:center;color:var(--t3);padding:40px">No data yet</td></tr>';
-    document.getElementById('meta-perf-note').textContent=(db.creatives||[]).length+' ads · last '+days+' days';
+    document.getElementById('meta-perf-note').textContent='top '+(db.creatives||[]).length+' of '+db.total_creatives+' by spend · last '+days+' days';
+    document.getElementById('meta-fatigue-def').textContent='Fatigue: '+(db.fatigue_definition||'');
 
     // ── Campaign health ──
     var ch=campHealth;
