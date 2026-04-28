@@ -884,6 +884,16 @@
     <!-- Action cards -->
     <div id="meta-actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px"></div>
 
+    <!-- Daily digest (Haiku) -->
+    <div class="sec" id="meta-digest-sec" style="display:none">
+      <div class="sec-h" style="display:flex;align-items:center;gap:10px">
+        <h3>Daily Digest</h3>
+        <span class="note" id="meta-digest-time"></span>
+        <button onclick="_refreshDigest()" style="border:1px solid var(--c3);background:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--t2)">Refresh</button>
+      </div>
+      <div id="meta-digest-body" style="font-size:13px;line-height:1.7;white-space:pre-wrap"></div>
+    </div>
+
     <!-- Funnel health -->
     <div class="sec" id="meta-funnel-sec">
       <div class="sec-h"><h3>Funnel Health</h3><span class="note">per ₹1K spent vs prior period</span></div>
@@ -4198,6 +4208,25 @@ document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
     _loadMetaTrend();
   });
 });
+async function _loadDigest(){
+  try{
+    var d=await api('/v1/meta/daily-digest');
+    if(d.digest){
+      document.getElementById('meta-digest-sec').style.display='';
+      document.getElementById('meta-digest-body').textContent=d.digest;
+      document.getElementById('meta-digest-time').textContent=d.generated_at?shortD(d.generated_at.slice(0,10))+(d.cached?' (cached)':' (fresh)'):'';
+    }
+  }catch(e){console.log('Digest not available:',e.message);}
+}
+async function _refreshDigest(){
+  document.getElementById('meta-digest-body').textContent='Generating...';
+  try{
+    var d=await api('/v1/meta/daily-digest?regenerate=true');
+    document.getElementById('meta-digest-body').textContent=d.digest||d.error||'No data';
+    document.getElementById('meta-digest-time').textContent='just now';
+  }catch(e){document.getElementById('meta-digest-body').textContent='Error: '+e.message;}
+}
+
 document.querySelectorAll('.meta-days-pills button').forEach(function(b){
   b.addEventListener('click', function(){
     _metaDays = parseInt(b.dataset.days);
@@ -4242,6 +4271,7 @@ async function loadMetaAds(){
       api('/v1/meta/campaign-health?days='+days),
     ]);
     _loadMetaTrend();
+    _loadDigest();
     var p=db.pulse, sc=db.status_counts||{}, acts=db.actions||{}, fun=db.funnel||{};
 
     // ── Pulse KPIs ──
