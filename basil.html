@@ -245,6 +245,8 @@
   <div class="ss">
     <div class="sl">Meta Ads</div>
     <div class="si" onclick="sw('metaads',this)"><div class="ic">&#127912;</div><span>Creative Performance</span></div>
+    <div class="si sb-sub" onclick="swSub('metaads','data',this)"><span>Dashboard</span></div>
+    <div class="si sb-sub" onclick="swSub('metaads','weekly',this)"><span>Weekly Review</span></div>
   </div>
   <div class="ss">
     <div class="sl">Amazon IN</div>
@@ -872,6 +874,9 @@
       <div><h2>Meta Ads</h2><p class="sub">Creative performance, funnel health, action recommendations. Attribution: 7d click + 1d view.</p></div>
     </div>
 
+    <!-- Sub-tab: Dashboard (default) -->
+    <div id="metas-data" class="act">
+
     <!-- Pulse KPIs -->
     <div class="g5" style="margin-bottom:20px">
       <div class="cd"><div class="kl">Spend</div><div class="kv" id="meta-spend">--</div><div class="kd n" id="meta-spend-sub">&nbsp;</div></div>
@@ -912,6 +917,12 @@
     <div class="sec" id="meta-funnel-sec">
       <div class="sec-h"><h3>Funnel Health</h3><span class="note">per ₹1K spent vs prior period</span></div>
       <div id="meta-funnel" style="display:flex;gap:0;align-items:center;justify-content:center;flex-wrap:wrap;padding:16px 0"></div>
+    </div>
+
+    <!-- Audience Segments (New / Engaged / Existing Buyer) -->
+    <div class="sec" id="meta-aud-sec" style="display:none">
+      <div class="sec-h"><h3>Audience Segments</h3><span class="note">from campaign naming: PP/CL = new user acquisition, retarget = existing buyer</span></div>
+      <div id="meta-aud-cards" class="g3" style="margin-bottom:8px"></div>
     </div>
 
     <!-- Trend (transposed) -->
@@ -982,6 +993,55 @@
         </table>
       </div>
     </div>
+
+    <!-- Creative Intelligence (from Claude Vision analysis) -->
+    <div class="sec" id="meta-ci-sec" style="display:none">
+      <div class="sec-h">
+        <h3>Creative Intelligence</h3>
+        <span class="note" id="meta-ci-note"></span>
+      </div>
+      <p class="sub" style="margin-bottom:12px;color:var(--t3)">Creative features correlated with ROAS — from Claude Vision analysis of ad thumbnails + copy.</p>
+      <div id="meta-ci-insights"></div>
+      <div style="margin-top:16px">
+        <div class="sec-h"><h4 style="font-size:13px;font-weight:600;margin:0">Analyzed Ads</h4></div>
+        <div style="overflow-x:auto">
+          <table class="tbl" id="meta-ci-tbl">
+            <thead><tr>
+              <th style="min-width:180px">Ad</th>
+              <th>ROAS</th>
+              <th>Spend</th>
+              <th>Hook Type</th>
+              <th>Person</th>
+              <th>Style</th>
+              <th>Tone</th>
+              <th>Strength</th>
+            </tr></thead>
+            <tbody id="meta-ci-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /metas-data -->
+
+    <!-- Sub-tab: Weekly Review -->
+    <div id="metas-weekly" style="display:none">
+      <div class="sec" id="meta-weekly-sec">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <h3 style="margin:0">Weekly Review</h3>
+          <button class="btn" onclick="_runWeeklyReview()" id="meta-weekly-run-btn" style="font-size:12px;padding:4px 14px">Run Weekly Review</button>
+          <span class="note" id="meta-weekly-note"></span>
+        </div>
+        <div id="meta-weekly-content">
+          <div style="text-align:center;padding:60px 20px;color:var(--t3)">
+            <div style="font-size:32px;margin-bottom:12px">&#128202;</div>
+            <div style="font-size:14px;font-weight:500;margin-bottom:6px">Sonnet-grade weekly analysis</div>
+            <div style="font-size:12px">Click "Run Weekly Review" for creative intelligence, audience analysis, funnel diagnostics, and strategic recommendations.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <div class="vw" id="v-shopify">
@@ -1121,6 +1181,7 @@ const viewTitles={
   shopify:'&#128717; Shopify D2C',
   otherch:'&#128722; Other Channels',
   metaads:'&#127912; Meta Ads &mdash; Creative Performance',
+  'metaads-weekly':'&#127912; Meta Ads &mdash; Weekly Review',
 };
 let currentView='mc';
 function swSub(viewId, subId, el){
@@ -1135,6 +1196,7 @@ function swSub(viewId, subId, el){
   if(viewId==='amzads') adsSub(subId);
   if(viewId==='catalog') catalogSub(subId);
   if(viewId==='kwi') kwiSub(subId);
+  if(viewId==='metaads') metaSub(subId);
 }
 function sw(id,el){
   const target=document.getElementById('v-'+id);
@@ -1158,7 +1220,7 @@ function sw(id,el){
   if(id==='catalog') loadCatalog();
   if(id==='inventory') loadInventory();
   if(id==='pnl') loadPnL();
-  if(id==='metaads') loadMetaAds();
+  if(id==='metaads'){ loadMetaAds(); metaSub(_metaSubCurrent); }
 }
 
 /* ========== MULTI-CHANNEL OVERVIEW ========== */
@@ -4353,6 +4415,288 @@ async function _loadMetaTrend() {
   document.getElementById('meta-trend-tbl').innerHTML='<thead>'+hdr+'</thead><tbody>'+body+'</tbody>';
 }
 
+/* ── Meta sub-tab switching ── */
+var _metaSubCurrent='data';
+function metaSub(id){
+  _metaSubCurrent=id;
+  document.querySelectorAll('#metas-data,#metas-weekly').forEach(function(el){
+    var match=el.id==='metas-'+id;
+    el.style.display=match?'':'none';
+    el.classList.toggle('act',match);
+  });
+  if(id==='weekly') _loadWeeklyReview();
+  var titleKey=id==='weekly'?'metaads-weekly':'metaads';
+  document.getElementById('viewTitle').innerHTML=viewTitles[titleKey]||viewTitles.metaads;
+}
+
+/* ── Creative Intelligence loader ── */
+var _ciLoaded=false;
+async function _loadCreativeIntelligence(){
+  if(_ciLoaded) return;
+  try{
+    var ci=await api('/v1/meta/creative-intelligence');
+    if(!ci||ci.status==='no_data'||!ci.insights||ci.insights.length===0){return;}
+    _ciLoaded=true;
+    document.getElementById('meta-ci-sec').style.display='';
+    document.getElementById('meta-ci-note').textContent=ci.ads_analyzed+' ads analyzed · '+ci.analyzed_at.split('T')[0];
+
+    // Render insight bars
+    var ih='';
+    (ci.insights||[]).forEach(function(ins){
+      var allVals=ins.all_values||[];
+      var maxRoas=Math.max.apply(null,allVals.map(function(v){return v.avg_roas||0}));
+      ih+='<div style="margin-bottom:18px">';
+      ih+='<div style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:6px;text-transform:capitalize">'+ins.dimension.replace(/_/g,' ');
+      if(ins.lift_pct!=null) ih+=' <span style="color:var(--g);font-weight:500;font-size:11px">+'+ins.lift_pct+'% lift</span>';
+      ih+='</div>';
+      allVals.forEach(function(v){
+        var pct=maxRoas>0?Math.round((v.avg_roas||0)/maxRoas*100):0;
+        var clr=(v.avg_roas||0)>=2?'var(--g)':(v.avg_roas||0)>=1?'#3b82f6':'var(--r)';
+        ih+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;font-size:12px">';
+        ih+='<div style="width:120px;text-align:right;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+v.value+'">'+v.value.replace(/_/g,' ')+'</div>';
+        ih+='<div style="flex:1;height:18px;background:var(--c1);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+clr+';border-radius:4px;transition:width .3s"></div></div>';
+        ih+='<div style="width:50px;font-weight:600;color:'+clr+'">'+((v.avg_roas||0).toFixed(1))+'x</div>';
+        ih+='<div style="width:50px;color:var(--t3);font-size:10px">'+v.count+' ads</div>';
+        ih+='</div>';
+      });
+      ih+='</div>';
+    });
+    document.getElementById('meta-ci-insights').innerHTML=ih;
+
+    // Render analyzed ads table
+    var tb='';
+    (ci.ads||[]).forEach(function(a){
+      var nm=(a.ad_name||'').length>35?a.ad_name.slice(0,35)+'...':a.ad_name||'--';
+      var rc=a.roas>=2?'var(--g)':a.roas>=1?'inherit':'var(--r)';
+      tb+='<tr>';
+      tb+='<td><div style="font-weight:500;font-size:12px" title="'+(a.ad_name||'')+'">'+nm+'</div><div style="font-size:10px;color:var(--t3)">'+(a.campaign||'').slice(0,30)+'</div></td>';
+      tb+='<td style="font-weight:600;color:'+rc+'">'+(a.roas!=null?a.roas.toFixed(1)+'x':'--')+'</td>';
+      tb+='<td>'+cur(a.spend||0)+'</td>';
+      tb+='<td><span style="padding:2px 6px;border-radius:8px;font-size:10px;background:var(--c1)">'+(a.hook_type||'--').replace(/_/g,' ')+'</span></td>';
+      tb+='<td>'+(a.person_type||'--').replace(/_/g,' ')+'</td>';
+      tb+='<td>'+(a.format_style||'--').replace(/_/g,' ')+'</td>';
+      tb+='<td>'+(a.emotional_tone||'--').replace(/_/g,' ')+'</td>';
+      tb+='<td style="font-size:11px;max-width:200px">'+(a.key_strength||'--')+'</td>';
+      tb+='</tr>';
+    });
+    document.getElementById('meta-ci-body').innerHTML=tb||'<tr><td colspan="8" style="color:var(--t3)">No analyzed ads</td></tr>';
+  }catch(e){
+    console.warn('Creative intelligence:',e);
+  }
+}
+
+/* ── Weekly Review (streaming agent) ── */
+var _weeklyLoaded=false;
+async function _loadWeeklyReview(){
+  if(_weeklyLoaded) return;
+  try{
+    var cached=await api('/v1/agents/meta_weekly');
+    if(cached&&cached.output&&!cached.status){
+      _weeklyLoaded=true;
+      _renderWeeklyReview(cached.output,cached.generated_at,cached.model_used);
+    }
+  }catch(e){console.warn('Weekly review cache:',e);}
+}
+
+function _runWeeklyReview(){
+  var btn=document.getElementById('meta-weekly-run-btn');
+  btn.disabled=true;btn.textContent='Running...';
+  var cont=document.getElementById('meta-weekly-content');
+  cont.innerHTML='<div class="ag-trace streaming"><div class="st-status" id="meta-weekly-status">Connecting...</div><div class="steps" id="meta-weekly-steps"></div></div>';
+  var full='';
+  var t=T6.token?T6.token():(sessionStorage.getItem('t6_token')||'');
+  var headers={'Authorization':'Bearer '+t};
+  if(window.T6_BRAND_SLUG) headers['X-Brand']=window.T6_BRAND_SLUG;
+  var API_BASE=(location.hostname.includes('.terminal6.io')&&location.hostname!=='terminal6.io'&&location.hostname!=='www.terminal6.io')?'':'https://api.terminal6.io';
+
+  fetch(API_BASE+'/v1/agents/meta_weekly/stream',{headers:headers})
+    .then(function(response){
+      if(!response.ok) throw new Error('API '+response.status);
+      var reader=response.body.getReader();
+      var decoder=new TextDecoder();
+      var buffer='';
+      var stepCount=0;
+      var statusEl=document.getElementById('meta-weekly-status');
+      var stepsEl=document.getElementById('meta-weekly-steps');
+
+      function processChunk(chunk){
+        buffer+=chunk;
+        var lines=buffer.split('\n');
+        buffer=lines.pop()||'';
+        var eventType='';
+        for(var i=0;i<lines.length;i++){
+          var line=lines[i];
+          if(line.startsWith('event: ')){eventType=line.slice(7).trim();continue;}
+          if(line.startsWith('data: ')){
+            var data=line.slice(6);
+            if(eventType==='status'){
+              statusEl.textContent=data;
+              stepCount++;
+              stepsEl.innerHTML+='<div class="step" style="animation:fadeIn .3s"><span class="step-num">'+stepCount+'</span><span class="step-text">'+data+'</span></div>';
+            }else if(eventType==='token'){
+              full+=data.replace(/\\n/g,'\n');
+              if(full.length>200&&stepCount<1) statusEl.textContent='Reasoning through the data...';
+            }else if(eventType==='done'){
+              btn.disabled=false;btn.textContent='Run Weekly Review';
+              try{
+                var result=JSON.parse(data);
+                _weeklyLoaded=true;
+                _renderWeeklyReview(result.output,new Date().toISOString(),'sonnet-4');
+                var cost=result.cost_usd?(' \u00B7 $'+result.cost_usd.toFixed(3)):'';
+                document.getElementById('meta-weekly-note').textContent='Generated just now'+cost;
+              }catch(ex){
+                cont.innerHTML='<div style="white-space:pre-wrap;font-family:monospace;font-size:12px;padding:16px;background:var(--c1);border-radius:8px;max-height:600px;overflow-y:auto">'+full+'</div>';
+              }
+              return;
+            }else if(eventType==='error'){
+              btn.disabled=false;btn.textContent='Run Weekly Review';
+              cont.innerHTML='<div style="color:var(--r);padding:20px">Error: '+data+'</div>';
+              return;
+            }
+            eventType='';
+          }
+        }
+      }
+      function read(){
+        reader.read().then(function(result){
+          if(result.done) return;
+          processChunk(decoder.decode(result.value,{stream:true}));
+          read();
+        });
+      }
+      read();
+    }).catch(function(e){
+      btn.disabled=false;btn.textContent='Run Weekly Review';
+      cont.innerHTML='<div style="color:var(--r);padding:20px">Failed to connect: '+e.message+'</div>';
+    });
+}
+
+function _renderWeeklyReview(o,genAt,model){
+  if(!o) return;
+  var h='';
+
+  // Executive summary
+  if(o.executive_summary){
+    h+='<div style="background:var(--c1);border-radius:10px;padding:16px 20px;margin-bottom:18px;border-left:4px solid #3b82f6">';
+    h+='<div style="font-size:11px;font-weight:600;color:var(--t3);margin-bottom:6px">EXECUTIVE SUMMARY</div>';
+    h+='<div style="font-size:14px;line-height:1.7;color:var(--t1)">'+o.executive_summary+'</div>';
+    h+='</div>';
+  }
+
+  // Performance trend
+  if(o.performance_trend){
+    var pt=o.performance_trend;
+    h+='<div class="sec" style="margin-bottom:18px"><div class="sec-h"><h4 style="margin:0;font-size:13px">Performance Trend</h4></div>';
+    h+='<div class="g3" style="margin-bottom:8px">';
+    ['this_week','last_week','four_week_avg'].forEach(function(k){
+      var d=pt[k];if(!d) return;
+      var label=k.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase()});
+      h+='<div class="cd"><div class="kl">'+label+'</div>';
+      h+='<div style="font-size:12px">Spend: '+cur(d.spend||0)+' · ROAS: '+(d.roas!=null?d.roas.toFixed(2)+'x':'--')+' · Orders: '+fmt(d.orders||0)+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+    if(pt.assessment) h+='<div style="font-size:12px;color:var(--t2);padding:8px 12px;background:var(--c1);border-radius:6px">'+pt.assessment+'</div>';
+    h+='</div>';
+  }
+
+  // Creative Intelligence
+  if(o.creative_intelligence){
+    var ci=o.creative_intelligence;
+    h+='<div class="sec" style="margin-bottom:18px"><div class="sec-h"><h4 style="margin:0;font-size:13px">Creative Intelligence</h4></div>';
+    (ci.feature_correlations||[]).forEach(function(fc){
+      h+='<div style="background:var(--c1);border-radius:8px;padding:12px 16px;margin-bottom:8px">';
+      h+='<div style="font-size:13px;font-weight:500">'+fc.finding+'</div>';
+      if(fc.evidence) h+='<div style="font-size:11px;color:var(--t3);margin-top:4px">'+fc.evidence+'</div>';
+      if(fc.recommendation) h+='<div style="font-size:12px;color:#3b82f6;margin-top:4px;font-weight:500">\u2192 '+fc.recommendation+'</div>';
+      h+='</div>';
+    });
+    if(ci.creative_brief_for_next_week){
+      h+='<div style="background:#eff6ff;border-radius:8px;padding:12px 16px;margin-top:10px;border:1px solid #bfdbfe">';
+      h+='<div style="font-size:11px;font-weight:600;color:#1d4ed8;margin-bottom:4px">CREATIVE BRIEF FOR NEXT WEEK</div>';
+      h+='<div style="font-size:13px;line-height:1.6">'+ci.creative_brief_for_next_week+'</div>';
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+
+  // Funnel Diagnostics
+  if(o.funnel_diagnostics){
+    var fd=o.funnel_diagnostics;
+    h+='<div class="sec" style="margin-bottom:18px"><div class="sec-h"><h4 style="margin:0;font-size:13px">Funnel Diagnostics</h4></div>';
+    if(fd.biggest_leak) h+='<div style="font-size:13px;font-weight:500;color:var(--r);margin-bottom:6px">Biggest leak: '+fd.biggest_leak+'</div>';
+    if(fd.diagnosis) h+='<div style="font-size:12px;color:var(--t2);margin-bottom:4px">'+fd.diagnosis+'</div>';
+    if(fd.recommendation) h+='<div style="font-size:12px;color:#3b82f6;font-weight:500">\u2192 '+fd.recommendation+'</div>';
+    h+='</div>';
+  }
+
+  // Creative Health
+  if(o.creative_health){
+    var ch=o.creative_health;
+    h+='<div class="sec" style="margin-bottom:18px"><div class="sec-h"><h4 style="margin:0;font-size:13px">Creative Health</h4></div>';
+    h+='<div class="g4" style="margin-bottom:10px">';
+    h+='<div class="cd"><div class="kl">Winners</div><div class="kv" style="color:var(--g)">'+(ch.winners_active||0)+'</div></div>';
+    h+='<div class="cd"><div class="kl">Needed</div><div class="kv">'+(ch.winners_needed||15)+'</div></div>';
+    h+='<div class="cd"><div class="kl">Pipeline Gap</div><div class="kv" style="color:'+(ch.pipeline_gap>5?'var(--r)':'var(--y)')+'">'+(ch.pipeline_gap||0)+'</div></div>';
+    h+='<div class="cd"><div class="kl">Win Rate</div><div class="kv" style="font-size:13px">'+(ch.win_rate||'--')+'</div></div>';
+    h+='</div>';
+    var acts=ch.actions||{};
+    ['scale','pause','fatiguing','recycle'].forEach(function(bk){
+      var items=acts[bk]||[];
+      if(items.length===0) return;
+      var bkColors={scale:'var(--g)',pause:'var(--r)',fatiguing:'#f97316',recycle:'#8b5cf6'};
+      h+='<div style="margin-bottom:8px"><div style="font-size:11px;font-weight:600;color:'+(bkColors[bk]||'var(--t3)')+';text-transform:uppercase;margin-bottom:4px">'+bk+' ('+items.length+')</div>';
+      items.forEach(function(it){
+        h+='<div style="font-size:12px;padding:4px 0;border-bottom:1px solid var(--c2)"><strong>'+it.ad_name+'</strong>'+(it.reason?' — '+it.reason:'')+'</div>';
+      });
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  // Strategic Recommendations
+  if(o.strategic_recommendations&&o.strategic_recommendations.length>0){
+    h+='<div class="sec" style="margin-bottom:18px"><div class="sec-h"><h4 style="margin:0;font-size:13px">Strategic Recommendations</h4></div>';
+    o.strategic_recommendations.forEach(function(r,i){
+      h+='<div style="background:var(--c1);border-radius:8px;padding:12px 16px;margin-bottom:8px;border-left:4px solid '+(i===0?'#3b82f6':'var(--c2)')+'">';
+      h+='<div style="font-size:13px;font-weight:600">#'+(r.priority||i+1)+' '+r.recommendation+'</div>';
+      if(r.rationale) h+='<div style="font-size:12px;color:var(--t2);margin-top:4px">'+r.rationale+'</div>';
+      if(r.impact) h+='<div style="font-size:11px;color:var(--g);margin-top:4px;font-weight:500">Impact: '+r.impact+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  // Competitor Watch
+  if(o.competitor_watch&&o.competitor_watch.length>0){
+    h+='<div class="sec" style="margin-bottom:18px"><div class="sec-h"><h4 style="margin:0;font-size:13px">Competitor Watch</h4></div>';
+    o.competitor_watch.forEach(function(cw){
+      h+='<div style="background:var(--c1);border-radius:8px;padding:12px 16px;margin-bottom:8px">';
+      h+='<div style="font-size:13px;font-weight:600;color:var(--t1)">'+cw.brand+'</div>';
+      if(cw.observation) h+='<div style="font-size:12px;color:var(--t2);margin-top:4px">'+cw.observation+'</div>';
+      if(cw.pattern) h+='<div style="font-size:11px;color:var(--t3);margin-top:2px">Pattern: '+cw.pattern+'</div>';
+      if(cw.implication) h+='<div style="font-size:12px;color:#3b82f6;margin-top:4px;font-weight:500">\u2192 '+cw.implication+'</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  // Cross-channel + Audience — compact
+  if(o.cross_channel_impact&&o.cross_channel_impact.correlation){
+    h+='<div style="background:var(--c1);border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:12px">';
+    h+='<strong>Cross-channel:</strong> '+o.cross_channel_impact.correlation;
+    if(o.cross_channel_impact.recommendation) h+=' <span style="color:#3b82f6">\u2192 '+o.cross_channel_impact.recommendation+'</span>';
+    h+='</div>';
+  }
+
+  if(genAt){
+    h+='<div style="font-size:11px;color:var(--t3);margin-top:12px">Generated: '+genAt.split('T')[0]+' · Model: '+(model||'sonnet')+'</div>';
+  }
+
+  document.getElementById('meta-weekly-content').innerHTML=h||'<div style="color:var(--t3);padding:20px">No weekly review data yet.</div>';
+  if(genAt) document.getElementById('meta-weekly-note').textContent='Last run: '+genAt.split('T')[0];
+}
+
 async function loadMetaAds(){
   if(_metaLoaded) return;
   var days=_metaDays;
@@ -4363,6 +4707,7 @@ async function loadMetaAds(){
     ]);
     _loadMetaTrend();
     _loadDigest();
+    _loadCreativeIntelligence();
     var p=db.pulse, sc=db.status_counts||{}, acts=db.actions||{}, fun=db.funnel||{};
 
     // ── Pulse KPIs ──
@@ -4376,6 +4721,7 @@ async function loadMetaAds(){
     document.getElementById('meta-adcount').textContent=p.active_ads||'--';
     var scH='';
     if(sc.Winner)scH+='<span style="color:var(--g)">'+sc.Winner+' winners</span>';
+    if(sc.Potential)scH+=(scH?' · ':'')+'<span style="color:#8b5cf6">'+sc.Potential+' potential</span>';
     if(sc.Fatiguing)scH+=(scH?' · ':'')+'<span style="color:#f97316">'+sc.Fatiguing+' fatiguing</span>';
     if(sc.Loser)scH+=(scH?' · ':'')+'<span style="color:var(--r)">'+sc.Loser+' losers</span>';
     document.getElementById('meta-adcount-sub').innerHTML=scH||'&nbsp;';
@@ -4401,6 +4747,27 @@ async function loadMetaAds(){
     });
     document.getElementById('meta-funnel').innerHTML=funHtml;
 
+    // ── Audience segments ──
+    var audSegs=db.audience_segments||{};
+    var audLabels={new_user:{label:'New Users',icon:'&#128100;',color:'#3b82f6',desc:'Prospecting / PP-CL excluded'},engaged:{label:'Engaged',icon:'&#128101;',color:'#8b5cf6',desc:'ASC / mixed audiences'},existing_buyer:{label:'Existing Buyers',icon:'&#128176;',color:'#14b8a6',desc:'Retargeting / warm audiences'}};
+    var audH='',hasAud=false;
+    ['new_user','engaged','existing_buyer'].forEach(function(k){
+      var s=audSegs[k];if(!s||s.spend===0) return;
+      hasAud=true;
+      var al=audLabels[k];
+      var rc=s.roas>=2.5?'var(--g)':s.roas>=1.5?'inherit':'var(--r)';
+      audH+='<div class="cd" style="border-left:4px solid '+al.color+'">';
+      audH+='<div style="font-size:11px;color:var(--t3)">'+al.icon+' '+al.label+'</div>';
+      audH+='<div style="font-size:18px;font-weight:600;color:'+rc+'">'+(s.roas!=null?s.roas.toFixed(2)+'x':'--')+'</div>';
+      audH+='<div style="font-size:11px;color:var(--t2)">'+cur(s.spend)+' ('+s.spend_share_pct+'%) · '+(s.orders||0)+' orders · CPA '+(s.cpa!=null?cur(s.cpa):'--')+'</div>';
+      audH+='<div style="font-size:10px;color:var(--t3);margin-top:2px">'+s.campaigns+' campaigns · '+al.desc+'</div>';
+      audH+='</div>';
+    });
+    if(hasAud){
+      document.getElementById('meta-aud-sec').style.display='';
+      document.getElementById('meta-aud-cards').innerHTML=audH;
+    }
+
     // ── Format mix ──
     var fmtColors={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
     var barH='',cardsH='';
@@ -4413,7 +4780,7 @@ async function loadMetaAds(){
     document.getElementById('meta-fmt-cards').innerHTML=cardsH;
 
     // ── Creative table ──
-    var statusColors={Winner:'var(--g)',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Active:'var(--t3)'};
+    var statusColors={Winner:'var(--g)',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
     var fmtP={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
     var tR='';
     (db.creatives||[]).forEach(function(d){
