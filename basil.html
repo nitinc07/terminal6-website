@@ -1098,12 +1098,20 @@
     <!-- Sub-tab: Demographics & Placements -->
     <div id="metas-demo" style="display:none">
       <div class="sec">
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+        <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <h3 style="margin:0">Demographics &amp; Placements</h3>
-          <div id="demo-days-pills" style="display:flex;gap:2px">
-            <button data-days="7" onclick="_setDemoDays(7)" style="font-size:11px;padding:2px 10px;border:1px solid var(--c3);border-radius:4px;background:none;cursor:pointer;color:var(--t2)">7d</button>
-            <button data-days="30" onclick="_setDemoDays(30)" style="font-size:11px;padding:2px 10px;border:1px solid var(--c3);border-radius:4px;background:var(--acc);color:#fff;cursor:pointer">30d</button>
-            <button data-days="90" onclick="_setDemoDays(90)" style="font-size:11px;padding:2px 10px;border:1px solid var(--c3);border-radius:4px;background:none;cursor:pointer;color:var(--t2)">90d</button>
+          <div class="pills" id="demo-days-pills">
+            <button data-days="7" onclick="_setDemoDays(7)">7d</button>
+            <button data-days="14" onclick="_setDemoDays(14)">14d</button>
+            <button class="a" data-days="30" onclick="_setDemoDays(30)">30d</button>
+            <button data-days="60" onclick="_setDemoDays(60)">60d</button>
+            <button data-days="90" onclick="_setDemoDays(90)">90d</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="date" id="demo-date-from" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--sans);color:var(--t2)">
+            <span style="font-size:11px;color:var(--t3)">to</span>
+            <input type="date" id="demo-date-to" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:5px;font-family:var(--sans);color:var(--t2)">
+            <button onclick="_setDemoCustom()" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:5px;background:var(--bg-white);cursor:pointer;font-family:var(--sans);color:var(--t2)">Apply</button>
           </div>
           <span class="note" id="meta-demo-note"></span>
         </div>
@@ -5034,28 +5042,42 @@ async function _loadHourlyTracker(){
 }
 
 /* ── Demographics & Placements loader ── */
-var _demoDays=30, _demoLoaded=0;
+var _demoDays=30, _demoLoaded=0, _demoCustom=null;
 function _setDemoDays(d){
-  _demoDays=d; _demoLoaded=0;
+  _demoDays=d; _demoLoaded=0; _demoCustom=null;
   document.querySelectorAll('#demo-days-pills button').forEach(function(b){
-    var a=parseInt(b.dataset.days)===d;
-    b.style.background=a?'var(--acc)':'none';
-    b.style.color=a?'#fff':'var(--t2)';
+    b.classList.toggle('a',parseInt(b.dataset.days)===d);
   });
+  document.getElementById('demo-date-from').value='';
+  document.getElementById('demo-date-to').value='';
+  _loadDemoPlacement();
+}
+function _setDemoCustom(){
+  var from=document.getElementById('demo-date-from').value;
+  var to=document.getElementById('demo-date-to').value;
+  if(!from||!to){return;}
+  // Calculate days between dates
+  var d1=new Date(from), d2=new Date(to);
+  var diff=Math.ceil((d2-d1)/(1000*60*60*24));
+  if(diff<1||diff>365){alert('Pick a range between 1 and 365 days');return;}
+  _demoDays=diff; _demoLoaded=0; _demoCustom={from:from,to:to};
+  // Deselect preset pills
+  document.querySelectorAll('#demo-days-pills button').forEach(function(b){b.classList.remove('a');});
   _loadDemoPlacement();
 }
 function _roasClr(v){return v>=2?'var(--g)':v>=1?'#3b82f6':'var(--r)';}
 function _spendBar(v,mx){var p=mx>0?Math.round(v/mx*100):0;return '<div style="width:60px;height:6px;background:var(--c1);border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px"><div style="width:'+p+'%;height:100%;background:var(--acc);border-radius:3px"></div></div>';}
 
 async function _loadDemoPlacement(){
-  if(_demoLoaded===_demoDays) return;
+  if(_demoLoaded===_demoDays && !_demoCustom) return;
   try{
     var [demo, place]=await Promise.all([
       api('/v1/meta/demographics?days='+_demoDays),
       api('/v1/meta/placements?days='+_demoDays),
     ]);
     _demoLoaded=_demoDays;
-    document.getElementById('meta-demo-note').textContent=_demoDays+'d window';
+    var noteText=_demoCustom?(_demoCustom.from+' to '+_demoCustom.to):(_demoDays+'d window');
+    document.getElementById('meta-demo-note').textContent=noteText;
 
     // ── Age × Gender heatmap ──
     if(demo.heatmap && demo.heatmap.length){
