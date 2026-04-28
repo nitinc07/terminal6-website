@@ -881,18 +881,18 @@
       <div class="cd"><div class="kl">Creatives</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
     </div>
 
-    <!-- Action cards -->
-    <div id="meta-actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px"></div>
-
-    <!-- Daily digest (Haiku) -->
+    <!-- Daily digest (Haiku) — primary intelligence layer -->
     <div class="sec" id="meta-digest-sec" style="display:none">
       <div class="sec-h" style="display:flex;align-items:center;gap:10px">
         <h3>Daily Digest</h3>
         <span class="note" id="meta-digest-time"></span>
         <button onclick="_refreshDigest()" style="border:1px solid var(--c3);background:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--t2)">Refresh</button>
       </div>
-      <div id="meta-digest-body" style="font-size:13px;line-height:1.7;white-space:pre-wrap"></div>
+      <div id="meta-digest-body" style="font-size:13px;line-height:1.7"></div>
     </div>
+
+    <!-- Action cards (rule-based, ACTIVE ads only) -->
+    <div id="meta-actions" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px"></div>
 
     <!-- Funnel health -->
     <div class="sec" id="meta-funnel-sec">
@@ -945,8 +945,9 @@
             <th>Share</th>
             <th>Orders</th>
             <th>Status</th>
+            <th>Live</th>
           </tr></thead>
-          <tbody id="meta-perf-body"><tr><td colspan="10" class="loading">Loading...</td></tr></tbody>
+          <tbody id="meta-perf-body"><tr><td colspan="11" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -4208,23 +4209,30 @@ document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
     _loadMetaTrend();
   });
 });
+function _fmtDigest(raw){
+  // Convert markdown bold + bullets to HTML
+  return (raw||'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^[-•] /gm,'<span style="color:var(--tm);margin-right:4px">&#8226;</span>')
+    .replace(/\n\n/g,'</p><p style="margin:8px 0">')
+    .replace(/\n/g,'<br>');
+}
 async function _loadDigest(){
   try{
     var d=await api('/v1/meta/daily-digest');
     if(d.digest){
       document.getElementById('meta-digest-sec').style.display='';
-      document.getElementById('meta-digest-body').textContent=d.digest;
+      document.getElementById('meta-digest-body').innerHTML=_fmtDigest(d.digest);
       document.getElementById('meta-digest-time').textContent=d.generated_at?shortD(d.generated_at.slice(0,10))+(d.cached?' (cached)':' (fresh)'):'';
     }
   }catch(e){console.log('Digest not available:',e.message);}
 }
 async function _refreshDigest(){
-  document.getElementById('meta-digest-body').textContent='Generating...';
+  document.getElementById('meta-digest-body').innerHTML='<span style="color:var(--t3)">Generating (~10s)...</span>';
   try{
     var d=await api('/v1/meta/daily-digest?regenerate=true');
-    document.getElementById('meta-digest-body').textContent=d.digest||d.error||'No data';
+    document.getElementById('meta-digest-body').innerHTML=_fmtDigest(d.digest||d.error||'No data');
     document.getElementById('meta-digest-time').textContent='just now';
-  }catch(e){document.getElementById('meta-digest-body').textContent='Error: '+e.message;}
+  }catch(e){document.getElementById('meta-digest-body').innerHTML='<span style="color:var(--r)">Error: '+e.message+'</span>';}
 }
 
 document.querySelectorAll('.meta-days-pills button').forEach(function(b){
@@ -4369,9 +4377,10 @@ async function loadMetaAds(){
         '<td>'+cur(d.spend)+'</td>'+
         '<td>'+(d.spend_share_pct||0).toFixed(1)+'%</td>'+
         '<td>'+fmt(d.attributed_orders)+'</td>'+
-        '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+d.status+'</span></td></tr>';
+        '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+d.status+'</span></td>'+
+        '<td><span style="font-size:10.5px;color:'+(d.effective_status==='ACTIVE'?'var(--g)':'var(--t3)')+'">'+(d.effective_status||'--')+'</span></td></tr>';
     });
-    document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="10" style="text-align:center;color:var(--t3);padding:40px">No data yet</td></tr>';
+    document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:40px">No data yet</td></tr>';
     document.getElementById('meta-perf-note').textContent='top '+(db.creatives||[]).length+' of '+db.total_creatives+' by spend · last '+days+' days';
     document.getElementById('meta-fatigue-def').textContent='Fatigue: '+(db.fatigue_definition||'');
 
