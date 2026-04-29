@@ -225,6 +225,7 @@
 .ag-stream .token{color:#c9d1d9}
 .ag-stream .cursor{display:inline-block;width:7px;height:14px;background:#58a6ff;animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-left:1px}
 @keyframes blink{50%{opacity:0}}
+@keyframes blink-live{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(22,163,106,.4)}50%{opacity:.5;box-shadow:0 0 0 4px rgba(22,163,106,0)}}
 </style>
 <script>window.T6_BRAND_SLUG = 'basil'; window.T6_SHOPIFY_DOMAIN = 'yourbasil.com';</script>
 <script src="/shared.js?v=2026-04-29b"></script>
@@ -249,7 +250,7 @@
     <div class="si sb-sub" onclick="swSub('metaads','campaigns',this)"><span>Campaigns</span></div>
     <div class="si sb-sub" onclick="swSub('metaads','demo',this)"><span>Audiences</span></div>
     <!-- <div class="si sb-sub" onclick="swSub('metaads','weekly',this)"><span>Weekly Review</span></div> -->
-    <div class="si sb-sub" onclick="swSub('metaads','hourly',this)"><span>Hourly Tracker</span></div>
+    <div class="si sb-sub" onclick="swSub('metaads','hourly',this)"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#16a34a;animation:blink-live 1.5s ease-in-out infinite"></span>Live Performance</span></div>
     <div class="si sb-sub" onclick="swSub('metaads','strategic',this)"><span>Strategic Analysis</span></div>
   </div>
   <div class="ss">
@@ -1059,11 +1060,11 @@
       </div>
     </div>
 
-    <!-- Sub-tab: Hourly Tracker -->
+    <!-- Sub-tab: Live Performance -->
     <div id="metas-hourly" style="display:none">
       <div class="sec">
         <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
-          <h3 style="margin:0">Hourly Spend &amp; ROAS Tracker</h3>
+          <h3 style="margin:0"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a;animation:blink-live 1.5s ease-in-out infinite;margin-right:6px"></span>Live Performance</h3>
           <span class="note" id="meta-hourly-note"></span>
         </div>
         <!-- Pacing alert -->
@@ -1369,7 +1370,7 @@ const viewTitles={
   metaads:'&#127912; Meta Ads &mdash; Creative Performance',
   'metaads-weekly':'&#127912; Meta Ads &mdash; Weekly Review',
   'metaads-campaigns':'&#127912; Meta Ads &mdash; Campaigns',
-  'metaads-hourly':'&#127912; Meta Ads &mdash; Hourly Tracker',
+  'metaads-hourly':'&#127912; Meta Ads &mdash; Live Performance',
   'metaads-strategic':'&#127912; Meta Ads &mdash; Strategic Analysis',
   'metaads-demo':'&#127912; Meta Ads &mdash; Audiences',
 };
