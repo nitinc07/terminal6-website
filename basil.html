@@ -4414,22 +4414,22 @@ function _renderDigest(d){
   // Audit-style bucket cards
   var b=d.buckets||{};
   var configs=[
-    {key:'scale',sev:'green',icon:'\uD83D\uDE80',title:'Scale',
-     headline:function(items){var total=items.reduce(function(s,c){return s+(c.spend_7d||0)},0);return cur(total)+' in winners';}},
-    {key:'pause',sev:'red',icon:'\uD83D\uDD25',title:'Pause',
+    {key:'winner',sev:'green',icon:'\uD83D\uDE80',title:'Winners',
+     headline:function(items){var total=items.reduce(function(s,c){return s+(c.spend_7d||0)},0);return cur(total)+' spend · launched <7d';}},
+    {key:'proven',sev:'cyan',icon:'\u2705',title:'Proven',
+     headline:function(items){var total=items.reduce(function(s,c){return s+(c.spend_7d||0)},0);return cur(total)+' spend · scaled';}},
+    {key:'loser',sev:'red',icon:'\uD83D\uDD25',title:'Losers',
      headline:function(items){var total=items.reduce(function(s,c){return s+(c.spend_7d||0)},0);return cur(total)+' wasted spend';}},
     {key:'fatiguing',sev:'amber',icon:'\u26A0\uFE0F',title:'Fatiguing',
      headline:function(items){return items.length+' declining';}},
-    {key:'watch',sev:'blue',icon:'\uD83D\uDC41',title:'Watch',
-     headline:function(items){return items.length+' too early to call';}},
   ];
   var html='';
   configs.forEach(function(cfg){
     var raw=b[cfg.key];
     var items=Array.isArray(raw)?raw:(raw&&raw.items?raw.items:[]);
     if(!items.length) return;
-    var sevColors={green:'#16a34a',red:'#dc2626',amber:'#d97706',blue:'#2563eb'};
-    var bgColors={green:'#f0fdf4',red:'#fef2f2',amber:'#fffbeb',blue:'#eff6ff'};
+    var sevColors={green:'#16a34a',cyan:'#0891b2',red:'#dc2626',amber:'#d97706',blue:'#2563eb'};
+    var bgColors={green:'#f0fdf4',cyan:'#ecfeff',red:'#fef2f2',amber:'#fffbeb',blue:'#eff6ff'};
     var co=sevColors[cfg.sev]||'#666';
     var bg=bgColors[cfg.sev]||'var(--c1)';
     html+='<div class="audit-card '+cfg.sev+'" onclick="openMetaDrawer(\''+cfg.key+'\')" style="background:'+bg+';border-left:4px solid '+co+';border-radius:8px;padding:14px 18px;flex:1;min-width:200px;cursor:pointer">';
@@ -4456,8 +4456,8 @@ function openMetaDrawer(bucketKey){
   var b=_metaDigestData.buckets||{};
   var raw=b[bucketKey];
   var items=Array.isArray(raw)?raw:(raw&&raw.items?raw.items:[]);
-  var labels={scale:'Scale — Winners with headroom',pause:'Pause — Bleeding',fatiguing:'Fatiguing — ROAS declining',watch:'Watch — Too early to call'};
-  var sevs={scale:'green',pause:'red',fatiguing:'amber',watch:'blue'};
+  var labels={winner:'Winners — Launched <7d, strong ROAS',proven:'Proven — Scaled performers',loser:'Losers — Below threshold, pause',fatiguing:'Fatiguing — ROAS declining'};
+  var sevs={winner:'green',proven:'cyan',loser:'red',fatiguing:'amber'};
 
   var drawer=document.getElementById('metaDigestDrawer');
   document.getElementById('mdDrawerSev').className='rf-sev '+sevs[bucketKey];
