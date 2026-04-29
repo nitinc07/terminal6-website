@@ -973,7 +973,16 @@
         </div>
         <span class="note" id="meta-perf-note"></span>
       </div>
-      <p class="sub" id="meta-fatigue-def" style="margin-bottom:8px;font-size:11px;color:var(--t3)"></p>
+      <div id="meta-status-filters" class="pills" style="margin-bottom:10px;gap:6px">
+        <button class="a" onclick="_filterMetaStatus('all')">All</button>
+        <button onclick="_filterMetaStatus('Winner')" style="--pill-color:var(--g)">Winners</button>
+        <button onclick="_filterMetaStatus('Proven')" style="--pill-color:#0891b2">Proven</button>
+        <button onclick="_filterMetaStatus('Fatiguing')" style="--pill-color:#f97316">Fatiguing</button>
+        <button onclick="_filterMetaStatus('Loser')" style="--pill-color:var(--r)">Losers</button>
+        <button onclick="_filterMetaStatus('Potential')" style="--pill-color:#8b5cf6">Potential</button>
+        <button onclick="_filterMetaStatus('Testing')" style="--pill-color:var(--y)">Testing</button>
+        <button onclick="_filterMetaStatus('Active')">Active</button>
+      </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="meta-perf-tbl">
           <thead><tr>
@@ -4392,6 +4401,46 @@ function agAct(btn, action){
 var _metaGran = 'week';
 var _metaDays = 7;
 var _metaLoaded = false;
+var _metaStatusFilter = 'all';
+
+function _renderMetaCreatives(list){
+  var statusColors={Winner:'var(--g)',Proven:'#0891b2',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
+  var fmtP={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
+  var tR='';
+  list.forEach(function(d){
+    var thumb=d.thumbnail_url?'<img src="'+d.thumbnail_url+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">'+(d.creative_type==='VIDEO'?'&#9654;':'&#128444;')+'</div>';
+    var nm=(d.ad_name||'').length>40?d.ad_name.slice(0,40)+'...':d.ad_name||'--';
+    var cp=(d.campaign_name||'').length>28?d.campaign_name.slice(0,28)+'...':d.campaign_name||'';
+    var sc2=statusColors[d.status]||'var(--t3)';
+    var fc2=fmtP[d.creative_type]||'#6b7280';
+    var rc='';
+    if(d.roas_change_pct!=null){var ar=d.roas_change_pct>=0?'\u25B2':'\u25BC';rc='<div style="font-size:10px;color:'+(d.roas_change_pct>=0?'var(--g)':'var(--r)')+'">'+ar+' '+Math.abs(d.roas_change_pct).toFixed(0)+'%</div>';}
+    var fw='';
+    if(d.recent_frequency&&d.recent_frequency>3)fw='<span style="color:#f97316;font-size:10px;margin-left:4px">f'+d.recent_frequency.toFixed(1)+'</span>';
+    tR+='<tr><td>'+thumb+'</td>'+
+      '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+'</div></td>'+
+      '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+fc2+'22;color:'+fc2+'">'+d.creative_type+'</span></td>'+
+      '<td><div style="font-weight:600;color:'+(d.roas>=2?'var(--g)':d.roas>=1?'inherit':'var(--r)')+'">'+(d.roas!=null?d.roas.toFixed(1)+'x':'--')+'</div>'+rc+'</td>'+
+      '<td>'+(d.cpa!=null?cur(d.cpa):'--')+'</td>'+
+      '<td>'+(d.ctr!=null?d.ctr.toFixed(1)+'%':'--')+'</td>'+
+      '<td>'+cur(d.spend)+'</td>'+
+      '<td>'+(d.spend_share_pct||0).toFixed(1)+'%</td>'+
+      '<td>'+fmt(d.attributed_orders)+'</td>'+
+      '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+d.status+'</span></td>'+
+      '<td><span style="font-size:10.5px;color:'+(d.effective_status==='ACTIVE'?'var(--g)':'var(--t3)')+'">'+(d.effective_status||'--')+'</span></td></tr>';
+  });
+  document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:40px">No creatives match filter</td></tr>';
+  var note=_metaStatusFilter==='all'?'top '+list.length+' of '+(window._metaTotalCreatives||0)+' by spend':list.length+' '+_metaStatusFilter+' creatives';
+  document.getElementById('meta-perf-note').textContent=note+' · last '+(window._metaDays||7)+' days';
+}
+
+function _filterMetaStatus(status){
+  _metaStatusFilter=status;
+  document.querySelectorAll('#meta-status-filters button').forEach(function(b){b.classList.remove('a')});
+  event.target.classList.add('a');
+  if(status==='all'){_renderMetaCreatives(window._metaCreatives||[]);}
+  else{_renderMetaCreatives((window._metaCreatives||[]).filter(function(d){return d.status===status}));}
+}
 
 document.querySelectorAll('.meta-gran-pills button').forEach(function(b){
   b.addEventListener('click', function(){
@@ -5373,32 +5422,19 @@ async function loadMetaAds(){
     // ── Creative table ──
     var statusColors={Winner:'var(--g)',Proven:'#0891b2',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
     var fmtP={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
-    var tR='';
-    (db.creatives||[]).forEach(function(d){
-      var thumb=d.thumbnail_url?'<img src="'+d.thumbnail_url+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">'+(d.creative_type==='VIDEO'?'&#9654;':'&#128444;')+'</div>';
-      var nm=(d.ad_name||'').length>40?d.ad_name.slice(0,40)+'...':d.ad_name||'--';
-      var cp=(d.campaign_name||'').length>28?d.campaign_name.slice(0,28)+'...':d.campaign_name||'';
-      var sc2=statusColors[d.status]||'var(--t3)';
-      var fc2=fmtP[d.creative_type]||'#6b7280';
-      var rc='';
-      if(d.roas_change_pct!=null){var ar=d.roas_change_pct>=0?'\u25B2':'\u25BC';rc='<div style="font-size:10px;color:'+(d.roas_change_pct>=0?'var(--g)':'var(--r)')+'">'+ar+' '+Math.abs(d.roas_change_pct).toFixed(0)+'%</div>';}
-      var fw='';
-      if(d.recent_frequency&&d.recent_frequency>3)fw='<span style="color:#f97316;font-size:10px;margin-left:4px">f'+d.recent_frequency.toFixed(1)+'</span>';
-      tR+='<tr><td>'+thumb+'</td>'+
-        '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+'</div></td>'+
-        '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+fc2+'22;color:'+fc2+'">'+d.creative_type+'</span></td>'+
-        '<td><div style="font-weight:600;color:'+(d.roas>=2?'var(--g)':d.roas>=1?'inherit':'var(--r)')+'">'+(d.roas!=null?d.roas.toFixed(1)+'x':'--')+'</div>'+rc+'</td>'+
-        '<td>'+(d.cpa!=null?cur(d.cpa):'--')+'</td>'+
-        '<td>'+(d.ctr!=null?d.ctr.toFixed(1)+'%':'--')+'</td>'+
-        '<td>'+cur(d.spend)+'</td>'+
-        '<td>'+(d.spend_share_pct||0).toFixed(1)+'%</td>'+
-        '<td>'+fmt(d.attributed_orders)+'</td>'+
-        '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+d.status+'</span></td>'+
-        '<td><span style="font-size:10.5px;color:'+(d.effective_status==='ACTIVE'?'var(--g)':'var(--t3)')+'">'+(d.effective_status||'--')+'</span></td></tr>';
+    window._metaCreatives=db.creatives||[];
+    window._metaTotalCreatives=db.total_creatives||0;
+    window._metaDays=days;
+    _renderMetaCreatives(window._metaCreatives);
+    // Update filter pill counts
+    var sc=db.status_counts||{};
+    document.querySelectorAll('#meta-status-filters button').forEach(function(btn){
+      var st=btn.getAttribute('onclick').match(/'([^']+)'/);
+      if(!st) return;
+      var key=st[1];
+      if(key==='all'){btn.textContent='All ('+window._metaCreatives.length+')';}
+      else if(sc[key]){btn.textContent=btn.textContent.replace(/\s*\(\d+\)/,'')+' ('+sc[key]+')';}
     });
-    document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:40px">No data yet</td></tr>';
-    document.getElementById('meta-perf-note').textContent='top '+(db.creatives||[]).length+' of '+db.total_creatives+' by spend · last '+days+' days';
-    document.getElementById('meta-fatigue-def').textContent='Fatigue: '+(db.fatigue_definition||'');
 
     // ── Campaign health ──
     var ch=campHealth;
