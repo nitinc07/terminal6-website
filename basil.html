@@ -4675,16 +4675,12 @@ function openCreativeDetail(adId){
         });
         hc+='<path d="'+pathD+'" fill="none" stroke="#6366f1" stroke-width="2"/>';
 
-        // Data points + value labels (show every Nth to avoid crowding)
-        var labelEvery=Math.max(Math.floor(validRoas.length/10),1);
+        // Data points (hover for value via tooltip)
         validRoas.forEach(function(d,i){
           var x=padL+i*stepX;
           var y=padT+chartH-chartH*((d.roas-minR)/range);
           var col=d.roas>=2?'#22c55e':d.roas>=1.5?'#eab308':'#ef4444';
           hc+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="'+col+'" stroke="#fff" stroke-width="1" style="cursor:crosshair"><title>'+d.date+': '+d.roas+'x</title></circle>';
-          if(i%labelEvery===0||i===validRoas.length-1){
-            hc+='<text x="'+x+'" y="'+(y-8)+'" text-anchor="middle" font-size="9" fill="'+col+'" font-weight="600">'+d.roas+'x</text>';
-          }
         });
 
         // X-axis labels (first, middle, last)
