@@ -1081,7 +1081,7 @@
           <div id="meta-hourly-legend" style="display:flex;gap:20px;justify-content:center;margin-top:8px;font-size:12px"></div>
         </div>
         <!-- Hourly breakdown table -->
-        <div class="sec-h"><h4 style="font-size:13px;margin:0">Hourly Breakdown</h4></div>
+        <div class="sec-h" style="display:flex;align-items:center;gap:10px"><h4 style="font-size:13px;margin:0">Hourly Breakdown</h4><span class="note" id="meta-hourly-refreshed"></span></div>
         <div style="overflow-x:auto">
           <table class="tbl" id="meta-hourly-tbl"></table>
         </div>
@@ -4995,6 +4995,8 @@ async function _loadHourlyTracker(){
       tbody+='</tr>';
     }
     document.getElementById('meta-hourly-tbl').innerHTML='<thead>'+hdr+'</thead><tbody>'+tbody+'</tbody>';
+    var now=new Date();
+    document.getElementById('meta-hourly-refreshed').textContent='Last refreshed: '+now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' · data through '+(d.current_hour-1)+':00';
 
     // Top 10 creatives: today (live) vs yesterday (paced to same hour) vs 7d avg (paced)
     var crs=d.top_creatives||[];
