@@ -919,6 +919,15 @@
       <div id="mdDrawerItems"></div>
     </div>
 
+    <!-- Creative detail drawer -->
+    <div id="metaCreativeDrawer" style="display:none;position:fixed;top:0;right:0;width:min(640px,92vw);height:100vh;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.15);z-index:1001;overflow-y:auto;padding:0">
+      <div style="position:sticky;top:0;background:#fff;padding:16px 24px;border-bottom:1px solid var(--c2);display:flex;justify-content:space-between;align-items:center;z-index:1">
+        <h3 id="mcDrawerTitle" style="margin:0;font-size:15px"></h3>
+        <button onclick="document.getElementById('metaCreativeDrawer').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3)">&times;</button>
+      </div>
+      <div id="mcDrawerContent" style="padding:24px"></div>
+    </div>
+
     <!-- Funnel health -->
     <div class="sec" id="meta-funnel-sec">
       <div class="sec-h"><h3>Funnel Health</h3><span class="note">per ₹1K spent vs prior period</span></div>
@@ -4421,7 +4430,7 @@ function _renderMetaCreatives(list){
     if(d.roas_change_pct!=null){var ar=d.roas_change_pct>=0?'\u25B2':'\u25BC';rc='<div style="font-size:10px;color:'+(d.roas_change_pct>=0?'var(--g)':'var(--r)')+'">'+ar+' '+Math.abs(d.roas_change_pct).toFixed(0)+'%</div>';}
     var fw='';
     if(d.recent_frequency&&d.recent_frequency>3)fw='<span style="color:#f97316;font-size:10px;margin-left:4px">f'+d.recent_frequency.toFixed(1)+'</span>';
-    tR+='<tr><td>'+thumb+'</td>'+
+    tR+='<tr style="cursor:pointer" onclick="openCreativeDetail(\''+d.ad_id+'\')"><td>'+thumb+'</td>'+
       '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+'</div></td>'+
       '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+fc2+'22;color:'+fc2+'">'+d.creative_type+'</span></td>'+
       '<td><div style="font-weight:600;color:'+(d.roas>=2?'var(--g)':d.roas>=1?'inherit':'var(--r)')+'">'+(d.roas!=null?d.roas.toFixed(1)+'x':'--')+'</div>'+rc+'</td>'+
@@ -4445,6 +4454,75 @@ function _filterMetaStatus(status){
   var active=_metaActiveOnly(window._metaCreatives||[]);
   if(status==='top'){_renderMetaCreatives(active.slice(0,25));}
   else{_renderMetaCreatives(active.filter(function(d){return d.status===status}));}
+}
+
+function openCreativeDetail(adId){
+  var d=(window._metaCreatives||[]).find(function(c){return c.ad_id===adId});
+  if(!d) return;
+  var statusColors={Winner:'var(--g)',Proven:'#0891b2',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
+  var sc=statusColors[d.status]||'var(--t3)';
+  document.getElementById('mcDrawerTitle').textContent=(d.ad_name||'--');
+
+  var h='';
+  // Creative preview
+  h+='<div style="display:flex;gap:20px;margin-bottom:24px;flex-wrap:wrap">';
+  h+='<div style="flex:0 0 auto">';
+  if(d.thumbnail_url){
+    h+='<img src="'+d.thumbnail_url+'" style="max-width:280px;max-height:280px;border-radius:8px;object-fit:contain;background:var(--c1)" onerror="this.outerHTML=\'<div style=padding:40px;background:var(--c1);border-radius:8px;color:var(--t3);text-align:center>Image unavailable</div>\'">';
+  } else {
+    h+='<div style="width:200px;height:200px;background:var(--c1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--t3)">'+(d.creative_type==='VIDEO'?'&#9654;':'&#128444;')+'</div>';
+  }
+  h+='</div>';
+
+  // Right side — status + ad copy
+  h+='<div style="flex:1;min-width:200px">';
+  h+='<div style="margin-bottom:12px"><span style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;background:'+sc+'22;color:'+sc+'">'+d.status+'</span>';
+  h+=' <span style="font-size:11px;color:var(--t3);margin-left:8px">'+d.creative_type+' · '+(d.effective_status||'--')+'</span></div>';
+  if(d.body){
+    var fullBody=d.body.endsWith('...')?(d.body):d.body;
+    h+='<div style="font-size:12.5px;line-height:1.5;color:var(--t2);margin-bottom:10px;white-space:pre-wrap">'+fullBody+'</div>';
+  }
+  h+='<div style="font-size:11px;color:var(--t3)">Campaign: '+(d.campaign_name||'--')+'</div>';
+  h+='<div style="font-size:11px;color:var(--t3)">First seen: '+d.first_seen+' · Last seen: '+d.last_seen+' · Age: '+d.days_active+'d</div>';
+  h+='</div></div>';
+
+  // KPI grid
+  var acctRoas=window._metaAccountRoas||2.0;
+  h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px">';
+  var kpis=[
+    {label:'ROAS',value:d.roas!=null?d.roas.toFixed(2)+'x':'--',color:d.roas>=acctRoas*1.5?'var(--g)':d.roas>=acctRoas?'inherit':'var(--r)'},
+    {label:'Spend',value:cur(d.spend)},
+    {label:'Orders',value:fmt(d.attributed_orders)},
+    {label:'CPA',value:d.cpa!=null?cur(d.cpa):'--'},
+    {label:'CTR',value:d.ctr!=null?d.ctr.toFixed(2)+'%':'--'},
+    {label:'Impressions',value:fmt(d.impressions)},
+    {label:'Clicks',value:fmt(d.clicks)},
+    {label:'Spend Share',value:(d.spend_share_pct||0).toFixed(1)+'%'},
+  ];
+  kpis.forEach(function(k){
+    h+='<div style="background:var(--c1);border-radius:8px;padding:10px 14px">';
+    h+='<div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px">'+k.label+'</div>';
+    h+='<div style="font-size:18px;font-weight:600;margin-top:2px'+(k.color?';color:'+k.color:'')+'">'+k.value+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+
+  // Fatigue signals
+  if(d.recent_frequency||d.roas_change_pct!=null){
+    h+='<div style="background:#fffbeb;border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+    h+='<div style="font-size:11px;font-weight:600;color:#d97706;text-transform:uppercase;letter-spacing:.3px;margin-bottom:6px">Fatigue Signals</div>';
+    if(d.recent_frequency) h+='<div style="font-size:13px">Frequency: <strong>'+d.recent_frequency.toFixed(1)+'</strong>'+(d.recent_frequency>3?' <span style="color:#f97316">&#9888; saturated</span>':d.recent_frequency>2?' <span style="color:var(--y)">watching</span>':' <span style="color:var(--g)">fresh</span>')+'</div>';
+    if(d.roas_change_pct!=null) h+='<div style="font-size:13px">ROAS trend: <strong style="color:'+(d.roas_change_pct>=0?'var(--g)':'var(--r)')+'">'+(d.roas_change_pct>=0?'+':'')+d.roas_change_pct.toFixed(0)+'%</strong> (recent half vs prior half)</div>';
+    h+='</div>';
+  }
+
+  // Quality
+  if(d.quality_ranking){
+    h+='<div style="font-size:12px;color:var(--t2);margin-bottom:16px">Quality Ranking: <strong>'+d.quality_ranking+'</strong></div>';
+  }
+
+  document.getElementById('mcDrawerContent').innerHTML=h;
+  document.getElementById('metaCreativeDrawer').style.display='';
 }
 
 function _updateMetaFilterCounts(){
@@ -5442,6 +5520,7 @@ async function loadMetaAds(){
     var fmtP={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
     window._metaCreatives=db.creatives||[];
     window._metaTotalCreatives=db.total_creatives||0;
+    window._metaAccountRoas=db.account_roas||2.0;
     window._metaDays=days;
     _metaStatusFilter='top';
     document.querySelectorAll('#meta-status-filters button').forEach(function(b){b.classList.remove('a')});
