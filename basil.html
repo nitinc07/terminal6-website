@@ -4544,7 +4544,7 @@ function _loadMetaVideo(adId){
   if(btn) btn.innerHTML='<span style="color:#fff;font-size:12px">Loading...</span>';
   T6.get('/v1/meta/video-url?ad_id='+adId).then(function(r){
     if(r.error){
-      if(btn) btn.innerHTML='<span style="color:#fff;font-size:10px;text-align:center;padding:4px">'+r.error+'</span>';
+      if(btn){btn.style.width='auto';btn.style.height='auto';btn.style.borderRadius='8px';btn.style.padding='8px 14px';btn.innerHTML='<span style="color:#fff;font-size:11px;text-align:center;line-height:1.4">'+r.error+'</span>';}
       return;
     }
     var container=document.getElementById('mcMediaContainer');
