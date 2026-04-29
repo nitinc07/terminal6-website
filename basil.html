@@ -5131,6 +5131,10 @@ function _runStrategicAnalysis(){
   var API_BASE=(location.hostname.includes('.terminal6.io')&&location.hostname!=='terminal6.io'&&location.hostname!=='www.terminal6.io')?'':'https://api.terminal6.io';
 
   var fullText='';
+  var stepCount=0;
+  // Show trace container
+  document.getElementById('meta-strategic-cards').innerHTML='<div class="ag-trace streaming"><div class="steps" id="meta-strat-steps"></div></div>';
+
   fetch(API_BASE+'/v1/agents/meta_strategic/stream',{headers:headers})
     .then(function(response){
       if(!response.ok) throw new Error('API '+response.status);
@@ -5150,10 +5154,11 @@ function _runStrategicAnalysis(){
             var data=line.slice(6);
             if(eventType==='status'){
               noteEl.textContent=data;
+              stepCount++;
+              var stepsEl=document.getElementById('meta-strat-steps');
+              if(stepsEl) stepsEl.innerHTML+='<div class="step" style="animation:fadeIn .3s;padding:6px 0;font-size:12.5px;color:var(--t2);border-bottom:1px solid var(--c1)"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;text-align:center;line-height:22px;font-size:11px;margin-right:10px;font-weight:600">'+stepCount+'</span>'+data+'</div>';
             }else if(eventType==='token'){
               fullText+=data.replace(/\\n/g,'\n');
-              // Don't show raw JSON — show a progress indicator instead
-              document.getElementById('meta-strategic-cards').innerHTML='<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:14px;margin-bottom:8px">Analyzing...</div><div style="font-size:12px">'+Math.round(fullText.length/50)+' insights generated</div></div>';
             }else if(eventType==='done'){
               btn.disabled=false; btn.textContent='Run Analysis';
               try{
