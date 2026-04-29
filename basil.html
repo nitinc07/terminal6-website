@@ -934,19 +934,26 @@
       <div id="meta-funnel" style="display:flex;gap:0;align-items:center;justify-content:center;flex-wrap:wrap;padding:16px 0"></div>
     </div>
 
-    <!-- Audience Segments (New / Engaged / Existing Buyer) -->
-    <div class="sec" id="meta-aud-sec" style="display:none">
-      <div class="sec-h"><h3>Audience Segments</h3><span class="note" id="meta-aud-note">from ad set targeting API</span></div>
+    <!-- Audience Segments (Meta native: user_segment_key) -->
+    <div class="sec" id="meta-aud-sec">
+      <div class="sec-h"><h3>Audience Segments</h3><span class="note" id="meta-aud-note">from Meta Audience Segments</span></div>
+      <div id="meta-aud-cards" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
       <div style="overflow-x:auto">
         <table class="tbl" id="meta-aud-tbl">
-          <thead><tr><th>Segment</th><th>Spend</th><th>Share</th><th>ROAS</th><th>CPA</th><th>CPM</th><th>CTR</th><th>Orders</th><th>Ads</th></tr></thead>
-          <tbody id="meta-aud-body"></tbody>
+          <thead><tr><th>Segment</th><th>Spend</th><th>Share</th><th>ROAS</th><th>CPA</th><th>CPM</th><th>CTR</th><th>Orders</th></tr></thead>
+          <tbody id="meta-aud-body"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
       <div style="margin-top:14px">
         <div class="sec-h"><h4 style="font-size:13px;margin:0">Weekly Trend by Segment</h4></div>
         <div style="overflow-x:auto">
           <table class="tbl" id="meta-aud-trend-tbl"></table>
+        </div>
+      </div>
+      <div style="margin-top:14px" id="meta-aud-camp-sec" style="display:none">
+        <div class="sec-h"><h4 style="font-size:13px;margin:0">Per-Campaign Segment Split</h4></div>
+        <div style="overflow-x:auto">
+          <table class="tbl" id="meta-aud-camp-tbl"></table>
         </div>
       </div>
     </div>
@@ -4549,6 +4556,110 @@ function _openAdPreview(adId,evt){
   });
 }
 
+function _loadAudienceSegments(days){
+  var audLabels={new_user:{label:'New Audience',color:'#3b82f6',icon:'\uD83C\uDFAF'},engaged:{label:'Engaged',color:'#8b5cf6',icon:'\uD83D\uDD04'},existing_buyer:{label:'Existing Customers',color:'#14b8a6',icon:'\u2B50'}};
+  T6.get('/v1/meta/audience-segments?days='+days).then(function(d){
+    if(d.error){document.getElementById('meta-aud-body').innerHTML='<tr><td colspan="8" style="color:var(--r)">'+d.error+'</td></tr>';return;}
+    var segs=d.segments||{};
+    var acctRoas=window._metaAccountRoas||2.0;
+
+    // KPI cards
+    var cardsH='';
+    ['new_user','engaged','existing_buyer'].forEach(function(k){
+      var s=segs[k]; if(!s) return;
+      var al=audLabels[k];
+      var rc=s.roas!=null?(s.roas>=acctRoas?'var(--g)':s.roas>=1?'inherit':'var(--r)'):'';
+      cardsH+='<div style="flex:1;min-width:180px;background:var(--c1);border-left:4px solid '+al.color+';border-radius:8px;padding:14px 18px">';
+      cardsH+='<div style="font-weight:600;font-size:13px;margin-bottom:8px">'+al.icon+' '+al.label+'</div>';
+      cardsH+='<div style="display:flex;gap:16px;flex-wrap:wrap">';
+      cardsH+='<div><div style="font-size:10px;color:var(--t3)">SPEND</div><div style="font-size:16px;font-weight:600">'+cur(s.spend)+'</div><div style="font-size:10px;color:var(--t3)">'+s.spend_share_pct+'%</div></div>';
+      cardsH+='<div><div style="font-size:10px;color:var(--t3)">ROAS</div><div style="font-size:16px;font-weight:600;color:'+rc+'">'+(s.roas!=null?s.roas.toFixed(2)+'x':'--')+'</div></div>';
+      cardsH+='<div><div style="font-size:10px;color:var(--t3)">CPA</div><div style="font-size:16px;font-weight:600">'+(s.cpa!=null?cur(s.cpa):'--')+'</div></div>';
+      cardsH+='<div><div style="font-size:10px;color:var(--t3)">ORDERS</div><div style="font-size:16px;font-weight:600">'+fmt(s.orders)+'</div></div>';
+      cardsH+='</div></div>';
+    });
+    document.getElementById('meta-aud-cards').innerHTML=cardsH;
+
+    // Table
+    var tb='';
+    ['new_user','engaged','existing_buyer'].forEach(function(k){
+      var s=segs[k]; if(!s) return;
+      var al=audLabels[k];
+      var rc=s.roas!=null?(s.roas>=acctRoas?'var(--g)':s.roas>=1?'inherit':'var(--r)'):'';
+      tb+='<tr>';
+      tb+='<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+al.color+';margin-right:6px"></span><strong>'+al.label+'</strong></td>';
+      tb+='<td>'+cur(s.spend)+'</td>';
+      tb+='<td>'+s.spend_share_pct+'%</td>';
+      tb+='<td style="font-weight:600;color:'+rc+'">'+(s.roas!=null?s.roas.toFixed(2)+'x':'--')+'</td>';
+      tb+='<td>'+(s.cpa!=null?cur(s.cpa):'--')+'</td>';
+      tb+='<td>'+(s.cpm!=null?'\u20B9'+Math.round(s.cpm):'--')+'</td>';
+      tb+='<td>'+(s.ctr!=null?s.ctr.toFixed(2)+'%':'--')+'</td>';
+      tb+='<td>'+fmt(s.orders)+'</td>';
+      tb+='</tr>';
+    });
+    document.getElementById('meta-aud-body').innerHTML=tb||'<tr><td colspan="8">No segment data</td></tr>';
+
+    // Weekly trend (transposed: metrics x weeks, per segment)
+    var trend=d.weekly_trend||{};
+    var weeks=Object.keys(trend).sort();
+    if(weeks.length>1){
+      var segKeys=['new_user','engaged','existing_buyer'].filter(function(k){return segs[k]&&segs[k].spend>0});
+      var tMetrics=[
+        {key:'spend',label:'Spend',fmt:function(v){return cur(v||0)}},
+        {key:'roas',label:'ROAS',fmt:function(v){return v!=null?v.toFixed(2)+'x':'--'},color:function(v){return v>=acctRoas?'var(--g)':v>=1?'':'var(--r)'}},
+        {key:'orders',label:'Orders',fmt:function(v){return fmt(v||0)}},
+      ];
+      var th='<tr><th style="min-width:130px">SEGMENT / METRIC</th>';
+      weeks.forEach(function(w){th+='<th>'+shortD(w)+'</th>'});
+      var tBody='';
+      segKeys.forEach(function(seg){
+        var al=audLabels[seg];
+        tBody+='<tr style="background:var(--c1)"><td colspan="'+(weeks.length+1)+'" style="font-weight:600;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+al.color+';margin-right:6px"></span>'+al.label+'</td></tr>';
+        tMetrics.forEach(function(m){
+          tBody+='<tr><td style="padding-left:20px;font-size:12px">'+m.label+'</td>';
+          weeks.forEach(function(w){
+            var sv=(trend[w]||{})[seg]||{};
+            var v=sv[m.key];
+            var st='';
+            if(m.color){var c=m.color(v);if(c)st=' style="color:'+c+';font-weight:600"';}
+            tBody+='<td'+st+'>'+m.fmt(v)+'</td>';
+          });
+          tBody+='</tr>';
+        });
+      });
+      document.getElementById('meta-aud-trend-tbl').innerHTML='<thead>'+th+'</thead><tbody>'+tBody+'</tbody>';
+    }
+
+    // Per-campaign segment split
+    var camps=d.campaigns||[];
+    if(camps.length>0){
+      var cth='<tr><th>Campaign</th><th>Total Spend</th><th>New %</th><th>New ROAS</th><th>Engaged %</th><th>Eng ROAS</th><th>Existing %</th><th>Ext ROAS</th></tr>';
+      var ctb='';
+      camps.forEach(function(c){
+        var ts=c.total_spend;
+        var ns=c.segments.new_user||{};
+        var es=c.segments.engaged||{};
+        var xs=c.segments.existing_buyer||{};
+        var cn=(c.campaign_name||'').length>40?c.campaign_name.slice(0,40)+'...':c.campaign_name||'--';
+        ctb+='<tr>';
+        ctb+='<td style="font-size:12px" title="'+(c.campaign_name||'')+'">'+cn+'</td>';
+        ctb+='<td>'+cur(ts)+'</td>';
+        ctb+='<td>'+(ns.spend?Math.round(ns.spend/ts*100)+'%':'--')+'</td>';
+        ctb+='<td style="font-weight:600;color:'+(ns.roas&&ns.roas>=acctRoas?'var(--g)':ns.roas&&ns.roas>=1?'inherit':'var(--r)')+'">'+(ns.roas?ns.roas.toFixed(1)+'x':'--')+'</td>';
+        ctb+='<td>'+(es.spend?Math.round(es.spend/ts*100)+'%':'--')+'</td>';
+        ctb+='<td style="font-weight:600;color:'+(es.roas&&es.roas>=acctRoas?'var(--g)':es.roas&&es.roas>=1?'inherit':'var(--r)')+'">'+(es.roas?es.roas.toFixed(1)+'x':'--')+'</td>';
+        ctb+='<td>'+(xs.spend?Math.round(xs.spend/ts*100)+'%':'--')+'</td>';
+        ctb+='<td style="font-weight:600;color:'+(xs.roas&&xs.roas>=acctRoas?'var(--g)':xs.roas&&xs.roas>=1?'inherit':'var(--r)')+'">'+(xs.roas?xs.roas.toFixed(1)+'x':'--')+'</td>';
+        ctb+='</tr>';
+      });
+      document.getElementById('meta-aud-camp-tbl').innerHTML='<thead>'+cth+'</thead><tbody>'+ctb+'</tbody>';
+      document.getElementById('meta-aud-camp-sec').style.display='';
+    }
+  }).catch(function(e){
+    document.getElementById('meta-aud-body').innerHTML='<tr><td colspan="8" style="color:var(--r)">Failed: '+e.message+'</td></tr>';
+  });
+}
+
 function _updateMetaFilterCounts(){
   var active=_metaActiveOnly(window._metaCreatives||[]);
   var counts={};
@@ -5470,63 +5581,8 @@ async function loadMetaAds(){
     });
     document.getElementById('meta-funnel').innerHTML=funHtml;
 
-    // ── Audience segments (table + weekly trend) ──
-    var audSegs=db.audience_segments||{};
-    var audLabels={new_user:{label:'New Users',color:'#3b82f6'},engaged:{label:'Engaged (ASC/Broad)',color:'#8b5cf6'},existing_buyer:{label:'Existing Buyers',color:'#14b8a6'}};
-    var audBody='',hasAud=false;
-    ['new_user','engaged','existing_buyer'].forEach(function(k){
-      var s=audSegs[k];if(!s||s.spend===0) return;
-      hasAud=true;
-      var al=audLabels[k];
-      var rc=s.roas!=null?(s.roas>=(db.account_roas||2)?'var(--g)':s.roas>=1?'inherit':'var(--r)'):'';
-      audBody+='<tr>';
-      audBody+='<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+al.color+';margin-right:6px"></span><strong>'+al.label+'</strong></td>';
-      audBody+='<td>'+cur(s.spend)+'</td>';
-      audBody+='<td>'+s.spend_share_pct+'%</td>';
-      audBody+='<td style="font-weight:600;color:'+rc+'">'+(s.roas!=null?s.roas.toFixed(2)+'x':'--')+'</td>';
-      audBody+='<td>'+(s.cpa!=null?cur(s.cpa):'--')+'</td>';
-      audBody+='<td>'+(s.cpm!=null?'\u20B9'+Math.round(s.cpm):'--')+'</td>';
-      audBody+='<td>'+(s.ctr!=null?s.ctr.toFixed(2)+'%':'--')+'</td>';
-      audBody+='<td>'+fmt(s.orders)+'</td>';
-      audBody+='<td>'+(s.ads||'--')+'</td>';
-      audBody+='</tr>';
-    });
-    if(hasAud){
-      document.getElementById('meta-aud-sec').style.display='';
-      document.getElementById('meta-aud-body').innerHTML=audBody;
-    }
-    // Weekly trend by audience type (transposed: metrics × weeks, per segment)
-    var audTrend=db.audience_trend||{};
-    var weeks=Object.keys(audTrend).sort();
-    if(weeks.length>1&&hasAud){
-      var segs=['new_user','engaged','existing_buyer'].filter(function(k){return audSegs[k]&&audSegs[k].spend>0});
-      var tMetrics=[
-        {key:'spend',label:'Spend',fmt:function(v){return cur(v||0)}},
-        {key:'roas',label:'ROAS',fmt:function(v){return v!=null?v.toFixed(2)+'x':'--'},color:function(v){return v>=(db.account_roas||2)?'var(--g)':v>=1?'':'var(--r)'}},
-        {key:'orders',label:'Orders',fmt:function(v){return fmt(v||0)}},
-        {key:'cpa',label:'CPA',fmt:function(v){return v!=null?cur(v):'--'}},
-      ];
-      var th='<tr><th style="min-width:130px">SEGMENT / METRIC</th>';
-      weeks.forEach(function(w){th+='<th>'+shortD(w)+'</th>'});
-      var tb='';
-      segs.forEach(function(seg){
-        var al=audLabels[seg];
-        // Segment header row
-        tb+='<tr style="background:var(--c1)"><td colspan="'+(weeks.length+1)+'" style="font-weight:600;font-size:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+al.color+';margin-right:6px"></span>'+al.label+'</td></tr>';
-        tMetrics.forEach(function(m){
-          tb+='<tr><td style="padding-left:20px;font-size:12px">'+m.label+'</td>';
-          weeks.forEach(function(w){
-            var d=(audTrend[w]||{})[seg]||{};
-            var v=d[m.key];
-            var s='';
-            if(m.color){var c=m.color(v);if(c)s=' style="color:'+c+';font-weight:600"';}
-            tb+='<td'+s+'>'+m.fmt(v)+'</td>';
-          });
-          tb+='</tr>';
-        });
-      });
-      document.getElementById('meta-aud-trend-tbl').innerHTML='<thead>'+th+'</thead><tbody>'+tb+'</tbody>';
-    }
+    // ── Audience segments (from Meta user_segment_key — separate API call) ──
+    _loadAudienceSegments(days);
 
     // ── Format mix ──
     var fmtColors={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
