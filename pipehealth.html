@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Terminal6 — Pipeline Health</title>
+<script>
+/* ACCESS GATE — needs a signed-in user. Platform-admin-only access is enforced
+   server-side (every /v1/control-tower/* endpoint returns 403 unless role is
+   platform_admin) and re-checked client-side after /v1/users/permissions. */
+(function(){
+  var saved = sessionStorage.getItem('t6_user');
+  if(!saved){ location.replace('/home.html'); document.documentElement.style.display='none'; }
+})();
+/* Auto-detect the brand subdomain so X-Brand resolves on main-domain fallback
+   too. On the subdomain itself, nginx already injects X-Brand. */
+(function(){
+  var h = location.hostname.split('.')[0];
+  if(h && !['terminal6','www','dev','localhost','127','api'].includes(h)) {
+    window.T6_BRAND_SLUG = h;
+  }
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/shared.css?v=2026-04-29b">
+<style>
+/* shared.css pins body to height:100vh + overflow:hidden for the brand
+   dashboard's split-pane layout. This page is a flat scrolling document. */
+html, body { height: auto !important; overflow: auto !important; }
+
+.page { max-width: 1200px; margin: 0 auto; padding: 32px 32px 80px; }
+.page-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px }
+.page-head h1 { font-family: var(--serif); font-size: 26px; font-weight: 700; }
+.page-head .sub { font-size: 13px; color: var(--tm); margin-top: 2px; }
+.back-link { font-size: 12px; color: var(--tm); text-decoration: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; background: var(--bg-white); }
+.back-link:hover { color: var(--text); border-color: var(--accent); }
+
+.card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 24px; }
+.card h2 { font-family: var(--serif); font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.card .note { font-size: 12px; color: var(--tm); margin-bottom: 14px; line-height: 1.6; }
+
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 8px; }
+.kpi { padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.kpi .label { font-size: 11px; color: var(--tm); text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi .value { font-family: var(--serif); font-size: 22px; font-weight: 600; margin-top: 4px; }
+.kpi.fresh .value { color: #16a34a; }
+.kpi.stale .value { color: #b45309; }
+.kpi.no_data .value { color: var(--r); }
+
+table.t6 { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.t6 th { text-align: left; padding: 10px 8px; font-weight: 600; font-size: 11px; color: var(--tm); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
+table.t6 td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.t6 tr:last-child td { border-bottom: none; }
+table.t6 tbody tr:hover { background: var(--bg); }
+
+.pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.pill.fresh    { background: rgba(22,163,74,.12); color: #16a34a; }
+.pill.stale    { background: rgba(180,83,9,.12);  color: #b45309; }
+.pill.no_data  { background: rgba(220,38,38,.12); color: var(--r); }
+.pill.resolved { background: rgba(22,163,74,.12); color: #16a34a; }
+.pill.failed   { background: rgba(220,38,38,.12); color: var(--r); }
+.pill.escalated{ background: rgba(180,83,9,.12);  color: #b45309; }
+.pill.skipped  { background: var(--bg); color: var(--tm); }
+.pill.playbook { background: rgba(15,118,110,.1); color: #0F766E; }
+.pill.llm      { background: rgba(139,92,246,.12); color: #7c3aed; }
+.pill.dim      { background: var(--bg); color: var(--tm); }
+.pill.demote   { background: rgba(220,38,38,.12); color: var(--r); }
+
+.lag-cell { font-family: var(--mono, 'JetBrains Mono', monospace); }
+.lag-cell.over { color: var(--r); font-weight: 600; }
+
+.muted { color: var(--tm); font-size: 12px; }
+.diag-cell { max-width: 360px; }
+.diag-cell .diag { font-size: 12px; color: var(--text); }
+.diag-cell .fix { font-size: 11px; color: var(--tm); margin-top: 2px; font-family: var(--mono, monospace); }
+
+.loading-row { padding: 24px; text-align: center; color: var(--tm); font-size: 13px; }
+.error-banner { background: #fef2f2; color: #991b1b; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; }
+
+.refresh-btn { font-family: var(--sans); font-size: 12px; padding: 6px 12px; border: 1px solid var(--border); background: var(--bg-white); color: var(--text); border-radius: 6px; cursor: pointer; }
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Pipeline Health</h1>
+      <div class="sub" id="brandLine">Loading…</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="refresh-btn" onclick="loadAll()">&#8635; Refresh</button>
+      <a class="back-link" href="/">&larr; Back to dashboard</a>
+    </div>
+  </div>
+
+  <div id="errorBox"></div>
+
+  <!-- 1. Freshness matrix -->
+  <div class="card">
+    <h2>Freshness across brands</h2>
+    <div class="note">Latest <code>pipeline_health_checks</code> row per (brand × source). Lag is days between today and the most recent canonical-table row; status flips to <span class="pill stale">stale</span> when lag exceeds source tolerance, <span class="pill no_data">no_data</span> if no row exists.</div>
+    <div class="kpi-row" id="freshnessKpis"></div>
+    <div id="freshnessTableWrap"><div class="loading-row">Loading…</div></div>
+  </div>
+
+  <!-- 2. Recent remediations -->
+  <div class="card">
+    <h2>Recent remediations</h2>
+    <div class="note">Last 50 rows from <code>remediation_log</code>. Tier <span class="pill playbook">playbook</span> = deterministic fix from <code>control_tower/pipeline_agent/playbooks/</code>; <span class="pill llm">llm</span> = Phase 2 LLM proposal; <span class="pill dim">escalated</span> = no auto-fix attempted.</div>
+    <div id="remediationsTableWrap"><div class="loading-row">Loading…</div></div>
+  </div>
+
+  <!-- 3. Playbook trust -->
+  <div class="card">
+    <h2>Playbook trust (rolling 30d)</h2>
+    <div class="note">Same numbers <code>trust.py</code> uses to auto-demote: a playbook with &lt;80% success over &ge;5 runs is flagged <span class="pill demote">demote</span> and stops auto-running until the next 5 consecutive runs succeed.</div>
+    <div id="trustTableWrap"><div class="loading-row">Loading…</div></div>
+  </div>
+</div>
+
+<script src="/shared.js?v=2026-04-29b"></script>
+<script>
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]});
+}
+function showError(msg){
+  document.getElementById('errorBox').innerHTML = '<div class="error-banner">' + escapeHtml(msg) + '</div>';
+}
+function fmtDate(iso){
+  if(!iso) return '—';
+  // Accept date or ISO datetime. Render as YYYY-MM-DD HH:MM (local) for datetime,
+  // YYYY-MM-DD for plain date.
+  try {
+    if(iso.length <= 10) return iso;
+    var d = new Date(iso);
+    if(isNaN(d.getTime())) return iso;
+    var pad = function(n){ return n < 10 ? '0' + n : '' + n; };
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
+      ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  } catch(e){ return iso; }
+}
+
+(async function init(){
+  try {
+    var perms = await T6.api('/v1/users/permissions');
+    if(perms.role !== 'platform_admin'){
+      // Server still gates the API, but mirror the gate in the UI for clarity.
+      location.replace('/');
+      return;
+    }
+    document.getElementById('brandLine').textContent =
+      'Cross-brand pipeline visibility · signed in as ' + perms.email;
+    loadAll();
+  } catch(e){
+    showError('Failed to load permissions: ' + (e && e.message ? e.message : e));
+  }
+})();
+
+async function loadAll(){
+  try {
+    var [fresh, rem, trust] = await Promise.all([
+      T6.api('/v1/control-tower/freshness'),
+      T6.api('/v1/control-tower/remediations?limit=50'),
+      T6.api('/v1/control-tower/playbook-trust'),
+    ]);
+    renderFreshness(fresh);
+    renderRemediations(rem);
+    renderTrust(trust);
+  } catch(e){
+    showError('Failed to load: ' + (e && e.message ? e.message : e));
+  }
+}
+
+function renderFreshness(resp){
+  var s = resp.summary || {};
+  var kpiHtml = '';
+  kpiHtml += '<div class="kpi"><div class="label">Total checks</div><div class="value">' + (s.total||0) + '</div></div>';
+  kpiHtml += '<div class="kpi fresh"><div class="label">Fresh</div><div class="value">' + (s.fresh||0) + '</div></div>';
+  kpiHtml += '<div class="kpi stale"><div class="label">Stale</div><div class="value">' + (s.stale||0) + '</div></div>';
+  kpiHtml += '<div class="kpi no_data"><div class="label">No data</div><div class="value">' + (s.no_data||0) + '</div></div>';
+  document.getElementById('freshnessKpis').innerHTML = kpiHtml;
+
+  var rows = resp.checks || [];
+  if(!rows.length){
+    document.getElementById('freshnessTableWrap').innerHTML =
+      '<div class="muted">No pipeline_health_checks rows yet — the agent may not have run on this DB.</div>';
+    return;
+  }
+  // Sort: failures first, then by brand+source
+  rows.sort(function(a,b){
+    var sev = function(r){ return r.status === 'no_data' ? 0 : (r.status === 'stale' ? 1 : 2); };
+    if(sev(a) !== sev(b)) return sev(a) - sev(b);
+    if(a.brand_name !== b.brand_name) return a.brand_name.localeCompare(b.brand_name);
+    return a.source.localeCompare(b.source);
+  });
+
+  var html = '<table class="t6"><thead><tr>'
+    + '<th>Brand</th>'
+    + '<th>Source</th>'
+    + '<th>Layer</th>'
+    + '<th>Canonical table</th>'
+    + '<th>Last data</th>'
+    + '<th>Lag</th>'
+    + '<th>Tolerance</th>'
+    + '<th>Status</th>'
+    + '<th>Symptom</th>'
+    + '<th>Checked</th>'
+    + '</tr></thead><tbody>';
+
+  rows.forEach(function(r){
+    var lagOver = r.lag_days != null && r.tolerance_days != null && r.lag_days > r.tolerance_days;
+    html += '<tr>'
+      + '<td>' + escapeHtml(r.brand_name) + '</td>'
+      + '<td><code>' + escapeHtml(r.source) + '</code></td>'
+      + '<td>' + escapeHtml(r.layer) + '</td>'
+      + '<td><code>' + escapeHtml(r.canonical_table || '—') + '</code></td>'
+      + '<td>' + escapeHtml(r.last_data_date || '—') + '</td>'
+      + '<td class="lag-cell ' + (lagOver ? 'over' : '') + '">' + (r.lag_days == null ? '—' : (r.lag_days + 'd')) + '</td>'
+      + '<td class="muted">' + r.tolerance_days + 'd</td>'
+      + '<td><span class="pill ' + escapeHtml(r.status) + '">' + escapeHtml(r.status) + '</span></td>'
+      + '<td class="muted">' + escapeHtml(r.symptom || '—') + '</td>'
+      + '<td class="muted">' + fmtDate(r.checked_at) + '</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('freshnessTableWrap').innerHTML = html;
+}
+
+function renderRemediations(resp){
+  var rows = resp.remediations || [];
+  if(!rows.length){
+    document.getElementById('remediationsTableWrap').innerHTML =
+      '<div class="muted">No remediation_log rows in scope. Either the agent has not detected anything to fix, or it has not run yet.</div>';
+    return;
+  }
+  var html = '<table class="t6"><thead><tr>'
+    + '<th>Detected</th>'
+    + '<th>Brand</th>'
+    + '<th>Source</th>'
+    + '<th>Symptom</th>'
+    + '<th>Tier</th>'
+    + '<th>Playbook</th>'
+    + '<th>Diagnosis / fix</th>'
+    + '<th>Outcome</th>'
+    + '<th>Verified</th>'
+    + '</tr></thead><tbody>';
+
+  rows.forEach(function(r){
+    var tierClass = (r.diagnosis_tier === 'playbook') ? 'playbook'
+      : (r.diagnosis_tier === 'llm') ? 'llm' : 'dim';
+    var outcomeClass = (r.fix_outcome === 'resolved') ? 'resolved'
+      : (r.fix_outcome === 'failed') ? 'failed'
+      : (r.fix_outcome === 'escalated') ? 'escalated' : 'skipped';
+    html += '<tr>'
+      + '<td class="muted">' + fmtDate(r.detected_at) + '</td>'
+      + '<td>' + escapeHtml(r.brand_name) + '</td>'
+      + '<td>' + escapeHtml(r.source || '—') + '</td>'
+      + '<td><code>' + escapeHtml(r.symptom) + '</code></td>'
+      + '<td><span class="pill ' + tierClass + '">' + escapeHtml(r.diagnosis_tier) + '</span></td>'
+      + '<td>' + escapeHtml(r.playbook_used || '—') + '</td>'
+      + '<td class="diag-cell">'
+        + '<div class="diag">' + escapeHtml(r.diagnosis || '') + '</div>'
+        + (r.fix_applied ? '<div class="fix">' + escapeHtml(r.fix_applied) + '</div>' : '')
+      + '</td>'
+      + '<td><span class="pill ' + outcomeClass + '">' + escapeHtml(r.fix_outcome) + '</span></td>'
+      + '<td class="muted">' + fmtDate(r.verified_at) + '</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('remediationsTableWrap').innerHTML = html;
+}
+
+function renderTrust(resp){
+  var rows = resp.playbooks || [];
+  if(!rows.length){
+    document.getElementById('trustTableWrap').innerHTML =
+      '<div class="muted">No playbook runs in the last 30 days.</div>';
+    return;
+  }
+  var html = '<table class="t6"><thead><tr>'
+    + '<th>Playbook</th>'
+    + '<th>Runs (30d)</th>'
+    + '<th>Resolved</th>'
+    + '<th>Failed</th>'
+    + '<th>Escalated</th>'
+    + '<th>Success rate</th>'
+    + '<th>Status</th>'
+    + '<th>Last run</th>'
+    + '</tr></thead><tbody>';
+
+  rows.forEach(function(r){
+    var rate = r.success_rate == null ? '—' : (Math.round(r.success_rate * 1000) / 10) + '%';
+    html += '<tr>'
+      + '<td><code>' + escapeHtml(r.playbook_used) + '</code></td>'
+      + '<td>' + r.runs_30d + '</td>'
+      + '<td>' + r.resolved_30d + '</td>'
+      + '<td>' + r.failed_30d + '</td>'
+      + '<td>' + r.escalated_30d + '</td>'
+      + '<td>' + rate + '</td>'
+      + '<td>' + (r.demote_candidate
+            ? '<span class="pill demote">demote</span>'
+            : '<span class="pill resolved">healthy</span>') + '</td>'
+      + '<td class="muted">' + fmtDate(r.last_run_at) + '</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table>';
+  document.getElementById('trustTableWrap').innerHTML = html;
+}
+</script>
+</body>
+</html>
