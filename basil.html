@@ -14,7 +14,7 @@
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css?v=2026-04-29a">
+<link rel="stylesheet" href="/shared.css?v=2026-04-29b">
 <style>
 /* Basil-specific styles only. Design tokens, layout, sidebar, cards, tables,
    pills, loading/error/empty states, delta pill, section header, placeholder
@@ -227,7 +227,7 @@
 @keyframes blink{50%{opacity:0}}
 </style>
 <script>window.T6_BRAND_SLUG = 'basil'; window.T6_SHOPIFY_DOMAIN = 'yourbasil.com';</script>
-<script src="/shared.js?v=2026-04-29a"></script>
+<script src="/shared.js?v=2026-04-29b"></script>
 </head>
 <body>
 <div class="app">
@@ -282,6 +282,7 @@
   <div class="ss">
     <div class="sl">Admin</div>
     <div class="si" onclick="sw('users',this)"><div class="ic">&#128101;</div><span>Users</span></div>
+    <div class="si" onclick="sw('pipehealth',this)"><div class="ic">&#128737;</div><span>Pipeline Health</span></div>
   </div>
   <div class="sb-b">
     <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:6px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:8px">
@@ -919,11 +920,12 @@
       <div id="mdDrawerItems"></div>
     </div>
 
-    <!-- Creative detail drawer -->
-    <div id="metaCreativeDrawer" style="display:none;position:fixed;top:0;right:0;width:min(640px,92vw);height:100vh;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.15);z-index:1001;overflow-y:auto;padding:0">
-      <div style="position:sticky;top:0;background:#fff;padding:16px 24px;border-bottom:1px solid var(--c2);display:flex;justify-content:space-between;align-items:center;z-index:1">
+    <!-- Creative detail modal (centered popup) -->
+    <div id="metaCreativeOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);z-index:1000" onclick="document.getElementById('metaCreativeDrawer').style.display='none';this.style.display='none'"></div>
+    <div id="metaCreativeDrawer" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(900px,60vw);max-height:85vh;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:1001;overflow-y:auto;padding:0;border-radius:12px">
+      <div style="position:sticky;top:0;background:#fff;padding:16px 24px;border-bottom:1px solid var(--c2);display:flex;justify-content:space-between;align-items:center;z-index:1;border-radius:12px 12px 0 0">
         <h3 id="mcDrawerTitle" style="margin:0;font-size:15px"></h3>
-        <button onclick="document.getElementById('metaCreativeDrawer').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3)">&times;</button>
+        <button onclick="document.getElementById('metaCreativeDrawer').style.display='none';document.getElementById('metaCreativeOverlay').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3)">&times;</button>
       </div>
       <div id="mcDrawerContent" style="padding:24px"></div>
     </div>
@@ -1339,6 +1341,8 @@ function swSub(viewId, subId, el){
 function sw(id,el){
   // Users is its own page (admin-only view of brand_users + permissions).
   if(id==='users'){ location.href='/users.html'; return; }
+  // Pipeline Health is platform-admin-only — its own page too.
+  if(id==='pipehealth'){ location.href='/pipehealth.html'; return; }
   const target=document.getElementById('v-'+id);
   if(!target) return;
   document.querySelectorAll('.vw').forEach(v=>v.classList.remove('act'));
@@ -4539,8 +4543,184 @@ function openCreativeDetail(adId){
     h+='<div style="font-size:12px;color:var(--t2);margin-bottom:16px">Quality Ranking: <strong>'+d.quality_ranking+'</strong></div>';
   }
 
+  // Placeholder for async health card data
+  h+='<div id="creativeHealthCard" style="margin-top:8px"><div style="color:var(--t3);font-size:12px">Loading health data...</div></div>';
+
   document.getElementById('mcDrawerContent').innerHTML=h;
+  document.getElementById('metaCreativeOverlay').style.display='';
   document.getElementById('metaCreativeDrawer').style.display='';
+
+  // Fetch per-creative health data async
+  api('/v1/meta/creative/'+adId+'?days=90').then(function(data){
+    if(data.error) { document.getElementById('creativeHealthCard').innerHTML=''; return; }
+    var hc='';
+
+    // Significance bar
+    var sig=data.significance;
+    var sigColor=sig.reached?'var(--g)':'var(--y)';
+    hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+    hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">Statistical Significance</div>';
+    hc+='<div style="display:flex;align-items:center;gap:12px">';
+    hc+='<div style="flex:1;height:8px;background:var(--c2);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+sig.progress_pct+'%;background:'+sigColor+';border-radius:4px"></div></div>';
+    hc+='<div style="font-size:13px;font-weight:600;color:'+sigColor+'">'+sig.conversions+'/'+sig.threshold+'</div>';
+    hc+='</div>';
+    hc+='<div style="font-size:11px;color:var(--t3);margin-top:4px">'+(sig.reached?'Sufficient data to evaluate performance':'Need '+(sig.threshold-sig.conversions)+' more conversions before calling this creative')+'</div>';
+    hc+='</div>';
+
+    // Video retention funnel — visual trapezoid funnel
+    var ret=data.retention;
+    if(ret){
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:14px">Video Retention Funnel</div>';
+      var stages=[
+        {label:'Impressions',val:ret.impressions,pct:100,color:'#6366f1'},
+        {label:'Watched 25%',val:ret.p25,pct:ret.hook_rate_pct,color:'#8b5cf6'},
+        {label:'Watched 50%',val:ret.p50,pct:ret.impressions>0?Math.round(ret.p50/ret.impressions*1000)/10:0,color:'#a78bfa'},
+        {label:'Watched 75%',val:ret.p75,pct:ret.impressions>0?Math.round(ret.p75/ret.impressions*1000)/10:0,color:'#c4b5fd'},
+        {label:'Completed',val:ret.p100,pct:ret.impressions>0?Math.round(ret.p100/ret.impressions*1000)/10:0,color:'#ddd6fe'}
+      ];
+      var funnelW=500,stepH=42;
+      var svgH=stages.length*stepH;
+      hc+='<div style="display:flex;justify-content:center"><svg width="'+funnelW+'" height="'+svgH+'" viewBox="0 0 '+funnelW+' '+svgH+'" style="max-width:100%">';
+      stages.forEach(function(st,i){
+        var w=Math.max(st.pct/100*funnelW*0.85,40);
+        var nextW=i<stages.length-1?Math.max(stages[i+1].pct/100*funnelW*0.85,40):w;
+        var x=(funnelW-w)/2,nx=(funnelW-nextW)/2;
+        var y=i*stepH,ny=y+stepH;
+        // Trapezoid
+        hc+='<polygon points="'+x+','+y+' '+(x+w)+','+y+' '+(nx+nextW)+','+ny+' '+nx+','+ny+'" fill="'+st.color+'" opacity="0.85"/>';
+        // Label left
+        hc+='<text x="'+(x-8)+'" y="'+(y+stepH/2+4)+'" text-anchor="end" font-size="11" fill="#64748b">'+st.label+'</text>';
+        // Value + pct right
+        hc+='<text x="'+(x+w+8)+'" y="'+(y+stepH/2+4)+'" font-size="11" fill="#334155" font-weight="600">'+fmt(st.val)+' ('+st.pct+'%)</text>';
+        // Drop-off arrow between stages
+        if(i>0){
+          var dropPct=i===1?ret.drop_25_50_pct:i===2?ret.drop_50_75_pct:i===3?ret.drop_75_100_pct:null;
+          // no arrow needed, the visual shape shows the drop
+        }
+      });
+      hc+='</svg></div>';
+      // Key rates below funnel
+      hc+='<div style="display:flex;justify-content:center;gap:24px;margin-top:14px;font-size:13px">';
+      hc+='<div style="text-align:center"><div style="font-size:10px;color:var(--t3);text-transform:uppercase">Hook Rate</div><div style="font-size:20px;font-weight:700;color:'+(ret.hook_rate_pct>15?'var(--g)':ret.hook_rate_pct>8?'var(--y)':'var(--r)')+'">'+ret.hook_rate_pct+'%</div></div>';
+      hc+='<div style="text-align:center"><div style="font-size:10px;color:var(--t3);text-transform:uppercase">Hold Rate</div><div style="font-size:20px;font-weight:700;color:var(--t1)">'+ret.hold_rate_pct+'%</div></div>';
+      hc+='<div style="text-align:center"><div style="font-size:10px;color:var(--t3);text-transform:uppercase">Completion</div><div style="font-size:20px;font-weight:700;color:var(--t1)">'+ret.completion_rate_pct+'%</div></div>';
+      hc+='</div>';
+      // Cliff detection
+      var drops=[{seg:'25-50%',v:ret.drop_25_50_pct},{seg:'50-75%',v:ret.drop_50_75_pct},{seg:'75-100%',v:ret.drop_75_100_pct}];
+      var cliff=drops.reduce(function(a,b){return(b.v||0)>(a.v||0)?b:a});
+      if(cliff.v) hc+='<div style="text-align:center;font-size:11px;color:var(--t3);margin-top:8px">Biggest drop-off: <strong>'+cliff.seg+'</strong> ('+cliff.v+'% of viewers lost)</div>';
+      hc+='</div>';
+    }
+
+    // ROAS trend — SVG line chart with value labels
+    if(data.daily&&data.daily.length>1){
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">ROAS Trend — 7d Rolling ('+data.totals.days_active+' days)</div>';
+      // Compute 7-day rolling ROAS
+      var roasData=[];
+      for(var i=0;i<data.daily.length;i++){
+        var wStart=Math.max(0,i-6);
+        var wSpend=0,wRev=0;
+        for(var j=wStart;j<=i;j++){wSpend+=data.daily[j].spend;wRev+=data.daily[j].revenue;}
+        roasData.push({date:data.daily[i].date,roas:wSpend>0?Math.round(wRev/wSpend*100)/100:null});
+      }
+      var validRoas=roasData.filter(function(d){return d.roas!=null});
+      if(validRoas.length>2){
+        var svgW=Math.min(820,validRoas.length*12+80),svgChartH=140,padL=40,padR=20,padT=20,padB=30;
+        var chartW=svgW-padL-padR,chartH=svgChartH-padT-padB;
+        var maxR=Math.max.apply(null,validRoas.map(function(d){return d.roas}));
+        var minR=Math.min.apply(null,validRoas.map(function(d){return d.roas}));
+        // Add 10% padding to range
+        var rangePad=(maxR-minR)*0.1||0.5;
+        minR=Math.max(0,minR-rangePad);maxR=maxR+rangePad;
+        var range=maxR-minR||1;
+        var stepX=chartW/(validRoas.length-1);
+
+        hc+='<div style="overflow-x:auto"><svg width="'+svgW+'" height="'+svgChartH+'" viewBox="0 0 '+svgW+' '+svgChartH+'" style="display:block;max-width:100%">';
+
+        // Y-axis grid lines + labels
+        var yTicks=5;
+        for(var t=0;t<=yTicks;t++){
+          var yVal=minR+(range*t/yTicks);
+          var yPos=padT+chartH-chartH*(t/yTicks);
+          hc+='<line x1="'+padL+'" y1="'+yPos+'" x2="'+(svgW-padR)+'" y2="'+yPos+'" stroke="#e5e7eb" stroke-width="0.5"/>';
+          hc+='<text x="'+(padL-6)+'" y="'+(yPos+3)+'" text-anchor="end" font-size="10" fill="#94a3b8">'+yVal.toFixed(1)+'x</text>';
+        }
+
+        // 2x reference line
+        if(2>=minR&&2<=maxR){
+          var refY=padT+chartH-chartH*((2-minR)/range);
+          hc+='<line x1="'+padL+'" y1="'+refY+'" x2="'+(svgW-padR)+'" y2="'+refY+'" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>';
+          hc+='<text x="'+(svgW-padR+4)+'" y="'+(refY+3)+'" font-size="9" fill="#22c55e">2x</text>';
+        }
+
+        // Area fill under line
+        var areaPoints=padL+','+(padT+chartH);
+        validRoas.forEach(function(d,i){
+          var x=padL+i*stepX;
+          var y=padT+chartH-chartH*((d.roas-minR)/range);
+          areaPoints+=' '+x+','+y;
+        });
+        areaPoints+=' '+(padL+(validRoas.length-1)*stepX)+','+(padT+chartH);
+        hc+='<polygon points="'+areaPoints+'" fill="url(#roasGrad)" opacity="0.3"/>';
+        hc+='<defs><linearGradient id="roasGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#6366f1" stop-opacity="0"/></linearGradient></defs>';
+
+        // Line path
+        var pathD='';
+        validRoas.forEach(function(d,i){
+          var x=padL+i*stepX;
+          var y=padT+chartH-chartH*((d.roas-minR)/range);
+          pathD+=(i===0?'M':'L')+x+','+y;
+        });
+        hc+='<path d="'+pathD+'" fill="none" stroke="#6366f1" stroke-width="2"/>';
+
+        // Data points (hover for value via tooltip)
+        validRoas.forEach(function(d,i){
+          var x=padL+i*stepX;
+          var y=padT+chartH-chartH*((d.roas-minR)/range);
+          var col=d.roas>=2?'#22c55e':d.roas>=1.5?'#eab308':'#ef4444';
+          hc+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="'+col+'" stroke="#fff" stroke-width="1" style="cursor:crosshair"><title>'+d.date+': '+d.roas+'x</title></circle>';
+        });
+
+        // X-axis labels (first, middle, last)
+        var xLabels=[0,Math.floor(validRoas.length/2),validRoas.length-1];
+        xLabels.forEach(function(idx){
+          var x=padL+idx*stepX;
+          var dt=validRoas[idx].date.slice(5); // MM-DD
+          hc+='<text x="'+x+'" y="'+(svgChartH-4)+'" text-anchor="middle" font-size="9" fill="#94a3b8">'+dt+'</text>';
+        });
+
+        hc+='</svg></div>';
+      }
+      // Decay summary
+      if(data.decay&&data.decay.decay_pct!=null){
+        var dc=data.decay;
+        var dColor=dc.decay_pct>=0?'var(--g)':'var(--r)';
+        hc+='<div style="font-size:12px;margin-top:10px">First half: <strong>'+dc.first_half_roas+'x</strong> &rarr; Second half: <strong>'+dc.second_half_roas+'x</strong> <span style="color:'+dColor+'">('+((dc.decay_pct>=0?'+':'')+dc.decay_pct)+'%)</span></div>';
+      }
+      hc+='</div>';
+    }
+
+    // Cumulative spend + orders
+    hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+    hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">Lifetime</div>';
+    hc+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">';
+    var lkpis=[
+      {l:'Total Spend',v:cur(data.totals.spend)},
+      {l:'Total Revenue',v:cur(data.totals.revenue)},
+      {l:'Total Orders',v:fmt(data.totals.orders)},
+      {l:'Lifetime ROAS',v:data.totals.roas?data.totals.roas+'x':'--'},
+    ];
+    lkpis.forEach(function(k){
+      hc+='<div><div style="font-size:10px;color:var(--t3)">'+k.l+'</div><div style="font-size:16px;font-weight:600;margin-top:2px">'+k.v+'</div></div>';
+    });
+    hc+='</div></div>';
+
+    document.getElementById('creativeHealthCard').innerHTML=hc;
+  }).catch(function(){
+    document.getElementById('creativeHealthCard').innerHTML='';
+  });
 }
 
 function _openAdPreview(adId,evt){
