@@ -6261,14 +6261,15 @@ async function _loadDemoPlacement(){
 async function loadMetaAds(){
   if(_metaLoaded) return;
   var days=_metaDays;
+  // Fire all independent API calls in parallel — don't serialize
+  _loadMetaTrend();
+  _loadDigest();
+  _loadCreativeIntelligence();
   try{
     var [db, campHealth]=await Promise.all([
       api('/v1/meta/dashboard?days='+days+'&limit=25'),
       api('/v1/meta/campaign-health?days='+days),
     ]);
-    _loadMetaTrend();
-    _loadDigest();
-    _loadCreativeIntelligence();
     var p=db.pulse, sc=db.status_counts||{}, acts=db.actions||{}, fun=db.funnel||{};
 
     // ── Pulse KPIs ──
