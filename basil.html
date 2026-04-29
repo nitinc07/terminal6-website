@@ -1138,15 +1138,17 @@
             <div style="margin-top:12px"><button class="btn" onclick="_runStrategicAnalysis()" style="font-size:13px;padding:6px 20px">Run Strategic Analysis</button></div>
           </div>
         </div>
+        <div id="meta-strategic-chart" style="display:none;margin-bottom:16px"></div>
         <div id="meta-strategic-summary" style="display:none;margin-bottom:16px;padding:16px 20px;background:#fffbeb;border-radius:8px;font-size:13px;line-height:1.6"></div>
-        <div id="meta-strategic-cards" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div id="meta-strategic-actions" style="display:flex;flex-direction:column;gap:14px"></div>
+        <div id="meta-strategic-deepdive" style="display:flex;flex-direction:column;gap:10px;margin-top:16px"></div>
         <div id="meta-strategic-scaling" style="display:none;margin-top:16px;padding:16px 20px;border-radius:8px;font-size:13px"></div>
       </div>
     </div>
 
     <!-- Strategic calculations modal -->
     <div id="strategicCalcModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:1002;display:none;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
-      <div style="background:#fff;border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)">
+      <div style="background:#fff;border-radius:12px;padding:24px;max-width:820px;width:94%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <h3 id="strategicCalcTitle" style="margin:0;font-size:15px"></h3>
           <button onclick="document.getElementById('strategicCalcModal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3)">&times;</button>
@@ -5118,9 +5120,11 @@ async function _loadStrategicAnalysis(){
 function _runStrategicAnalysis(){
   var btn=document.getElementById('meta-strategic-run-btn');
   btn.disabled=true; btn.textContent='Running...';
-  document.getElementById('meta-strategic-cards').innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Assembling data...</div>';
+  document.getElementById('meta-strategic-actions').innerHTML='';
+  document.getElementById('meta-strategic-deepdive').innerHTML='';
   document.getElementById('meta-strategic-summary').style.display='none';
   document.getElementById('meta-strategic-scaling').style.display='none';
+  document.getElementById('meta-strategic-chart').style.display='none';
   document.getElementById('meta-strategic-placeholder').style.display='none';
   var noteEl=document.getElementById('meta-strategic-note');
   noteEl.textContent='Connecting...';
@@ -5133,7 +5137,7 @@ function _runStrategicAnalysis(){
   var fullText='';
   var stepCount=0;
   // Show trace container
-  document.getElementById('meta-strategic-cards').innerHTML='<div class="ag-trace streaming"><div class="steps" id="meta-strat-steps"></div></div>';
+  document.getElementById('meta-strategic-actions').innerHTML='<div class="ag-trace streaming"><div class="steps" id="meta-strat-steps"></div></div>';
 
   fetch(API_BASE+'/v1/agents/meta_strategic/stream',{headers:headers})
     .then(function(response){
@@ -5156,9 +5160,20 @@ function _runStrategicAnalysis(){
               noteEl.textContent=data;
               stepCount++;
               var stepsEl=document.getElementById('meta-strat-steps');
-              if(stepsEl) stepsEl.innerHTML+='<div class="step" style="animation:fadeIn .3s;padding:6px 0;font-size:12.5px;color:var(--t2);border-bottom:1px solid var(--c1)"><span style="display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;text-align:center;line-height:22px;font-size:11px;margin-right:10px;font-weight:600">'+stepCount+'</span>'+data+'</div>';
+              if(stepsEl){
+                // Mark previous steps as done (green check)
+                stepsEl.querySelectorAll('.step-icon.active').forEach(function(el){
+                  el.classList.remove('active');
+                  el.innerHTML='&#10003;';
+                  el.style.background='var(--g)';
+                });
+                stepsEl.innerHTML+='<div class="step" style="animation:fadeIn .3s;padding:8px 0;font-size:12.5px;color:var(--t2);border-bottom:1px solid var(--c1);display:flex;align-items:center;gap:10px"><span class="step-icon active" style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:600">'+stepCount+'</span><span>'+data+'</span></div>';
+              }
             }else if(eventType==='token'){
               fullText+=data.replace(/\\n/g,'\n');
+              // Show token count during streaming
+              var tokenCount=fullText.split(/\s+/).length;
+              if(tokenCount%20===0) noteEl.textContent='Sonnet reasoning... ('+tokenCount+' words)';
             }else if(eventType==='done'){
               btn.disabled=false; btn.textContent='Run Analysis';
               try{
@@ -5192,76 +5207,280 @@ function _runStrategicAnalysis(){
     });
 }
 
-var _strategicDimensions=[];
+var _strategicFactSheet=null;
 
-function _showStrategicCalc(idx){
-  var d=_strategicDimensions[idx];
-  if(!d||!d.data) return;
-  var verdictColors={red:'#dc2626',yellow:'#d97706',green:'#16a34a'};
-  var vc=verdictColors[d.verdict]||'#666';
-  document.getElementById('strategicCalcTitle').innerHTML='<span style="color:'+vc+'">\u25CF</span> '+d.title+' \u2014 Calculations';
-  var h='<thead><tr><th style="text-align:left">Metric</th><th style="text-align:left">Value</th></tr></thead><tbody>';
-  d.data.forEach(function(dp){
-    h+='<tr><td style="font-size:12.5px;color:var(--t3);padding:8px 12px">'+dp.label+'</td><td style="font-size:13px;font-weight:600;padding:8px 12px">'+dp.value+'</td></tr>';
+/* ── Fact sheet table key → column definitions ── */
+var _factTableDefs={
+  msku_spend_vs_revenue:{
+    title:'MSKU Spend vs Revenue',
+    cols:[{k:'product',l:'Product'},{k:'meta_spend',l:'Meta Spend',f:'cur'},{k:'d2c_revenue',l:'D2C Revenue',f:'cur'},
+          {k:'d2c_orders',l:'Orders'},{k:'spend_share_pct',l:'Spend %',f:'pct'},{k:'revenue_share_pct',l:'Revenue %',f:'pct'},{k:'gap_pp',l:'Gap (pp)',f:'pp'}]
+  },
+  campaigns:{
+    title:'Campaign Structure',
+    cols:[{k:'name',l:'Campaign'},{k:'spend',l:'Spend',f:'cur'},{k:'roas',l:'ROAS',f:'x'},{k:'orders',l:'Orders'},
+          {k:'ads',l:'Ads'},{k:'adsets',l:'Ad Sets'},{k:'learning',l:'Learning?',f:'bool'}]
+  },
+  creative_trajectories:{
+    title:'Creative Fatigue Trajectories',
+    cols:[{k:'name',l:'Creative'},{k:'spend',l:'Spend',f:'cur'},{k:'lifetime_roas',l:'Lifetime ROAS',f:'x'},
+          {k:'early_roas',l:'Early ROAS',f:'x'},{k:'late_roas',l:'Late ROAS',f:'x'},{k:'decay_pct',l:'Decay %',f:'pct'},{k:'days',l:'Days'}]
+  },
+  audience_segments:{
+    title:'Audience Segments',
+    cols:[{k:'_key',l:'Segment'},{k:'spend',l:'Spend',f:'cur'},{k:'sales',l:'Sales',f:'cur'},{k:'roas',l:'ROAS',f:'x'},
+          {k:'orders',l:'Orders'},{k:'cpa',l:'CPA',f:'cur'},{k:'spend_share_pct',l:'Spend %',f:'pct'}]
+  },
+  video_retention:{
+    title:'Video Retention',
+    cols:[{k:'name',l:'Creative'},{k:'spend',l:'Spend',f:'cur'},{k:'roas',l:'ROAS',f:'x'},
+          {k:'hook_rate',l:'Hook %',f:'pct'},{k:'hold_rate',l:'Hold %',f:'pct'},{k:'completion_rate',l:'Complete %',f:'pct'}]
+  },
+  weekly_trend:{
+    title:'Weekly Trend',
+    cols:[{k:'week',l:'Week'},{k:'spend',l:'Spend',f:'cur'},{k:'sales',l:'Sales',f:'cur'},{k:'roas',l:'ROAS',f:'x'},
+          {k:'orders',l:'Orders'},{k:'cpm',l:'CPM',f:'cur'},{k:'ads',l:'Ads'},{k:'campaigns',l:'Campaigns'}]
+  },
+  funnel:{
+    title:'Funnel Per \u20B91K Spend',
+    cols:[{k:'_key',l:'Stage'},{k:'_val',l:'Current'},{k:'_prior',l:'Prior'}]
+  },
+  product_overlap:{
+    title:'Product \u00D7 Campaign Overlap',
+    cols:[{k:'_key',l:'Product'},{k:'campaign_count',l:'Campaigns'},{k:'total_spend',l:'Total Spend',f:'cur'}]
+  }
+};
+
+function _fmtCell(v,f){
+  if(v==null||v===undefined) return '-';
+  if(f==='cur') return '\u20B9'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:0});
+  if(f==='x') return Number(v).toFixed(2)+'x';
+  if(f==='pct') return Number(v).toFixed(1)+'%';
+  if(f==='pp') return (v>0?'+':'')+Number(v).toFixed(1)+'pp';
+  if(f==='bool') return v?'Yes':'No';
+  return String(v);
+}
+
+function _showStrategicCalc(tableKey){
+  var def=_factTableDefs[tableKey];
+  if(!def||!_strategicFactSheet) return;
+  var rawData=_strategicFactSheet[tableKey];
+  if(!rawData) return;
+
+  document.getElementById('strategicCalcTitle').textContent=def.title+' \u2014 Fact Sheet';
+
+  // Normalize data: arrays stay, objects become [{_key, ...vals}]
+  var rows=[];
+  if(Array.isArray(rawData)){
+    rows=rawData;
+  }else if(typeof rawData==='object'){
+    // audience_segments / product_overlap / funnel
+    if(tableKey==='funnel'){
+      var cur=_strategicFactSheet.pulse_current||{};
+      var pri=_strategicFactSheet.pulse_prior||{};
+      var fc=cur.funnel_per_1k||{};var fp=pri.funnel_per_1k||{};
+      ['clicks','lpv','atc','checkouts','purchases'].forEach(function(s){
+        rows.push({_key:s,_val:_fmtCell(fc[s],''),_prior:_fmtCell(fp[s],'')});
+      });
+    }else{
+      Object.keys(rawData).forEach(function(k){
+        if(k==='note') return;
+        var r=typeof rawData[k]==='object'?Object.assign({_key:k},rawData[k]):{_key:k,value:rawData[k]};
+        rows.push(r);
+      });
+    }
+  }
+
+  var h='<thead><tr>';
+  def.cols.forEach(function(c){h+='<th style="text-align:'+(c.f?'right':'left')+';padding:8px 10px;font-size:11.5px;white-space:nowrap">'+c.l+'</th>';});
+  h+='</tr></thead><tbody>';
+  rows.forEach(function(r,i){
+    h+='<tr style="background:'+(i%2?'var(--c1)':'#fff')+'">';
+    def.cols.forEach(function(c){
+      var v=r[c.k];
+      var align=c.f?'right':'left';
+      h+='<td style="font-size:12.5px;padding:7px 10px;text-align:'+align+'">'+_fmtCell(v,c.f)+'</td>';
+    });
+    h+='</tr>';
   });
   h+='</tbody>';
   document.getElementById('strategicCalcTable').innerHTML=h;
   document.getElementById('strategicCalcModal').style.display='flex';
 }
 
+function _renderWeeklyChart(chartData){
+  if(!chartData||!chartData.length) return;
+  var el=document.getElementById('meta-strategic-chart');
+  var maxSpend=Math.max.apply(null,chartData.map(function(d){return d.spend||0;}));
+  var maxRoas=Math.max.apply(null,chartData.map(function(d){return d.roas||0;}));
+  if(!maxSpend) return;
+  var barH=120, gap=4;
+  var barW=Math.min(48,Math.floor(600/chartData.length));
+  var totalW=chartData.length*(barW+gap)-gap;
+
+  var h='<div style="background:var(--c1);border-radius:10px;padding:16px 20px">';
+  h+='<div style="font-weight:600;font-size:13px;margin-bottom:12px">Weekly Spend & ROAS</div>';
+  h+='<div style="position:relative;height:'+barH+'px;width:'+totalW+'px">';
+
+  // Bars + ROAS line via single SVG overlay
+  var pts=[];
+  chartData.forEach(function(d,i){
+    var bh=Math.round((d.spend||0)/maxSpend*barH*0.85);
+    var rh=maxRoas>0?Math.round((d.roas||0)/maxRoas*barH*0.9):0;
+    var x=i*(barW+gap);
+    pts.push((x+barW/2)+','+(barH-rh));
+  });
+
+  h+='<svg width="'+totalW+'" height="'+barH+'" style="display:block">';
+  // Spend bars
+  chartData.forEach(function(d,i){
+    var bh=Math.round((d.spend||0)/maxSpend*barH*0.85);
+    var x=i*(barW+gap);
+    h+='<rect x="'+x+'" y="'+(barH-bh)+'" width="'+(barW-2)+'" height="'+bh+'" rx="3" fill="var(--accent)" opacity="0.55">';
+    h+='<title>'+d.week+'\nSpend: \u20B9'+(d.spend/100000).toFixed(1)+'L\nROAS: '+((d.roas)||0).toFixed(2)+'x</title></rect>';
+  });
+  // ROAS line
+  if(pts.length>1){
+    h+='<polyline points="'+pts.join(' ')+'" fill="none" stroke="#0F766E" stroke-width="2.5" stroke-linejoin="round"/>';
+    pts.forEach(function(p){
+      var xy=p.split(',');
+      h+='<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="3.5" fill="#0F766E"/>';
+    });
+  }
+  // ROAS labels on dots
+  chartData.forEach(function(d,i){
+    var rh=maxRoas>0?Math.round((d.roas||0)/maxRoas*barH*0.9):0;
+    var x=i*(barW+gap)+barW/2;
+    var y=barH-rh-8;
+    if(y<10) y=barH-rh+14;
+    if(i%2===0||chartData.length<=8) h+='<text x="'+x+'" y="'+y+'" text-anchor="middle" font-size="10" fill="#0F766E" font-weight="600">'+((d.roas)||0).toFixed(1)+'</text>';
+  });
+  h+='</svg></div>';
+
+  // X-axis labels
+  h+='<div style="display:flex;gap:'+gap+'px;margin-top:4px;width:'+totalW+'px">';
+  chartData.forEach(function(d){
+    var lbl=d.week?d.week.slice(5):'';
+    h+='<div style="width:'+barW+'px;text-align:center;font-size:10px;color:var(--t3);flex-shrink:0">'+lbl+'</div>';
+  });
+  h+='</div>';
+
+  // Legend
+  h+='<div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--t3)">';
+  h+='<div><span style="display:inline-block;width:10px;height:10px;background:var(--accent);opacity:.6;border-radius:2px;margin-right:4px"></span>Spend</div>';
+  h+='<div><span style="display:inline-block;width:10px;height:3px;background:#0F766E;margin-right:4px;vertical-align:middle"></span>ROAS</div>';
+  h+='</div></div>';
+
+  el.innerHTML=h;
+  el.style.display='';
+}
+
 function _renderStrategicAnalysis(o){
   document.getElementById('meta-strategic-placeholder').style.display='none';
-  _strategicDimensions=o.dimensions||[];
 
-  // Executive summary
+  // Store fact sheet for View Calculations
+  _strategicFactSheet=o._fact_sheet||null;
+
+  // Weekly chart
+  _renderWeeklyChart(o.weekly_chart);
+
+  // Executive summary + health score
   if(o.executive_summary){
     var sumEl=document.getElementById('meta-strategic-summary');
-    sumEl.innerHTML='<strong>Executive Summary:</strong> '+o.executive_summary;
+    var scoreHtml='';
+    if(o.health_score!=null){
+      var sc=o.health_score;
+      var scc=sc>=70?'var(--g)':sc>=40?'#d97706':'#dc2626';
+      scoreHtml='<div style="display:inline-flex;align-items:center;gap:6px;margin-right:12px;padding:3px 10px;border-radius:12px;background:'+scc+'15;border:1px solid '+scc+'40"><span style="font-size:18px;font-weight:700;color:'+scc+'">'+sc+'</span><span style="font-size:11px;color:'+scc+'">/ 100</span></div>';
+    }
+    sumEl.innerHTML=scoreHtml+'<strong>Executive Summary:</strong> '+o.executive_summary;
     sumEl.style.display='';
   }
 
-  // Dimension cards
-  var verdictColors={red:'#dc2626',yellow:'#d97706',green:'#16a34a',not_ready:'#dc2626'};
-  var verdictBg={red:'#fef2f2',yellow:'#fffbeb',green:'#f0fdf4',not_ready:'#fef2f2'};
-  var verdictIcons={red:'\u274C',yellow:'\u26A0\uFE0F',green:'\u2705',not_ready:'\u274C'};
+  // Priority action cards
+  var sevColors={high:'#dc2626',medium:'#d97706',low:'#16a34a'};
+  var sevBg={high:'#fef2f2',medium:'#fffbeb',low:'#f0fdf4'};
+  var sevIcons={high:'\uD83D\uDD34',medium:'\uD83D\uDFE1',low:'\uD83D\uDFE2'};
 
-  var html='';
-  (o.dimensions||[]).forEach(function(d){
-    var vc=verdictColors[d.verdict]||'#666';
-    var bg=verdictBg[d.verdict]||'var(--c1)';
-    var icon=verdictIcons[d.verdict]||'';
-    html+='<div style="background:'+bg+';border-left:4px solid '+vc+';border-radius:8px;padding:16px 20px">';
-    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-    html+='<div style="font-weight:600;font-size:14px">'+icon+' '+d.title+'</div>';
-    html+='<span style="font-size:11px;font-weight:600;color:'+vc+';text-transform:uppercase;letter-spacing:.5px">'+d.verdict+'</span>';
-    html+='</div>';
-    html+='<div style="font-size:13px;font-weight:500;margin-bottom:8px">'+d.headline+'</div>';
-    html+='<div style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:10px">'+d.body+'</div>';
-    if(d.actions&&d.actions.length){
-      html+='<div style="border-top:1px solid rgba(0,0,0,.06);padding-top:8px;margin-bottom:8px;font-size:12px">';
-      d.actions.forEach(function(a){
-        html+='<div style="margin-bottom:4px;color:var(--t2)"><span style="color:'+vc+';font-weight:600;margin-right:6px">\u2192</span>'+a+'</div>';
-      });
-      html+='</div>';
-    }
-    if(d.data&&d.data.length){
-      var dimIdx=o.dimensions.indexOf(d);
-      html+='<div style="text-align:right"><button onclick="_showStrategicCalc('+dimIdx+')" style="font-size:11px;padding:4px 14px;border:1px solid '+vc+';border-radius:5px;background:none;color:'+vc+';cursor:pointer;font-family:var(--sans)">View Calculations</button></div>';
-    }
-    html+='</div>';
-  });
-  document.getElementById('meta-strategic-cards').innerHTML=html;
+  var ahtml='';
+  if(o.priority_actions&&o.priority_actions.length){
+    ahtml+='<div style="font-weight:600;font-size:14px;margin-bottom:8px;color:var(--t1)">Priority Actions</div>';
+    o.priority_actions.forEach(function(a,idx){
+      var sev=a.severity||'medium';
+      var sc=sevColors[sev]||'#d97706';
+      var bg=sevBg[sev]||'#fffbeb';
+      ahtml+='<div style="background:'+bg+';border-left:4px solid '+sc+';border-radius:8px;padding:18px 20px">';
+
+      // Header: number + action title + severity badge
+      ahtml+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px">';
+      ahtml+='<div style="font-weight:600;font-size:14px;line-height:1.4"><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:'+sc+';color:#fff;font-size:12px;margin-right:8px">'+(idx+1)+'</span>'+a.action+'</div>';
+      ahtml+='<span style="font-size:10px;font-weight:600;color:'+sc+';text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;padding:2px 8px;border:1px solid '+sc+'40;border-radius:4px">'+sev+'</span>';
+      ahtml+='</div>';
+
+      // Why (the mini-memo)
+      if(a.why){
+        ahtml+='<div style="font-size:12.5px;color:var(--t2);line-height:1.7;margin-bottom:12px">'+a.why+'</div>';
+      }
+
+      // Specific steps
+      if(a.specific_steps&&a.specific_steps.length){
+        ahtml+='<div style="background:rgba(0,0,0,.03);border-radius:6px;padding:10px 14px;margin-bottom:10px">';
+        ahtml+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Steps</div>';
+        a.specific_steps.forEach(function(s,si){
+          ahtml+='<div style="font-size:12.5px;color:var(--t1);padding:3px 0;display:flex;gap:8px"><span style="color:'+sc+';font-weight:600;flex-shrink:0">'+(si+1)+'.</span><span>'+s+'</span></div>';
+        });
+        ahtml+='</div>';
+      }
+
+      // Risk + Impact row
+      var metaRow='';
+      if(a.impact) metaRow+='<span style="margin-right:16px"><strong>Impact:</strong> '+a.impact+'</span>';
+      if(a.risk) metaRow+='<span style="color:var(--t3)"><strong>Risk:</strong> '+a.risk+'</span>';
+      if(metaRow) ahtml+='<div style="font-size:12px;line-height:1.6;margin-bottom:8px">'+metaRow+'</div>';
+
+      // View Calculations button
+      if(a.table_key&&_strategicFactSheet&&_strategicFactSheet[a.table_key]){
+        ahtml+='<div style="text-align:right"><button onclick="_showStrategicCalc(\''+a.table_key+'\')" style="font-size:11px;padding:4px 14px;border:1px solid '+sc+';border-radius:5px;background:none;color:'+sc+';cursor:pointer;font-family:var(--sans)">View Calculations</button></div>';
+      }
+      ahtml+='</div>';
+    });
+  }
+  document.getElementById('meta-strategic-actions').innerHTML=ahtml;
+
+  // Deep dive cards
+  var verdictColors={red:'#dc2626',yellow:'#d97706',green:'#16a34a'};
+  var verdictBg={red:'#fef2f2',yellow:'#fffbeb',green:'#f0fdf4'};
+  var verdictIcons={red:'\u274C',yellow:'\u26A0\uFE0F',green:'\u2705'};
+  var dhtml='';
+  if(o.deep_dive&&o.deep_dive.length){
+    dhtml+='<div style="font-weight:600;font-size:13px;margin-bottom:6px;margin-top:8px;color:var(--t3)">Deep Dive</div>';
+    o.deep_dive.forEach(function(d){
+      var vc=verdictColors[d.verdict]||'#666';
+      var bg=verdictBg[d.verdict]||'var(--c1)';
+      var icon=verdictIcons[d.verdict]||'';
+      dhtml+='<div style="background:'+bg+';border-left:3px solid '+vc+';border-radius:6px;padding:12px 16px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px">';
+      dhtml+='<div style="flex:1;min-width:0">';
+      dhtml+='<div style="font-weight:600;font-size:13px;margin-bottom:4px">'+icon+' '+d.title+' <span style="font-size:10px;font-weight:600;color:'+vc+';text-transform:uppercase;letter-spacing:.5px;margin-left:6px">'+d.verdict+'</span></div>';
+      dhtml+='<div style="font-size:12.5px;color:var(--t2);line-height:1.5">'+d.summary+'</div>';
+      dhtml+='</div>';
+      if(d.table_key&&_strategicFactSheet&&_strategicFactSheet[d.table_key]){
+        dhtml+='<button onclick="_showStrategicCalc(\''+d.table_key+'\')" style="font-size:10px;padding:3px 10px;border:1px solid '+vc+';border-radius:4px;background:none;color:'+vc+';cursor:pointer;font-family:var(--sans);white-space:nowrap;flex-shrink:0">View Data</button>';
+      }
+      dhtml+='</div>';
+    });
+  }
+  document.getElementById('meta-strategic-deepdive').innerHTML=dhtml;
 
   // Scaling verdict
   if(o.scaling_verdict){
     var sv=o.scaling_verdict;
-    var svc=verdictColors[sv.status]||verdictColors.not_ready;
-    var svbg=verdictBg[sv.status]||verdictBg.not_ready;
+    var svc=verdictColors[sv.status]||verdictColors.not_ready||'#dc2626';
+    var svbg=verdictBg[sv.status]||verdictBg.not_ready||'#fef2f2';
     var el=document.getElementById('meta-strategic-scaling');
     var sh='<div style="font-weight:600;font-size:14px;margin-bottom:6px">';
     sh+=(sv.status==='ready'?'\u2705':sv.status==='conditional'?'\u26A0\uFE0F':'\u274C');
     sh+=' Scaling Verdict: '+sv.status.toUpperCase().replace('_',' ')+'</div>';
-    sh+='<div style="font-size:13px;margin-bottom:8px">'+sv.headline+'</div>';
+    sh+='<div style="font-size:13px;margin-bottom:8px">'+(sv.headline||'')+'</div>';
     if(sv.blockers&&sv.blockers.length){
       sh+='<div style="font-size:12px;color:var(--t2)">';
       sv.blockers.forEach(function(b){sh+='<div>\u2022 '+b+'</div>';});
