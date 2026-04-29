@@ -1144,6 +1144,17 @@
       </div>
     </div>
 
+    <!-- Strategic calculations modal -->
+    <div id="strategicCalcModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:1002;display:none;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+      <div style="background:#fff;border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.15)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 id="strategicCalcTitle" style="margin:0;font-size:15px"></h3>
+          <button onclick="document.getElementById('strategicCalcModal').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3)">&times;</button>
+        </div>
+        <table class="tbl" id="strategicCalcTable" style="width:100%"></table>
+      </div>
+    </div>
+
     <!-- Sub-tab: Demographics & Placements -->
     <div id="metas-demo" style="display:none">
       <div class="sec">
@@ -5175,8 +5186,26 @@ function _runStrategicAnalysis(){
     });
 }
 
+var _strategicDimensions=[];
+
+function _showStrategicCalc(idx){
+  var d=_strategicDimensions[idx];
+  if(!d||!d.data) return;
+  var verdictColors={red:'#dc2626',yellow:'#d97706',green:'#16a34a'};
+  var vc=verdictColors[d.verdict]||'#666';
+  document.getElementById('strategicCalcTitle').innerHTML='<span style="color:'+vc+'">\u25CF</span> '+d.title+' \u2014 Calculations';
+  var h='<thead><tr><th style="text-align:left">Metric</th><th style="text-align:left">Value</th></tr></thead><tbody>';
+  d.data.forEach(function(dp){
+    h+='<tr><td style="font-size:12.5px;color:var(--t3);padding:8px 12px">'+dp.label+'</td><td style="font-size:13px;font-weight:600;padding:8px 12px">'+dp.value+'</td></tr>';
+  });
+  h+='</tbody>';
+  document.getElementById('strategicCalcTable').innerHTML=h;
+  document.getElementById('strategicCalcModal').style.display='flex';
+}
+
 function _renderStrategicAnalysis(o){
   document.getElementById('meta-strategic-placeholder').style.display='none';
+  _strategicDimensions=o.dimensions||[];
 
   // Executive summary
   if(o.executive_summary){
@@ -5201,21 +5230,17 @@ function _renderStrategicAnalysis(o){
     html+='<span style="font-size:11px;font-weight:600;color:'+vc+';text-transform:uppercase;letter-spacing:.5px">'+d.verdict+'</span>';
     html+='</div>';
     html+='<div style="font-size:13px;font-weight:500;margin-bottom:8px">'+d.headline+'</div>';
-    // Data points — the calculations behind the callout
-    if(d.data&&d.data.length){
-      html+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;padding:10px 14px;background:rgba(255,255,255,.6);border-radius:6px">';
-      d.data.forEach(function(dp){
-        html+='<div style="min-width:120px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px">'+dp.label+'</div><div style="font-size:13px;font-weight:600">'+dp.value+'</div></div>';
-      });
-      html+='</div>';
-    }
     html+='<div style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:10px">'+d.body+'</div>';
     if(d.actions&&d.actions.length){
-      html+='<div style="border-top:1px solid rgba(0,0,0,.06);padding-top:8px;font-size:12px">';
+      html+='<div style="border-top:1px solid rgba(0,0,0,.06);padding-top:8px;margin-bottom:8px;font-size:12px">';
       d.actions.forEach(function(a){
         html+='<div style="margin-bottom:4px;color:var(--t2)"><span style="color:'+vc+';font-weight:600;margin-right:6px">\u2192</span>'+a+'</div>';
       });
       html+='</div>';
+    }
+    if(d.data&&d.data.length){
+      var dimIdx=o.dimensions.indexOf(d);
+      html+='<div style="text-align:right"><button onclick="_showStrategicCalc('+dimIdx+')" style="font-size:11px;padding:4px 14px;border:1px solid '+vc+';border-radius:5px;background:none;color:'+vc+';cursor:pointer;font-family:var(--sans)">View Calculations</button></div>';
     }
     html+='</div>';
   });
