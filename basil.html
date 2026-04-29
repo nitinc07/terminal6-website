@@ -5152,7 +5152,8 @@ function _runStrategicAnalysis(){
               noteEl.textContent=data;
             }else if(eventType==='token'){
               fullText+=data.replace(/\\n/g,'\n');
-              document.getElementById('meta-strategic-cards').innerHTML='<pre style="white-space:pre-wrap;font-size:12px;font-family:var(--sans);line-height:1.6;padding:16px;background:var(--c1);border-radius:8px;max-height:600px;overflow-y:auto">'+fullText.replace(/</g,'&lt;')+'</pre>';
+              // Don't show raw JSON — show a progress indicator instead
+              document.getElementById('meta-strategic-cards').innerHTML='<div style="padding:40px;text-align:center;color:var(--t3)"><div style="font-size:14px;margin-bottom:8px">Analyzing...</div><div style="font-size:12px">'+Math.round(fullText.length/50)+' insights generated</div></div>';
             }else if(eventType==='done'){
               btn.disabled=false; btn.textContent='Run Analysis';
               try{
