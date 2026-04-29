@@ -4545,7 +4545,7 @@ function openCreativeDetail(adId){
 
 function _openAdPreview(adId,evt){
   if(evt) evt.stopPropagation();
-  T6.get('/v1/meta/ad-preview?ad_id='+adId).then(function(r){
+  api('/v1/meta/ad-preview?ad_id='+adId).then(function(r){
     var url=r.url||r.fallback_url;
     if(url) window.open(url,'_blank');
     else alert(r.error||'Could not get preview URL');
@@ -4558,7 +4558,7 @@ function _openAdPreview(adId,evt){
 
 function _loadAudienceSegments(days){
   var audLabels={new_user:{label:'New Audience',color:'#3b82f6',icon:'\uD83C\uDFAF'},engaged:{label:'Engaged',color:'#8b5cf6',icon:'\uD83D\uDD04'},existing_buyer:{label:'Existing Customers',color:'#14b8a6',icon:'\u2B50'}};
-  T6.get('/v1/meta/audience-segments?days='+days).then(function(d){
+  api('/v1/meta/audience-segments?days='+days).then(function(d){
     if(d.error){document.getElementById('meta-aud-body').innerHTML='<tr><td colspan="8" style="color:var(--r)">'+d.error+'</td></tr>';return;}
     var segs=d.segments||{};
     var acctRoas=window._metaAccountRoas||2.0;
