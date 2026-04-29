@@ -23,7 +23,7 @@
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css?v=2026-04-29b">
+<link rel="stylesheet" href="/shared.css?v=2026-04-29c">
 <style>
 /* shared.css pins body to height:100vh + overflow:hidden for the brand
    dashboard's split-pane layout. This page is a flat scrolling document. */
@@ -99,8 +99,8 @@ table.t6 tbody tr:hover { background: var(--bg); }
 
   <!-- 1. Freshness matrix -->
   <div class="card">
-    <h2>Freshness across brands</h2>
-    <div class="note">Latest <code>pipeline_health_checks</code> row per (brand × source). Lag is days between today and the most recent canonical-table row; status flips to <span class="pill stale">stale</span> when lag exceeds source tolerance, <span class="pill no_data">no_data</span> if no row exists.</div>
+    <h2>Source freshness</h2>
+    <div class="note">Latest <code>pipeline_health_checks</code> row per source × layer. Lag is days between today and the most recent row; status flips to <span class="pill stale">stale</span> when lag exceeds source tolerance, <span class="pill no_data">no_data</span> if no row exists. Layer A = raw_ingestion, Layer B = canonical table — Layer A fresh + Layer B stale points to a normaliser bug.</div>
     <div class="kpi-row" id="freshnessKpis"></div>
     <div id="freshnessTableWrap"><div class="loading-row">Loading…</div></div>
   </div>
@@ -120,7 +120,7 @@ table.t6 tbody tr:hover { background: var(--bg); }
   </div>
 </div>
 
-<script src="/shared.js?v=2026-04-29b"></script>
+<script src="/shared.js?v=2026-04-29c"></script>
 <script>
 function escapeHtml(s){
   return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]});
@@ -150,8 +150,10 @@ function fmtDate(iso){
       location.replace('/');
       return;
     }
+    var brandSlug = window.T6_BRAND_SLUG || '';
+    var brandLabel = brandSlug ? (brandSlug.charAt(0).toUpperCase() + brandSlug.slice(1)) : 'this brand';
     document.getElementById('brandLine').textContent =
-      'Cross-brand pipeline visibility · signed in as ' + perms.email;
+      'Pipeline visibility for ' + brandLabel + ' · signed in as ' + perms.email;
     loadAll();
   } catch(e){
     showError('Failed to load permissions: ' + (e && e.message ? e.message : e));
@@ -188,16 +190,15 @@ function renderFreshness(resp){
       '<div class="muted">No pipeline_health_checks rows yet — the agent may not have run on this DB.</div>';
     return;
   }
-  // Sort: failures first, then by brand+source
+  // Sort: failures first, then by source+layer
   rows.sort(function(a,b){
     var sev = function(r){ return r.status === 'no_data' ? 0 : (r.status === 'stale' ? 1 : 2); };
     if(sev(a) !== sev(b)) return sev(a) - sev(b);
-    if(a.brand_name !== b.brand_name) return a.brand_name.localeCompare(b.brand_name);
-    return a.source.localeCompare(b.source);
+    if(a.source !== b.source) return a.source.localeCompare(b.source);
+    return (a.layer || '').localeCompare(b.layer || '');
   });
 
   var html = '<table class="t6"><thead><tr>'
-    + '<th>Brand</th>'
     + '<th>Source</th>'
     + '<th>Layer</th>'
     + '<th>Canonical table</th>'
@@ -212,7 +213,6 @@ function renderFreshness(resp){
   rows.forEach(function(r){
     var lagOver = r.lag_days != null && r.tolerance_days != null && r.lag_days > r.tolerance_days;
     html += '<tr>'
-      + '<td>' + escapeHtml(r.brand_name) + '</td>'
       + '<td><code>' + escapeHtml(r.source) + '</code></td>'
       + '<td>' + escapeHtml(r.layer) + '</td>'
       + '<td><code>' + escapeHtml(r.canonical_table || '—') + '</code></td>'
@@ -237,7 +237,6 @@ function renderRemediations(resp){
   }
   var html = '<table class="t6"><thead><tr>'
     + '<th>Detected</th>'
-    + '<th>Brand</th>'
     + '<th>Source</th>'
     + '<th>Symptom</th>'
     + '<th>Tier</th>'
@@ -255,7 +254,6 @@ function renderRemediations(resp){
       : (r.fix_outcome === 'escalated') ? 'escalated' : 'skipped';
     html += '<tr>'
       + '<td class="muted">' + fmtDate(r.detected_at) + '</td>'
-      + '<td>' + escapeHtml(r.brand_name) + '</td>'
       + '<td>' + escapeHtml(r.source || '—') + '</td>'
       + '<td><code>' + escapeHtml(r.symptom) + '</code></td>'
       + '<td><span class="pill ' + tierClass + '">' + escapeHtml(r.diagnosis_tier) + '</span></td>'
