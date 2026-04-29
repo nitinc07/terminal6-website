@@ -935,7 +935,7 @@
     </div>
 
     <!-- Audience Segments (Meta native: user_segment_key) -->
-    <div class="sec" id="meta-aud-sec">
+    <div class="sec" id="meta-aud-sec" style="display:none">
       <div class="sec-h"><h3>Audience Segments</h3><span class="note" id="meta-aud-note">from Meta Audience Segments</span></div>
       <div id="meta-aud-cards" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
       <div style="overflow-x:auto">
@@ -5581,8 +5581,8 @@ async function loadMetaAds(){
     });
     document.getElementById('meta-funnel').innerHTML=funHtml;
 
-    // ── Audience segments (from Meta user_segment_key — separate API call) ──
-    _loadAudienceSegments(days);
+    // ── Audience segments — on staging for validation ──
+    // _loadAudienceSegments(days);
 
     // ── Format mix ──
     var fmtColors={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
