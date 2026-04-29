@@ -248,6 +248,7 @@
     <div class="si sb-sub" onclick="swSub('metaads','data',this)"><span>Dashboard</span></div>
     <!-- <div class="si sb-sub" onclick="swSub('metaads','weekly',this)"><span>Weekly Review</span></div> -->
     <div class="si sb-sub" onclick="swSub('metaads','hourly',this)"><span>Hourly Tracker</span></div>
+    <div class="si sb-sub" onclick="swSub('metaads','strategic',this)"><span>Strategic Analysis</span></div>
     <div class="si sb-sub" onclick="swSub('metaads','demo',this)"><span>Demographics & Placements</span></div>
   </div>
   <div class="ss">
@@ -1122,6 +1123,27 @@
       </div>
     </div>
 
+    <!-- Sub-tab: Strategic Analysis -->
+    <div id="metas-strategic" style="display:none">
+      <div class="sec">
+        <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <h3 style="margin:0">Strategic Analysis</h3>
+          <button class="btn" onclick="_runStrategicAnalysis()" id="meta-strategic-run-btn" style="font-size:12px;padding:4px 14px">Run Analysis</button>
+          <span class="note" id="meta-strategic-note"></span>
+        </div>
+        <div id="meta-strategic-placeholder" style="padding:20px 0">
+          <div style="background:var(--c1);border-radius:10px;padding:24px;text-align:center">
+            <div style="font-size:14px;font-weight:500;margin-bottom:8px">Deep Meta Ads Account Analysis</div>
+            <div style="font-size:12px;color:var(--t3);max-width:500px;margin:0 auto">10-dimension strategic review: campaign structure, audience segments, creative fatigue, product coverage, video retention, budget allocation, scaling readiness.</div>
+            <div style="margin-top:12px"><button class="btn" onclick="_runStrategicAnalysis()" style="font-size:13px;padding:6px 20px">Run Strategic Analysis</button></div>
+          </div>
+        </div>
+        <div id="meta-strategic-summary" style="display:none;margin-bottom:16px;padding:16px 20px;background:#fffbeb;border-radius:8px;font-size:13px;line-height:1.6"></div>
+        <div id="meta-strategic-cards" style="display:flex;flex-direction:column;gap:12px"></div>
+        <div id="meta-strategic-scaling" style="display:none;margin-top:16px;padding:16px 20px;border-radius:8px;font-size:13px"></div>
+      </div>
+    </div>
+
     <!-- Sub-tab: Demographics & Placements -->
     <div id="metas-demo" style="display:none">
       <div class="sec">
@@ -1321,6 +1343,7 @@ const viewTitles={
   metaads:'&#127912; Meta Ads &mdash; Creative Performance',
   'metaads-weekly':'&#127912; Meta Ads &mdash; Weekly Review',
   'metaads-hourly':'&#127912; Meta Ads &mdash; Hourly Tracker',
+  'metaads-strategic':'&#127912; Meta Ads &mdash; Strategic Analysis',
   'metaads-demo':'&#127912; Meta Ads &mdash; Demographics &amp; Placements',
 };
 let currentView='mc';
@@ -4995,7 +5018,7 @@ async function _loadMetaTrend() {
 var _metaSubCurrent='data';
 function metaSub(id){
   _metaSubCurrent=id;
-  document.querySelectorAll('#metas-data,#metas-weekly,#metas-hourly,#metas-demo').forEach(function(el){
+  document.querySelectorAll('#metas-data,#metas-weekly,#metas-hourly,#metas-demo,#metas-strategic').forEach(function(el){
     var match=el.id==='metas-'+id;
     el.style.display=match?'':'none';
     el.classList.toggle('act',match);
@@ -5003,6 +5026,7 @@ function metaSub(id){
   if(id==='weekly') _loadWeeklyReview();
   if(id==='hourly') _loadHourlyTracker();
   if(id==='demo') _loadDemoPlacement();
+  if(id==='strategic') _loadStrategicAnalysis();
   var titleKey=id==='data'?'metaads':('metaads-'+id);
   document.getElementById('viewTitle').innerHTML=viewTitles[titleKey]||viewTitles.metaads;
 }
@@ -5065,6 +5089,152 @@ async function _loadCreativeIntelligence(){
 
 /* ── Weekly Review (streaming agent) ── */
 var _weeklyLoaded=false;
+/* ── Strategic Analysis ── */
+var _strategicLoaded=false;
+
+async function _loadStrategicAnalysis(){
+  if(_strategicLoaded) return;
+  try{
+    var cached=await api('/v1/agents/meta_strategic');
+    if(cached&&cached.output&&!cached.status){
+      _renderStrategicAnalysis(cached.output);
+      _strategicLoaded=true;
+      document.getElementById('meta-strategic-placeholder').style.display='none';
+    }
+  }catch(e){}
+}
+
+function _runStrategicAnalysis(){
+  var btn=document.getElementById('meta-strategic-run-btn');
+  btn.disabled=true; btn.textContent='Running...';
+  document.getElementById('meta-strategic-cards').innerHTML='<div style="padding:20px;text-align:center;color:var(--t3)">Assembling data...</div>';
+  document.getElementById('meta-strategic-summary').style.display='none';
+  document.getElementById('meta-strategic-scaling').style.display='none';
+  document.getElementById('meta-strategic-placeholder').style.display='none';
+  var noteEl=document.getElementById('meta-strategic-note');
+  noteEl.textContent='Connecting...';
+
+  var t=T6.token?T6.token():(sessionStorage.getItem('t6_token')||'');
+  var headers={'Authorization':'Bearer '+t};
+  if(window.T6_BRAND_SLUG) headers['X-Brand']=window.T6_BRAND_SLUG;
+  var API_BASE=(location.hostname.includes('.terminal6.io')&&location.hostname!=='terminal6.io'&&location.hostname!=='www.terminal6.io')?'':'https://api.terminal6.io';
+
+  var fullText='';
+  fetch(API_BASE+'/v1/agents/meta_strategic/stream',{headers:headers})
+    .then(function(response){
+      if(!response.ok) throw new Error('API '+response.status);
+      var reader=response.body.getReader();
+      var decoder=new TextDecoder();
+      var buffer='';
+
+      function processChunk(chunk){
+        buffer+=chunk;
+        var lines=buffer.split('\n');
+        buffer=lines.pop()||'';
+        var eventType='';
+        for(var i=0;i<lines.length;i++){
+          var line=lines[i];
+          if(line.startsWith('event: ')){eventType=line.slice(7).trim();continue;}
+          if(line.startsWith('data: ')){
+            var data=line.slice(6);
+            if(eventType==='status'){
+              noteEl.textContent=data;
+            }else if(eventType==='token'){
+              fullText+=data.replace(/\\n/g,'\n');
+              document.getElementById('meta-strategic-cards').innerHTML='<pre style="white-space:pre-wrap;font-size:12px;font-family:var(--sans);line-height:1.6;padding:16px;background:var(--c1);border-radius:8px;max-height:600px;overflow-y:auto">'+fullText.replace(/</g,'&lt;')+'</pre>';
+            }else if(eventType==='done'){
+              btn.disabled=false; btn.textContent='Run Analysis';
+              try{
+                var result=JSON.parse(data);
+                if(result.output) _renderStrategicAnalysis(result.output);
+                var cost=result.cost_usd?(' · ~$'+result.cost_usd.toFixed(3)):'';
+                noteEl.textContent='Generated just now'+cost;
+              }catch(ex){noteEl.textContent='Done (parse error)';}
+              _strategicLoaded=true;
+            }else if(eventType==='error'){
+              btn.disabled=false; btn.textContent='Run Analysis';
+              noteEl.textContent='Error: '+data;
+            }
+            eventType='';
+          }
+        }
+      }
+
+      function read(){
+        return reader.read().then(function(result){
+          if(result.done) return;
+          processChunk(decoder.decode(result.value,{stream:true}));
+          return read();
+        });
+      }
+      return read();
+    })
+    .catch(function(e){
+      btn.disabled=false; btn.textContent='Run Analysis';
+      noteEl.textContent='Error: '+e.message;
+    });
+}
+
+function _renderStrategicAnalysis(o){
+  document.getElementById('meta-strategic-placeholder').style.display='none';
+
+  // Executive summary
+  if(o.executive_summary){
+    var sumEl=document.getElementById('meta-strategic-summary');
+    sumEl.innerHTML='<strong>Executive Summary:</strong> '+o.executive_summary;
+    sumEl.style.display='';
+  }
+
+  // Dimension cards
+  var verdictColors={red:'#dc2626',yellow:'#d97706',green:'#16a34a',not_ready:'#dc2626'};
+  var verdictBg={red:'#fef2f2',yellow:'#fffbeb',green:'#f0fdf4',not_ready:'#fef2f2'};
+  var verdictIcons={red:'\u274C',yellow:'\u26A0\uFE0F',green:'\u2705',not_ready:'\u274C'};
+
+  var html='';
+  (o.dimensions||[]).forEach(function(d){
+    var vc=verdictColors[d.verdict]||'#666';
+    var bg=verdictBg[d.verdict]||'var(--c1)';
+    var icon=verdictIcons[d.verdict]||'';
+    html+='<div style="background:'+bg+';border-left:4px solid '+vc+';border-radius:8px;padding:16px 20px">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+    html+='<div style="font-weight:600;font-size:14px">'+icon+' '+d.title+'</div>';
+    html+='<span style="font-size:11px;font-weight:600;color:'+vc+';text-transform:uppercase;letter-spacing:.5px">'+d.verdict+'</span>';
+    html+='</div>';
+    html+='<div style="font-size:13px;font-weight:500;margin-bottom:6px">'+d.headline+'</div>';
+    html+='<div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-bottom:10px">'+d.body+'</div>';
+    if(d.actions&&d.actions.length){
+      html+='<div style="font-size:11.5px;color:var(--t2)">';
+      d.actions.forEach(function(a){
+        html+='<div style="margin-bottom:3px">\u2192 '+a+'</div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+  document.getElementById('meta-strategic-cards').innerHTML=html;
+
+  // Scaling verdict
+  if(o.scaling_verdict){
+    var sv=o.scaling_verdict;
+    var svc=verdictColors[sv.status]||verdictColors.not_ready;
+    var svbg=verdictBg[sv.status]||verdictBg.not_ready;
+    var el=document.getElementById('meta-strategic-scaling');
+    var sh='<div style="font-weight:600;font-size:14px;margin-bottom:6px">';
+    sh+=(sv.status==='ready'?'\u2705':sv.status==='conditional'?'\u26A0\uFE0F':'\u274C');
+    sh+=' Scaling Verdict: '+sv.status.toUpperCase().replace('_',' ')+'</div>';
+    sh+='<div style="font-size:13px;margin-bottom:8px">'+sv.headline+'</div>';
+    if(sv.blockers&&sv.blockers.length){
+      sh+='<div style="font-size:12px;color:var(--t2)">';
+      sv.blockers.forEach(function(b){sh+='<div>\u2022 '+b+'</div>';});
+      sh+='</div>';
+    }
+    el.innerHTML=sh;
+    el.style.background=svbg;
+    el.style.borderLeft='4px solid '+svc;
+    el.style.display='';
+  }
+}
+
 async function _loadWeeklyReview(){
   if(_weeklyLoaded) return;
   try{
