@@ -4447,7 +4447,8 @@ function _renderDigest(d){
   if(pl.gap>0){
     plEl.style.display='';
     var assess=pl.assessment||('Gap of '+pl.gap+' — creative team needs to deliver more winning ads.');
-    plEl.innerHTML='\u26A0\uFE0F <strong>Creative pipeline:</strong> '+(pl.winners_active||pl.winners)+' winners active, need '+pl.needed+'. '+assess;
+    var wCount=(pl.winners||0)+(pl.proven||0);
+    plEl.innerHTML='\u26A0\uFE0F <strong>Creative pipeline:</strong> '+(pl.winners||0)+' winners + '+(pl.proven||0)+' proven = '+wCount+' / '+pl.needed+' needed. '+assess;
   }else{plEl.style.display='none';}
 }
 
