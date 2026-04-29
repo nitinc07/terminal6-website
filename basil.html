@@ -250,7 +250,7 @@
     <div class="si sb-sub" onclick="swSub('metaads','demo',this)"><span>Audiences</span></div>
     <!-- <div class="si sb-sub" onclick="swSub('metaads','weekly',this)"><span>Weekly Review</span></div> -->
     <div class="si sb-sub" onclick="swSub('metaads','hourly',this)"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#16a34a;animation:blink-live 1.5s ease-in-out infinite"></span>Live Performance</span></div>
-    <div class="si sb-sub" onclick="swSub('metaads','strategic',this)"><span>Strategic Analysis</span></div>
+    <div class="si sb-sub" onclick="swSub('metaads','strategic',this)"><span>AI Deep Dive</span></div>
   </div>
   <div class="ss">
     <div class="sl">Amazon IN</div>
@@ -1095,19 +1095,19 @@
       </div>
     </div>
 
-    <!-- Sub-tab: Strategic Analysis -->
+    <!-- Sub-tab: AI Deep Dive -->
     <div id="metas-strategic" style="display:none">
       <div class="sec">
         <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3 style="margin:0">Strategic Analysis</h3>
+          <h3 style="margin:0">AI Deep Dive</h3>
           <button class="btn" onclick="_runStrategicAnalysis()" id="meta-strategic-run-btn" style="font-size:12px;padding:4px 14px">Run Analysis</button>
           <span class="note" id="meta-strategic-note"></span>
         </div>
         <div id="meta-strategic-placeholder" style="padding:20px 0">
           <div style="background:var(--c1);border-radius:10px;padding:24px;text-align:center">
-            <div style="font-size:14px;font-weight:500;margin-bottom:8px">Deep Meta Ads Account Analysis</div>
-            <div style="font-size:12px;color:var(--t3);max-width:500px;margin:0 auto">10-dimension strategic review: campaign structure, audience segments, creative fatigue, product coverage, video retention, budget allocation, scaling readiness.</div>
-            <div style="margin-top:12px"><button class="btn" onclick="_runStrategicAnalysis()" style="font-size:13px;padding:6px 20px">Run Strategic Analysis</button></div>
+            <div style="font-size:14px;font-weight:500;margin-bottom:8px">AI-Powered Meta Ads Deep Dive</div>
+            <div style="font-size:12px;color:var(--t3);max-width:500px;margin:0 auto">10-dimension strategic review powered by Claude Sonnet: campaign structure, audience segments, creative fatigue, product coverage, video retention, budget allocation, scaling readiness.</div>
+            <div style="margin-top:12px"><button class="btn" onclick="_runStrategicAnalysis()" style="font-size:13px;padding:6px 20px">Run Deep Dive</button></div>
           </div>
         </div>
         <div id="meta-strategic-chart" style="display:none;margin-bottom:16px"></div>
@@ -1385,7 +1385,7 @@ const viewTitles={
   'metaads-weekly':'Meta Ads &mdash; Weekly Review',
   'metaads-campaigns':'Meta Ads &mdash; Campaigns',
   'metaads-hourly':'Meta Ads &mdash; Live Performance',
-  'metaads-strategic':'Meta Ads &mdash; Strategic Analysis',
+  'metaads-strategic':'Meta Ads &mdash; AI Deep Dive',
   'metaads-demo':'Meta Ads &mdash; Audiences',
 };
 let currentView='mc';
@@ -5201,6 +5201,13 @@ async function _loadStrategicAnalysis(){
       _renderStrategicAnalysis(cached.output);
       _strategicLoaded=true;
       document.getElementById('meta-strategic-placeholder').style.display='none';
+      // Show timestamp
+      if(cached.generated_at){
+        var d=new Date(cached.generated_at);
+        var ago=Math.round((Date.now()-d.getTime())/60000);
+        var agoStr=ago<60?(ago+'m ago'):(Math.round(ago/60)+'h ago');
+        document.getElementById('meta-strategic-note').textContent='Last ran: '+d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' ('+agoStr+')';
+      }
     }
   }catch(e){}
 }
@@ -5268,7 +5275,8 @@ function _runStrategicAnalysis(){
                 var result=JSON.parse(data);
                 if(result.output) _renderStrategicAnalysis(result.output);
                 var cost=result.cost_usd?(' · ~$'+result.cost_usd.toFixed(3)):'';
-                noteEl.textContent='Generated just now'+cost;
+                var now=new Date();
+                noteEl.textContent='Last ran: '+now.toLocaleDateString('en-IN',{day:'numeric',month:'short'})+' '+now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+' (just now)'+cost;
               }catch(ex){noteEl.textContent='Done (parse error)';}
               _strategicLoaded=true;
             }else if(eventType==='error'){
