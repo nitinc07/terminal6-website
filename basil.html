@@ -941,17 +941,17 @@
 
     <!-- Audience Segments moved to Audiences sub-tab -->
 
-    <!-- Trend (transposed) -->
+    <!-- Trend (transposed: metrics × time, like Amazon tab) -->
     <div class="sec" id="meta-trend-sec">
       <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <h3>Trend</h3>
-        <div class="pills meta-gran-pills">
-          <button data-gran="day">Day</button>
-          <button class="a" data-gran="week">Week</button>
-          <button data-gran="month">Month</button>
+        <span class="note" id="meta-trend-note">7 days + MTD + 3 months</span>
+        <div class="pills meta-gran-pills" style="margin-left:auto">
+          <button class="a" data-gran="day">Day</button>
+          <button data-gran="week">Week</button>
         </div>
       </div>
-      <div style="overflow-x:auto"><table class="tbl" id="meta-trend-tbl"><tbody id="meta-trend-body"><tr><td class="loading">Loading...</td></tr></tbody></table></div>
+      <div style="overflow-x:auto" id="meta-trend-table"><div class="loading">Loading...</div></div>
     </div>
 
     <!-- Format breakdown -->
@@ -4469,7 +4469,7 @@ function agAct(btn, action){
 }
 
 /* ========== META ADS — CREATIVE PERFORMANCE ========== */
-var _metaGran = 'week';
+var _metaGran = 'day';
 var _metaDays = 7;
 var _metaLoaded = false;
 var _metaStatusFilter = 'top';
@@ -5016,30 +5016,88 @@ document.querySelectorAll('.meta-days-pills button').forEach(function(b){
   });
 });
 
+var _metaTrendMetrics=[
+  {label:'Spend',   key:'spend',   fn:function(v){return cur(v)},                          th:'pct', tv:15, tip:'Total Meta ad spend across all campaigns.'},
+  {label:'Revenue', key:'revenue', fn:function(v){return cur(v)},                          th:'pct', tv:15, tip:'Attributed sales (7-day click + 1-day view).'},
+  {label:'ROAS',    key:'roas',    fn:function(v){return v!=null?v.toFixed(2)+'x':'--'},   th:'pct', tv:15, tip:'Revenue / Spend.'},
+  {label:'Orders',  key:'orders',  fn:function(v){return fmt(v)},                          th:'pct', tv:15, tip:'Attributed orders (7-day click + 1-day view).'},
+  {label:'CPM',     key:'cpm',     fn:function(v){return v!=null?'\u20B9'+Math.round(v):'--'}, inv:true, th:'pct', tv:15, tip:'Cost per 1,000 impressions.'},
+  {label:'CPC',     key:'cpc',     fn:function(v){return v!=null?'\u20B9'+v.toFixed(0):'--'},  inv:true, th:'pct', tv:15, tip:'Cost per click.'},
+  {label:'CTR',     key:'ctr',     fn:function(v){return v!=null?v.toFixed(2)+'%':'--'},         th:'pp', tv:0.05, tip:'Click-through rate.'},
+  {label:'CPA',     key:'cpa',     fn:function(v){return v!=null?cur(v):'--'},              inv:true, th:'pct', tv:15, tip:'Cost per attributed order.'},
+];
+
 async function _loadMetaTrend() {
-  var p = _metaGran==='day'?7:_metaGran==='month'?6:12;
-  var d = await api('/v1/meta/account-health?granularity='+_metaGran+'&periods='+p);
-  var rows = (d.data||[]).slice().reverse();
-  if(!rows.length){document.getElementById('meta-trend-tbl').innerHTML='<tbody><tr><td>No data</td></tr></tbody>';return;}
-  var metrics=[
-    {key:'spend',label:'Spend',fmt:function(v){return cur(v)}},
-    {key:'revenue',label:'Revenue',fmt:function(v){return cur(v)}},
-    {key:'roas',label:'ROAS',fmt:function(v){return v!=null?v.toFixed(2)+'x':'--'},color:function(v){return v>=2.5?'var(--g)':v>=2?'':'var(--r)'}},
-    {key:'cpm',label:'CPM',fmt:function(v){return v!=null?'\u20B9'+Math.round(v):'--'}},
-    {key:'ctr',label:'CTR %',fmt:function(v){return v!=null?v.toFixed(2)+'%':'--'}},
-    {key:'cpc',label:'CPC',fmt:function(v){return v!=null?'\u20B9'+v.toFixed(0):'--'}},
-    {key:'cpa',label:'CPA',fmt:function(v){return v!=null?cur(v):'--'}},
-    {key:'orders',label:'Orders',fmt:function(v){return fmt(v)}},
-  ];
-  var hdr='<tr><th style="min-width:100px">METRIC</th>';
-  rows.forEach(function(r){hdr+='<th>'+shortD(r.period)+'</th>';});
-  var body='';
-  metrics.forEach(function(m){
-    body+='<tr><td style="font-weight:500">'+m.label+'</td>';
-    rows.forEach(function(r){var v=r[m.key];var s='';if(m.color){var c=m.color(v);if(c)s=' style="color:'+c+';font-weight:600"';}body+='<td'+s+'>'+m.fmt(v)+'</td>';});
-    body+='</tr>';
-  });
-  document.getElementById('meta-trend-tbl').innerHTML='<thead>'+hdr+'</thead><tbody>'+body+'</tbody>';
+  var gran=_metaGran;
+  var el=document.getElementById('meta-trend-table');
+  el.innerHTML='<div class="loading">Loading...</div>';
+
+  try{
+    var [granRes, monthRes]=await Promise.all([
+      api('/v1/meta/account-health?granularity='+gran+'&periods=7'),
+      api('/v1/meta/account-health?granularity=month&periods=4'),
+    ]);
+    var granData=(granRes.data||[]);
+    var monthData=(monthRes.data||[]);
+    if(!granData.length && !monthData.length){el.innerHTML='<div class="empty">No data</div>';return;}
+
+    // monthData: chronological (oldest first), last = MTD
+    var mtd=monthData.length?monthData[monthData.length-1]:null;
+    var priorMonths=monthData.slice(0,-1).reverse(); // newest first
+
+    // Build columns: granular (newest first) | MTD | prior months
+    var cols=[];
+    for(var i=granData.length-1;i>=0;i--){
+      cols.push({label:shortD(granData[i].period), data:granData[i], cls:''});
+    }
+    if(mtd) cols.push({label:'MTD', data:mtd, cls:'az-mtd'});
+    for(var j=0;j<priorMonths.length;j++){
+      cols.push({label:shortD(priorMonths[j].period), data:priorMonths[j], cls:'az-mo'});
+    }
+
+    // Render transposed table
+    var html='<table class="tbl"><thead><tr><th>Metric</th>';
+    for(var c=0;c<cols.length;c++){
+      var borderL=cols[c].cls==='az-mtd'?' style="border-left:2px solid var(--border)"':'';
+      html+='<th class="r"'+borderL+'>'+cols[c].label+'</th>';
+    }
+    html+='</tr></thead><tbody>';
+
+    for(var m=0;m<_metaTrendMetrics.length;m++){
+      var met=_metaTrendMetrics[m];
+      html+='<tr><td class="hi">'+met.label+(met.tip?(' '+tip(met.tip)):'')+'</td>';
+      for(var c2=0;c2<cols.length;c2++){
+        var val=cols[c2].data[met.key];
+        var bg='';
+        if(c2<cols.length-1){
+          var prev=cols[c2+1].data[met.key];
+          if(val!=null && prev!=null && prev!==0){
+            var sig=false;
+            if(met.th==='pp') sig=Math.abs(val-prev)>=met.tv;
+            else              sig=Math.abs((val-prev)/prev*100)>=met.tv;
+            if(sig){
+              var diff=val-prev;
+              if(met.inv) diff=-diff;
+              if(diff>0) bg='background:var(--gl)';
+              else if(diff<0) bg='background:var(--rl)';
+            }
+          }
+        }
+        var borderL2=cols[c2].cls==='az-mtd'?'border-left:2px solid var(--border);':'';
+        var style=(borderL2||bg)?' style="'+borderL2+bg+'"':'';
+        html+='<td class="mn2 r"'+style+'>'+met.fn(val)+'</td>';
+      }
+      html+='</tr>';
+    }
+    html+='</tbody></table>';
+
+    var noteEl=document.getElementById('meta-trend-note');
+    if(noteEl) noteEl.textContent=(gran==='day'?'7 days':'7 weeks')+' + MTD + 3 months';
+
+    el.innerHTML=html;
+  }catch(e){
+    el.innerHTML='<div style="color:var(--r);padding:12px">Failed: '+e.message+'</div>';
+  }
 }
 
 /* ── Meta sub-tab switching ── */
