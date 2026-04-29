@@ -4469,13 +4469,14 @@ function openCreativeDetail(adId){
   h+='<div style="flex:0 0 auto" id="mcMediaContainer">';
   if(d.creative_type==='VIDEO'){
     // Show thumbnail as poster, then fetch video URL async
-    h+='<div id="mcVideoWrap" style="position:relative;cursor:pointer" onclick="_loadMetaVideo(\''+d.ad_id+'\')">';
+    var metaUrl='https://business.facebook.com/adsmanager/manage/ads?act='+(window._metaAdAccountId||'')+'\x26selected_ad_ids='+d.ad_id;
+    h+='<div style="position:relative">';
     if(d.thumbnail_url){
-      h+='<img id="mcVideoPoster" src="'+d.thumbnail_url+'" style="max-width:280px;max-height:280px;border-radius:8px;object-fit:contain;background:var(--c1)" onerror="this.style.display=\'none\'">';
+      h+='<img src="'+d.thumbnail_url+'" style="max-width:280px;max-height:280px;border-radius:8px;object-fit:contain;background:var(--c1)" onerror="this.style.display=\'none\'">';
     } else {
       h+='<div style="width:280px;height:200px;background:var(--c1);border-radius:8px"></div>';
     }
-    h+='<div id="mcPlayBtn" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:24px;margin-left:3px">&#9654;</span></div>';
+    h+='<a href="'+metaUrl+'" target="_blank" rel="noopener" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;text-decoration:none"><span style="color:#fff;font-size:24px;margin-left:3px">&#9654;</span></a>';
     h+='</div>';
   } else if(d.thumbnail_url){
     h+='<img src="'+d.thumbnail_url+'" style="max-width:280px;max-height:280px;border-radius:8px;object-fit:contain;background:var(--c1)" onerror="this.outerHTML=\'<div style=padding:40px;background:var(--c1);border-radius:8px;color:var(--t3);text-align:center>Image unavailable</div>\'">';
@@ -4486,8 +4487,10 @@ function openCreativeDetail(adId){
 
   // Right side — status + ad copy
   h+='<div style="flex:1;min-width:200px">';
+  var metaLink='https://business.facebook.com/adsmanager/manage/ads?act='+(window._metaAdAccountId||'')+'\x26selected_ad_ids='+d.ad_id;
   h+='<div style="margin-bottom:12px"><span style="padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;background:'+sc+'22;color:'+sc+'">'+d.status+'</span>';
-  h+=' <span style="font-size:11px;color:var(--t3);margin-left:8px">'+d.creative_type+' · '+(d.effective_status||'--')+'</span></div>';
+  h+=' <span style="font-size:11px;color:var(--t3);margin-left:8px">'+d.creative_type+' · '+(d.effective_status||'--')+'</span>';
+  h+=' <a href="'+metaLink+'" target="_blank" rel="noopener" style="font-size:11px;margin-left:10px;color:var(--accent)">View in Ads Manager &rarr;</a></div>';
   if(d.body){
     var fullBody=d.body.endsWith('...')?(d.body):d.body;
     h+='<div style="font-size:12.5px;line-height:1.5;color:var(--t2);margin-bottom:10px;white-space:pre-wrap">'+fullBody+'</div>';
@@ -5550,6 +5553,7 @@ async function loadMetaAds(){
     window._metaCreatives=db.creatives||[];
     window._metaTotalCreatives=db.total_creatives||0;
     window._metaAccountRoas=db.account_roas||2.0;
+    window._metaAdAccountId=db.meta_account_id||'';
     window._metaDays=days;
     _metaStatusFilter='top';
     document.querySelectorAll('#meta-status-filters button').forEach(function(b){b.classList.remove('a')});
