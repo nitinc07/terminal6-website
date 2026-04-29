@@ -1114,7 +1114,6 @@
         <div id="meta-strategic-summary" style="display:none;margin-bottom:16px;padding:16px 20px;background:#fffbeb;border-radius:8px;font-size:13px;line-height:1.6"></div>
         <div id="meta-strategic-actions" style="display:flex;flex-direction:column;gap:14px"></div>
         <div id="meta-strategic-deepdive" style="display:flex;flex-direction:column;gap:10px;margin-top:16px"></div>
-        <div id="meta-strategic-scaling" style="display:none;margin-top:16px;padding:16px 20px;border-radius:8px;font-size:13px"></div>
       </div>
     </div>
 
@@ -5218,7 +5217,7 @@ function _runStrategicAnalysis(){
   document.getElementById('meta-strategic-actions').innerHTML='';
   document.getElementById('meta-strategic-deepdive').innerHTML='';
   document.getElementById('meta-strategic-summary').style.display='none';
-  document.getElementById('meta-strategic-scaling').style.display='none';
+
   document.getElementById('meta-strategic-chart').style.display='none';
   document.getElementById('meta-strategic-placeholder').style.display='none';
   var noteEl=document.getElementById('meta-strategic-note');
@@ -5318,9 +5317,13 @@ var _factTableDefs={
           {k:'ads',l:'Ads'},{k:'adsets',l:'Ad Sets'},{k:'learning',l:'Learning?',f:'bool'}]
   },
   creative_trajectories:{
-    title:'Creative Fatigue Trajectories',
-    cols:[{k:'name',l:'Creative'},{k:'spend',l:'Spend',f:'cur'},{k:'lifetime_roas',l:'Lifetime ROAS',f:'x'},
-          {k:'early_roas',l:'Early ROAS',f:'x'},{k:'late_roas',l:'Late ROAS',f:'x'},{k:'decay_pct',l:'Decay %',f:'pct'},{k:'days',l:'Days'}]
+    title:'Creative Performance (Active, Last 14d vs Prior 14d)',
+    cols:[{k:'name',l:'Creative'},{k:'status',l:'Status'},{k:'spend',l:'Spend (30d)',f:'cur'},{k:'period_roas',l:'30d ROAS',f:'x'},
+          {k:'prior_14d_roas',l:'Prior 14d',f:'x'},{k:'recent_14d_roas',l:'Recent 14d',f:'x'},{k:'roas_change_pct',l:'Change',f:'pct'}]
+  },
+  creative_pipeline:{
+    title:'Creative Pipeline Health (Last 14d)',
+    cols:[{k:'_key',l:'Metric'},{k:'_val',l:'Value'}]
   },
   audience_segments:{
     title:'Audience Segments',
@@ -5566,27 +5569,6 @@ function _renderStrategicAnalysis(o){
     });
   }
   document.getElementById('meta-strategic-deepdive').innerHTML=dhtml;
-
-  // Scaling verdict
-  if(o.scaling_verdict){
-    var sv=o.scaling_verdict;
-    var svc=verdictColors[sv.status]||verdictColors.not_ready||'#dc2626';
-    var svbg=verdictBg[sv.status]||verdictBg.not_ready||'#fef2f2';
-    var el=document.getElementById('meta-strategic-scaling');
-    var sh='<div style="font-weight:600;font-size:14px;margin-bottom:6px">';
-    sh+=(sv.status==='ready'?'\u2705':sv.status==='conditional'?'\u26A0\uFE0F':'\u274C');
-    sh+=' Scaling Verdict: '+sv.status.toUpperCase().replace('_',' ')+'</div>';
-    sh+='<div style="font-size:13px;margin-bottom:8px">'+(sv.headline||'')+'</div>';
-    if(sv.blockers&&sv.blockers.length){
-      sh+='<div style="font-size:12px;color:var(--t2)">';
-      sv.blockers.forEach(function(b){sh+='<div>\u2022 '+b+'</div>';});
-      sh+='</div>';
-    }
-    el.innerHTML=sh;
-    el.style.background=svbg;
-    el.style.borderLeft='4px solid '+svc;
-    el.style.display='';
-  }
 }
 
 async function _loadWeeklyReview(){
