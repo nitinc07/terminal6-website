@@ -246,10 +246,11 @@
     <div class="sl">Meta Ads</div>
     <div class="si" onclick="sw('metaads',this)"><div class="ic">&#127912;</div><span>Creative Performance</span></div>
     <div class="si sb-sub" onclick="swSub('metaads','data',this)"><span>Dashboard</span></div>
+    <div class="si sb-sub" onclick="swSub('metaads','campaigns',this)"><span>Campaigns</span></div>
+    <div class="si sb-sub" onclick="swSub('metaads','demo',this)"><span>Audiences</span></div>
     <!-- <div class="si sb-sub" onclick="swSub('metaads','weekly',this)"><span>Weekly Review</span></div> -->
     <div class="si sb-sub" onclick="swSub('metaads','hourly',this)"><span>Hourly Tracker</span></div>
     <div class="si sb-sub" onclick="swSub('metaads','strategic',this)"><span>Strategic Analysis</span></div>
-    <div class="si sb-sub" onclick="swSub('metaads','demo',this)"><span>Demographics & Placements</span></div>
   </div>
   <div class="ss">
     <div class="sl">Amazon IN</div>
@@ -937,29 +938,7 @@
       <div id="meta-funnel" style="display:flex;gap:0;align-items:center;justify-content:center;flex-wrap:wrap;padding:16px 0"></div>
     </div>
 
-    <!-- Audience Segments (Meta native: user_segment_key) -->
-    <div class="sec" id="meta-aud-sec">
-      <div class="sec-h"><h3>Audience Segments</h3><span class="note" id="meta-aud-note">from Meta Audience Segments</span></div>
-      <div id="meta-aud-cards" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
-      <div style="overflow-x:auto">
-        <table class="tbl" id="meta-aud-tbl">
-          <thead><tr><th>Segment</th><th>Spend</th><th>Share</th><th>ROAS</th><th>CPA</th><th>CPM</th><th>CTR</th><th>Orders</th></tr></thead>
-          <tbody id="meta-aud-body"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-      <div style="margin-top:14px">
-        <div class="sec-h"><h4 style="font-size:13px;margin:0">Weekly Trend by Segment</h4></div>
-        <div style="overflow-x:auto">
-          <table class="tbl" id="meta-aud-trend-tbl"></table>
-        </div>
-      </div>
-      <div style="margin-top:14px" id="meta-aud-camp-sec" style="display:none">
-        <div class="sec-h"><h4 style="font-size:13px;margin:0">Per-Campaign Segment Split</h4></div>
-        <div style="overflow-x:auto">
-          <table class="tbl" id="meta-aud-camp-tbl"></table>
-        </div>
-      </div>
-    </div>
+    <!-- Audience Segments moved to Audiences sub-tab -->
 
     <!-- Trend (transposed) -->
     <div class="sec" id="meta-trend-sec">
@@ -1022,21 +1001,14 @@
       </div>
     </div>
 
-    <!-- Campaign health (budget containers) -->
-    <div class="sec" id="meta-camp-sec">
-      <div class="sec-h"><h3>Campaigns (Budget Containers)</h3><span class="note" id="meta-camp-note"></span></div>
-      <div class="g4" style="margin-bottom:14px">
-        <div class="cd"><div class="kl">Campaigns</div><div class="kv" id="meta-camp-count">--</div><div class="kd n" id="meta-camp-frag">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Above 2x ROAS</div><div class="kv" id="meta-camp-above">--</div><div class="kd n" id="meta-camp-above-sub">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Below 2x ROAS</div><div class="kv" id="meta-camp-below">--</div><div class="kd n" id="meta-camp-below-sub">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Bleeding (&lt;1x)</div><div class="kv" id="meta-camp-bleed">--</div><div class="kd n" id="meta-camp-bleed-sub">&nbsp;</div></div>
+    <!-- Campaign teaser (full view in Campaigns sub-tab) -->
+    <div class="sec" id="meta-camp-teaser-sec">
+      <div class="sec-h" style="display:flex;align-items:center;gap:12px">
+        <h3 style="margin:0">Campaigns</h3>
+        <span class="note" id="meta-camp-teaser-note"></span>
+        <a href="javascript:void(0)" onclick="metaSub('campaigns');document.querySelector('[onclick*=\x22campaigns\x22]').classList.add('act')" style="margin-left:auto;font-size:12px;color:var(--accent);text-decoration:none;font-weight:500">View All &rarr;</a>
       </div>
-      <div style="overflow-x:auto">
-        <table class="tbl" id="meta-camp-tbl">
-          <thead><tr><th>Campaign</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Share</th><th>Orders</th><th>Ads</th><th>Freq</th></tr></thead>
-          <tbody id="meta-camp-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
+      <div id="meta-camp-teaser" style="display:flex;gap:12px;flex-wrap:wrap"></div>
     </div>
 
     <!-- Creative Intelligence (from Claude Vision analysis) -->
@@ -1157,11 +1129,32 @@
       </div>
     </div>
 
-    <!-- Sub-tab: Demographics & Placements -->
+    <!-- Sub-tab: Campaigns (extracted from Dashboard) -->
+    <div id="metas-campaigns" style="display:none">
+      <div class="sec">
+        <div class="sec-h"><h3>Campaign Performance</h3><span class="note" id="meta-camp-note"></span></div>
+        <div class="g4" style="margin-bottom:14px">
+          <div class="cd"><div class="kl">Campaigns</div><div class="kv" id="meta-camp-count">--</div><div class="kd n" id="meta-camp-frag">&nbsp;</div></div>
+          <div class="cd"><div class="kl">Above 2x ROAS</div><div class="kv" id="meta-camp-above">--</div><div class="kd n" id="meta-camp-above-sub">&nbsp;</div></div>
+          <div class="cd"><div class="kl">Below 2x ROAS</div><div class="kv" id="meta-camp-below">--</div><div class="kd n" id="meta-camp-below-sub">&nbsp;</div></div>
+          <div class="cd"><div class="kl">Bleeding (&lt;1x)</div><div class="kv" id="meta-camp-bleed">--</div><div class="kd n" id="meta-camp-bleed-sub">&nbsp;</div></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl" id="meta-camp-tbl">
+            <thead><tr><th>Campaign</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Share</th><th>Orders</th><th>Ads</th><th>Freq</th></tr></thead>
+            <tbody id="meta-camp-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-tab: Audiences (was Demographics & Placements) -->
     <div id="metas-demo" style="display:none">
+
+      <!-- Period picker (shared across all sections) -->
       <div class="sec">
         <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <h3 style="margin:0">Demographics &amp; Placements</h3>
+          <h3 style="margin:0">Audiences</h3>
           <div class="pills" id="demo-days-pills">
             <button data-days="7" onclick="_setDemoDays(7)">7d</button>
             <button data-days="14" onclick="_setDemoDays(14)">14d</button>
@@ -1176,6 +1169,26 @@
             <button onclick="_setDemoCustom()" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:5px;background:var(--bg-white);cursor:pointer;font-family:var(--sans);color:var(--t2)">Apply</button>
           </div>
           <span class="note" id="meta-demo-note"></span>
+        </div>
+
+        <!-- Audience Segments (moved from Dashboard) -->
+        <div style="margin-bottom:24px">
+          <h4 style="font-size:13px;margin:0 0 10px">Audience Segments</h4>
+          <div id="meta-aud-cards" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"></div>
+          <div style="overflow-x:auto">
+            <table class="tbl" id="meta-aud-tbl">
+              <thead><tr><th>Segment</th><th>Spend</th><th>Share</th><th>ROAS</th><th>CPA</th><th>CPM</th><th>CTR</th><th>Orders</th></tr></thead>
+              <tbody id="meta-aud-body"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+            </table>
+          </div>
+          <div style="margin-top:14px">
+            <h4 style="font-size:13px;margin:0 0 10px">Weekly Trend by Segment</h4>
+            <div style="overflow-x:auto"><table class="tbl" id="meta-aud-trend-tbl"></table></div>
+          </div>
+          <div style="margin-top:14px" id="meta-aud-camp-sec">
+            <h4 style="font-size:13px;margin:0 0 10px">Per-Campaign Segment Split</h4>
+            <div style="overflow-x:auto"><table class="tbl" id="meta-aud-camp-tbl"></table></div>
+          </div>
         </div>
 
         <!-- Age × Gender Heatmap -->
@@ -1355,9 +1368,10 @@ const viewTitles={
   otherch:'&#128722; Other Channels',
   metaads:'&#127912; Meta Ads &mdash; Creative Performance',
   'metaads-weekly':'&#127912; Meta Ads &mdash; Weekly Review',
+  'metaads-campaigns':'&#127912; Meta Ads &mdash; Campaigns',
   'metaads-hourly':'&#127912; Meta Ads &mdash; Hourly Tracker',
   'metaads-strategic':'&#127912; Meta Ads &mdash; Strategic Analysis',
-  'metaads-demo':'&#127912; Meta Ads &mdash; Demographics &amp; Placements',
+  'metaads-demo':'&#127912; Meta Ads &mdash; Audiences',
 };
 let currentView='mc';
 function swSub(viewId, subId, el){
@@ -5031,14 +5045,15 @@ async function _loadMetaTrend() {
 var _metaSubCurrent='data';
 function metaSub(id){
   _metaSubCurrent=id;
-  document.querySelectorAll('#metas-data,#metas-weekly,#metas-hourly,#metas-demo,#metas-strategic').forEach(function(el){
+  document.querySelectorAll('#metas-data,#metas-weekly,#metas-hourly,#metas-demo,#metas-strategic,#metas-campaigns').forEach(function(el){
     var match=el.id==='metas-'+id;
     el.style.display=match?'':'none';
     el.classList.toggle('act',match);
   });
   if(id==='weekly') _loadWeeklyReview();
   if(id==='hourly') _loadHourlyTracker();
-  if(id==='demo') _loadDemoPlacement();
+  if(id==='campaigns') _loadCampaigns();
+  if(id==='demo') _loadAudiences();
   if(id==='strategic') _loadStrategicAnalysis();
   var titleKey=id==='data'?'metaads':('metaads-'+id);
   document.getElementById('viewTitle').innerHTML=viewTitles[titleKey]||viewTitles.metaads;
@@ -5935,13 +5950,13 @@ async function _loadHourlyTracker(){
 /* ── Demographics & Placements loader ── */
 var _demoDays=30, _demoLoaded=0, _demoCustom=null;
 function _setDemoDays(d){
-  _demoDays=d; _demoLoaded=0; _demoCustom=null;
+  _demoDays=d; _demoLoaded=0; _demoCustom=null; _audiencesLoaded=false;
   document.querySelectorAll('#demo-days-pills button').forEach(function(b){
     b.classList.toggle('a',parseInt(b.dataset.days)===d);
   });
   document.getElementById('demo-date-from').value='';
   document.getElementById('demo-date-to').value='';
-  _loadDemoPlacement();
+  _loadAudiences();
 }
 function _setDemoCustom(){
   var from=document.getElementById('demo-date-from').value;
@@ -5951,13 +5966,59 @@ function _setDemoCustom(){
   var d1=new Date(from), d2=new Date(to);
   var diff=Math.ceil((d2-d1)/(1000*60*60*24));
   if(diff<1||diff>365){alert('Pick a range between 1 and 365 days');return;}
-  _demoDays=diff; _demoLoaded=0; _demoCustom={from:from,to:to};
+  _demoDays=diff; _demoLoaded=0; _demoCustom={from:from,to:to}; _audiencesLoaded=false;
   // Deselect preset pills
   document.querySelectorAll('#demo-days-pills button').forEach(function(b){b.classList.remove('a');});
-  _loadDemoPlacement();
+  _loadAudiences();
 }
 function _roasClr(v){return v>=2?'var(--g)':v>=1?'#3b82f6':'var(--r)';}
 function _spendBar(v,mx){var p=mx>0?Math.round(v/mx*100):0;return '<div style="width:60px;height:6px;background:var(--c1);border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px"><div style="width:'+p+'%;height:100%;background:var(--acc);border-radius:3px"></div></div>';}
+
+/* ── Campaigns sub-tab loader ── */
+var _campaignsLoaded=false;
+async function _loadCampaigns(){
+  if(_campaignsLoaded) return;
+  // Wait for dashboard to load first (it fetches campHealth)
+  if(!window._metaCampHealth){
+    await loadMetaAds();
+  }
+  var ch=window._metaCampHealth;
+  if(!ch) return;
+  var fragC={healthy:'var(--g)',moderate:'var(--y)',severe:'var(--r)'};
+  document.getElementById('meta-camp-count').textContent=ch.campaign_count;
+  document.getElementById('meta-camp-frag').innerHTML='<span style="color:'+(fragC[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</span>';
+  document.getElementById('meta-camp-above').textContent=ch.above_target.count;
+  document.getElementById('meta-camp-above-sub').textContent=ch.above_target.spend_pct+'% of spend';
+  document.getElementById('meta-camp-below').textContent=ch.below_target.count;
+  document.getElementById('meta-camp-below-sub').textContent=ch.below_target.spend_pct+'% of spend';
+  document.getElementById('meta-camp-bleed').textContent=ch.bleeding.count;
+  document.getElementById('meta-camp-bleed-sub').textContent=ch.bleeding.count>0?cur(ch.bleeding.spend)+' wasted':'none';
+  document.getElementById('meta-camp-note').textContent='last '+ch.days+' days';
+  var cB='';
+  (ch.campaigns||[]).forEach(function(c){
+    var rc3=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
+    var cn=(c.campaign_name||'').length>45?c.campaign_name.slice(0,45)+'...':c.campaign_name||'--';
+    cB+='<tr><td style="font-size:12px" title="'+(c.campaign_name||'')+'">'+cn+'</td>'+
+      '<td style="font-weight:600;color:'+rc3+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
+      '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
+      '<td>'+(c.ctr!=null?c.ctr.toFixed(1)+'%':'--')+'</td>'+
+      '<td>'+cur(c.spend)+'</td><td>'+c.spend_share_pct+'%</td>'+
+      '<td>'+fmt(c.orders)+'</td><td>'+c.ad_count+'</td>'+
+      '<td>'+(c.avg_frequency||'--')+'</td></tr>';
+  });
+  document.getElementById('meta-camp-body').innerHTML=cB||'<tr><td colspan="9">No data</td></tr>';
+  _campaignsLoaded=true;
+}
+
+/* ── Audiences sub-tab loader (segments + demographics + placements) ── */
+var _audiencesLoaded=false;
+async function _loadAudiences(){
+  if(!_audiencesLoaded){
+    _loadAudienceSegments(_demoDays||30);
+    _audiencesLoaded=true;
+  }
+  _loadDemoPlacement();
+}
 
 async function _loadDemoPlacement(){
   if(_demoLoaded===_demoDays && !_demoCustom) return;
@@ -6189,9 +6250,6 @@ async function loadMetaAds(){
     });
     document.getElementById('meta-funnel').innerHTML=funHtml;
 
-    // ── Audience segments (from Meta user_segment_key — live API call) ──
-    _loadAudienceSegments(days);
-
     // ── Format mix ──
     var fmtColors={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
     var barH='',cardsH='';
@@ -6217,31 +6275,32 @@ async function loadMetaAds(){
     _renderMetaCreatives(_metaActiveOnly(window._metaCreatives).slice(0,25));
     _updateMetaFilterCounts();
 
-    // ── Campaign health ──
+    // ── Campaign teaser (full view in Campaigns sub-tab) ──
+    window._metaCampHealth=campHealth;
     var ch=campHealth;
     var fragC={healthy:'var(--g)',moderate:'var(--y)',severe:'var(--r)'};
-    document.getElementById('meta-camp-count').textContent=ch.campaign_count;
-    document.getElementById('meta-camp-frag').innerHTML='<span style="color:'+(fragC[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</span>';
-    document.getElementById('meta-camp-above').textContent=ch.above_target.count;
-    document.getElementById('meta-camp-above-sub').textContent=ch.above_target.spend_pct+'% of spend';
-    document.getElementById('meta-camp-below').textContent=ch.below_target.count;
-    document.getElementById('meta-camp-below-sub').textContent=ch.below_target.spend_pct+'% of spend';
-    document.getElementById('meta-camp-bleed').textContent=ch.bleeding.count;
-    document.getElementById('meta-camp-bleed-sub').textContent=ch.bleeding.count>0?cur(ch.bleeding.spend)+' wasted':'none';
-    document.getElementById('meta-camp-note').textContent='last '+ch.days+' days';
-    var cB='';
-    (ch.campaigns||[]).forEach(function(c){
-      var rc3=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
-      var cn=(c.campaign_name||'').length>45?c.campaign_name.slice(0,45)+'...':c.campaign_name||'--';
-      cB+='<tr><td style="font-size:12px" title="'+(c.campaign_name||'')+'">'+cn+'</td>'+
-        '<td style="font-weight:600;color:'+rc3+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
-        '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
-        '<td>'+(c.ctr!=null?c.ctr.toFixed(1)+'%':'--')+'</td>'+
-        '<td>'+cur(c.spend)+'</td><td>'+c.spend_share_pct+'%</td>'+
-        '<td>'+fmt(c.orders)+'</td><td>'+c.ad_count+'</td>'+
-        '<td>'+(c.avg_frequency||'--')+'</td></tr>';
-    });
-    document.getElementById('meta-camp-body').innerHTML=cB||'<tr><td colspan="9">No data</td></tr>';
+    var teaserH='';
+    // Fragmentation card
+    teaserH+='<div style="flex:1;min-width:140px;background:var(--c1);border-radius:8px;padding:12px 16px">';
+    teaserH+='<div style="font-size:11px;color:var(--t3);margin-bottom:4px">'+ch.campaign_count+' campaigns</div>';
+    teaserH+='<div style="font-size:16px;font-weight:600;color:'+(fragC[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</div>';
+    teaserH+='</div>';
+    // Above target
+    teaserH+='<div style="flex:1;min-width:140px;background:#f0fdf4;border-radius:8px;padding:12px 16px">';
+    teaserH+='<div style="font-size:11px;color:var(--t3);margin-bottom:4px">Above 2x ROAS</div>';
+    teaserH+='<div style="font-size:16px;font-weight:600;color:var(--g)">'+ch.above_target.count+'</div>';
+    teaserH+='<div style="font-size:11px;color:var(--t3)">'+ch.above_target.spend_pct+'% spend</div>';
+    teaserH+='</div>';
+    // Bleeders
+    if(ch.bleeding.count>0){
+      teaserH+='<div style="flex:1;min-width:140px;background:#fef2f2;border-radius:8px;padding:12px 16px">';
+      teaserH+='<div style="font-size:11px;color:var(--t3);margin-bottom:4px">Bleeding (&lt;1x ROAS)</div>';
+      teaserH+='<div style="font-size:16px;font-weight:600;color:var(--r)">'+ch.bleeding.count+'</div>';
+      teaserH+='<div style="font-size:11px;color:var(--r)">'+cur(ch.bleeding.spend)+' wasted</div>';
+      teaserH+='</div>';
+    }
+    document.getElementById('meta-camp-teaser').innerHTML=teaserH;
+    document.getElementById('meta-camp-teaser-note').textContent='last '+ch.days+' days';
 
     _metaLoaded=true;
   }catch(e){
