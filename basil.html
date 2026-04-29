@@ -5200,12 +5200,20 @@ function _renderStrategicAnalysis(o){
     html+='<div style="font-weight:600;font-size:14px">'+icon+' '+d.title+'</div>';
     html+='<span style="font-size:11px;font-weight:600;color:'+vc+';text-transform:uppercase;letter-spacing:.5px">'+d.verdict+'</span>';
     html+='</div>';
-    html+='<div style="font-size:13px;font-weight:500;margin-bottom:6px">'+d.headline+'</div>';
-    html+='<div style="font-size:12.5px;color:var(--t2);line-height:1.5;margin-bottom:10px">'+d.body+'</div>';
+    html+='<div style="font-size:13px;font-weight:500;margin-bottom:8px">'+d.headline+'</div>';
+    // Data points — the calculations behind the callout
+    if(d.data&&d.data.length){
+      html+='<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;padding:10px 14px;background:rgba(255,255,255,.6);border-radius:6px">';
+      d.data.forEach(function(dp){
+        html+='<div style="min-width:120px"><div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.3px">'+dp.label+'</div><div style="font-size:13px;font-weight:600">'+dp.value+'</div></div>';
+      });
+      html+='</div>';
+    }
+    html+='<div style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:10px">'+d.body+'</div>';
     if(d.actions&&d.actions.length){
-      html+='<div style="font-size:11.5px;color:var(--t2)">';
+      html+='<div style="border-top:1px solid rgba(0,0,0,.06);padding-top:8px;font-size:12px">';
       d.actions.forEach(function(a){
-        html+='<div style="margin-bottom:3px">\u2192 '+a+'</div>';
+        html+='<div style="margin-bottom:4px;color:var(--t2)"><span style="color:'+vc+';font-weight:600;margin-right:6px">\u2192</span>'+a+'</div>';
       });
       html+='</div>';
     }
