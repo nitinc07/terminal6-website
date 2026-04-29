@@ -5273,6 +5273,7 @@ async function loadMetaAds(){
     document.getElementById('meta-adcount').textContent=p.active_ads||'--';
     var scH='';
     if(sc.Winner)scH+='<span style="color:var(--g)">'+sc.Winner+' winners</span>';
+    if(sc.Proven)scH+=(scH?' · ':'')+'<span style="color:#0891b2">'+sc.Proven+' proven</span>';
     if(sc.Potential)scH+=(scH?' · ':'')+'<span style="color:#8b5cf6">'+sc.Potential+' potential</span>';
     if(sc.Fatiguing)scH+=(scH?' · ':'')+'<span style="color:#f97316">'+sc.Fatiguing+' fatiguing</span>';
     if(sc.Loser)scH+=(scH?' · ':'')+'<span style="color:var(--r)">'+sc.Loser+' losers</span>';
@@ -5369,7 +5370,7 @@ async function loadMetaAds(){
     document.getElementById('meta-fmt-cards').innerHTML=cardsH;
 
     // ── Creative table ──
-    var statusColors={Winner:'var(--g)',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
+    var statusColors={Winner:'var(--g)',Proven:'#0891b2',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
     var fmtP={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
     var tR='';
     (db.creatives||[]).forEach(function(d){
