@@ -4542,8 +4542,120 @@ function openCreativeDetail(adId){
     h+='<div style="font-size:12px;color:var(--t2);margin-bottom:16px">Quality Ranking: <strong>'+d.quality_ranking+'</strong></div>';
   }
 
+  // Placeholder for async health card data
+  h+='<div id="creativeHealthCard" style="margin-top:8px"><div style="color:var(--t3);font-size:12px">Loading health data...</div></div>';
+
   document.getElementById('mcDrawerContent').innerHTML=h;
   document.getElementById('metaCreativeDrawer').style.display='';
+
+  // Fetch per-creative health data async
+  api('/v1/meta/creative/'+adId+'?days=90').then(function(data){
+    if(data.error) { document.getElementById('creativeHealthCard').innerHTML=''; return; }
+    var hc='';
+
+    // Significance bar
+    var sig=data.significance;
+    var sigColor=sig.reached?'var(--g)':'var(--y)';
+    hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+    hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">Statistical Significance</div>';
+    hc+='<div style="display:flex;align-items:center;gap:12px">';
+    hc+='<div style="flex:1;height:8px;background:var(--c2);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+sig.progress_pct+'%;background:'+sigColor+';border-radius:4px"></div></div>';
+    hc+='<div style="font-size:13px;font-weight:600;color:'+sigColor+'">'+sig.conversions+'/'+sig.threshold+'</div>';
+    hc+='</div>';
+    hc+='<div style="font-size:11px;color:var(--t3);margin-top:4px">'+(sig.reached?'Sufficient data to evaluate performance':'Need '+(sig.threshold-sig.conversions)+' more conversions before calling this creative')+'</div>';
+    hc+='</div>';
+
+    // Video retention funnel
+    var ret=data.retention;
+    if(ret){
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Video Retention Funnel</div>';
+      // Funnel bars
+      var stages=[
+        {label:'Impressions',val:ret.impressions,pct:100},
+        {label:'Watched 25%',val:ret.p25,pct:ret.hook_rate_pct},
+        {label:'Watched 50%',val:ret.p50,pct:ret.impressions>0?Math.round(ret.p50/ret.impressions*1000)/10:0},
+        {label:'Watched 75%',val:ret.p75,pct:ret.impressions>0?Math.round(ret.p75/ret.impressions*1000)/10:0},
+        {label:'Watched 100%',val:ret.p100,pct:ret.impressions>0?Math.round(ret.p100/ret.impressions*1000)/10:0}
+      ];
+      var maxVal=ret.impressions||1;
+      stages.forEach(function(st){
+        var w=Math.max(st.val/maxVal*100,2);
+        hc+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+        hc+='<div style="width:90px;font-size:11px;color:var(--t3);text-align:right">'+st.label+'</div>';
+        hc+='<div style="flex:1;height:18px;background:var(--c2);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+w.toFixed(1)+'%;background:var(--accent);border-radius:4px"></div></div>';
+        hc+='<div style="width:70px;font-size:11px;color:var(--t2)">'+fmt(st.val)+' ('+st.pct+'%)</div>';
+        hc+='</div>';
+      });
+      // Key rates
+      hc+='<div style="display:flex;gap:16px;margin-top:10px;font-size:12px">';
+      hc+='<div>Hook rate: <strong style="color:'+(ret.hook_rate_pct>15?'var(--g)':ret.hook_rate_pct>8?'var(--y)':'var(--r)')+'">'+ret.hook_rate_pct+'%</strong></div>';
+      hc+='<div>Hold rate: <strong>'+ret.hold_rate_pct+'%</strong></div>';
+      hc+='<div>Completion: <strong>'+ret.completion_rate_pct+'%</strong></div>';
+      hc+='</div>';
+      // Cliff detection
+      var drops=[{seg:'25-50%',v:ret.drop_25_50_pct},{seg:'50-75%',v:ret.drop_50_75_pct},{seg:'75-100%',v:ret.drop_75_100_pct}];
+      var cliff=drops.reduce(function(a,b){return(b.v||0)>(a.v||0)?b:a});
+      if(cliff.v) hc+='<div style="font-size:11px;color:var(--t3);margin-top:6px">Biggest drop: <strong>'+cliff.seg+'</strong> ('+cliff.v+'% of viewers lost)</div>';
+      hc+='</div>';
+    }
+
+    // ROAS trend chart (simple sparkline using divs)
+    if(data.daily&&data.daily.length>1){
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">ROAS Trend ('+data.totals.days_active+' days)</div>';
+      // 7-day rolling ROAS
+      var roasData=[];
+      var window7=7;
+      for(var i=0;i<data.daily.length;i++){
+        var wStart=Math.max(0,i-window7+1);
+        var wSpend=0,wRev=0;
+        for(var j=wStart;j<=i;j++){wSpend+=data.daily[j].spend;wRev+=data.daily[j].revenue;}
+        roasData.push({date:data.daily[i].date,roas:wSpend>0?Math.round(wRev/wSpend*100)/100:null});
+      }
+      var validRoas=roasData.filter(function(d){return d.roas!=null});
+      if(validRoas.length>2){
+        var maxR=Math.max.apply(null,validRoas.map(function(d){return d.roas}));
+        var minR=Math.min.apply(null,validRoas.map(function(d){return d.roas}));
+        var range=maxR-minR||1;
+        var barW=Math.max(Math.floor(280/validRoas.length),2);
+        hc+='<div style="display:flex;align-items:flex-end;gap:1px;height:60px">';
+        validRoas.forEach(function(d){
+          var h2=Math.max(((d.roas-minR)/range)*55+5,3);
+          var col=d.roas>=2?'var(--g)':d.roas>=1.5?'var(--y)':'var(--r)';
+          hc+='<div title="'+d.date+': '+d.roas+'x" style="width:'+barW+'px;height:'+h2.toFixed(0)+'px;background:'+col+';border-radius:2px 2px 0 0;cursor:crosshair"></div>';
+        });
+        hc+='</div>';
+        hc+='<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:4px"><span>'+validRoas[0].date+'</span><span>7d rolling ROAS</span><span>'+validRoas[validRoas.length-1].date+'</span></div>';
+      }
+      // Decay summary
+      if(data.decay&&data.decay.decay_pct!=null){
+        var dc=data.decay;
+        var dColor=dc.decay_pct>=0?'var(--g)':'var(--r)';
+        hc+='<div style="font-size:12px;margin-top:10px">First half: <strong>'+dc.first_half_roas+'x</strong> &rarr; Second half: <strong>'+dc.second_half_roas+'x</strong> <span style="color:'+dColor+'">('+((dc.decay_pct>=0?'+':'')+dc.decay_pct)+'%)</span></div>';
+      }
+      hc+='</div>';
+    }
+
+    // Cumulative spend + orders
+    hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+    hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:8px">Lifetime</div>';
+    hc+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">';
+    var lkpis=[
+      {l:'Total Spend',v:cur(data.totals.spend)},
+      {l:'Total Revenue',v:cur(data.totals.revenue)},
+      {l:'Total Orders',v:fmt(data.totals.orders)},
+      {l:'Lifetime ROAS',v:data.totals.roas?data.totals.roas+'x':'--'},
+    ];
+    lkpis.forEach(function(k){
+      hc+='<div><div style="font-size:10px;color:var(--t3)">'+k.l+'</div><div style="font-size:16px;font-weight:600;margin-top:2px">'+k.v+'</div></div>';
+    });
+    hc+='</div></div>';
+
+    document.getElementById('creativeHealthCard').innerHTML=hc;
+  }).catch(function(){
+    document.getElementById('creativeHealthCard').innerHTML='';
+  });
 }
 
 function _openAdPreview(adId,evt){
