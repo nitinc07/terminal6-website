@@ -1149,14 +1149,20 @@
         </div>
         <div class="g4" style="margin-bottom:14px">
           <div class="cd"><div class="kl">Campaigns</div><div class="kv" id="meta-camp-count">--</div><div class="kd n" id="meta-camp-frag">&nbsp;</div></div>
+          <div class="cd"><div class="kl">Active</div><div class="kv" id="meta-camp-active">--</div><div class="kd n" id="meta-camp-paused">&nbsp;</div></div>
           <div class="cd"><div class="kl">Above 2x ROAS</div><div class="kv" id="meta-camp-above">--</div><div class="kd n" id="meta-camp-above-sub">&nbsp;</div></div>
           <div class="cd"><div class="kl">Below 2x ROAS</div><div class="kv" id="meta-camp-below">--</div><div class="kd n" id="meta-camp-below-sub">&nbsp;</div></div>
           <div class="cd"><div class="kl">Bleeding (&lt;1x)</div><div class="kv" id="meta-camp-bleed">--</div><div class="kd n" id="meta-camp-bleed-sub">&nbsp;</div></div>
         </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px" id="camp-status-filter">
+          <button class="a" onclick="_filterCampStatus('all',this)">All</button>
+          <button onclick="_filterCampStatus('ACTIVE',this)">Active</button>
+          <button onclick="_filterCampStatus('PAUSED',this)">Paused</button>
+        </div>
         <div style="overflow-x:auto">
           <table class="tbl" id="meta-camp-tbl">
-            <thead><tr><th>Campaign</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Share</th><th>Orders</th><th>Ads</th><th>Freq</th></tr></thead>
-            <tbody id="meta-camp-body"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
+            <thead><tr><th>Campaign</th><th>Status</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Budget</th><th>Share</th><th>Orders</th><th>Ads</th><th>Bid</th></tr></thead>
+            <tbody id="meta-camp-body"><tr><td colspan="11" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -5117,6 +5123,7 @@ async function _loadMetaTrend() {
 var _metaSubCurrent='data';
 function metaSub(id){
   _metaSubCurrent=id;
+  if(id!=='campaigns') _stopCampRefresh();
   document.querySelectorAll('#metas-data,#metas-weekly,#metas-hourly,#metas-demo,#metas-strategic,#metas-campaigns').forEach(function(el){
     var match=el.id==='metas-'+id;
     el.style.display=match?'':'none';
@@ -5124,7 +5131,7 @@ function metaSub(id){
   });
   if(id==='weekly') _loadWeeklyReview();
   if(id==='hourly') _loadHourlyTracker();
-  if(id==='campaigns') _loadCampaigns();
+  if(id==='campaigns'){ _campLoaded=0; _loadCampaigns(); }
   if(id==='demo') _loadAudiences();
   if(id==='strategic') _loadStrategicAnalysis();
   var titleKey=id==='data'?'metaads':('metaads-'+id);
@@ -6038,7 +6045,16 @@ function _roasClr(v){return v>=2?'var(--g)':v>=1?'#3b82f6':'var(--r)';}
 function _spendBar(v,mx){var p=mx>0?Math.round(v/mx*100):0;return '<div style="width:60px;height:6px;background:var(--c1);border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px"><div style="width:'+p+'%;height:100%;background:var(--acc);border-radius:3px"></div></div>';}
 
 /* ── Campaigns sub-tab loader ── */
-var _campDays=14, _campLoaded=0, _campCustom=null;
+var _campDays=14, _campLoaded=0, _campCustom=null, _campData=[], _campStatusFilter='all', _campRefreshTimer=null;
+
+function _startCampRefresh(){
+  _stopCampRefresh();
+  _campRefreshTimer=setInterval(function(){
+    if(_metaSubCurrent==='campaigns'){ _campLoaded=0; _loadCampaigns(); }
+    else _stopCampRefresh();
+  },60000);
+}
+function _stopCampRefresh(){ if(_campRefreshTimer){clearInterval(_campRefreshTimer);_campRefreshTimer=null;} }
 
 function _setCampDays(d){
   _campDays=d; _campLoaded=0; _campCustom=null;
@@ -6058,16 +6074,61 @@ function _setCampCustom(){
   document.querySelectorAll('#camp-days-pills button').forEach(function(b){b.classList.remove('a');});
   _loadCampaigns();
 }
+function _filterCampStatus(s,btn){
+  _campStatusFilter=s;
+  document.querySelectorAll('#camp-status-filter button').forEach(function(b){b.classList.remove('a');});
+  if(btn) btn.classList.add('a');
+  _renderCampRows();
+}
+function _renderCampRows(){
+  var filtered=_campData;
+  if(_campStatusFilter!=='all'){
+    filtered=_campData.filter(function(c){return c.effective_status===_campStatusFilter;});
+  }
+  var cB='';
+  filtered.forEach(function(c){
+    var rc3=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
+    var cn=(c.campaign_name||'').length>45?c.campaign_name.slice(0,45)+'...':c.campaign_name||'--';
+    var st=c.effective_status||'--';
+    var stC=st==='ACTIVE'?'var(--g)':st==='PAUSED'?'var(--y)':'var(--t3)';
+    var stL=st==='ACTIVE'?'Active':st==='PAUSED'?'Paused':st==='DELETED'?'Deleted':st==='ARCHIVED'?'Archived':st;
+    // Budget: show daily or lifetime
+    var budgetStr='--';
+    if(c.daily_budget) budgetStr=cur(c.daily_budget)+'/d';
+    else if(c.lifetime_budget) budgetStr=cur(c.lifetime_budget)+(c.budget_remaining!=null?' ('+cur(c.budget_remaining)+' left)':'');
+    // Bid strategy display
+    var bidStr=c.bid_strategy?c.bid_strategy.replace(/_/g,' ').toLowerCase():'--';
+    // Tooltip with dates
+    var tip=c.campaign_name||'';
+    if(c.created_time) tip+='\nCreated: '+c.created_time.slice(0,10);
+    if(c.start_time) tip+='\nStart: '+c.start_time.slice(0,10);
+    if(c.stop_time) tip+='\nEnd: '+c.stop_time.slice(0,10);
+    cB+='<tr><td style="font-size:12px" title="'+tip.replace(/"/g,'&quot;')+'">'+cn+'</td>'+
+      '<td><span style="color:'+stC+';font-size:11px;font-weight:600">'+stL+'</span></td>'+
+      '<td style="font-weight:600;color:'+rc3+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
+      '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
+      '<td>'+(c.ctr!=null?c.ctr.toFixed(1)+'%':'--')+'</td>'+
+      '<td>'+cur(c.spend)+'</td>'+
+      '<td style="font-size:11px">'+budgetStr+'</td>'+
+      '<td>'+c.spend_share_pct+'%</td>'+
+      '<td>'+fmt(c.orders)+'</td><td>'+c.ad_count+'</td>'+
+      '<td style="font-size:11px;text-transform:capitalize">'+bidStr+'</td></tr>';
+  });
+  document.getElementById('meta-camp-body').innerHTML=cB||'<tr><td colspan="11">No data</td></tr>';
+}
 
 async function _loadCampaigns(){
   if(_campLoaded===_campDays && !_campCustom) return;
-  document.getElementById('meta-camp-body').innerHTML='<tr><td colspan="9" class="loading">Loading...</td></tr>';
+  document.getElementById('meta-camp-body').innerHTML='<tr><td colspan="11" class="loading">Loading...</td></tr>';
   try{
     var ch=await api('/v1/meta/campaign-health?days='+_campDays);
     _campLoaded=_campDays;
+    _campData=ch.campaigns||[];
     var fragC={healthy:'var(--g)',moderate:'var(--y)',severe:'var(--r)'};
     document.getElementById('meta-camp-count').textContent=ch.campaign_count;
     document.getElementById('meta-camp-frag').innerHTML='<span style="color:'+(fragC[ch.fragmentation]||'var(--t3)')+'">'+ch.fragmentation+'</span>';
+    document.getElementById('meta-camp-active').textContent=ch.active_count||0;
+    document.getElementById('meta-camp-paused').textContent=(ch.paused_count||0)+' paused';
     document.getElementById('meta-camp-above').textContent=ch.above_target.count;
     document.getElementById('meta-camp-above-sub').textContent=ch.above_target.spend_pct+'% of spend';
     document.getElementById('meta-camp-below').textContent=ch.below_target.count;
@@ -6076,21 +6137,10 @@ async function _loadCampaigns(){
     document.getElementById('meta-camp-bleed-sub').textContent=ch.bleeding.count>0?cur(ch.bleeding.spend)+' wasted':'none';
     var noteText=_campCustom?(_campCustom.from+' to '+_campCustom.to):('last '+_campDays+' days');
     document.getElementById('meta-camp-note').textContent=noteText;
-    var cB='';
-    (ch.campaigns||[]).forEach(function(c){
-      var rc3=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
-      var cn=(c.campaign_name||'').length>45?c.campaign_name.slice(0,45)+'...':c.campaign_name||'--';
-      cB+='<tr><td style="font-size:12px" title="'+(c.campaign_name||'')+'">'+cn+'</td>'+
-        '<td style="font-weight:600;color:'+rc3+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
-        '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
-        '<td>'+(c.ctr!=null?c.ctr.toFixed(1)+'%':'--')+'</td>'+
-        '<td>'+cur(c.spend)+'</td><td>'+c.spend_share_pct+'%</td>'+
-        '<td>'+fmt(c.orders)+'</td><td>'+c.ad_count+'</td>'+
-        '<td>'+(c.avg_frequency||'--')+'</td></tr>';
-    });
-    document.getElementById('meta-camp-body').innerHTML=cB||'<tr><td colspan="9">No data</td></tr>';
+    _renderCampRows();
+    _startCampRefresh();
   }catch(e){
-    document.getElementById('meta-camp-body').innerHTML='<tr><td colspan="9" style="color:var(--r)">Failed: '+e.message+'</td></tr>';
+    document.getElementById('meta-camp-body').innerHTML='<tr><td colspan="11" style="color:var(--r)">Failed: '+e.message+'</td></tr>';
   }
 }
 
