@@ -4803,7 +4803,7 @@ function openCreativeDetail(adId){
     // Cumulative frequency curve (from reach_curve)
     if(data.reach_curve&&data.reach_curve.length>1){
       hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
-      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Cumulative Frequency — 30d Rolling (audience saturation)</div>';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Cumulative Frequency — Since Launch (audience saturation)</div>';
       var freqData=data.reach_curve;
       var svgW3=Math.min(820,freqData.length*12+80),svgH3=140,padL3=40,padR3=20,padT3=20,padB3=30;
       var cW3=svgW3-padL3-padR3,cH3=svgH3-padT3-padB3;
