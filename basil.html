@@ -993,10 +993,11 @@
             <th>Spend</th>
             <th>Share</th>
             <th>Orders</th>
+            <th>Freq</th>
             <th>Status</th>
             <th>Live</th>
           </tr></thead>
-          <tbody id="meta-perf-body"><tr><td colspan="11" class="loading">Loading...</td></tr></tbody>
+          <tbody id="meta-perf-body"><tr><td colspan="12" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -4520,10 +4521,11 @@ function _renderMetaCreatives(list){
       '<td>'+cur(d.spend)+'</td>'+
       '<td>'+(d.spend_share_pct||0).toFixed(1)+'%</td>'+
       '<td>'+fmt(d.attributed_orders)+'</td>'+
+      '<td>'+(d.cumulative_frequency!=null?'<span style="font-weight:600;color:'+(d.cumulative_frequency>3?'#f97316':d.cumulative_frequency>2?'var(--y)':'var(--g)')+'">'+d.cumulative_frequency.toFixed(1)+'x</span>':'--')+'</td>'+
       '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+d.status+'</span></td>'+
       '<td><span style="font-size:10.5px;color:'+(d.effective_status==='ACTIVE'?'var(--g)':'var(--t3)')+'">'+(d.effective_status||'--')+'</span></td></tr>';
   });
-  document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:40px">No creatives match filter</td></tr>';
+  document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="12" style="text-align:center;color:var(--t3);padding:40px">No creatives match filter</td></tr>';
   var note=_metaStatusFilter==='top'?'top '+list.length+' active by spend':list.length+' '+_metaStatusFilter+' active creatives';
   document.getElementById('meta-perf-note').textContent=note+' · last '+(window._metaDays||7)+' days';
 }
@@ -4770,6 +4772,104 @@ function openCreativeDetail(adId){
         hc+='<div style="font-size:12px;margin-top:10px">First half: <strong>'+dc.first_half_roas+'x</strong> &rarr; Second half: <strong>'+dc.second_half_roas+'x</strong> <span style="color:'+dColor+'">('+((dc.decay_pct>=0?'+':'')+dc.decay_pct)+'%)</span></div>';
       }
       hc+='</div>';
+    }
+
+    // Spend trend (daily bar chart)
+    if(data.daily&&data.daily.length>1){
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Daily Spend</div>';
+      var spVals=data.daily.map(function(d){return d.spend});
+      var maxSp=Math.max.apply(null,spVals)||1;
+      var svgW2=Math.min(820,data.daily.length*12+80),svgH2=100,padL2=50,padR2=20,padT2=10,padB2=25;
+      var cW2=svgW2-padL2-padR2,cH2=svgH2-padT2-padB2;
+      var barW2=Math.max(Math.floor(cW2/data.daily.length)-2,2);
+      hc+='<div style="overflow-x:auto"><svg width="'+svgW2+'" height="'+svgH2+'" viewBox="0 0 '+svgW2+' '+svgH2+'" style="display:block;max-width:100%">';
+      data.daily.forEach(function(d,i){
+        var bH=Math.max(d.spend/maxSp*cH2,1);
+        var x=padL2+i*(cW2/data.daily.length);
+        var y=padT2+cH2-bH;
+        var col=d.roas!=null&&d.roas>=2?'#6366f1':'#a5b4fc';
+        hc+='<rect x="'+x+'" y="'+y+'" width="'+barW2+'" height="'+bH+'" rx="1" fill="'+col+'"><title>'+d.date+': '+cur(d.spend)+'</title></rect>';
+      });
+      // Y-axis label
+      hc+='<text x="'+(padL2-6)+'" y="'+(padT2+8)+'" text-anchor="end" font-size="9" fill="#94a3b8">'+cur(maxSp)+'</text>';
+      // X-axis labels
+      [0,Math.floor(data.daily.length/2),data.daily.length-1].forEach(function(idx){
+        hc+='<text x="'+(padL2+idx*(cW2/data.daily.length)+barW2/2)+'" y="'+(svgH2-4)+'" text-anchor="middle" font-size="9" fill="#94a3b8">'+data.daily[idx].date.slice(5)+'</text>';
+      });
+      hc+='</svg></div></div>';
+    }
+
+    // Cumulative frequency curve (from reach_curve)
+    if(data.reach_curve&&data.reach_curve.length>1){
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Cumulative Frequency — 30d Rolling (audience saturation)</div>';
+      var freqData=data.reach_curve;
+      var svgW3=Math.min(820,freqData.length*12+80),svgH3=140,padL3=40,padR3=20,padT3=20,padB3=30;
+      var cW3=svgW3-padL3-padR3,cH3=svgH3-padT3-padB3;
+      var maxF=Math.max.apply(null,freqData.map(function(d){return d.frequency}))||1;
+      var minF=Math.min.apply(null,freqData.map(function(d){return d.frequency}))||0;
+      var rangePad3=(maxF-minF)*0.15||0.3;
+      minF=Math.max(0,minF-rangePad3);maxF=maxF+rangePad3;
+      var rangeF=maxF-minF||1;
+      var stepX3=cW3/(freqData.length-1);
+      hc+='<div style="overflow-x:auto"><svg width="'+svgW3+'" height="'+svgH3+'" viewBox="0 0 '+svgW3+' '+svgH3+'" style="display:block;max-width:100%">';
+
+      // Y-axis
+      for(var t3=0;t3<=4;t3++){
+        var yVal3=minF+(rangeF*t3/4);
+        var yPos3=padT3+cH3-cH3*(t3/4);
+        hc+='<line x1="'+padL3+'" y1="'+yPos3+'" x2="'+(svgW3-padR3)+'" y2="'+yPos3+'" stroke="#e5e7eb" stroke-width="0.5"/>';
+        hc+='<text x="'+(padL3-6)+'" y="'+(yPos3+3)+'" text-anchor="end" font-size="10" fill="#94a3b8">'+yVal3.toFixed(1)+'x</text>';
+      }
+
+      // 3x warning line
+      if(3>=minF&&3<=maxF){
+        var warnY=padT3+cH3-cH3*((3-minF)/rangeF);
+        hc+='<line x1="'+padL3+'" y1="'+warnY+'" x2="'+(svgW3-padR3)+'" y2="'+warnY+'" stroke="#f97316" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>';
+        hc+='<text x="'+(svgW3-padR3+4)+'" y="'+(warnY+3)+'" font-size="9" fill="#f97316">3x</text>';
+      }
+
+      // Area fill
+      var areaP3=padL3+','+(padT3+cH3);
+      freqData.forEach(function(d,i){
+        var x=padL3+i*stepX3;
+        var y=padT3+cH3-cH3*((d.frequency-minF)/rangeF);
+        areaP3+=' '+x+','+y;
+      });
+      areaP3+=' '+(padL3+(freqData.length-1)*stepX3)+','+(padT3+cH3);
+      hc+='<polygon points="'+areaP3+'" fill="#f97316" opacity="0.15"/>';
+
+      // Line
+      var pathF='';
+      freqData.forEach(function(d,i){
+        var x=padL3+i*stepX3;
+        var y=padT3+cH3-cH3*((d.frequency-minF)/rangeF);
+        pathF+=(i===0?'M':'L')+x+','+y;
+      });
+      hc+='<path d="'+pathF+'" fill="none" stroke="#f97316" stroke-width="2"/>';
+
+      // Data points
+      freqData.forEach(function(d,i){
+        var x=padL3+i*stepX3;
+        var y=padT3+cH3-cH3*((d.frequency-minF)/rangeF);
+        var col=d.frequency>=3?'#ef4444':d.frequency>=2?'#f97316':'#22c55e';
+        hc+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="'+col+'" stroke="#fff" stroke-width="1" style="cursor:crosshair"><title>'+d.date+': '+d.frequency.toFixed(1)+'x (reach: '+fmt(d.reach)+')</title></circle>';
+      });
+
+      // X-axis labels
+      [0,Math.floor(freqData.length/2),freqData.length-1].forEach(function(idx){
+        hc+='<text x="'+(padL3+idx*stepX3)+'" y="'+(svgH3-4)+'" text-anchor="middle" font-size="9" fill="#94a3b8">'+freqData[idx].date.slice(5)+'</text>';
+      });
+      hc+='</svg></div>';
+
+      // Latest frequency summary
+      var latest=freqData[freqData.length-1];
+      var first=freqData[0];
+      var freqDelta=latest.frequency-first.frequency;
+      hc+='<div style="font-size:12px;margin-top:8px">Current: <strong style="color:'+(latest.frequency>=3?'#f97316':'var(--t1)')+'">'+latest.frequency.toFixed(1)+'x</strong> · Reach: <strong>'+fmt(latest.reach)+'</strong>';
+      if(freqData.length>7) hc+=' · Change over '+freqData.length+'d: <strong style="color:'+(freqDelta>0.5?'#f97316':'var(--g)')+'">'+(freqDelta>=0?'+':'')+freqDelta.toFixed(1)+'x</strong>';
+      hc+='</div></div>';
     }
 
     // Cumulative spend + orders
@@ -6448,7 +6548,7 @@ async function loadMetaAds(){
     _metaLoaded=true;
   }catch(e){
     console.error('Meta Ads error:',e);
-    document.getElementById('meta-perf-body').innerHTML='<tr><td colspan="11" style="color:var(--r)">Failed to load: '+e.message+'</td></tr>';
+    document.getElementById('meta-perf-body').innerHTML='<tr><td colspan="12" style="color:var(--r)">Failed to load: '+e.message+'</td></tr>';
   }
 }
 
