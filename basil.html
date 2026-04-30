@@ -6092,10 +6092,18 @@ function _renderCampRows(){
     var st=c.effective_status||'--';
     var stC=st==='ACTIVE'?'var(--g)':st==='PAUSED'?'var(--y)':'var(--t3)';
     var stL=st==='ACTIVE'?'Active':st==='PAUSED'?'Paused':st==='DELETED'?'Deleted':st==='ARCHIVED'?'Archived':st;
-    // Budget: show daily or lifetime
+    // Budget: daily budget + pacing indicator
     var budgetStr='--';
-    if(c.daily_budget) budgetStr=cur(c.daily_budget)+'/d';
-    else if(c.lifetime_budget) budgetStr=cur(c.lifetime_budget)+(c.budget_remaining!=null?' ('+cur(c.budget_remaining)+' left)':'');
+    var pacingColor='inherit';
+    if(c.daily_budget){
+      budgetStr=cur(c.daily_budget)+'/d';
+      if(c.pacing_pct!=null){
+        pacingColor=c.pacing_pct>110?'var(--r)':c.pacing_pct<80?'var(--y)':'var(--g)';
+        budgetStr+=' <span style="color:'+pacingColor+';font-weight:600">('+c.pacing_pct+'%)</span>';
+      }
+    } else if(c.lifetime_budget){
+      budgetStr=cur(c.lifetime_budget)+(c.budget_remaining!=null?' ('+cur(c.budget_remaining)+' left)':'');
+    }
     // Bid strategy display
     var bidStr=c.bid_strategy?c.bid_strategy.replace(/_/g,' ').toLowerCase():'--';
     // Tooltip with dates
