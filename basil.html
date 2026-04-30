@@ -4774,102 +4774,138 @@ function openCreativeDetail(adId){
       hc+='</div>';
     }
 
-    // Spend trend (daily bar chart)
+    // Combined chart: Spend (bars) + ROAS (line, left axis) + Cumulative Frequency (line, right axis)
     if(data.daily&&data.daily.length>1){
-      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
-      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Daily Spend</div>';
-      var spVals=data.daily.map(function(d){return d.spend});
-      var maxSp=Math.max.apply(null,spVals)||1;
-      var svgW2=Math.min(820,data.daily.length*12+80),svgH2=100,padL2=50,padR2=20,padT2=10,padB2=25;
-      var cW2=svgW2-padL2-padR2,cH2=svgH2-padT2-padB2;
-      var barW2=Math.max(Math.floor(cW2/data.daily.length)-2,2);
-      hc+='<div style="overflow-x:auto"><svg width="'+svgW2+'" height="'+svgH2+'" viewBox="0 0 '+svgW2+' '+svgH2+'" style="display:block;max-width:100%">';
-      data.daily.forEach(function(d,i){
-        var bH=Math.max(d.spend/maxSp*cH2,1);
-        var x=padL2+i*(cW2/data.daily.length);
-        var y=padT2+cH2-bH;
-        var col=d.roas!=null&&d.roas>=2?'#6366f1':'#a5b4fc';
-        hc+='<rect x="'+x+'" y="'+y+'" width="'+barW2+'" height="'+bH+'" rx="1" fill="'+col+'"><title>'+d.date+': '+cur(d.spend)+'</title></rect>';
-      });
-      // Y-axis label
-      hc+='<text x="'+(padL2-6)+'" y="'+(padT2+8)+'" text-anchor="end" font-size="9" fill="#94a3b8">'+cur(maxSp)+'</text>';
-      // X-axis labels
-      [0,Math.floor(data.daily.length/2),data.daily.length-1].forEach(function(idx){
-        hc+='<text x="'+(padL2+idx*(cW2/data.daily.length)+barW2/2)+'" y="'+(svgH2-4)+'" text-anchor="middle" font-size="9" fill="#94a3b8">'+data.daily[idx].date.slice(5)+'</text>';
-      });
-      hc+='</svg></div></div>';
-    }
+      // Merge reach_curve into daily by date
+      var freqMap={};
+      if(data.reach_curve) data.reach_curve.forEach(function(r){freqMap[r.date]=r;});
+      // Build 7d rolling ROAS
+      var combined=[];
+      for(var ci=0;ci<data.daily.length;ci++){
+        var wS=Math.max(0,ci-6),wSpend=0,wRev=0;
+        for(var cj=wS;cj<=ci;cj++){wSpend+=data.daily[cj].spend;wRev+=data.daily[cj].revenue;}
+        var rr=freqMap[data.daily[ci].date];
+        combined.push({date:data.daily[ci].date,spend:data.daily[ci].spend,roas:wSpend>0?Math.round(wRev/wSpend*100)/100:null,freq:rr?rr.frequency:null,reach:rr?rr.reach:null});
+      }
+      // Only show last 30 days
+      if(combined.length>30) combined=combined.slice(combined.length-30);
 
-    // Cumulative frequency curve (from reach_curve)
-    if(data.reach_curve&&data.reach_curve.length>1){
-      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
-      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Cumulative Frequency — Since Launch (audience saturation)</div>';
-      var freqData=data.reach_curve;
-      var svgW3=Math.min(820,freqData.length*12+80),svgH3=140,padL3=40,padR3=20,padT3=20,padB3=30;
-      var cW3=svgW3-padL3-padR3,cH3=svgH3-padT3-padB3;
-      var maxF=Math.max.apply(null,freqData.map(function(d){return d.frequency}))||1;
-      var minF=Math.min.apply(null,freqData.map(function(d){return d.frequency}))||0;
-      var rangePad3=(maxF-minF)*0.15||0.3;
-      minF=Math.max(0,minF-rangePad3);maxF=maxF+rangePad3;
-      var rangeF=maxF-minF||1;
-      var stepX3=cW3/(freqData.length-1);
-      hc+='<div style="overflow-x:auto"><svg width="'+svgW3+'" height="'+svgH3+'" viewBox="0 0 '+svgW3+' '+svgH3+'" style="display:block;max-width:100%">';
+      var hasFreq=combined.some(function(d){return d.freq!=null});
+      var svgW4=Math.min(820,combined.length*18+120),svgH4=200;
+      var padL4=45,padR4=hasFreq?50:20,padT4=20,padB4=30;
+      var cW4=svgW4-padL4-padR4,cH4=svgH4-padT4-padB4;
+      var barW4=Math.max(Math.floor(cW4/combined.length)-2,3);
 
-      // Y-axis
-      for(var t3=0;t3<=4;t3++){
-        var yVal3=minF+(rangeF*t3/4);
-        var yPos3=padT3+cH3-cH3*(t3/4);
-        hc+='<line x1="'+padL3+'" y1="'+yPos3+'" x2="'+(svgW3-padR3)+'" y2="'+yPos3+'" stroke="#e5e7eb" stroke-width="0.5"/>';
-        hc+='<text x="'+(padL3-6)+'" y="'+(yPos3+3)+'" text-anchor="end" font-size="10" fill="#94a3b8">'+yVal3.toFixed(1)+'x</text>';
+      var maxSp4=Math.max.apply(null,combined.map(function(d){return d.spend}))||1;
+      var roasVals=combined.filter(function(d){return d.roas!=null}).map(function(d){return d.roas});
+      var maxR4=roasVals.length?Math.max.apply(null,roasVals):4;
+      var minR4=roasVals.length?Math.min.apply(null,roasVals):0;
+      var rPad4=(maxR4-minR4)*0.1||0.5;minR4=Math.max(0,minR4-rPad4);maxR4=maxR4+rPad4;
+      var rangeR4=maxR4-minR4||1;
+
+      var freqVals=combined.filter(function(d){return d.freq!=null}).map(function(d){return d.freq});
+      var maxF4=freqVals.length?Math.max.apply(null,freqVals):3;
+      var minF4=freqVals.length?Math.min.apply(null,freqVals):0;
+      var fPad4=(maxF4-minF4)*0.1||0.3;minF4=Math.max(0,minF4-fPad4);maxF4=maxF4+fPad4;
+      var rangeF4=maxF4-minF4||1;
+
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="display:flex;align-items:center;gap:16px;margin-bottom:10px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px">Spend + ROAS + Frequency</div>';
+      hc+='<div style="display:flex;gap:12px;font-size:10px;color:var(--t3)">';
+      hc+='<span><span style="display:inline-block;width:10px;height:10px;background:#a5b4fc;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Spend</span>';
+      hc+='<span><span style="display:inline-block;width:10px;height:2px;background:#6366f1;vertical-align:middle;margin-right:3px"></span>ROAS (7d)</span>';
+      if(hasFreq) hc+='<span><span style="display:inline-block;width:10px;height:2px;background:#f97316;vertical-align:middle;margin-right:3px"></span>Frequency</span>';
+      hc+='</div></div>';
+
+      hc+='<div style="overflow-x:auto"><svg width="'+svgW4+'" height="'+svgH4+'" viewBox="0 0 '+svgW4+' '+svgH4+'" style="display:block;max-width:100%">';
+
+      // Left Y-axis grid (ROAS)
+      for(var t4=0;t4<=4;t4++){
+        var yV4=minR4+(rangeR4*t4/4);
+        var yP4=padT4+cH4-cH4*(t4/4);
+        hc+='<line x1="'+padL4+'" y1="'+yP4+'" x2="'+(svgW4-padR4)+'" y2="'+yP4+'" stroke="#e5e7eb" stroke-width="0.5"/>';
+        hc+='<text x="'+(padL4-6)+'" y="'+(yP4+3)+'" text-anchor="end" font-size="10" fill="#6366f1">'+yV4.toFixed(1)+'x</text>';
+      }
+      // Right Y-axis labels (Frequency)
+      if(hasFreq){
+        for(var t5=0;t5<=4;t5++){
+          var yV5=minF4+(rangeF4*t5/4);
+          var yP5=padT4+cH4-cH4*(t5/4);
+          hc+='<text x="'+(svgW4-padR4+6)+'" y="'+(yP5+3)+'" font-size="10" fill="#f97316">'+yV5.toFixed(1)+'x</text>';
+        }
       }
 
-      // 3x warning line
-      if(3>=minF&&3<=maxF){
-        var warnY=padT3+cH3-cH3*((3-minF)/rangeF);
-        hc+='<line x1="'+padL3+'" y1="'+warnY+'" x2="'+(svgW3-padR3)+'" y2="'+warnY+'" stroke="#f97316" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>';
-        hc+='<text x="'+(svgW3-padR3+4)+'" y="'+(warnY+3)+'" font-size="9" fill="#f97316">3x</text>';
+      // 2x ROAS reference
+      if(2>=minR4&&2<=maxR4){
+        var refY4=padT4+cH4-cH4*((2-minR4)/rangeR4);
+        hc+='<line x1="'+padL4+'" y1="'+refY4+'" x2="'+(svgW4-padR4)+'" y2="'+refY4+'" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>';
       }
 
-      // Area fill
-      var areaP3=padL3+','+(padT3+cH3);
-      freqData.forEach(function(d,i){
-        var x=padL3+i*stepX3;
-        var y=padT3+cH3-cH3*((d.frequency-minF)/rangeF);
-        areaP3+=' '+x+','+y;
+      // Spend bars
+      combined.forEach(function(d,i){
+        var bH=Math.max(d.spend/maxSp4*cH4*0.5,1);
+        var x=padL4+i*(cW4/combined.length);
+        var y=padT4+cH4-bH;
+        hc+='<rect x="'+x+'" y="'+y+'" width="'+barW4+'" height="'+bH+'" rx="1" fill="#a5b4fc" opacity="0.6"><title>'+d.date+'\nSpend: '+cur(d.spend)+(d.roas!=null?'\nROAS: '+d.roas+'x':'')+(d.freq!=null?'\nFreq: '+d.freq.toFixed(1)+'x':'')+'</title></rect>';
       });
-      areaP3+=' '+(padL3+(freqData.length-1)*stepX3)+','+(padT3+cH3);
-      hc+='<polygon points="'+areaP3+'" fill="#f97316" opacity="0.15"/>';
 
-      // Line
-      var pathF='';
-      freqData.forEach(function(d,i){
-        var x=padL3+i*stepX3;
-        var y=padT3+cH3-cH3*((d.frequency-minF)/rangeF);
-        pathF+=(i===0?'M':'L')+x+','+y;
+      // ROAS line
+      var roasPath='';
+      combined.forEach(function(d,i){
+        if(d.roas==null) return;
+        var x=padL4+i*(cW4/combined.length)+barW4/2;
+        var y=padT4+cH4-cH4*((d.roas-minR4)/rangeR4);
+        roasPath+=(roasPath?'L':'M')+x+','+y;
       });
-      hc+='<path d="'+pathF+'" fill="none" stroke="#f97316" stroke-width="2"/>';
+      if(roasPath) hc+='<path d="'+roasPath+'" fill="none" stroke="#6366f1" stroke-width="2"/>';
+      // ROAS dots
+      combined.forEach(function(d,i){
+        if(d.roas==null) return;
+        var x=padL4+i*(cW4/combined.length)+barW4/2;
+        var y=padT4+cH4-cH4*((d.roas-minR4)/rangeR4);
+        var dc=d.roas>=2?'#22c55e':d.roas>=1.5?'#eab308':'#ef4444';
+        hc+='<circle cx="'+x+'" cy="'+y+'" r="2.5" fill="'+dc+'" stroke="#fff" stroke-width="0.5"/>';
+      });
 
-      // Data points
-      freqData.forEach(function(d,i){
-        var x=padL3+i*stepX3;
-        var y=padT3+cH3-cH3*((d.frequency-minF)/rangeF);
-        var col=d.frequency>=3?'#ef4444':d.frequency>=2?'#f97316':'#22c55e';
-        hc+='<circle cx="'+x+'" cy="'+y+'" r="3" fill="'+col+'" stroke="#fff" stroke-width="1" style="cursor:crosshair"><title>'+d.date+': '+d.frequency.toFixed(1)+'x (reach: '+fmt(d.reach)+')</title></circle>';
-      });
+      // Frequency line (right axis)
+      if(hasFreq){
+        var freqPath='';
+        combined.forEach(function(d,i){
+          if(d.freq==null) return;
+          var x=padL4+i*(cW4/combined.length)+barW4/2;
+          var y=padT4+cH4-cH4*((d.freq-minF4)/rangeF4);
+          freqPath+=(freqPath?'L':'M')+x+','+y;
+        });
+        if(freqPath) hc+='<path d="'+freqPath+'" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3"/>';
+        combined.forEach(function(d,i){
+          if(d.freq==null) return;
+          var x=padL4+i*(cW4/combined.length)+barW4/2;
+          var y=padT4+cH4-cH4*((d.freq-minF4)/rangeF4);
+          var fc=d.freq>=3?'#ef4444':d.freq>=2?'#f97316':'#22c55e';
+          hc+='<circle cx="'+x+'" cy="'+y+'" r="2.5" fill="'+fc+'" stroke="#fff" stroke-width="0.5"/>';
+        });
+      }
 
       // X-axis labels
-      [0,Math.floor(freqData.length/2),freqData.length-1].forEach(function(idx){
-        hc+='<text x="'+(padL3+idx*stepX3)+'" y="'+(svgH3-4)+'" text-anchor="middle" font-size="9" fill="#94a3b8">'+freqData[idx].date.slice(5)+'</text>';
+      [0,Math.floor(combined.length/2),combined.length-1].forEach(function(idx){
+        hc+='<text x="'+(padL4+idx*(cW4/combined.length)+barW4/2)+'" y="'+(svgH4-4)+'" text-anchor="middle" font-size="9" fill="#94a3b8">'+combined[idx].date.slice(5)+'</text>';
       });
       hc+='</svg></div>';
 
-      // Latest frequency summary
-      var latest=freqData[freqData.length-1];
-      var first=freqData[0];
-      var freqDelta=latest.frequency-first.frequency;
-      hc+='<div style="font-size:12px;margin-top:8px">Current: <strong style="color:'+(latest.frequency>=3?'#f97316':'var(--t1)')+'">'+latest.frequency.toFixed(1)+'x</strong> · Reach: <strong>'+fmt(latest.reach)+'</strong>';
-      if(freqData.length>7) hc+=' · Change over '+freqData.length+'d: <strong style="color:'+(freqDelta>0.5?'#f97316':'var(--g)')+'">'+(freqDelta>=0?'+':'')+freqDelta.toFixed(1)+'x</strong>';
-      hc+='</div></div>';
+      // Summary line
+      if(hasFreq&&freqVals.length>0){
+        var latestF=freqVals[freqVals.length-1];
+        var latestR=combined.filter(function(d){return d.reach!=null});
+        var lastReach=latestR.length?latestR[latestR.length-1].reach:null;
+        var firstF=freqVals[0];
+        var fDelta=latestF-firstF;
+        hc+='<div style="font-size:12px;margin-top:8px">Frequency: <strong style="color:'+(latestF>=3?'#f97316':'var(--t1)')+'">'+latestF.toFixed(1)+'x</strong>';
+        if(lastReach) hc+=' · Reach: <strong>'+fmt(lastReach)+'</strong>';
+        if(freqVals.length>3) hc+=' · Change: <strong style="color:'+(fDelta>0.5?'#f97316':'var(--g)')+'">'+(fDelta>=0?'+':'')+fDelta.toFixed(1)+'x</strong> over '+freqVals.length+'d';
+        hc+='</div>';
+      }
+      hc+='</div>';
     }
 
     // Cumulative spend + orders
