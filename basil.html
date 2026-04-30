@@ -4641,7 +4641,7 @@ function openCreativeDetail(adId){
 
     // Video retention funnel — visual trapezoid funnel
     var ret=data.retention;
-    if(ret){
+    if(ret&&ret.hook_rate_pct>1){
       hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
       hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:14px">Video Retention Funnel</div>';
       var stages=[
