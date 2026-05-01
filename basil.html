@@ -922,16 +922,6 @@
       <div id="mdDrawerItems"></div>
     </div>
 
-    <!-- Campaign detail modal -->
-    <div id="metaCampOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);z-index:1000" onclick="document.getElementById('metaCampDrawer').style.display='none';this.style.display='none'"></div>
-    <div id="metaCampDrawer" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(960px,65vw);max-height:85vh;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:1001;overflow-y:auto;padding:0;border-radius:12px">
-      <div style="position:sticky;top:0;background:#fff;padding:16px 24px;border-bottom:1px solid var(--c2);display:flex;justify-content:space-between;align-items:center;z-index:1;border-radius:12px 12px 0 0">
-        <h3 id="mcCampTitle" style="margin:0;font-size:15px"></h3>
-        <button onclick="document.getElementById('metaCampDrawer').style.display='none';document.getElementById('metaCampOverlay').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3)">&times;</button>
-      </div>
-      <div id="mcCampContent" style="padding:24px"></div>
-    </div>
-
     <!-- Creative detail modal (centered popup) -->
     <div id="metaCreativeOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);z-index:1000" onclick="document.getElementById('metaCreativeDrawer').style.display='none';this.style.display='none'"></div>
     <div id="metaCreativeDrawer" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(900px,60vw);max-height:85vh;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:1001;overflow-y:auto;padding:0;border-radius:12px">
@@ -6628,5 +6618,14 @@ async function loadMetaAds(){
   loadBugs();
 })();
 </script>
+<!-- Campaign detail modal (outside all page containers so it renders from any sub-tab) -->
+<div id="metaCampOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);z-index:1000" onclick="document.getElementById('metaCampDrawer').style.display='none';this.style.display='none'"></div>
+<div id="metaCampDrawer" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(960px,65vw);max-height:85vh;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:1001;overflow-y:auto;padding:0;border-radius:12px">
+  <div style="position:sticky;top:0;background:#fff;padding:16px 24px;border-bottom:1px solid var(--c2);display:flex;justify-content:space-between;align-items:center;z-index:1;border-radius:12px 12px 0 0">
+    <h3 id="mcCampTitle" style="margin:0;font-size:15px"></h3>
+    <button onclick="document.getElementById('metaCampDrawer').style.display='none';document.getElementById('metaCampOverlay').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3)">&times;</button>
+  </div>
+  <div id="mcCampContent" style="padding:24px"></div>
+</div>
 </body>
 </html>
