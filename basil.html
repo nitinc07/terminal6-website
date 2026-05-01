@@ -6085,11 +6085,10 @@ async function _loadHourlyTracker(){
     var curHrLbl=curHr<23?'through '+hrLabel(curHr-1):'Full day';
     if(crs.length>0){
       var cHdr='<tr><th style="width:40px"></th><th style="min-width:180px">Creative</th>';
-      cHdr+='<th colspan="4" style="text-align:center;border-bottom:2px solid var(--t1)">Today (live)</th>';
-      cHdr+='<th colspan="2" style="text-align:center;border-bottom:2px solid var(--t3)">Yday '+curHrLbl+'</th>';
-      cHdr+='<th colspan="2" style="text-align:center;border-bottom:2px solid #8b5cf6">7d avg '+curHrLbl+'</th>';
-      cHdr+='<th>vs Yday</th><th>vs 7d</th></tr>';
-      cHdr+='<tr><th></th><th></th><th>Spend</th><th>ROAS</th><th>Orders</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>Spend</th><th>ROAS</th><th></th><th></th></tr>';
+      cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #2563eb">Today (live)</th>';
+      cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #f59e0b">Yday '+curHrLbl+'</th>';
+      cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #8b5cf6">7d avg '+curHrLbl+'</th></tr>';
+      cHdr+='<tr><th></th><th></th><th>Spend</th><th>ROAS</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th></tr>';
       var cBody='';
       crs.forEach(function(c){
         var t=c.today||{}, yp=c.yesterday_paced||{}, ap=c.avg_7d_paced||{};
@@ -6097,22 +6096,18 @@ async function _loadHourlyTracker(){
         var thumb=c.thumbnail_url?'<img src="'+c.thumbnail_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'';
         var nm=(c.ad_name||'').length>35?c.ad_name.slice(0,35)+'...':c.ad_name||'--';
         var cp=(c.campaign||'').slice(0,25);
-        var vyPct=c.spend_vs_yesterday_pct, vaPct=c.spend_vs_avg7_pct;
-        var vyC=vyPct!=null?(vyPct>15?'var(--r)':vyPct<-15?'var(--g)':'var(--t3)'):'';
-        var vaC=vaPct!=null?(vaPct>15?'var(--r)':vaPct<-15?'var(--g)':'var(--t3)'):'';
         cBody+='<tr>';
         cBody+='<td>'+thumb+'</td>';
         cBody+='<td><div style="font-weight:500;font-size:12px" title="'+(c.ad_name||'')+'">'+nm+'</div><div style="font-size:10px;color:var(--t3)">'+cp+'</div></td>';
         cBody+='<td style="font-weight:500">'+cur(t.spend||0)+'</td>';
         cBody+='<td style="font-weight:600;color:'+tRc+'">'+(t.roas!=null?t.roas.toFixed(2)+'x':'--')+'</td>';
-        cBody+='<td>'+(t.orders||0)+'</td>';
         cBody+='<td>'+(t.ctr!=null?t.ctr.toFixed(1)+'%':'--')+'</td>';
-        cBody+='<td style="color:var(--t3)">'+cur(yp.spend||0)+'</td>';
-        cBody+='<td style="color:var(--t3)">'+(yp.roas!=null?yp.roas.toFixed(2)+'x':'--')+'</td>';
+        cBody+='<td style="color:#b45309">'+cur(yp.spend||0)+'</td>';
+        cBody+='<td style="color:#b45309">'+(yp.roas!=null?yp.roas.toFixed(2)+'x':'--')+'</td>';
+        cBody+='<td style="color:#b45309">'+(yp.ctr!=null?yp.ctr.toFixed(1)+'%':'--')+'</td>';
         cBody+='<td style="color:#8b5cf6">'+cur(ap.spend||0)+'</td>';
         cBody+='<td style="color:#8b5cf6">'+(ap.roas!=null?ap.roas.toFixed(2)+'x':'--')+'</td>';
-        cBody+='<td style="font-weight:600;color:'+vyC+'">'+(vyPct!=null?(vyPct>=0?'+':'')+vyPct+'%':'--')+'</td>';
-        cBody+='<td style="font-weight:600;color:'+vaC+'">'+(vaPct!=null?(vaPct>=0?'+':'')+vaPct+'%':'--')+'</td>';
+        cBody+='<td style="color:#8b5cf6">'+(ap.ctr!=null?ap.ctr.toFixed(1)+'%':'--')+'</td>';
         cBody+='</tr>';
       });
       document.getElementById('meta-hourly-creative-tbl').innerHTML='<thead>'+cHdr+'</thead><tbody>'+cBody+'</tbody>';
