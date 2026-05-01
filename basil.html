@@ -6169,7 +6169,7 @@ function _renderCampRows(){
     } else if(c.lifetime_budget){
       budgetStr=cur(c.lifetime_budget)+(c.budget_remaining!=null?' ('+cur(c.budget_remaining)+' left)':'');
     }
-    cB+='<tr style="cursor:pointer" onclick="openCampaignDetail(\''+c.campaign_id+'\',\''+cn.replace(/'/g,"\\'")+'\')">'+
+    cB+='<tr style="cursor:pointer" onclick="openCampaignDetail(\''+c.campaign_id+'\')">'+
       '<td style="font-size:12px">'+cn+'</td>'+
       '<td><span style="color:'+stC+';font-size:11px;font-weight:600">'+stL+'</span></td>'+
       '<td style="font-weight:600;color:'+rc3+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
@@ -6210,13 +6210,12 @@ async function _loadCampaigns(){
 }
 
 /* ── Campaign detail drawer ── */
-async function openCampaignDetail(campId,campName){
-  document.getElementById('mcCampTitle').textContent=campName||campId;
+async function openCampaignDetail(campId){
+  var meta=(_campData||[]).find(function(c){return c.campaign_id===campId;})||{};
+  document.getElementById('mcCampTitle').textContent=meta.campaign_name||campId;
   document.getElementById('mcCampContent').innerHTML='<div class="loading">Loading...</div>';
   document.getElementById('metaCampOverlay').style.display='';
   document.getElementById('metaCampDrawer').style.display='';
-  // Find campaign metadata from _campData
-  var meta=(_campData||[]).find(function(c){return c.campaign_id===campId;})||{};
   try{
     var data=await api('/v1/meta/campaign/'+campId+'?days='+(_campDays||14));
     var t=data.totals||{};
