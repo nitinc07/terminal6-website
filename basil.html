@@ -965,7 +965,8 @@
       <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <h3>Top Creatives</h3>
         <div class="pills meta-days-pills">
-          <button class="a" data-days="7">7d</button>
+          <button class="a" data-days="1">1d</button>
+          <button data-days="7">7d</button>
           <button data-days="14">14d</button>
           <button data-days="30">30d</button>
         </div>
@@ -1175,9 +1176,10 @@
         <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <h3 style="margin:0">Audiences</h3>
           <div class="pills" id="demo-days-pills">
+            <button class="a" data-days="1" onclick="_setDemoDays(1)">1d</button>
             <button data-days="7" onclick="_setDemoDays(7)">7d</button>
             <button data-days="14" onclick="_setDemoDays(14)">14d</button>
-            <button class="a" data-days="30" onclick="_setDemoDays(30)">30d</button>
+            <button data-days="30" onclick="_setDemoDays(30)">30d</button>
             <button data-days="60" onclick="_setDemoDays(60)">60d</button>
             <button data-days="90" onclick="_setDemoDays(90)">90d</button>
           </div>
@@ -4488,7 +4490,7 @@ function agAct(btn, action){
 
 /* ========== META ADS — CREATIVE PERFORMANCE ========== */
 var _metaGran = 'day';
-var _metaDays = 7;
+var _metaDays = 1;
 var _metaLoaded = false;
 var _metaStatusFilter = 'top';
 
@@ -6119,7 +6121,7 @@ async function _loadHourlyTracker(){
 }
 
 /* ── Demographics & Placements loader ── */
-var _demoDays=30, _demoLoaded=0, _demoCustom=null;
+var _demoDays=1, _demoLoaded=0, _demoCustom=null;
 function _setDemoDays(d){
   _demoDays=d; _demoLoaded=0; _demoCustom=null; _audiencesLoaded=false;
   document.querySelectorAll('#demo-days-pills button').forEach(function(b){
@@ -6259,7 +6261,7 @@ async function _loadCampaigns(){
 }
 
 /* ── Campaign detail drawer ── */
-var _campDetailId=null,_campDetailDays=7;
+var _campDetailId=null,_campDetailDays=1;
 async function openCampaignDetail(campId,days){
   _campDetailId=campId;
   if(days) _campDetailDays=days;
@@ -6391,7 +6393,7 @@ async function openCampaignDetail(campId,days){
 var _audiencesLoaded=false;
 async function _loadAudiences(){
   if(!_audiencesLoaded){
-    _loadAudienceSegments(_demoDays||30);
+    _loadAudienceSegments(_demoDays||1);
     _audiencesLoaded=true;
   }
   _loadDemoPlacement();
