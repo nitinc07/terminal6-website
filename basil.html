@@ -6159,8 +6159,11 @@ function _renderCampRows(){
     } else if(c.lifetime_budget){
       budgetStr=cur(c.lifetime_budget)+(c.budget_remaining!=null?' ('+cur(c.budget_remaining)+' left)':'');
     }
+    var wlBadge='';
+    if(c.winners>0) wlBadge+=' <span style="font-size:10px;font-weight:700;color:var(--g);background:#dcfce7;padding:1px 4px;border-radius:3px;margin-left:4px">'+c.winners+'W</span>';
+    if(c.losers>0) wlBadge+=' <span style="font-size:10px;font-weight:700;color:var(--r);background:#fee2e2;padding:1px 4px;border-radius:3px;margin-left:2px">'+c.losers+'L</span>';
     cB+='<tr style="cursor:pointer" onclick="openCampaignDetail(\''+c.campaign_id+'\')">'+
-      '<td style="font-size:12px">'+cn+'</td>'+
+      '<td style="font-size:12px">'+cn+wlBadge+'</td>'+
       '<td><span style="color:'+stC+';font-size:11px;font-weight:600">'+stL+'</span></td>'+
       '<td style="font-weight:600;color:'+rc3+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
       '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
