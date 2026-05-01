@@ -5986,21 +5986,6 @@ async function _loadHourlyTracker(){
       ctx.fillText('Budget '+cur(bp.daily_budget),W-pad.r,budgetY-5);
     }
 
-    // Median expected curve (shaded area)
-    if(d.median_curve&&d.median_curve.length>0&&bp&&bp.daily_budget>0){
-      ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
-      ctx.beginPath();
-      var medStarted=false;
-      d.median_curve.forEach(function(mc){
-        if(mc.hour<chartStartHour) return;
-        var expSpend=bp.daily_budget*mc.cum_pct/100;
-        var x=pad.l+cW*((mc.hour-chartStartHour)/(chartHours-1));
-        var y=pad.t+cH-cH*(expSpend/maxSpend);
-        if(!medStarted){ctx.moveTo(x,y);medStarted=true;}else ctx.lineTo(x,y);
-      });
-      ctx.stroke(); ctx.setLineDash([]);
-    }
-
     // Today: draw dot at current hour + projected line to EOD
     var todayCurve=d.cumulative.today;
     if(todayCurve){
@@ -6052,8 +6037,6 @@ async function _loadHourlyTracker(){
       var dash=dayDash[day].length>0?'dashed':'solid';
       legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px '+dash+' '+dayStroke[day]+'"></span>'+dayLabels[day]+'</span>';
     });
-    if(todayCurve) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px dashed #3b82f6;opacity:0.5"></span>Projected</span>';
-    if(d.median_curve&&bp) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:1px dashed #94a3b8"></span>Expected (14d median)</span>';
     if(bp) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px dashed #ef4444"></span>Budget</span>';
     document.getElementById('meta-hourly-legend').innerHTML=legH;
 
