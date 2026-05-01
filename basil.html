@@ -14,7 +14,7 @@
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/shared.css?v=2026-04-29b">
+<link rel="stylesheet" href="/shared.css?v=2026-05-01a">
 <style>
 /* Basil-specific styles only. Design tokens, layout, sidebar, cards, tables,
    pills, loading/error/empty states, delta pill, section header, placeholder
@@ -228,7 +228,7 @@
 @keyframes blink-live{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(22,163,106,.4)}50%{opacity:.5;box-shadow:0 0 0 4px rgba(22,163,106,0)}}
 </style>
 <script>window.T6_BRAND_SLUG = 'basil'; window.T6_SHOPIFY_DOMAIN = 'yourbasil.com';</script>
-<script src="/shared.js?v=2026-04-29b"></script>
+<script src="/shared.js?v=2026-05-01a"></script>
 </head>
 <body>
 <div class="app">
@@ -4507,6 +4507,14 @@ function _renderMetaCreatives(list){
     var nm=(d.ad_name||'').length>40?d.ad_name.slice(0,40)+'...':d.ad_name||'--';
     var cp=(d.campaign_name||'').length>28?d.campaign_name.slice(0,28)+'...':d.campaign_name||'';
     var ascBadge=d.campaign_type==='ASC'?' <span style="font-size:9px;font-weight:600;color:#6d28d9;background:#ede9fe;padding:0 3px;border-radius:2px">ASC</span>':'';
+    // Multi-campaign badge: if creative is active in >1 campaign, surface count
+    var campsBadge=(d.campaign_count>1)?' <span title="Click to see all '+d.campaign_count+' campaigns" style="font-size:9px;font-weight:600;color:#1d4ed8;background:#dbeafe;padding:0 4px;border-radius:2px">+'+(d.campaign_count-1)+' camps</span>':'';
+    // Cannibalization warning when ROAS spread is wide across campaigns
+    var cannBadge='';
+    if(d.cannibalization){
+      var cn=d.cannibalization;
+      cannBadge=' <span title="ROAS varies '+cn.roas_min+'x-'+cn.roas_max+'x across '+cn.n_campaigns+' campaigns. Worst: '+(cn.worst_campaign||'')+'" style="font-size:9px;font-weight:600;color:#b91c1c;background:#fee2e2;padding:0 4px;border-radius:2px">&#9888; cannibalize</span>';
+    }
     var sc2=statusColors[d.status]||'var(--t3)';
     var fc2=fmtP[d.creative_type]||'#6b7280';
     var rc='';
@@ -4514,7 +4522,7 @@ function _renderMetaCreatives(list){
     var fw='';
     if(d.recent_frequency&&d.recent_frequency>3)fw='<span style="color:#f97316;font-size:10px;margin-left:4px">f'+d.recent_frequency.toFixed(1)+'</span>';
     tR+='<tr style="cursor:pointer" onclick="openCreativeDetail(\''+d.ad_id+'\')"><td>'+thumb+'</td>'+
-      '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+ascBadge+'</div></td>'+
+      '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+ascBadge+campsBadge+cannBadge+'</div></td>'+
       '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+fc2+'22;color:'+fc2+'">'+d.creative_type+'</span></td>'+
       '<td><div style="font-weight:600;color:'+(d.roas>=2?'var(--g)':d.roas>=1?'inherit':'var(--r)')+'">'+(d.roas!=null?d.roas.toFixed(1)+'x':'--')+'</div>'+rc+'</td>'+
       '<td>'+(d.cpa!=null?cur(d.cpa):'--')+'</td>'+
@@ -4592,8 +4600,22 @@ function openCreativeDetail(adId){
     var fullBody=d.body.endsWith('...')?(d.body):d.body;
     h+='<div style="font-size:12.5px;line-height:1.5;color:var(--t2);margin-bottom:10px;white-space:pre-wrap">'+fullBody+'</div>';
   }
-  h+='<div style="font-size:11px;color:var(--t3)">Campaign: '+(d.campaign_name||'--')+'</div>';
+  // Active across N campaigns + M ad_ids — rest of detail in tables below
+  var ccLabel=(d.campaign_count>1)?d.campaign_count+' campaigns':'1 campaign';
+  var acLabel=(d.ad_id_count>1)?d.ad_id_count+' ad_ids (variants of the same creative)':'1 ad_id';
+  h+='<div style="font-size:11px;color:var(--t3)">Active across <strong>'+ccLabel+'</strong> · <strong>'+acLabel+'</strong></div>';
+  h+='<div style="font-size:11px;color:var(--t3)">Top campaign: '+(d.campaign_name||'--')+'</div>';
   h+='<div style="font-size:11px;color:var(--t3)">First seen: '+d.first_seen+' · Last seen: '+d.last_seen+' · Age: '+d.days_active+'d</div>';
+  // Cannibalization callout in drawer
+  if(d.cannibalization){
+    var cn=d.cannibalization;
+    h+='<div style="margin-top:10px;padding:8px 10px;background:#fee2e2;border-left:3px solid #b91c1c;border-radius:4px;font-size:12px">';
+    h+='<div style="font-weight:600;color:#b91c1c">&#9888; Cannibalization risk</div>';
+    h+='<div style="color:var(--t2);margin-top:2px">Same creative running in '+cn.n_campaigns+' campaigns. ROAS varies <strong>'+cn.roas_min+'x</strong> to <strong>'+cn.roas_max+'x</strong>.</div>';
+    h+='<div style="color:var(--t3);margin-top:2px;font-size:11px">Best: '+(cn.best_campaign||'')+'</div>';
+    h+='<div style="color:var(--t3);font-size:11px">Worst: '+(cn.worst_campaign||'')+' (Rs'+fmt(cn.worst_spend||0)+' spent at '+cn.roas_min+'x)</div>';
+    h+='</div>';
+  }
   h+='</div></div>';
 
   // KPI grid
@@ -4654,6 +4676,67 @@ function openCreativeDetail(adId){
     hc+='</div>';
     hc+='<div style="font-size:11px;color:var(--t3);margin-top:4px">'+(sig.reached?'Sufficient data to evaluate performance':'Need '+(sig.threshold-sig.conversions)+' more conversions before calling this creative')+'</div>';
     hc+='</div>';
+
+    // Per-campaign breakdown — same creative running in multiple campaigns
+    if(data.campaigns&&data.campaigns.length>0){
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Campaigns ('+data.campaigns.length+')</div>';
+      hc+='<table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--c2);color:var(--t3)">';
+      hc+='<th style="text-align:left;padding:6px 6px;font-weight:500">Campaign</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">Spend</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">ROAS</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">CPA</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">Orders</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">Ad IDs</th>';
+      hc+='<th style="text-align:left;padding:6px 6px;font-weight:500">Active</th>';
+      hc+='</tr></thead><tbody>';
+      data.campaigns.forEach(function(c){
+        var cname=(c.campaign_name||'--').length>50?c.campaign_name.slice(0,50)+'...':(c.campaign_name||'--');
+        var rcol=c.roas==null?'var(--t3)':(c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)');
+        hc+='<tr style="border-bottom:1px solid var(--c2)">';
+        hc+='<td style="padding:8px 6px" title="'+(c.campaign_name||'').replace(/"/g,'&quot;')+'">'+cname+'</td>';
+        hc+='<td style="text-align:right;padding:8px 6px">'+cur(c.spend)+'</td>';
+        hc+='<td style="text-align:right;padding:8px 6px;color:'+rcol+';font-weight:600">'+(c.roas!=null?c.roas.toFixed(2)+'x':'--')+'</td>';
+        hc+='<td style="text-align:right;padding:8px 6px">'+(c.cpa!=null?cur(c.cpa):'--')+'</td>';
+        hc+='<td style="text-align:right;padding:8px 6px">'+fmt(c.orders||0)+'</td>';
+        hc+='<td style="text-align:right;padding:8px 6px">'+c.ad_id_count+'</td>';
+        hc+='<td style="padding:8px 6px;font-size:11px;color:var(--t3)">'+(c.first_seen||'')+' &#8594; '+(c.last_seen||'')+'</td>';
+        hc+='</tr>';
+      });
+      hc+='</tbody></table></div>';
+    }
+
+    // Per-ad_id breakdown — each launch (different ad_id, possibly different ad set)
+    if(data.ad_id_breakdown&&data.ad_id_breakdown.length>1){
+      hc+='<div style="background:var(--c1);border-radius:8px;padding:14px 18px;margin-bottom:16px">';
+      hc+='<div style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:10px">Ad ID Variants ('+data.ad_id_breakdown.length+')</div>';
+      hc+='<div style="font-size:11px;color:var(--t3);margin-bottom:8px">Same Meta creative re-launched as multiple ads. Each is its own ad_id.</div>';
+      hc+='<table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--c2);color:var(--t3)">';
+      hc+='<th style="text-align:left;padding:6px 6px;font-weight:500">ad_id</th>';
+      hc+='<th style="text-align:left;padding:6px 6px;font-weight:500">Campaign / Ad Set</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">Spend</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">ROAS</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">CTR</th>';
+      hc+='<th style="text-align:right;padding:6px 6px;font-weight:500">Days</th>';
+      hc+='<th style="text-align:left;padding:6px 6px;font-weight:500">Status</th>';
+      hc+='</tr></thead><tbody>';
+      data.ad_id_breakdown.forEach(function(a){
+        var rcol=a.roas==null?'var(--t3)':(a.roas>=2?'var(--g)':a.roas>=1?'inherit':'var(--r)');
+        var stCol=a.effective_status==='ACTIVE'?'var(--g)':a.effective_status==='PAUSED'?'var(--y)':'var(--t3)';
+        var asn=(a.adset_name||'').length>40?a.adset_name.slice(0,40)+'...':(a.adset_name||'--');
+        var cn=(a.campaign_name||'').length>30?a.campaign_name.slice(0,30)+'...':(a.campaign_name||'--');
+        hc+='<tr style="border-bottom:1px solid var(--c2)">';
+        hc+='<td style="padding:8px 6px;font-family:monospace;font-size:11px;color:var(--t3)"><a href="#" onclick="_openAdPreview(\''+a.ad_id+'\',event);return false" style="color:var(--accent)">'+a.ad_id+'</a></td>';
+        hc+='<td style="padding:8px 6px"><div title="'+(a.campaign_name||'').replace(/"/g,'&quot;')+'">'+cn+'</div><div style="font-size:11px;color:var(--t3)" title="'+(a.adset_name||'').replace(/"/g,'&quot;')+'">'+asn+'</div></td>';
+        hc+='<td style="text-align:right;padding:8px 6px">'+cur(a.spend)+'</td>';
+        hc+='<td style="text-align:right;padding:8px 6px;color:'+rcol+';font-weight:600">'+(a.roas!=null?a.roas.toFixed(2)+'x':'--')+'</td>';
+        hc+='<td style="text-align:right;padding:8px 6px">'+(a.ctr!=null?a.ctr.toFixed(2)+'%':'--')+'</td>';
+        hc+='<td style="text-align:right;padding:8px 6px">'+(a.days_active||0)+'d</td>';
+        hc+='<td style="padding:8px 6px;color:'+stCol+';font-size:11px">'+(a.effective_status||'--')+'</td>';
+        hc+='</tr>';
+      });
+      hc+='</tbody></table></div>';
+    }
 
     // Video retention funnel — visual trapezoid funnel
     var ret=data.retention;
