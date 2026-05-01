@@ -5903,7 +5903,7 @@ async function _loadHourlyTracker(){
     // Cumulative spend line chart (canvas)
     var days=['today','yesterday','same_day_lw'];
     var dayLabels={today:'Today',yesterday:'Yesterday',same_day_lw:'Same day LW'};
-    var dayStroke={today:'#3b82f6',yesterday:'#94a3b8',same_day_lw:'#8b5cf6'};
+    var dayStroke={today:'#2563eb',yesterday:'#f59e0b',same_day_lw:'#8b5cf6'};
     var dayDash={today:[],yesterday:[6,4],same_day_lw:[3,3]};
     var dayWidth={today:2.5,yesterday:1.5,same_day_lw:1.5};
 
@@ -6007,7 +6007,7 @@ async function _loadHourlyTracker(){
           d.median_curve.forEach(function(mc){if(mc.hour<=lastH)medAtNow=mc.cum_pct;if(mc.hour<=23)medAtEnd=mc.cum_pct;});
           if(medAtNow>0&&medAtEnd>0){
             var projEod=pt.cum_spend*(medAtEnd/medAtNow);
-            ctx.strokeStyle='#3b82f6'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.globalAlpha=0.5;
+            ctx.strokeStyle='#2563eb'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.globalAlpha=0.5;
             ctx.beginPath(); ctx.moveTo(cx,cy);
             // Draw projected curve hour by hour
             d.median_curve.forEach(function(mc){
@@ -6021,14 +6021,14 @@ async function _loadHourlyTracker(){
             // EOD projected label
             var eodX=pad.l+cW;
             var eodY=pad.t+cH-cH*(projEod/maxSpend);
-            ctx.fillStyle='#3b82f6'; ctx.font='10px system-ui'; ctx.textAlign='left'; ctx.globalAlpha=0.6;
+            ctx.fillStyle='#2563eb'; ctx.font='10px system-ui'; ctx.textAlign='left'; ctx.globalAlpha=0.6;
             ctx.fillText('~'+cur(projEod),eodX+4,eodY+3);
             ctx.globalAlpha=1.0;
           }
         }
 
         // Current dot
-        ctx.fillStyle='#3b82f6'; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#2563eb'; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
         ctx.fillStyle='#1e40af'; ctx.font='bold 11px system-ui'; ctx.textAlign='left';
         ctx.fillText(cur(pt.cum_spend)+(pt.cum_roas!=null?' · '+pt.cum_roas.toFixed(1)+'x':''),cx+8,cy-4);
       }
