@@ -5844,14 +5844,23 @@ async function _loadHourlyTracker(){
 
     document.getElementById('meta-hourly-note').textContent=d.target_date;
 
-    // Pacing alert
-    var p=d.pacing;
-    if(p){
+    // Budget pacing banner
+    var bp=d.budget_pacing;
+    if(bp){
       var pacEl=document.getElementById('meta-hourly-pacing');
-      var pacColors={overspend:'#fee2e2;border:1px solid #fca5a5;color:#991b1b',underspend:'#fef3c7;border:1px solid #fcd34d;color:#92400e',on_track:'#d1fae5;border:1px solid #6ee7b7;color:#065f46'};
-      var pacIcons={overspend:'\u26A0\uFE0F Overspend',underspend:'\u26A0\uFE0F Underspend',on_track:'\u2705 On track'};
-      pacEl.style.cssText='display:block;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13px;background:#'+pacColors[p.status];
-      pacEl.innerHTML='<strong>'+pacIcons[p.status]+'</strong> — through '+hrLabel(p.hour-1)+', today spent '+cur(p.today_cum_spend)+' vs yesterday '+cur(p.yesterday_cum_spend)+' (<strong>'+(p.pacing_pct>=0?'+':'')+p.pacing_pct+'%</strong>)';
+      var bpColors={overspend:'fee2e2;border:1px solid #fca5a5;color:#991b1b',underspend:'fef3c7;border:1px solid #fcd34d;color:#92400e',on_track:'d1fae5;border:1px solid #6ee7b7;color:#065f46'};
+      var bpIcons={overspend:'Overpacing',underspend:'Underpacing',on_track:'On track'};
+      var projStr=bp.projected_eod?'Projected EOD: '+cur(bp.projected_eod)+' / '+cur(bp.daily_budget):'';
+      pacEl.style.cssText='display:block;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13px;background:#'+bpColors[bp.status];
+      pacEl.innerHTML='<strong>Budget: '+cur(bp.daily_budget)+'/d</strong> — Spent '+cur(bp.today_spend)+' (expected '+cur(bp.expected_spend)+' by now, <strong>'+(bp.actual_vs_expected_pct>=0?'+':'')+bp.actual_vs_expected_pct+'%</strong>) — '+bpIcons[bp.status]+(projStr?' — '+projStr:'');
+    } else {
+      // Fallback to vs-yesterday pacing if no budget data
+      var p=d.pacing;
+      if(p){
+        var pacEl=document.getElementById('meta-hourly-pacing');
+        pacEl.style.cssText='display:block;margin-bottom:16px;padding:12px 16px;border-radius:8px;font-size:13px;background:#d1fae5;border:1px solid #6ee7b7;color:#065f46';
+        pacEl.innerHTML='Through '+hrLabel(p.hour-1)+', today spent '+cur(p.today_cum_spend)+' vs yesterday '+cur(p.yesterday_cum_spend)+' (<strong>'+(p.pacing_pct>=0?'+':'')+p.pacing_pct+'%</strong>)';
+      }
     }
 
     // Summary KPIs table (today vs yesterday paced vs same-day-LW paced)
@@ -5966,6 +5975,32 @@ async function _loadHourlyTracker(){
       }
     });
 
+    // Budget line (horizontal dashed line at daily budget)
+    if(bp&&bp.daily_budget>0&&bp.daily_budget<=maxSpend*1.2){
+      // Adjust maxSpend if budget exceeds current max
+      if(bp.daily_budget>maxSpend){maxSpend=bp.daily_budget*1.1;}
+      var budgetY=pad.t+cH-cH*(bp.daily_budget/maxSpend);
+      ctx.strokeStyle='#ef4444'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(pad.l,budgetY); ctx.lineTo(W-pad.r,budgetY); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#ef4444'; ctx.font='bold 10px system-ui'; ctx.textAlign='right';
+      ctx.fillText('Budget '+cur(bp.daily_budget),W-pad.r,budgetY-5);
+    }
+
+    // Median expected curve (shaded area)
+    if(d.median_curve&&d.median_curve.length>0&&bp&&bp.daily_budget>0){
+      ctx.strokeStyle='#94a3b8'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath();
+      var medStarted=false;
+      d.median_curve.forEach(function(mc){
+        if(mc.hour<chartStartHour) return;
+        var expSpend=bp.daily_budget*mc.cum_pct/100;
+        var x=pad.l+cW*((mc.hour-chartStartHour)/(chartHours-1));
+        var y=pad.t+cH-cH*(expSpend/maxSpend);
+        if(!medStarted){ctx.moveTo(x,y);medStarted=true;}else ctx.lineTo(x,y);
+      });
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+
     // Today: draw dot at current hour
     var todayCurve=d.cumulative.today;
     if(todayCurve){
@@ -5988,6 +6023,8 @@ async function _loadHourlyTracker(){
       var dash=dayDash[day].length>0?'dashed':'solid';
       legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px '+dash+' '+dayStroke[day]+'"></span>'+dayLabels[day]+'</span>';
     });
+    if(d.median_curve&&bp) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:1px dashed #94a3b8"></span>Expected (14d median)</span>';
+    if(bp) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px dashed #ef4444"></span>Budget</span>';
     document.getElementById('meta-hourly-legend').innerHTML=legH;
 
     // Hourly breakdown table (all 24 hours, today vs yesterday)
