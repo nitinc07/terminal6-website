@@ -6146,11 +6146,12 @@ function _renderCampRows(){
     var st=c.effective_status||'--';
     var stC=st==='ACTIVE'?'var(--g)':st==='PAUSED'?'var(--y)':'var(--t3)';
     var stL=st==='ACTIVE'?'Active':st==='PAUSED'?'Paused':st==='DELETED'?'Deleted':st==='ARCHIVED'?'Archived':st;
-    // Budget: daily budget + pacing indicator, or "Ad Set" if no campaign-level budget
-    var budgetStr='<span style="color:var(--t3);font-style:italic">Ad Set</span>';
+    // Budget: daily budget + pacing indicator
+    var budgetStr='--';
     var pacingColor='inherit';
     if(c.daily_budget){
-      budgetStr=cur(c.daily_budget)+'/d';
+      var bLabel=c.budget_source==='adset'?'<span style="color:var(--t3);font-size:10px"> (ad sets)</span>':'';
+      budgetStr=cur(c.daily_budget)+'/d'+bLabel;
       if(c.pacing_pct!=null){
         pacingColor=c.pacing_pct>110?'var(--r)':c.pacing_pct<80?'var(--y)':'var(--g)';
         budgetStr+=' <span style="color:'+pacingColor+';font-weight:600">('+c.pacing_pct+'%)</span>';
