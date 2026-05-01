@@ -988,10 +988,10 @@
             <th style="width:50px"></th>
             <th style="min-width:200px">Ad</th>
             <th>Format</th>
-            <th>ROAS</th>
+            <th style="cursor:pointer" onclick="_sortCreatives('roas')">ROAS <span id="creative-sort-roas"></span></th>
             <th>CPA</th>
             <th>CTR</th>
-            <th>Spend</th>
+            <th style="cursor:pointer" onclick="_sortCreatives('spend')">Spend <span id="creative-sort-spend"></span></th>
             <th>Share</th>
             <th>Orders</th>
             <th>Freq</th>
@@ -1161,7 +1161,7 @@
         </div>
         <div style="overflow-x:auto">
           <table class="tbl" id="meta-camp-tbl">
-            <thead><tr><th>Campaign</th><th>Status</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Budget</th><th>Share</th></tr></thead>
+            <thead><tr><th>Campaign</th><th>Status</th><th style="cursor:pointer" onclick="_sortCamp('roas')">ROAS <span id="camp-sort-roas"></span></th><th>CPA</th><th>CTR</th><th style="cursor:pointer" onclick="_sortCamp('spend')">Spend <span id="camp-sort-spend"></span></th><th>Budget</th><th>Share</th></tr></thead>
             <tbody id="meta-camp-body"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
@@ -4530,6 +4530,21 @@ function _renderMetaCreatives(list){
   document.getElementById('meta-perf-note').textContent=note+' · last '+(window._metaDays||7)+' days';
 }
 
+function _sortCreatives(field){
+  var prev=_sortStates['creative']||{field:null,dir:'desc'};
+  if(prev.field===field) prev.dir=prev.dir==='desc'?'asc':'desc';
+  else {prev.field=field;prev.dir='desc';}
+  _sortStates['creative']=prev;
+  var all=window._metaCreatives||[];
+  all.sort(function(a,b){var av=a[field]||0,bv=b[field]||0;return prev.dir==='desc'?bv-av:av-bv;});
+  // Re-apply current filter
+  var active=_metaActiveOnly(all);
+  if(_metaStatusFilter==='top') _renderMetaCreatives(active.slice(0,25));
+  else _renderMetaCreatives(active.filter(function(d){return d.status===_metaStatusFilter}));
+  document.querySelectorAll('[id^="creative-sort-"]').forEach(function(el){el.textContent='';});
+  var el=document.getElementById('creative-sort-'+field);
+  if(el) el.textContent=prev.dir==='desc'?'\u25BC':'\u25B2';
+}
 function _filterMetaStatus(status){
   _metaStatusFilter=status;
   document.querySelectorAll('#meta-status-filters button').forEach(function(b){b.classList.remove('a')});
@@ -6082,15 +6097,18 @@ async function _loadHourlyTracker(){
 
     // Top 10 creatives: today (live) vs yesterday (paced to same hour) vs 7d avg (paced)
     var crs=d.top_creatives||[];
+    window._liveCreatives=crs;
+    window._liveCurHrLbl=null; // set below
     var pacRatio=d.pacing_ratio||1;
     var curHr=d.current_hour||23;
     var curHrLbl=curHr<23?'through '+hrLabel(curHr-1):'Full day';
+    window._liveCurHrLbl=curHrLbl;
     if(crs.length>0){
       var cHdr='<tr><th style="width:40px"></th><th style="min-width:180px">Creative</th>';
       cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #2563eb">Today (live)</th>';
       cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #f59e0b">Yday '+curHrLbl+'</th>';
       cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #8b5cf6">7d avg '+curHrLbl+'</th></tr>';
-      cHdr+='<tr><th></th><th></th><th>Spend</th><th>ROAS</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th></tr>';
+      cHdr+='<tr><th></th><th></th><th style="cursor:pointer" onclick="_sortLiveCreatives(\'spend\')">Spend <span id="live-sort-spend"></span></th><th style="cursor:pointer" onclick="_sortLiveCreatives(\'roas\')">ROAS <span id="live-sort-roas"></span></th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th></tr>';
       var cBody='';
       crs.forEach(function(c){
         var t=c.today||{}, yp=c.yesterday_paced||{}, ap=c.avg_7d_paced||{};
@@ -6147,6 +6165,60 @@ function _setDemoCustom(){
 function _roasClr(v){return v>=2?'var(--g)':v>=1?'#3b82f6':'var(--r)';}
 function _spendBar(v,mx){var p=mx>0?Math.round(v/mx*100):0;return '<div style="width:60px;height:6px;background:var(--c1);border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px"><div style="width:'+p+'%;height:100%;background:var(--acc);border-radius:3px"></div></div>';}
 
+/* ── Generic sort helper ── */
+var _sortStates={};
+function _toggleSort(key,arr,field,renderFn){
+  var prev=_sortStates[key]||{field:null,dir:'desc'};
+  if(prev.field===field) prev.dir=prev.dir==='desc'?'asc':'desc';
+  else {prev.field=field;prev.dir='desc';}
+  _sortStates[key]=prev;
+  arr.sort(function(a,b){var av=a[field]||0,bv=b[field]||0;return prev.dir==='desc'?bv-av:av-bv;});
+  renderFn();
+  // Update sort indicators
+  document.querySelectorAll('[id^="'+key+'-sort-"]').forEach(function(el){el.textContent='';});
+  var el=document.getElementById(key+'-sort-'+field);
+  if(el) el.textContent=prev.dir==='desc'?'\u25BC':'\u25B2';
+}
+
+function _sortLiveCreatives(field){
+  var crs=window._liveCreatives;if(!crs) return;
+  var prev=_sortStates['live']||{field:null,dir:'desc'};
+  if(prev.field===field) prev.dir=prev.dir==='desc'?'asc':'desc';
+  else {prev.field=field;prev.dir='desc';}
+  _sortStates['live']=prev;
+  crs.sort(function(a,b){var av=(a.today||{})[field]||0,bv=(b.today||{})[field]||0;return prev.dir==='desc'?bv-av:av-bv;});
+  // Re-render the table body only
+  var curHrLbl=window._liveCurHrLbl||'';
+  var cHdr='<tr><th style="width:40px"></th><th style="min-width:180px">Creative</th>';
+  cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #2563eb">Today (live)</th>';
+  cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #f59e0b">Yday '+curHrLbl+'</th>';
+  cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #8b5cf6">7d avg '+curHrLbl+'</th></tr>';
+  cHdr+='<tr><th></th><th></th><th style="cursor:pointer" onclick="_sortLiveCreatives(\'spend\')">Spend <span id="live-sort-spend"></span></th><th style="cursor:pointer" onclick="_sortLiveCreatives(\'roas\')">ROAS <span id="live-sort-roas"></span></th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th></tr>';
+  var cBody='';
+  crs.forEach(function(c){
+    var t=c.today||{},yp=c.yesterday_paced||{},ap=c.avg_7d_paced||{};
+    var tRc=t.roas!=null?(t.roas>=2?'var(--g)':t.roas>=1?'':'var(--r)'):'';
+    var thumb=c.thumbnail_url?'<img src="'+c.thumbnail_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'';
+    var nm=(c.ad_name||'').length>35?c.ad_name.slice(0,35)+'...':c.ad_name||'--';
+    var cp=(c.campaign||'').slice(0,25);
+    cBody+='<tr><td>'+thumb+'</td>';
+    cBody+='<td><div style="font-weight:500;font-size:12px" title="'+(c.ad_name||'')+'">'+nm+'</div><div style="font-size:10px;color:var(--t3)">'+cp+'</div></td>';
+    cBody+='<td style="font-weight:500">'+cur(t.spend||0)+'</td>';
+    cBody+='<td style="font-weight:600;color:'+tRc+'">'+(t.roas!=null?t.roas.toFixed(2)+'x':'--')+'</td>';
+    cBody+='<td>'+(t.ctr!=null?t.ctr.toFixed(1)+'%':'--')+'</td>';
+    cBody+='<td style="color:#b45309">'+cur(yp.spend||0)+'</td>';
+    cBody+='<td style="color:#b45309">'+(yp.roas!=null?yp.roas.toFixed(2)+'x':'--')+'</td>';
+    cBody+='<td style="color:#b45309">'+(yp.ctr!=null?yp.ctr.toFixed(1)+'%':'--')+'</td>';
+    cBody+='<td style="color:#8b5cf6">'+cur(ap.spend||0)+'</td>';
+    cBody+='<td style="color:#8b5cf6">'+(ap.roas!=null?ap.roas.toFixed(2)+'x':'--')+'</td>';
+    cBody+='<td style="color:#8b5cf6">'+(ap.ctr!=null?ap.ctr.toFixed(1)+'%':'--')+'</td></tr>';
+  });
+  document.getElementById('meta-hourly-creative-tbl').innerHTML='<thead>'+cHdr+'</thead><tbody>'+cBody+'</tbody>';
+  document.querySelectorAll('[id^="live-sort-"]').forEach(function(el){el.textContent='';});
+  var el=document.getElementById('live-sort-'+field);
+  if(el) el.textContent=prev.dir==='desc'?'\u25BC':'\u25B2';
+}
+
 /* ── Campaigns sub-tab loader ── */
 var _campDays=1, _campLoaded=0, _campCustom=null, _campData=[], _campStatusFilter='ACTIVE', _campRefreshTimer=null;
 
@@ -6177,6 +6249,7 @@ function _setCampCustom(){
   document.querySelectorAll('#camp-days-pills button').forEach(function(b){b.classList.remove('a');});
   _loadCampaigns();
 }
+function _sortCamp(field){_toggleSort('camp',_campData,field,_renderCampRows);}
 function _toggleCampInactive(show){
   _campStatusFilter=show?'all':'ACTIVE';
   _renderCampRows();
@@ -6262,6 +6335,16 @@ async function _loadCampaigns(){
 
 /* ── Campaign detail drawer ── */
 var _campDetailId=null,_campDetailDays=1;
+function _sortCampDrawer(field){
+  var cc=window._campDrawerCreatives;if(!cc) return;
+  var prev=_sortStates['cdraw']||{field:null,dir:'desc'};
+  if(prev.field===field) prev.dir=prev.dir==='desc'?'asc':'desc';
+  else {prev.field=field;prev.dir='desc';}
+  _sortStates['cdraw']=prev;
+  cc.sort(function(a,b){var av=a[field]||0,bv=b[field]||0;return prev.dir==='desc'?bv-av:av-bv;});
+  // Re-open the drawer with same params (will re-render with sorted data)
+  openCampaignDetail(_campDetailId);
+}
 async function openCampaignDetail(campId,days){
   _campDetailId=campId;
   if(days) _campDetailDays=days;
@@ -6348,7 +6431,9 @@ async function openCampaignDetail(campId,days){
         adsetMap[asId].rev+=c.revenue||0;
         adsetMap[asId].orders+=c.orders||0;
       });
-      h+='<h4 style="margin:20px 0 8px;font-size:13px">Creatives ('+cc.length+' ads in '+adsetOrder.length+' ad sets)</h4>';
+      // Store for sorting
+      window._campDrawerCreatives=cc;
+      h+='<h4 style="margin:20px 0 8px;font-size:13px">Creatives ('+cc.length+' ads in '+adsetOrder.length+' ad sets) <span style="font-size:11px;font-weight:400;color:var(--t3);margin-left:8px">Sort:</span> <button onclick="_sortCampDrawer(\'spend\')" style="font-size:11px;border:1px solid var(--c3);background:none;border-radius:4px;padding:1px 6px;cursor:pointer;margin-left:4px">Spend <span id="cdraw-sort-spend"></span></button> <button onclick="_sortCampDrawer(\'roas\')" style="font-size:11px;border:1px solid var(--c3);background:none;border-radius:4px;padding:1px 6px;cursor:pointer">ROAS <span id="cdraw-sort-roas"></span></button></h4>';
       adsetOrder.forEach(function(asId){
         var as=adsetMap[asId];
         var asRoas=as.spend>0?(as.rev/as.spend):0;
