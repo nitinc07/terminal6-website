@@ -5950,13 +5950,18 @@ async function _loadHourlyTracker(){
       ctx.fillText(hrLabel(xh),xx,H-pad.b+16);
     }
 
+    // Find today's last hour with actual spend (for truncating today's line)
+    var _todayLastH=chartStartHour;
+    if(d.hourly&&d.hourly.today){for(var _th=23;_th>=chartStartHour;_th--){if(d.hourly.today[_th]&&d.hourly.today[_th].spend>0){_todayLastH=_th;break;}}}
+
     // Draw lines (6am onwards)
     days.forEach(function(day){
       var curve=d.cumulative[day]; if(!curve) return;
+      var stopH=day==='today'?_todayLastH:23;
       ctx.strokeStyle=dayStroke[day]; ctx.lineWidth=dayWidth[day]; ctx.setLineDash(dayDash[day]);
       ctx.beginPath();
       var started=false;
-      for(var h=chartStartHour;h<24;h++){
+      for(var h=chartStartHour;h<=stopH;h++){
         var pt=curve[h]||{};
         if(pt.cum_spend===0&&!started) continue;
         var x=pad.l+cW*((h-chartStartHour)/(chartHours-1));
