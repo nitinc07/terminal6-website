@@ -922,6 +922,16 @@
       <div id="mdDrawerItems"></div>
     </div>
 
+    <!-- Campaign detail modal -->
+    <div id="metaCampOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);z-index:1000" onclick="document.getElementById('metaCampDrawer').style.display='none';this.style.display='none'"></div>
+    <div id="metaCampDrawer" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(960px,65vw);max-height:85vh;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:1001;overflow-y:auto;padding:0;border-radius:12px">
+      <div style="position:sticky;top:0;background:#fff;padding:16px 24px;border-bottom:1px solid var(--c2);display:flex;justify-content:space-between;align-items:center;z-index:1;border-radius:12px 12px 0 0">
+        <h3 id="mcCampTitle" style="margin:0;font-size:15px"></h3>
+        <button onclick="document.getElementById('metaCampDrawer').style.display='none';document.getElementById('metaCampOverlay').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3)">&times;</button>
+      </div>
+      <div id="mcCampContent" style="padding:24px"></div>
+    </div>
+
     <!-- Creative detail modal (centered popup) -->
     <div id="metaCreativeOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);z-index:1000" onclick="document.getElementById('metaCreativeDrawer').style.display='none';this.style.display='none'"></div>
     <div id="metaCreativeDrawer" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(900px,60vw);max-height:85vh;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:1001;overflow-y:auto;padding:0;border-radius:12px">
@@ -1160,8 +1170,8 @@
         </div>
         <div style="overflow-x:auto">
           <table class="tbl" id="meta-camp-tbl">
-            <thead><tr><th>Campaign</th><th>Status</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Budget</th><th>Share</th><th>Orders</th><th>Ads</th><th>Bid</th></tr></thead>
-            <tbody id="meta-camp-body"><tr><td colspan="11" class="loading">Loading...</td></tr></tbody>
+            <thead><tr><th>Campaign</th><th>Status</th><th>ROAS</th><th>CPA</th><th>CTR</th><th>Spend</th><th>Budget</th><th>Share</th></tr></thead>
+            <tbody id="meta-camp-body"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -6129,8 +6139,8 @@ function _renderCampRows(){
     filtered=_campData.filter(function(c){return c.effective_status===_campStatusFilter;});
   }
   // Totals
-  var tSpend=0,tSales=0,tOrders=0,tClicks=0,tImpr=0,tAds=0,tBudget=0;
-  filtered.forEach(function(c){tSpend+=c.spend||0;tSales+=(c.roas&&c.spend?c.roas*c.spend:0);tOrders+=c.orders||0;tClicks+=(c.ctr&&c.spend?1:0);tAds+=c.ad_count||0;if(c.daily_budget)tBudget+=c.daily_budget;});
+  var tSpend=0,tSales=0,tOrders=0,tBudget=0;
+  filtered.forEach(function(c){tSpend+=c.spend||0;tSales+=(c.roas&&c.spend?c.roas*c.spend:0);tOrders+=c.orders||0;if(c.daily_budget)tBudget+=c.daily_budget;});
   var tRoas=tSpend>0?tSales/tSpend:0;
   var tCpa=tOrders>0?tSpend/tOrders:0;
   var tPacing=tBudget>0?Math.round(tSpend/(_campDays||14)/tBudget*100):null;
@@ -6139,7 +6149,7 @@ function _renderCampRows(){
   var tRC=tRoas>=2?'var(--g)':tRoas>=1?'inherit':'var(--r)';
   var cB='<tr style="font-weight:700;background:var(--c1)"><td>Total ('+filtered.length+' campaigns)</td><td></td>'+
     '<td style="color:'+tRC+'">'+tRoas.toFixed(1)+'x</td><td>'+cur(tCpa)+'</td><td></td>'+
-    '<td>'+cur(tSpend)+'</td><td style="font-size:11px">'+tBudgetStr+'</td><td>100%</td><td>'+fmt(tOrders)+'</td><td>'+tAds+'</td><td></td></tr>';
+    '<td>'+cur(tSpend)+'</td><td style="font-size:11px">'+tBudgetStr+'</td><td>100%</td></tr>';
   filtered.forEach(function(c){
     var rc3=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
     var cn=(c.campaign_name||'').length>45?c.campaign_name.slice(0,45)+'...':c.campaign_name||'--';
@@ -6159,30 +6169,22 @@ function _renderCampRows(){
     } else if(c.lifetime_budget){
       budgetStr=cur(c.lifetime_budget)+(c.budget_remaining!=null?' ('+cur(c.budget_remaining)+' left)':'');
     }
-    // Bid strategy display
-    var bidStr=c.bid_strategy?c.bid_strategy.replace(/_/g,' ').toLowerCase():'--';
-    // Tooltip with dates
-    var tip=c.campaign_name||'';
-    if(c.created_time) tip+='\nCreated: '+c.created_time.slice(0,10);
-    if(c.start_time) tip+='\nStart: '+c.start_time.slice(0,10);
-    if(c.stop_time) tip+='\nEnd: '+c.stop_time.slice(0,10);
-    cB+='<tr><td style="font-size:12px" title="'+tip.replace(/"/g,'&quot;')+'">'+cn+'</td>'+
+    cB+='<tr style="cursor:pointer" onclick="openCampaignDetail(\''+c.campaign_id+'\',\''+cn.replace(/'/g,"\\'")+'\')">'+
+      '<td style="font-size:12px">'+cn+'</td>'+
       '<td><span style="color:'+stC+';font-size:11px;font-weight:600">'+stL+'</span></td>'+
       '<td style="font-weight:600;color:'+rc3+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
       '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
       '<td>'+(c.ctr!=null?c.ctr.toFixed(1)+'%':'--')+'</td>'+
       '<td>'+cur(c.spend)+'</td>'+
       '<td style="font-size:11px">'+budgetStr+'</td>'+
-      '<td>'+c.spend_share_pct+'%</td>'+
-      '<td>'+fmt(c.orders)+'</td><td>'+c.ad_count+'</td>'+
-      '<td style="font-size:11px;text-transform:capitalize">'+bidStr+'</td></tr>';
+      '<td>'+c.spend_share_pct+'%</td></tr>';
   });
-  document.getElementById('meta-camp-body').innerHTML=cB||'<tr><td colspan="11">No data</td></tr>';
+  document.getElementById('meta-camp-body').innerHTML=cB||'<tr><td colspan="8">No data</td></tr>';
 }
 
 async function _loadCampaigns(){
   if(_campLoaded===_campDays && !_campCustom) return;
-  document.getElementById('meta-camp-body').innerHTML='<tr><td colspan="11" class="loading">Loading...</td></tr>';
+  document.getElementById('meta-camp-body').innerHTML='<tr><td colspan="8" class="loading">Loading...</td></tr>';
   try{
     var ch=await api('/v1/meta/campaign-health?days='+_campDays);
     _campLoaded=_campDays;
@@ -6203,7 +6205,103 @@ async function _loadCampaigns(){
     _renderCampRows();
     _startCampRefresh();
   }catch(e){
-    document.getElementById('meta-camp-body').innerHTML='<tr><td colspan="11" style="color:var(--r)">Failed: '+e.message+'</td></tr>';
+    document.getElementById('meta-camp-body').innerHTML='<tr><td colspan="8" style="color:var(--r)">Failed: '+e.message+'</td></tr>';
+  }
+}
+
+/* ── Campaign detail drawer ── */
+async function openCampaignDetail(campId,campName){
+  document.getElementById('mcCampTitle').textContent=campName||campId;
+  document.getElementById('mcCampContent').innerHTML='<div class="loading">Loading...</div>';
+  document.getElementById('metaCampOverlay').style.display='';
+  document.getElementById('metaCampDrawer').style.display='';
+  // Find campaign metadata from _campData
+  var meta=(_campData||[]).find(function(c){return c.campaign_id===campId;})||{};
+  try{
+    var data=await api('/v1/meta/campaign/'+campId+'?days='+(_campDays||14));
+    var t=data.totals||{};
+    var h='';
+    // Header: status + objective + dates
+    var st=meta.effective_status||'--';
+    var stC=st==='ACTIVE'?'var(--g)':st==='PAUSED'?'var(--y)':'var(--t3)';
+    var stL=st==='ACTIVE'?'Active':st==='PAUSED'?'Paused':st;
+    var bidStr=meta.bid_strategy?meta.bid_strategy.replace(/_/g,' ').toLowerCase():'--';
+    h+='<div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">';
+    h+='<span style="color:'+stC+';font-weight:600;font-size:12px;border:1px solid '+stC+';padding:2px 8px;border-radius:4px">'+stL+'</span>';
+    if(meta.objective) h+='<span style="font-size:11px;color:var(--t3)">'+meta.objective.replace(/_/g,' ')+'</span>';
+    if(meta.buying_type) h+='<span style="font-size:11px;color:var(--t3)">'+meta.buying_type+'</span>';
+    h+='<span style="font-size:11px;color:var(--t3);text-transform:capitalize">Bid: '+bidStr+'</span>';
+    if(meta.created_time) h+='<span style="font-size:11px;color:var(--t3)">Created: '+meta.created_time.slice(0,10)+'</span>';
+    h+='</div>';
+    // KPI tiles
+    h+='<div class="g4" style="margin-bottom:20px">';
+    h+='<div class="cd"><div class="kl">Spend</div><div class="kv">'+cur(t.spend)+'</div></div>';
+    var rc=t.roas>=2?'var(--g)':t.roas>=1?'inherit':'var(--r)';
+    h+='<div class="cd"><div class="kl">ROAS</div><div class="kv" style="color:'+rc+'">'+(t.roas!=null?t.roas.toFixed(2)+'x':'--')+'</div></div>';
+    h+='<div class="cd"><div class="kl">CPA</div><div class="kv">'+(t.cpa!=null?cur(t.cpa):'--')+'</div></div>';
+    h+='<div class="cd"><div class="kl">Orders</div><div class="kv">'+fmt(t.orders)+'</div></div>';
+    h+='<div class="cd"><div class="kl">CTR</div><div class="kv">'+(t.ctr!=null?t.ctr.toFixed(2)+'%':'--')+'</div></div>';
+    h+='<div class="cd"><div class="kl">CPM</div><div class="kv">'+(t.cpm!=null?cur(t.cpm):'--')+'</div></div>';
+    if(meta.daily_budget) h+='<div class="cd"><div class="kl">Budget</div><div class="kv">'+cur(meta.daily_budget)+'/d'+(meta.pacing_pct!=null?' <span style="font-size:12px">('+meta.pacing_pct+'%)</span>':'')+'</div></div>';
+    h+='</div>';
+    // Daily trend chart (spend bars + ROAS line)
+    var dd=data.daily||[];
+    if(dd.length>1){
+      h+='<h4 style="margin:20px 0 8px;font-size:13px">Daily Trend</h4>';
+      var maxSp=Math.max.apply(null,dd.map(function(d){return d.spend;}));
+      var roasVals=dd.filter(function(d){return d.roas!=null;}).map(function(d){return d.roas;});
+      // 7d rolling ROAS
+      var rolled=[];
+      for(var ri=0;ri<dd.length;ri++){var ws=Math.max(0,ri-6),rS=0,rR=0;for(var rj=ws;rj<=ri;rj++){rS+=dd[rj].spend;rR+=dd[rj].revenue;}rolled.push(rS>0?Math.round(rR/rS*100)/100:null);}
+      var rvf=rolled.filter(function(v){return v!=null;});
+      var minR=rvf.length?Math.min.apply(null,rvf):0,maxR=rvf.length?Math.max.apply(null,rvf):4;
+      var rangeR=maxR-minR||1;minR=Math.max(0,minR-rangeR*0.1);maxR+=rangeR*0.1;rangeR=maxR-minR;
+      var svgW=Math.max(500,dd.length*22),svgH=180,pL=45,pR=15,pT=10,pB=25,cW=svgW-pL-pR,cH=svgH-pT-pB;
+      var bW=Math.max(4,Math.min(14,cW/dd.length*0.7));
+      h+='<div style="overflow-x:auto"><svg width="'+svgW+'" height="'+svgH+'" viewBox="0 0 '+svgW+' '+svgH+'" style="display:block;max-width:100%">';
+      // Y-axis grid
+      for(var gi=0;gi<=4;gi++){var gv=minR+(rangeR*gi/4);var gy=pT+cH-cH*(gi/4);h+='<line x1="'+pL+'" y1="'+gy+'" x2="'+(svgW-pR)+'" y2="'+gy+'" stroke="var(--c2)" stroke-width="0.5"/><text x="'+(pL-4)+'" y="'+(gy+3)+'" text-anchor="end" font-size="9" fill="var(--t3)">'+gv.toFixed(1)+'x</text>';}
+      // 2x ref line
+      if(2>=minR&&2<=maxR){var refY=pT+cH-cH*((2-minR)/rangeR);h+='<line x1="'+pL+'" y1="'+refY+'" x2="'+(svgW-pR)+'" y2="'+refY+'" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,3" opacity="0.4"/>';}
+      // Spend bars
+      dd.forEach(function(d,i){var bH=Math.max(d.spend/maxSp*cH*0.5,1);var x=pL+i*(cW/dd.length);var y=pT+cH-bH;h+='<rect x="'+x+'" y="'+y+'" width="'+bW+'" height="'+bH+'" rx="1" fill="#a5b4fc" opacity="0.6"><title>'+d.date+'\nSpend: '+cur(d.spend)+(d.roas!=null?'\nROAS: '+d.roas+'x':'')+'</title></rect>';});
+      // ROAS line
+      var rPath='';
+      rolled.forEach(function(v,i){if(v==null) return;var x=pL+i*(cW/dd.length)+bW/2;var y=pT+cH-cH*((v-minR)/rangeR);rPath+=(rPath?'L':'M')+x+','+y;});
+      if(rPath) h+='<path d="'+rPath+'" fill="none" stroke="#6366f1" stroke-width="2"/>';
+      rolled.forEach(function(v,i){if(v==null) return;var x=pL+i*(cW/dd.length)+bW/2;var y=pT+cH-cH*((v-minR)/rangeR);var dc=v>=2?'#22c55e':v>=1.5?'#eab308':'#ef4444';h+='<circle cx="'+x+'" cy="'+y+'" r="2.5" fill="'+dc+'" stroke="#fff" stroke-width="0.5"/>';});
+      // X-axis dates (every 5th)
+      dd.forEach(function(d,i){if(i%5===0||i===dd.length-1){var x=pL+i*(cW/dd.length)+bW/2;h+='<text x="'+x+'" y="'+(svgH-2)+'" text-anchor="middle" font-size="8" fill="var(--t3)">'+d.date.slice(5)+'</text>';}});
+      h+='</svg></div>';
+      h+='<div style="display:flex;gap:12px;font-size:10px;color:var(--t3);margin-top:4px"><span><span style="display:inline-block;width:10px;height:10px;background:#a5b4fc;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Spend</span><span><span style="display:inline-block;width:10px;height:2px;background:#6366f1;vertical-align:middle;margin-right:3px"></span>ROAS (7d)</span></div>';
+    }
+    // Creatives table
+    var cc=data.creatives||[];
+    if(cc.length){
+      h+='<h4 style="margin:20px 0 8px;font-size:13px">Creatives ('+cc.length+')</h4>';
+      h+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th></th><th>Creative</th><th>Status</th><th>ROAS</th><th>CPA</th><th>Spend</th><th>Orders</th><th>Freq</th><th>Tag</th></tr></thead><tbody>';
+      cc.forEach(function(c){
+        var crc=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
+        var cn2=(c.ad_name||'').length>40?c.ad_name.slice(0,40)+'...':c.ad_name||'--';
+        var stC2=c.effective_status==='ACTIVE'?'var(--g)':c.effective_status==='PAUSED'?'var(--y)':'var(--t3)';
+        var stL2=c.effective_status==='ACTIVE'?'Active':c.effective_status==='PAUSED'?'Paused':c.effective_status||'--';
+        var thumb=c.thumbnail_url?'<img src="'+c.thumbnail_url+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'';
+        var freq=c.cumulative_frequency!=null?c.cumulative_frequency.toFixed(1)+'x':c.avg_frequency!=null?c.avg_frequency.toFixed(1)+'x':'--';
+        var fC=c.cumulative_frequency>=3?'var(--r)':c.cumulative_frequency>=2?'#f97316':'var(--g)';
+        var tagC=c.classification==='Winner'?'var(--g)':c.classification==='Loser'?'var(--r)':'var(--t3)';
+        h+='<tr style="cursor:pointer" onclick="openCreativeDetail(\''+c.ad_id+'\')"><td>'+thumb+'</td><td style="font-size:12px">'+cn2+'</td>'+
+          '<td><span style="color:'+stC2+';font-size:11px;font-weight:600">'+stL2+'</span></td>'+
+          '<td style="font-weight:600;color:'+crc+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
+          '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
+          '<td>'+cur(c.spend)+'</td><td>'+fmt(c.orders)+'</td>'+
+          '<td style="color:'+fC+'">'+freq+'</td>'+
+          '<td style="font-size:11px;font-weight:600;color:'+tagC+'">'+c.classification+'</td></tr>';
+      });
+      h+='</tbody></table></div>';
+    }
+    document.getElementById('mcCampContent').innerHTML=h;
+  }catch(e){
+    document.getElementById('mcCampContent').innerHTML='<div style="color:var(--r)">Failed: '+e.message+'</div>';
   }
 }
 
