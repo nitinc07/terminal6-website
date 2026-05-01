@@ -6001,7 +6001,7 @@ async function _loadHourlyTracker(){
       ctx.stroke(); ctx.setLineDash([]);
     }
 
-    // Today: draw dot at current hour
+    // Today: draw dot at current hour + projected line to EOD
     var todayCurve=d.cumulative.today;
     if(todayCurve){
       var lastH=chartStartHour;
@@ -6010,6 +6010,35 @@ async function _loadHourlyTracker(){
       if(pt.cum_spend>0){
         var cx=pad.l+cW*((lastH-chartStartHour)/(chartHours-1));
         var cy=pad.t+cH-cH*(pt.cum_spend/maxSpend);
+
+        // Projected line from current hour to EOD using median curve ratio
+        if(d.median_curve&&d.median_curve.length>0&&lastH<23){
+          // Find median cum_pct at current hour and at hour 23
+          var medAtNow=0,medAtEnd=0;
+          d.median_curve.forEach(function(mc){if(mc.hour<=lastH)medAtNow=mc.cum_pct;if(mc.hour<=23)medAtEnd=mc.cum_pct;});
+          if(medAtNow>0&&medAtEnd>0){
+            var projEod=pt.cum_spend*(medAtEnd/medAtNow);
+            ctx.strokeStyle='#3b82f6'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.globalAlpha=0.5;
+            ctx.beginPath(); ctx.moveTo(cx,cy);
+            // Draw projected curve hour by hour
+            d.median_curve.forEach(function(mc){
+              if(mc.hour<=lastH||mc.hour<chartStartHour) return;
+              var projSpend=pt.cum_spend*(mc.cum_pct/medAtNow);
+              var px=pad.l+cW*((mc.hour-chartStartHour)/(chartHours-1));
+              var py=pad.t+cH-cH*(projSpend/maxSpend);
+              ctx.lineTo(px,py);
+            });
+            ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1.0;
+            // EOD projected label
+            var eodX=pad.l+cW;
+            var eodY=pad.t+cH-cH*(projEod/maxSpend);
+            ctx.fillStyle='#3b82f6'; ctx.font='10px system-ui'; ctx.textAlign='left'; ctx.globalAlpha=0.6;
+            ctx.fillText('~'+cur(projEod),eodX+4,eodY+3);
+            ctx.globalAlpha=1.0;
+          }
+        }
+
+        // Current dot
         ctx.fillStyle='#3b82f6'; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
         ctx.fillStyle='#1e40af'; ctx.font='bold 11px system-ui'; ctx.textAlign='left';
         ctx.fillText(cur(pt.cum_spend)+(pt.cum_roas!=null?' · '+pt.cum_roas.toFixed(1)+'x':''),cx+8,cy-4);
@@ -6023,6 +6052,7 @@ async function _loadHourlyTracker(){
       var dash=dayDash[day].length>0?'dashed':'solid';
       legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px '+dash+' '+dayStroke[day]+'"></span>'+dayLabels[day]+'</span>';
     });
+    if(todayCurve) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px dashed #3b82f6;opacity:0.5"></span>Projected</span>';
     if(d.median_curve&&bp) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:1px dashed #94a3b8"></span>Expected (14d median)</span>';
     if(bp) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px dashed #ef4444"></span>Budget</span>';
     document.getElementById('meta-hourly-legend').innerHTML=legH;
