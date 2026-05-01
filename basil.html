@@ -6044,27 +6044,34 @@ async function _loadHourlyTracker(){
     if(bp) legH+='<span style="display:flex;align-items:center;gap:4px"><span style="width:20px;height:0;border-top:2px dashed #ef4444"></span>Budget</span>';
     document.getElementById('meta-hourly-legend').innerHTML=legH;
 
-    // Hourly breakdown table (all 24 hours, today vs yesterday)
-    var hdr='<tr><th>Hour</th><th colspan="4" style="text-align:center;border-bottom:2px solid var(--t1)">Today</th><th colspan="4" style="text-align:center;border-bottom:2px solid var(--t3)">Yesterday</th></tr>';
-    hdr+='<tr><th></th><th>Spend</th><th>ROAS</th><th>Orders</th><th>CPM</th><th>Spend</th><th>ROAS</th><th>Orders</th><th>CPM</th></tr>';
+    // Hourly breakdown table (today vs yesterday vs 7d avg)
+    var a7=d.avg7||{};
+    var hdr='<tr><th rowspan="2">Hour</th><th colspan="4" style="text-align:center;border-bottom:2px solid #2563eb">Today</th><th colspan="3" style="text-align:center;border-bottom:2px solid #f59e0b">Yesterday</th><th colspan="2" style="text-align:center;border-bottom:2px solid #8b5cf6">7d Avg</th></tr>';
+    hdr+='<tr><th>Spend</th><th>ROAS</th><th>CTR</th><th>CPM</th><th>Spend</th><th>ROAS</th><th>CTR</th><th>CTR</th><th>ROAS</th></tr>';
     var tbody='';
     for(var h=0;h<24;h++){
       var t=(d.hourly.today||{})[h]||{};
       var y=(d.hourly.yesterday||{})[h]||{};
+      var av=a7[h]||{};
       var tRoas=t.roas,yRoas=y.roas;
       var tRc=tRoas>=2?'var(--g)':tRoas>=1?'':'var(--r)';
       var spDelta=y.spend>0?Math.round((t.spend-y.spend)/y.spend*100):null;
       var spColor=spDelta!=null?(spDelta>15?'var(--r)':spDelta<-15?'var(--y)':''):'';
+      // CTR delta vs 7d avg
+      var tCtr=t.ctr,aCtr=av.ctr;
+      var ctrDelta=tCtr!=null&&aCtr!=null&&aCtr>0?Math.round((tCtr-aCtr)/aCtr*100):null;
+      var ctrColor=ctrDelta!=null?(ctrDelta<-15?'var(--r)':ctrDelta>15?'var(--g)':''):'';
       tbody+='<tr>';
       tbody+='<td style="font-weight:500">'+hrLabel(h)+'</td>';
       tbody+='<td style="color:'+spColor+'">'+cur(t.spend||0)+(spDelta!=null?' <span style="font-size:10px">('+(spDelta>=0?'+':'')+spDelta+'%)</span>':'')+'</td>';
       tbody+='<td style="font-weight:600;color:'+tRc+'">'+(tRoas!=null?tRoas.toFixed(2)+'x':'--')+'</td>';
-      tbody+='<td>'+(t.orders||0)+'</td>';
+      tbody+='<td style="color:'+ctrColor+'">'+(tCtr!=null?tCtr.toFixed(2)+'%':'--')+'</td>';
       tbody+='<td>'+(t.cpm!=null?'\u20B9'+Math.round(t.cpm):'--')+'</td>';
       tbody+='<td style="color:var(--t3)">'+cur(y.spend||0)+'</td>';
       tbody+='<td style="color:var(--t3)">'+(yRoas!=null?yRoas.toFixed(2)+'x':'--')+'</td>';
-      tbody+='<td style="color:var(--t3)">'+(y.orders||0)+'</td>';
-      tbody+='<td style="color:var(--t3)">'+(y.cpm!=null?'\u20B9'+Math.round(y.cpm):'--')+'</td>';
+      tbody+='<td style="color:var(--t3)">'+(y.ctr!=null?y.ctr.toFixed(2)+'%':'--')+'</td>';
+      tbody+='<td style="color:#8b5cf6">'+(aCtr!=null?aCtr.toFixed(2)+'%':'--')+'</td>';
+      tbody+='<td style="color:#8b5cf6">'+(av.roas!=null?av.roas.toFixed(2)+'x':'--')+'</td>';
       tbody+='</tr>';
     }
     document.getElementById('meta-hourly-tbl').innerHTML='<thead>'+hdr+'</thead><tbody>'+tbody+'</tbody>';
