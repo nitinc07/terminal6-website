@@ -1155,10 +1155,8 @@
           <div class="cd"><div class="kl">Below 2x ROAS</div><div class="kv" id="meta-camp-below">--</div><div class="kd n" id="meta-camp-below-sub">&nbsp;</div></div>
           <div class="cd"><div class="kl">Bleeding (&lt;1x)</div><div class="kv" id="meta-camp-bleed">--</div><div class="kd n" id="meta-camp-bleed-sub">&nbsp;</div></div>
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:10px" id="camp-status-filter">
-          <button class="a" onclick="_filterCampStatus('all',this)">All</button>
-          <button onclick="_filterCampStatus('ACTIVE',this)">Active</button>
-          <button onclick="_filterCampStatus('PAUSED',this)">Paused</button>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px" id="camp-status-filter">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t3);cursor:pointer;user-select:none"><input type="checkbox" id="camp-show-inactive" onchange="_toggleCampInactive(this.checked)" style="cursor:pointer"> Show Inactive</label>
         </div>
         <div style="overflow-x:auto">
           <table class="tbl" id="meta-camp-tbl">
@@ -6092,7 +6090,7 @@ function _roasClr(v){return v>=2?'var(--g)':v>=1?'#3b82f6':'var(--r)';}
 function _spendBar(v,mx){var p=mx>0?Math.round(v/mx*100):0;return '<div style="width:60px;height:6px;background:var(--c1);border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px"><div style="width:'+p+'%;height:100%;background:var(--acc);border-radius:3px"></div></div>';}
 
 /* ── Campaigns sub-tab loader ── */
-var _campDays=14, _campLoaded=0, _campCustom=null, _campData=[], _campStatusFilter='all', _campRefreshTimer=null;
+var _campDays=14, _campLoaded=0, _campCustom=null, _campData=[], _campStatusFilter='ACTIVE', _campRefreshTimer=null;
 
 function _startCampRefresh(){
   _stopCampRefresh();
@@ -6121,10 +6119,8 @@ function _setCampCustom(){
   document.querySelectorAll('#camp-days-pills button').forEach(function(b){b.classList.remove('a');});
   _loadCampaigns();
 }
-function _filterCampStatus(s,btn){
-  _campStatusFilter=s;
-  document.querySelectorAll('#camp-status-filter button').forEach(function(b){b.classList.remove('a');});
-  if(btn) btn.classList.add('a');
+function _toggleCampInactive(show){
+  _campStatusFilter=show?'all':'ACTIVE';
   _renderCampRows();
 }
 function _renderCampRows(){
@@ -6132,15 +6128,26 @@ function _renderCampRows(){
   if(_campStatusFilter!=='all'){
     filtered=_campData.filter(function(c){return c.effective_status===_campStatusFilter;});
   }
-  var cB='';
+  // Totals
+  var tSpend=0,tSales=0,tOrders=0,tClicks=0,tImpr=0,tAds=0,tBudget=0;
+  filtered.forEach(function(c){tSpend+=c.spend||0;tSales+=(c.roas&&c.spend?c.roas*c.spend:0);tOrders+=c.orders||0;tClicks+=(c.ctr&&c.spend?1:0);tAds+=c.ad_count||0;if(c.daily_budget)tBudget+=c.daily_budget;});
+  var tRoas=tSpend>0?tSales/tSpend:0;
+  var tCpa=tOrders>0?tSpend/tOrders:0;
+  var tPacing=tBudget>0?Math.round(tSpend/(_campDays||14)/tBudget*100):null;
+  var tPacC=tPacing!=null?(tPacing>110?'var(--r)':tPacing<80?'var(--y)':'var(--g)'):'inherit';
+  var tBudgetStr=tBudget>0?cur(tBudget)+'/d'+(tPacing!=null?' <span style="color:'+tPacC+';font-weight:600">('+tPacing+'%)</span>':''):'';
+  var tRC=tRoas>=2?'var(--g)':tRoas>=1?'inherit':'var(--r)';
+  var cB='<tr style="font-weight:700;background:var(--c1)"><td>Total ('+filtered.length+' campaigns)</td><td></td>'+
+    '<td style="color:'+tRC+'">'+tRoas.toFixed(1)+'x</td><td>'+cur(tCpa)+'</td><td></td>'+
+    '<td>'+cur(tSpend)+'</td><td style="font-size:11px">'+tBudgetStr+'</td><td>100%</td><td>'+fmt(tOrders)+'</td><td>'+tAds+'</td><td></td></tr>';
   filtered.forEach(function(c){
     var rc3=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
     var cn=(c.campaign_name||'').length>45?c.campaign_name.slice(0,45)+'...':c.campaign_name||'--';
     var st=c.effective_status||'--';
     var stC=st==='ACTIVE'?'var(--g)':st==='PAUSED'?'var(--y)':'var(--t3)';
     var stL=st==='ACTIVE'?'Active':st==='PAUSED'?'Paused':st==='DELETED'?'Deleted':st==='ARCHIVED'?'Archived':st;
-    // Budget: daily budget + pacing indicator
-    var budgetStr='--';
+    // Budget: daily budget + pacing indicator, or "Ad Set" if no campaign-level budget
+    var budgetStr='<span style="color:var(--t3);font-style:italic">Ad Set</span>';
     var pacingColor='inherit';
     if(c.daily_budget){
       budgetStr=cur(c.daily_budget)+'/d';
