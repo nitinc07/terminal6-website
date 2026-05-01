@@ -1135,9 +1135,9 @@
         <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <h3 style="margin:0">Campaign Performance</h3>
           <div class="pills" id="camp-days-pills">
-            <button data-days="1" onclick="_setCampDays(1)">1d</button>
+            <button class="a" data-days="1" onclick="_setCampDays(1)">1d</button>
             <button data-days="7" onclick="_setCampDays(7)">7d</button>
-            <button class="a" data-days="14" onclick="_setCampDays(14)">14d</button>
+            <button data-days="14" onclick="_setCampDays(14)">14d</button>
             <button data-days="30" onclick="_setCampDays(30)">30d</button>
           </div>
           <div style="display:flex;align-items:center;gap:6px">
@@ -6090,7 +6090,7 @@ function _roasClr(v){return v>=2?'var(--g)':v>=1?'#3b82f6':'var(--r)';}
 function _spendBar(v,mx){var p=mx>0?Math.round(v/mx*100):0;return '<div style="width:60px;height:6px;background:var(--c1);border-radius:3px;display:inline-block;vertical-align:middle;margin-left:6px"><div style="width:'+p+'%;height:100%;background:var(--acc);border-radius:3px"></div></div>';}
 
 /* ── Campaigns sub-tab loader ── */
-var _campDays=14, _campLoaded=0, _campCustom=null, _campData=[], _campStatusFilter='ACTIVE', _campRefreshTimer=null;
+var _campDays=1, _campLoaded=0, _campCustom=null, _campData=[], _campStatusFilter='ACTIVE', _campRefreshTimer=null;
 
 function _startCampRefresh(){
   _stopCampRefresh();
@@ -6200,16 +6200,26 @@ async function _loadCampaigns(){
 }
 
 /* ── Campaign detail drawer ── */
-async function openCampaignDetail(campId){
+var _campDetailId=null,_campDetailDays=7;
+async function openCampaignDetail(campId,days){
+  _campDetailId=campId;
+  if(days) _campDetailDays=days;
   var meta=(_campData||[]).find(function(c){return c.campaign_id===campId;})||{};
   document.getElementById('mcCampTitle').textContent=meta.campaign_name||campId;
   document.getElementById('mcCampContent').innerHTML='<div class="loading">Loading...</div>';
   document.getElementById('metaCampOverlay').style.display='';
   document.getElementById('metaCampDrawer').style.display='';
   try{
-    var data=await api('/v1/meta/campaign/'+campId+'?days='+(_campDays||14));
+    var data=await api('/v1/meta/campaign/'+campId+'?days='+_campDetailDays);
     var t=data.totals||{};
     var h='';
+    // Period pills
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">';
+    [1,7,14,30].forEach(function(d){
+      var ac=d===_campDetailDays?' class="a"':'';
+      h+='<button'+ac+' onclick="openCampaignDetail(\''+campId+'\','+d+')" style="font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:5px;background:'+(d===_campDetailDays?'var(--t1);color:#fff':'var(--bg-white);color:var(--t2)')+';cursor:pointer;font-family:var(--sans)">'+d+'d</button>';
+    });
+    h+='</div>';
     // Header: status + objective + dates
     var st=meta.effective_status||'--';
     var stC=st==='ACTIVE'?'var(--g)':st==='PAUSED'?'var(--y)':'var(--t3)';
