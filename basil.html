@@ -5994,8 +5994,7 @@ async function _loadHourlyTracker(){
     // Today: draw dot at current hour + projected line to EOD
     var todayCurve=d.cumulative.today;
     if(todayCurve){
-      var lastH=chartStartHour;
-      for(var h=23;h>=chartStartHour;h--){if(todayCurve[h]&&todayCurve[h].cum_spend>0){lastH=h;break;}}
+      var lastH=_todayLastH;  // last hour with actual hourly spend (computed above)
       var pt=todayCurve[lastH]||{};
       if(pt.cum_spend>0){
         var cx=pad.l+cW*((lastH-chartStartHour)/(chartHours-1));
