@@ -4506,6 +4506,7 @@ function _renderMetaCreatives(list){
     var thumb=d.thumbnail_url?'<img src="'+d.thumbnail_url+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">'+(d.creative_type==='VIDEO'?'&#9654;':'&#128444;')+'</div>';
     var nm=(d.ad_name||'').length>40?d.ad_name.slice(0,40)+'...':d.ad_name||'--';
     var cp=(d.campaign_name||'').length>28?d.campaign_name.slice(0,28)+'...':d.campaign_name||'';
+    var ascBadge=d.campaign_type==='ASC'?' <span style="font-size:9px;font-weight:600;color:#6d28d9;background:#ede9fe;padding:0 3px;border-radius:2px">ASC</span>':'';
     var sc2=statusColors[d.status]||'var(--t3)';
     var fc2=fmtP[d.creative_type]||'#6b7280';
     var rc='';
@@ -4513,7 +4514,7 @@ function _renderMetaCreatives(list){
     var fw='';
     if(d.recent_frequency&&d.recent_frequency>3)fw='<span style="color:#f97316;font-size:10px;margin-left:4px">f'+d.recent_frequency.toFixed(1)+'</span>';
     tR+='<tr style="cursor:pointer" onclick="openCreativeDetail(\''+d.ad_id+'\')"><td>'+thumb+'</td>'+
-      '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+'</div></td>'+
+      '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+ascBadge+'</div></td>'+
       '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+fc2+'22;color:'+fc2+'">'+d.creative_type+'</span></td>'+
       '<td><div style="font-weight:600;color:'+(d.roas>=2?'var(--g)':d.roas>=1?'inherit':'var(--r)')+'">'+(d.roas!=null?d.roas.toFixed(1)+'x':'--')+'</div>'+rc+'</td>'+
       '<td>'+(d.cpa!=null?cur(d.cpa):'--')+'</td>'+
@@ -6291,7 +6292,8 @@ function _renderCampRows(){
       budgetStr=cur(c.lifetime_budget)+(c.budget_remaining!=null?' ('+cur(c.budget_remaining)+' left)':'');
     }
     var wlBadge='';
-    if(c.winners>0) wlBadge+=' <span style="font-size:10px;font-weight:700;color:var(--g);background:#dcfce7;padding:1px 4px;border-radius:3px;margin-left:4px">'+c.winners+'W</span>';
+    if(c.campaign_type==='ASC') wlBadge+=' <span style="font-size:9px;font-weight:600;color:#6d28d9;background:#ede9fe;padding:1px 4px;border-radius:3px;margin-left:4px">ASC</span>';
+    if(c.winners>0) wlBadge+=' <span style="font-size:10px;font-weight:700;color:var(--g);background:#dcfce7;padding:1px 4px;border-radius:3px;margin-left:2px">'+c.winners+'W</span>';
     if(c.losers>0) wlBadge+=' <span style="font-size:10px;font-weight:700;color:var(--r);background:#fee2e2;padding:1px 4px;border-radius:3px;margin-left:2px">'+c.losers+'L</span>';
     cB+='<tr style="cursor:pointer" onclick="openCampaignDetail(\''+c.campaign_id+'\')">'+
       '<td style="font-size:12px">'+cn+wlBadge+'</td>'+
