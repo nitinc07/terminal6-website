@@ -6277,29 +6277,53 @@ async function openCampaignDetail(campId,days){
       h+='</svg></div>';
       h+='<div style="display:flex;gap:12px;font-size:10px;color:var(--t3);margin-top:4px"><span><span style="display:inline-block;width:10px;height:10px;background:#a5b4fc;border-radius:2px;vertical-align:middle;margin-right:3px"></span>Spend</span><span><span style="display:inline-block;width:10px;height:2px;background:#6366f1;vertical-align:middle;margin-right:3px"></span>ROAS (7d)</span></div>';
     }
-    // Creatives table
+    // Creatives grouped by ad set
     var cc=data.creatives||[];
     if(cc.length){
-      h+='<h4 style="margin:20px 0 8px;font-size:13px">Creatives ('+cc.length+')</h4>';
-      h+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th></th><th>Creative</th><th>Status</th><th>ROAS</th><th>CPA</th><th>Spend</th><th>Orders</th><th>Freq</th><th>Tag</th></tr></thead><tbody>';
+      // Group by adset
+      var adsetMap={};var adsetOrder=[];
       cc.forEach(function(c){
-        var crc=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
-        var cn2=(c.ad_name||'').length>40?c.ad_name.slice(0,40)+'...':c.ad_name||'--';
-        var stC2=c.effective_status==='ACTIVE'?'var(--g)':c.effective_status==='PAUSED'?'var(--y)':'var(--t3)';
-        var stL2=c.effective_status==='ACTIVE'?'Active':c.effective_status==='PAUSED'?'Paused':c.effective_status||'--';
-        var thumb=c.thumbnail_url?'<img src="'+c.thumbnail_url+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'';
-        var freq=c.cumulative_frequency!=null?c.cumulative_frequency.toFixed(1)+'x':c.avg_frequency!=null?c.avg_frequency.toFixed(1)+'x':'--';
-        var fC=c.cumulative_frequency>=3?'var(--r)':c.cumulative_frequency>=2?'#f97316':'var(--g)';
-        var tagC=c.classification==='Winner'?'var(--g)':c.classification==='Loser'?'var(--r)':'var(--t3)';
-        h+='<tr style="cursor:pointer" onclick="openCreativeDetail(\''+c.ad_id+'\')"><td>'+thumb+'</td><td style="font-size:12px">'+cn2+'</td>'+
-          '<td><span style="color:'+stC2+';font-size:11px;font-weight:600">'+stL2+'</span></td>'+
-          '<td style="font-weight:600;color:'+crc+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
-          '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
-          '<td>'+cur(c.spend)+'</td><td>'+fmt(c.orders)+'</td>'+
-          '<td style="color:'+fC+'">'+freq+'</td>'+
-          '<td style="font-size:11px;font-weight:600;color:'+tagC+'">'+c.classification+'</td></tr>';
+        var asId=c.adset_id||'_none';
+        if(!adsetMap[asId]){adsetMap[asId]={name:c.adset_name||'Unknown Ad Set',ads:[],spend:0,rev:0,orders:0};adsetOrder.push(asId);}
+        adsetMap[asId].ads.push(c);
+        adsetMap[asId].spend+=c.spend||0;
+        adsetMap[asId].rev+=c.revenue||0;
+        adsetMap[asId].orders+=c.orders||0;
       });
-      h+='</tbody></table></div>';
+      h+='<h4 style="margin:20px 0 8px;font-size:13px">Creatives ('+cc.length+' ads in '+adsetOrder.length+' ad sets)</h4>';
+      adsetOrder.forEach(function(asId){
+        var as=adsetMap[asId];
+        var asRoas=as.spend>0?(as.rev/as.spend):0;
+        var asRC=asRoas>=2?'var(--g)':asRoas>=1?'inherit':'var(--r)';
+        var asName=(as.name||'').length>50?as.name.slice(0,50)+'...':as.name;
+        h+='<div style="margin-bottom:16px">';
+        h+='<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--c1);border-radius:6px 6px 0 0;border:1px solid var(--c2);border-bottom:none">';
+        h+='<span style="font-size:12px;font-weight:600;color:var(--t1)">'+asName+'</span>';
+        h+='<span style="font-size:11px;color:var(--t3)">'+as.ads.length+' ads</span>';
+        h+='<span style="font-size:11px;color:var(--t3)">Spend: '+cur(as.spend)+'</span>';
+        h+='<span style="font-size:11px;font-weight:600;color:'+asRC+'">ROAS: '+asRoas.toFixed(1)+'x</span>';
+        h+='<span style="font-size:11px;color:var(--t3)">Orders: '+fmt(as.orders)+'</span>';
+        h+='</div>';
+        h+='<div style="overflow-x:auto;border:1px solid var(--c2);border-radius:0 0 6px 6px"><table class="tbl" style="margin:0"><thead><tr><th></th><th>Creative</th><th>Status</th><th>ROAS</th><th>CPA</th><th>Spend</th><th>Orders</th><th>Freq</th><th>Tag</th></tr></thead><tbody>';
+        as.ads.forEach(function(c){
+          var crc=c.roas>=2?'var(--g)':c.roas>=1?'inherit':'var(--r)';
+          var cn2=(c.ad_name||'').length>40?c.ad_name.slice(0,40)+'...':c.ad_name||'--';
+          var stC2=c.effective_status==='ACTIVE'?'var(--g)':c.effective_status==='PAUSED'?'var(--y)':'var(--t3)';
+          var stL2=c.effective_status==='ACTIVE'?'Active':c.effective_status==='PAUSED'?'Paused':c.effective_status||'--';
+          var thumb=c.thumbnail_url?'<img src="'+c.thumbnail_url+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'';
+          var freq=c.cumulative_frequency!=null?c.cumulative_frequency.toFixed(1)+'x':c.avg_frequency!=null?c.avg_frequency.toFixed(1)+'x':'--';
+          var fC=c.cumulative_frequency>=3?'var(--r)':c.cumulative_frequency>=2?'#f97316':'var(--g)';
+          var tagC=c.classification==='Winner'||c.classification==='Proven'?'var(--g)':c.classification==='Loser'?'var(--r)':c.classification==='Fatiguing'?'#f97316':'var(--t3)';
+          h+='<tr style="cursor:pointer" onclick="openCreativeDetail(\''+c.ad_id+'\')"><td>'+thumb+'</td><td style="font-size:12px">'+cn2+'</td>'+
+            '<td><span style="color:'+stC2+';font-size:11px;font-weight:600">'+stL2+'</span></td>'+
+            '<td style="font-weight:600;color:'+crc+'">'+(c.roas!=null?c.roas.toFixed(1)+'x':'--')+'</td>'+
+            '<td>'+(c.cpa!=null?cur(c.cpa):'--')+'</td>'+
+            '<td>'+cur(c.spend)+'</td><td>'+fmt(c.orders)+'</td>'+
+            '<td style="color:'+fC+'">'+freq+'</td>'+
+            '<td style="font-size:11px;font-weight:600;color:'+tagC+'">'+c.classification+'</td></tr>';
+        });
+        h+='</tbody></table></div></div>';
+      });
     }
     document.getElementById('mcCampContent').innerHTML=h;
   }catch(e){
