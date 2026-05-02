@@ -178,10 +178,15 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 </div>
 
 <script>
+// Check if this is an invite-based onboarding (any email allowed)
+const INVITE_TOKEN = new URLSearchParams(location.search).get('invite');
+const ADMIN_EMAILS = ['contact@terminal6.io'];
+
 function handleGoogleSignIn(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
   const email = payload.email.toLowerCase();
-  if (!['contact@terminal6.io'].includes(email)) {
+  // Platform admins always allowed; invite-based users validated after sign-in
+  if (!INVITE_TOKEN && !ADMIN_EMAILS.includes(email)) {
     document.getElementById('loginError').textContent = 'Access restricted to platform admins.';
     document.getElementById('loginError').style.display = 'block';
     return;
@@ -190,15 +195,55 @@ function handleGoogleSignIn(response) {
   sessionStorage.setItem('t6_token', response.credential);
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
-  initPage();
+  if (INVITE_TOKEN) {
+    validateInvite(response.credential);
+  } else {
+    initPage();
+  }
 }
+
+async function validateInvite(token) {
+  try {
+    const resp = await fetch(API_BASE + '/v1/onboard/validate-invite?token=' + encodeURIComponent(INVITE_TOKEN), {
+      headers: {'Authorization': 'Bearer ' + token},
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      showToast(err.detail || 'Invalid invite link');
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('mainContent').style.display = 'none';
+      document.getElementById('loginError').textContent = err.detail || 'Invalid invite link';
+      document.getElementById('loginError').style.display = 'block';
+      return;
+    }
+    const data = await resp.json();
+    currentBrandId = data.brand_id;
+    currentBrandName = data.brand_name;
+    // Invite users go straight to Step 2 (Connect Platforms)
+    goToStep(2);
+    refreshStatus();
+  } catch (e) {
+    showToast('Error validating invite: ' + e.message);
+  }
+}
+
 (function() {
   const saved = sessionStorage.getItem('t6_user');
-  if (saved && ['contact@terminal6.io'].includes(JSON.parse(saved).email)) {
+  const isAdmin = saved && ADMIN_EMAILS.includes(JSON.parse(saved).email);
+  const isInviteUser = saved && INVITE_TOKEN;
+  if (isAdmin || isInviteUser) {
     document.getElementById('loginScreen').style.display = 'none';
     return;
   }
+  // Show sign-in screen — for invite links, update the message
   document.getElementById('loginScreen').style.display = 'flex';
+  if (INVITE_TOKEN) {
+    document.querySelector('#loginScreen .nav-tag, #loginScreen div[style*="margin-bottom:28px"]')
+    const msgEl = document.querySelector('#loginScreen div');
+    // Update subtitle for invite users
+    const subtitles = document.querySelectorAll('#loginScreen div[style*="color:var(--text-mid)"]');
+    if (subtitles.length) subtitles[0].textContent = 'Sign in with your Google account to connect your platforms.';
+  }
   const mc = document.getElementById('mainContent');
   if (mc) mc.style.display = 'none';
 })();
@@ -347,7 +392,13 @@ function initPage() {
   // Check for OAuth callback redirects
   setTimeout(() => { checkGa4Callback(); checkMetaAdsCallback(); }, 500);
 }
-if (sessionStorage.getItem('t6_user')) initPage();
+if (sessionStorage.getItem('t6_user')) {
+  if (INVITE_TOKEN) {
+    validateInvite(getToken());
+  } else {
+    initPage();
+  }
+}
 
 function getToken() { return sessionStorage.getItem('t6_token') || ''; }
 function apiHeaders() { return { 'Authorization': 'Bearer ' + getToken(), 'Content-Type': 'application/json' }; }
