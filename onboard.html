@@ -344,6 +344,8 @@ function initPage() {
     }
     refreshStatus();
   }
+  // Check for OAuth callback redirects
+  setTimeout(() => { checkGa4Callback(); checkMetaAdsCallback(); }, 500);
 }
 if (sessionStorage.getItem('t6_user')) initPage();
 
@@ -558,10 +560,7 @@ async function checkMetaAdsCallback() {
   } catch (e) { showToast('Error: ' + e.message); }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(checkGa4Callback, 500);
-  setTimeout(checkMetaAdsCallback, 600);
-});
+// OAuth callback checks are triggered from initPage() after page load
 
 // ── Step 3: Data pull ──
 let pullPolling = null;
