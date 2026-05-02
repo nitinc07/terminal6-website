@@ -365,6 +365,31 @@ async function validateInvite(token) {
   </div>
 </div></div>
 
+<!-- AMAZON SP-API MODAL -->
+<div class="modal-overlay" id="spApiModal"><div class="modal" style="max-width:520px">
+  <h3>Connect Amazon Seller Central</h3>
+  <p>Terminal6 needs API credentials from your Seller Central account. Follow these steps:</p>
+  <div style="background:var(--bg-warm);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:12.5px;line-height:1.7">
+    <div style="font-weight:600;margin-bottom:8px">Steps to create your SP-API app:</div>
+    <ol style="padding-left:18px;margin:0">
+      <li>Go to <a href="https://sellercentral.amazon.in/apps/manage" target="_blank" style="color:var(--accent)">Seller Central &rarr; Apps &amp; Services &rarr; Develop Apps</a></li>
+      <li>Click <strong>"Add new app client"</strong></li>
+      <li>App name: <strong>Terminal6</strong>, API type: <strong>SP API</strong></li>
+      <li>IAM ARN: <code style="background:#fff;padding:2px 6px;border-radius:3px;font-size:11px">arn:aws:iam::996393380257:user/Terminal6-SPAPI</code></li>
+      <li>Select roles: <strong>Finance, Selling Partner Insights, Pricing, Inventory &amp; Order Tracking, Product Listing</strong></li>
+      <li>Click <strong>"Save and exit"</strong>, then click <strong>"Authorize"</strong> on your new app</li>
+      <li>Copy the <strong>Client ID</strong>, <strong>Client Secret</strong>, and <strong>Refresh Token</strong> below</li>
+    </ol>
+  </div>
+  <div class="form-group"><label>Client ID</label><input type="text" id="spClientId" placeholder="amzn1.application-oa2-client.xxxxx"></div>
+  <div class="form-group"><label>Client Secret</label><input type="password" id="spClientSecret" placeholder="amzn1.oa2-cs.v1.xxxxx"></div>
+  <div class="form-group"><label>Refresh Token</label><input type="password" id="spRefreshToken" placeholder="Atzr|xxxxx"></div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="closeModal('spApiModal')">Cancel</button>
+    <button class="btn btn-primary" onclick="saveSpApiCredentials()">Connect</button>
+  </div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -516,6 +541,7 @@ function renderConnectors(data) {
 
 async function connectPlatform(pid, authType) {
   if (authType === 'credentials' && pid === 'unicommerce') { openModal('ucModal'); return; }
+  if (authType === 'credentials' && pid === 'amazon_sp') { openModal('spApiModal'); return; }
   if (pid === 'shopify') {
     // Prompt for shop name before calling connect-url
     const shop = prompt('Enter the Shopify store name (the part before .myshopify.com):');
@@ -746,10 +772,37 @@ async function startPull() {
 // ── UC modal ──
 async function saveUcCredentials() {
   const tenant = document.getElementById('ucTenant').value.trim();
+  const username = document.getElementById('ucUsername').value.trim();
   const password = document.getElementById('ucPassword').value.trim();
   if (!tenant || !password) { showToast('Tenant URL and password required'); return; }
-  showToast('UC credentials saved.');
-  closeModal('ucModal');
+  try {
+    const resp = await fetch(API_BASE + '/v1/onboard/save-credentials', {
+      method: 'POST', headers: apiHeaders(),
+      body: JSON.stringify({brand_id: currentBrandId, provider: 'unicommerce', credentials: {tenant_url: tenant, username: username || 'contact@terminal6.io', password: password}}),
+    });
+    if (!resp.ok) { const e = await resp.json().catch(()=>({})); showToast('Error: '+(e.detail||'Failed to save')); return; }
+    showToast('Unicommerce connected');
+    closeModal('ucModal');
+    refreshStatus();
+  } catch (e) { showToast('Error: '+e.message); }
+}
+
+// ── Amazon SP-API modal ──
+async function saveSpApiCredentials() {
+  const clientId = document.getElementById('spClientId').value.trim();
+  const clientSecret = document.getElementById('spClientSecret').value.trim();
+  const refreshToken = document.getElementById('spRefreshToken').value.trim();
+  if (!clientId || !clientSecret || !refreshToken) { showToast('All three fields are required'); return; }
+  try {
+    const resp = await fetch(API_BASE + '/v1/onboard/save-credentials', {
+      method: 'POST', headers: apiHeaders(),
+      body: JSON.stringify({brand_id: currentBrandId, provider: 'amazon_sp', credentials: {client_id: clientId, client_secret: clientSecret, refresh_token: refreshToken}}),
+    });
+    if (!resp.ok) { const e = await resp.json().catch(()=>({})); showToast('Error: '+(e.detail||'Failed to save')); return; }
+    showToast('Amazon SP-API connected');
+    closeModal('spApiModal');
+    refreshStatus();
+  } catch (e) { showToast('Error: '+e.message); }
 }
 
 function openModal(id) { document.getElementById(id).classList.add('active'); }
