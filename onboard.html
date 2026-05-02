@@ -512,11 +512,56 @@ async function checkGa4Callback() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({brand_id: bid, property_id: chosen.property_id}),
     });
-    if (pr.ok) { showToast(`GA4 property ${chosen.property_id} saved`); renderConnectorStatus(); }
+    if (pr.ok) { showToast(`GA4 property ${chosen.property_id} saved`); refreshStatus(); }
     else showToast('Failed to save property');
   } catch (e) { showToast('Error: '+e.message); }
 }
-window.addEventListener('DOMContentLoaded', () => setTimeout(checkGa4Callback, 500));
+
+// Meta Ads account picker — shown after ?meta_ads=success redirect
+async function checkMetaAdsCallback() {
+  const p = new URLSearchParams(location.search);
+  if (p.get('meta_ads') !== 'success') return;
+  const bid = p.get('brand') || currentBrandId;
+  if (!bid) return;
+  currentBrandId = bid;
+  try {
+    const resp = await fetch(API_BASE + '/auth/meta-ads/ad-accounts?brand_id=' + bid);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const accts = data.ad_accounts || [];
+    // If already auto-selected (single active account), just refresh
+    if (data.selected_ad_account_id) {
+      const sel = accts.find(a => a.ad_account_id === data.selected_ad_account_id);
+      showToast('Meta Ads connected: ' + (sel ? sel.name : data.selected_ad_account_id));
+      refreshStatus();
+      return;
+    }
+    if (!accts.length) { showToast('Meta Ads connected but no ad accounts found'); return; }
+    // Filter to active accounts for the picker
+    const active = accts.filter(a => a.status === 'ACTIVE');
+    const pickFrom = active.length > 0 ? active : accts;
+    const choices = pickFrom.map((a,i) =>
+      `${i+1}. ${a.name} (${a.ad_account_id}) — ${a.currency}${a.business_name ? ' — ' + a.business_name : ''}${a.status !== 'ACTIVE' ? ' [' + a.status + ']' : ''}`
+    ).join('\n');
+    const pick = prompt(`Meta Ads connected — pick an ad account:\n\n${choices}`, '1');
+    if (!pick) return;
+    const idx = parseInt(pick, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= pickFrom.length) { showToast('Invalid choice'); return; }
+    const chosen = pickFrom[idx];
+    const pr = await fetch(API_BASE + '/auth/meta-ads/select-account', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({brand_id: bid, ad_account_id: chosen.ad_account_id}),
+    });
+    if (pr.ok) { showToast('Meta Ads account ' + chosen.name + ' saved'); refreshStatus(); }
+    else showToast('Failed to save ad account');
+  } catch (e) { showToast('Error: ' + e.message); }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(checkGa4Callback, 500);
+  setTimeout(checkMetaAdsCallback, 600);
+});
 
 // ── Step 3: Data pull ──
 let pullPolling = null;
