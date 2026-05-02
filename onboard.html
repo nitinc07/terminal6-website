@@ -178,15 +178,18 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 </div>
 
 <script>
-// Check if this is an invite-based onboarding (any email allowed)
+// Check if this is an invite-based or brand-scoped onboarding
 const INVITE_TOKEN = new URLSearchParams(location.search).get('invite');
+const BRAND_REF = new URLSearchParams(location.search).get('brand');
 const ADMIN_EMAILS = ['contact@terminal6.io'];
+// Non-admin access: invite link OR returning from OAuth callback with ?brand=
+const IS_OPERATOR_FLOW = !!(INVITE_TOKEN || BRAND_REF);
 
 function handleGoogleSignIn(response) {
   const payload = JSON.parse(atob(response.credential.split('.')[1]));
   const email = payload.email.toLowerCase();
-  // Platform admins always allowed; invite-based users validated after sign-in
-  if (!INVITE_TOKEN && !ADMIN_EMAILS.includes(email)) {
+  // Platform admins always allowed; operator flow validated after sign-in
+  if (!IS_OPERATOR_FLOW && !ADMIN_EMAILS.includes(email)) {
     document.getElementById('loginError').textContent = 'Access restricted to platform admins.';
     document.getElementById('loginError').style.display = 'block';
     return;
@@ -230,17 +233,14 @@ async function validateInvite(token) {
 (function() {
   const saved = sessionStorage.getItem('t6_user');
   const isAdmin = saved && ADMIN_EMAILS.includes(JSON.parse(saved).email);
-  const isInviteUser = saved && INVITE_TOKEN;
-  if (isAdmin || isInviteUser) {
+  const isOperator = saved && IS_OPERATOR_FLOW;
+  if (isAdmin || isOperator) {
     document.getElementById('loginScreen').style.display = 'none';
     return;
   }
-  // Show sign-in screen — for invite links, update the message
+  // Show sign-in screen — for invite/operator links, update the message
   document.getElementById('loginScreen').style.display = 'flex';
-  if (INVITE_TOKEN) {
-    document.querySelector('#loginScreen .nav-tag, #loginScreen div[style*="margin-bottom:28px"]')
-    const msgEl = document.querySelector('#loginScreen div');
-    // Update subtitle for invite users
+  if (IS_OPERATOR_FLOW) {
     const subtitles = document.querySelectorAll('#loginScreen div[style*="color:var(--text-mid)"]');
     if (subtitles.length) subtitles[0].textContent = 'Sign in with your Google account to connect your platforms.';
   }
