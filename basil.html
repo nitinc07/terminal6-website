@@ -6189,26 +6189,34 @@ async function _loadHourlyTracker(){
     window._liveCurHrLbl=curHrLbl;
     if(crs.length>0){
       var cHdr='<tr><th style="width:40px"></th><th style="min-width:180px">Creative</th>';
-      cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #2563eb">Today (live)</th>';
-      cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #f59e0b">Yday '+curHrLbl+'</th>';
+      cHdr+='<th colspan="5" style="text-align:center;border-bottom:2px solid #2563eb">Today (live)</th>';
+      cHdr+='<th colspan="5" style="text-align:center;border-bottom:2px solid #f59e0b">Yday '+curHrLbl+'</th>';
       cHdr+='<th colspan="3" style="text-align:center;border-bottom:2px solid #8b5cf6">7d avg '+curHrLbl+'</th></tr>';
-      cHdr+='<tr><th></th><th></th><th style="cursor:pointer" onclick="_sortLiveCreatives(\'spend\')">Spend <span id="live-sort-spend"></span></th><th style="cursor:pointer" onclick="_sortLiveCreatives(\'roas\')">ROAS <span id="live-sort-roas"></span></th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th><th>Spend</th><th>ROAS</th><th>CTR</th></tr>';
+      cHdr+='<tr><th></th><th></th><th style="cursor:pointer" onclick="_sortLiveCreatives(\'spend\')">Spend <span id="live-sort-spend"></span></th><th style="cursor:pointer" onclick="_sortLiveCreatives(\'roas\')">ROAS <span id="live-sort-roas"></span></th><th>CTR</th><th>ATC</th><th>CVR</th><th>Spend</th><th>ROAS</th><th>CTR</th><th>ATC</th><th>CVR</th><th>Spend</th><th>ROAS</th><th>CTR</th></tr>';
       var cBody='';
+      var _delta=function(a,b){if(a==null||b==null||b===0)return null;return Math.round((a-b)/b*100);};
+      var _deltaSpan=function(dlt,inverse){if(dlt==null)return '';var col=dlt>0?(inverse?'var(--r)':'var(--g)'):dlt<0?(inverse?'var(--g)':'var(--r)'):'var(--t3)';return ' <span style="font-size:10px;color:'+col+'">('+(dlt>=0?'+':'')+dlt+'%)</span>';};
       crs.forEach(function(c){
         var t=c.today||{}, yp=c.yesterday_paced||{}, ap=c.avg_7d_paced||{};
         var tRc=t.roas!=null?(t.roas>=2?'var(--g)':t.roas>=1?'':'var(--r)'):'';
         var thumb=c.thumbnail_url?'<img src="'+c.thumbnail_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'';
         var nm=(c.ad_name||'').length>35?c.ad_name.slice(0,35)+'...':c.ad_name||'--';
         var cp=(c.campaign||'').slice(0,25);
+        var atcDelta=_delta(t.atc,yp.atc);
+        var cvrDelta=_delta(t.cvr,yp.cvr);
         cBody+='<tr>';
         cBody+='<td>'+thumb+'</td>';
         cBody+='<td><div style="font-weight:500;font-size:12px" title="'+(c.ad_name||'')+'">'+nm+'</div><div style="font-size:10px;color:var(--t3)">'+cp+'</div></td>';
         cBody+='<td style="font-weight:500">'+cur(t.spend||0)+'</td>';
         cBody+='<td style="font-weight:600;color:'+tRc+'">'+(t.roas!=null?t.roas.toFixed(2)+'x':'--')+'</td>';
         cBody+='<td>'+(t.ctr!=null?t.ctr.toFixed(1)+'%':'--')+'</td>';
+        cBody+='<td>'+(t.atc!=null?t.atc:'--')+_deltaSpan(atcDelta,false)+'</td>';
+        cBody+='<td>'+(t.cvr!=null?t.cvr.toFixed(2)+'%':'--')+_deltaSpan(cvrDelta,false)+'</td>';
         cBody+='<td style="color:#b45309">'+cur(yp.spend||0)+'</td>';
         cBody+='<td style="color:#b45309">'+(yp.roas!=null?yp.roas.toFixed(2)+'x':'--')+'</td>';
         cBody+='<td style="color:#b45309">'+(yp.ctr!=null?yp.ctr.toFixed(1)+'%':'--')+'</td>';
+        cBody+='<td style="color:#b45309">'+(yp.atc!=null?yp.atc:'--')+'</td>';
+        cBody+='<td style="color:#b45309">'+(yp.cvr!=null?yp.cvr.toFixed(2)+'%':'--')+'</td>';
         cBody+='<td style="color:#8b5cf6">'+cur(ap.spend||0)+'</td>';
         cBody+='<td style="color:#8b5cf6">'+(ap.roas!=null?ap.roas.toFixed(2)+'x':'--')+'</td>';
         cBody+='<td style="color:#8b5cf6">'+(ap.ctr!=null?ap.ctr.toFixed(1)+'%':'--')+'</td>';
