@@ -6196,6 +6196,31 @@ async function _loadHourlyTracker(){
       var cBody='';
       var _delta=function(a,b){if(a==null||b==null||b===0)return null;return Math.round((a-b)/b*100);};
       var _deltaSpan=function(dlt,inverse){if(dlt==null)return '';var col=dlt>0?(inverse?'var(--r)':'var(--g)'):dlt<0?(inverse?'var(--g)':'var(--r)'):'var(--t3)';return ' <span style="font-size:10px;color:'+col+'">('+(dlt>=0?'+':'')+dlt+'%)</span>';};
+      // Cumulative totals row (top)
+      var tot=d.top_creatives_totals||{};
+      if(tot.today||tot.yesterday_paced){
+        var tt=tot.today||{}, ty=tot.yesterday_paced||{}, ta=tot.avg_7d_paced||{};
+        var ttRc=tt.roas!=null?(tt.roas>=2?'var(--g)':tt.roas>=1?'':'var(--r)'):'';
+        var totAtcDelta=_delta(tt.atc,ty.atc);
+        var totCvrDelta=_delta(tt.cvr,ty.cvr);
+        cBody+='<tr style="background:#f9fafb;font-weight:600;border-bottom:2px solid #d1d5db">';
+        cBody+='<td></td>';
+        cBody+='<td style="text-transform:uppercase;font-size:11px;letter-spacing:0.5px;color:var(--t2)">Top 10 total</td>';
+        cBody+='<td>'+cur(tt.spend||0)+'</td>';
+        cBody+='<td style="color:'+ttRc+'">'+(tt.roas!=null?tt.roas.toFixed(2)+'x':'--')+'</td>';
+        cBody+='<td>'+(tt.ctr!=null?tt.ctr.toFixed(1)+'%':'--')+'</td>';
+        cBody+='<td>'+(tt.atc!=null?tt.atc:'--')+_deltaSpan(totAtcDelta,false)+'</td>';
+        cBody+='<td>'+(tt.cvr!=null?tt.cvr.toFixed(2)+'%':'--')+_deltaSpan(totCvrDelta,false)+'</td>';
+        cBody+='<td style="color:#b45309">'+cur(ty.spend||0)+'</td>';
+        cBody+='<td style="color:#b45309">'+(ty.roas!=null?ty.roas.toFixed(2)+'x':'--')+'</td>';
+        cBody+='<td style="color:#b45309">'+(ty.ctr!=null?ty.ctr.toFixed(1)+'%':'--')+'</td>';
+        cBody+='<td style="color:#b45309">'+(ty.atc!=null?ty.atc:'--')+'</td>';
+        cBody+='<td style="color:#b45309">'+(ty.cvr!=null?ty.cvr.toFixed(2)+'%':'--')+'</td>';
+        cBody+='<td style="color:#8b5cf6">'+cur(ta.spend||0)+'</td>';
+        cBody+='<td style="color:#8b5cf6">'+(ta.roas!=null?ta.roas.toFixed(2)+'x':'--')+'</td>';
+        cBody+='<td style="color:#8b5cf6">'+(ta.ctr!=null?ta.ctr.toFixed(1)+'%':'--')+'</td>';
+        cBody+='</tr>';
+      }
       crs.forEach(function(c){
         var t=c.today||{}, yp=c.yesterday_paced||{}, ap=c.avg_7d_paced||{};
         var tRc=t.roas!=null?(t.roas>=2?'var(--g)':t.roas>=1?'':'var(--r)'):'';
