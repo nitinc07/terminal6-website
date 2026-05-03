@@ -880,7 +880,7 @@
   <div class="vw" id="v-metaads">
     <div class="head">
       <div class="icon" style="background:#0081FB"><svg width="20" height="12" viewBox="0 0 36 20" fill="none"><path d="M9.04 1C6.37 1 4.21 3.37 2.67 6.5 1.07 9.76 0 13.8 0 16.3c0 1.7.93 2.7 2.4 2.7 1.73 0 3.15-1.42 4.87-4.72L9.64 9.8c1.1-2.1 2.55-4.07 4.36-4.07 1.44 0 2.59 1.03 3.43 2.89L18 10l.57-1.38c.84-1.86 1.99-2.89 3.43-2.89 1.81 0 3.26 1.97 4.36 4.07l2.37 4.48c1.72 3.3 3.14 4.72 4.87 4.72 1.47 0 2.4-1 2.4-2.7 0-2.5-1.07-6.54-2.67-9.8C31.79 3.37 29.63 1 26.96 1c-3.08 0-5.23 2.53-6.97 6.18L18 11.6l-1.99-4.42C14.27 3.53 12.12 1 9.04 1z" fill="#fff"/></svg></div>
-      <div><h2>Creative Performance</h2><p class="sub">Meta Ads creative performance, funnel health, action recommendations. Attribution: 7d click + 1d view.</p></div>
+      <div><h2>Creative Performance</h2><p class="sub">Meta Ads creative performance, funnel health, action recommendations. Attribution: 7d click + 1d view. <span id="meta-date-badge" style="margin-left:8px;color:var(--t2);font-weight:600"></span></p></div>
     </div>
 
     <!-- Sub-tab: Dashboard (default) -->
@@ -890,8 +890,8 @@
     <div class="g5" style="margin-bottom:20px">
       <div class="cd"><div class="kl">Spend</div><div class="kv" id="meta-spend">--</div><div class="kd n" id="meta-spend-sub">&nbsp;</div></div>
       <div class="cd"><div class="kl">ROAS</div><div class="kv" id="meta-roas">--</div><div class="kd n" id="meta-roas-sub">&nbsp;</div></div>
-      <div class="cd"><div class="kl">CPM</div><div class="kv" id="meta-cpm">--</div><div class="kd n">&nbsp;</div></div>
-      <div class="cd"><div class="kl">CPA</div><div class="kv" id="meta-cpa">--</div><div class="kd n">&nbsp;</div></div>
+      <div class="cd"><div class="kl">CPM</div><div class="kv" id="meta-cpm">--</div><div class="kd n" id="meta-cpm-sub">&nbsp;</div></div>
+      <div class="cd"><div class="kl">CPA</div><div class="kv" id="meta-cpa">--</div><div class="kd n" id="meta-cpa-sub">&nbsp;</div></div>
       <div class="cd"><div class="kl">Creatives</div><div class="kv" id="meta-adcount">--</div><div class="kd n" id="meta-adcount-sub">&nbsp;</div></div>
     </div>
 
@@ -934,7 +934,7 @@
 
     <!-- Funnel health -->
     <div class="sec" id="meta-funnel-sec">
-      <div class="sec-h"><h3>Funnel Health</h3><span class="note">per ₹1K spent vs prior period</span></div>
+      <div class="sec-h"><h3>Funnel Health</h3><span class="note" id="meta-funnel-note">absolute counts vs prior day</span></div>
       <div id="meta-funnel" style="display:flex;gap:0;align-items:center;justify-content:center;flex-wrap:wrap;padding:16px 0"></div>
     </div>
 
@@ -5204,7 +5204,12 @@ function _fmtNarrative(raw){
 var _metaDigestData=null;
 function _renderDigest(d){
   _metaDigestData=d;
-  document.getElementById('meta-digest-sec').style.display='';
+  // Legacy Daily Digest section hidden — its narrative + bucket cards are
+  // superseded by the pulse strip (yesterday vs day-before) and the
+  // Daily Decisions action panel above the Top Creatives table.
+  var sec=document.getElementById('meta-digest-sec');
+  if(sec) sec.style.display='none';
+  return;
   document.getElementById('meta-digest-narrative').innerHTML=_fmtNarrative(d.narrative||d.digest||'');
   document.getElementById('meta-digest-time').textContent=d.generated_at?shortD(d.generated_at.slice(0,10))+(d.cached?' (cached)':' (fresh)'):'';
 
@@ -6928,15 +6933,51 @@ async function loadMetaAds(){
       });
     }
 
-    // ── Pulse KPIs ──
-    document.getElementById('meta-spend').textContent=cur(p.spend);
-    document.getElementById('meta-spend-sub').innerHTML=p.spend_change_pct!=null?chg(p.spend_change_pct)+' vs prior':'30-day';
-    var roasColor=p.roas>=2.5?'var(--g)':p.roas>=2?'inherit':'var(--r)';
-    document.getElementById('meta-roas').innerHTML='<span style="color:'+roasColor+'">'+( p.roas!=null?p.roas.toFixed(2)+'x':'--')+'</span>';
-    document.getElementById('meta-roas-sub').innerHTML=p.prior_roas!=null?'prior: '+p.prior_roas.toFixed(2)+'x':'';
-    document.getElementById('meta-cpm').textContent=p.cpm!=null?'\u20B9'+Math.round(p.cpm):'--';
-    document.getElementById('meta-cpa').textContent=p.cpa!=null?cur(p.cpa):'--';
-    document.getElementById('meta-adcount').textContent=p.active_ads||'--';
+    // ── Pulse KPIs: yesterday vs day-before (from digest) ──
+    var ctx=digest && digest.context_yesterday_vs_day_before ? digest.context_yesterday_vs_day_before : null;
+    var yLabel=ctx && ctx.yesterday ? shortD(ctx.yesterday) : null;
+    var dbLabel=ctx && ctx.day_before ? shortD(ctx.day_before) : null;
+    var dateNote=yLabel && dbLabel ? ('as of '+yLabel+' vs '+dbLabel) : null;
+
+    if(ctx){
+      var ySpend=ctx.spend && ctx.spend.yesterday;
+      var dSpend=ctx.spend && ctx.spend.day_before;
+      var spendChg=ctx.spend && ctx.spend.change_pct;
+      document.getElementById('meta-spend').textContent=cur(ySpend);
+      document.getElementById('meta-spend-sub').innerHTML=
+        (spendChg!=null?chg(spendChg)+' vs '+dbLabel+' (\u20B9'+(dSpend>=1e5?(dSpend/1e5).toFixed(1)+'L':Math.round(dSpend))+')':dateNote||'');
+
+      var yRoas=ctx.roas && ctx.roas.yesterday;
+      var dRoas=ctx.roas && ctx.roas.day_before;
+      var roasColor=yRoas>=2.5?'var(--g)':yRoas>=2?'inherit':'var(--r)';
+      document.getElementById('meta-roas').innerHTML='<span style="color:'+roasColor+'">'+(yRoas!=null?yRoas.toFixed(2)+'x':'--')+'</span>';
+      document.getElementById('meta-roas-sub').innerHTML=dRoas!=null?(dbLabel||'prior')+': '+dRoas.toFixed(2)+'x':'';
+
+      var yCpm=ctx.cpm && ctx.cpm.yesterday;
+      var dCpm=ctx.cpm && ctx.cpm.day_before;
+      document.getElementById('meta-cpm').textContent=yCpm!=null?'\u20B9'+Math.round(yCpm):'--';
+      var cpmEl=document.getElementById('meta-cpm-sub'); if(cpmEl) cpmEl.textContent=dCpm!=null?(dbLabel||'prior')+': \u20B9'+Math.round(dCpm):'';
+
+      var yCpa=ctx.cpa && ctx.cpa.yesterday;
+      var dCpa=ctx.cpa && ctx.cpa.day_before;
+      document.getElementById('meta-cpa').textContent=yCpa!=null?cur(yCpa):'--';
+      var cpaEl=document.getElementById('meta-cpa-sub'); if(cpaEl) cpaEl.textContent=dCpa!=null?(dbLabel||'prior')+': '+cur(dCpa):'';
+
+      document.getElementById('meta-adcount').textContent=(ctx.active_ads && ctx.active_ads.yesterday)||p.active_ads||'--';
+    } else {
+      // Fallback: dashboard pulse (window-scoped, not yesterday-only)
+      document.getElementById('meta-spend').textContent=cur(p.spend);
+      document.getElementById('meta-spend-sub').innerHTML=p.spend_change_pct!=null?chg(p.spend_change_pct)+' vs prior':'window';
+      var roasColor=p.roas>=2.5?'var(--g)':p.roas>=2?'inherit':'var(--r)';
+      document.getElementById('meta-roas').innerHTML='<span style="color:'+roasColor+'">'+( p.roas!=null?p.roas.toFixed(2)+'x':'--')+'</span>';
+      document.getElementById('meta-roas-sub').innerHTML=p.prior_roas!=null?'prior: '+p.prior_roas.toFixed(2)+'x':'';
+      document.getElementById('meta-cpm').textContent=p.cpm!=null?'\u20B9'+Math.round(p.cpm):'--';
+      document.getElementById('meta-cpa').textContent=p.cpa!=null?cur(p.cpa):'--';
+      document.getElementById('meta-adcount').textContent=p.active_ads||'--';
+    }
+    // Date callout under the section header
+    var dateBadge=document.getElementById('meta-date-badge');
+    if(dateBadge && dateNote) dateBadge.textContent=dateNote;
     var scH='';
     var _scTag=function(label,key,n,color){
       return '<span onclick="_jumpToCreativeFilter(\''+key+'\')" style="color:'+color+';cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px" title="Click to filter table">'+n+' '+label+'</span>';
@@ -6972,26 +7013,37 @@ async function loadMetaAds(){
     document.getElementById('meta-adcount-sub').innerHTML=scH||'&nbsp;';
     _renderDailyDecisions(digest);
 
-    // ── Funnel health ──
-    var fc=fun.current||{}, fp=fun.prior||{};
+    // ── Funnel health: yesterday vs day-before (from digest) ──
+    var fnlY=ctx && ctx.funnel && ctx.funnel.yesterday;
+    var fnlD=ctx && ctx.funnel && ctx.funnel.day_before;
     var stages=[
       {key:'clicks',label:'Clicks'},{key:'lpv',label:'Landing Page'},{key:'atc',label:'Add to Cart'},
       {key:'checkouts',label:'Checkout'},{key:'purchases',label:'Purchase'}
     ];
     var funHtml='';
     stages.forEach(function(st,i){
-      var cv=fc[st.key], pv=fp[st.key];
+      // Prefer yesterday-vs-day-before from digest; fall back to dashboard's window funnel
+      var cv, pv;
+      if(fnlY && fnlD){
+        cv=fnlY[st.key]; pv=fnlD[st.key];
+      } else {
+        var fc=fun.current||{}, fp=fun.prior||{};
+        cv=fc[st.key]; pv=fp[st.key];
+      }
       var delta=cv!=null&&pv!=null&&pv>0?Math.round((cv-pv)/pv*100):null;
       var dColor=delta!=null?(delta>=0?'var(--g)':'var(--r)'):'var(--t3)';
-      var isLeak=fun.biggest_leak===st.key;
+      var isLeak=(!fnlY) && fun.biggest_leak===st.key;
       funHtml+='<div style="text-align:center;padding:8px 14px;min-width:90px'+(isLeak?';background:#fee2e2;border-radius:8px':'')+'">';
       funHtml+='<div style="font-size:11px;color:var(--t3)">'+st.label+'</div>';
-      funHtml+='<div style="font-size:18px;font-weight:600">'+(cv!=null?cv.toFixed(1):'--')+'</div>';
+      funHtml+='<div style="font-size:18px;font-weight:600">'+(cv!=null?(cv>=1000?fmt(cv):cv.toFixed?cv.toFixed(0):cv):'--')+'</div>';
       if(delta!=null)funHtml+='<div style="font-size:11px;color:'+dColor+'">'+(delta>=0?'\u25B2':'\u25BC')+' '+Math.abs(delta)+'%</div>';
       funHtml+='</div>';
       if(i<stages.length-1)funHtml+='<div style="font-size:18px;color:var(--t3);padding:0 4px">\u2192</div>';
     });
     document.getElementById('meta-funnel').innerHTML=funHtml;
+    // Funnel header: date label
+    var funnelNote=document.getElementById('meta-funnel-note');
+    if(funnelNote && fnlY) funnelNote.textContent=dateNote||('as of '+(yLabel||''));
 
     // ── Format mix ──
     var fmtColors={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
