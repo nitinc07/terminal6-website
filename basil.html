@@ -4557,10 +4557,22 @@ function _sortCreatives(field){
 function _filterMetaStatus(status){
   _metaStatusFilter=status;
   document.querySelectorAll('#meta-status-filters button').forEach(function(b){b.classList.remove('a')});
-  event.target.classList.add('a');
+  if(typeof event!=='undefined' && event && event.target && event.target.classList){event.target.classList.add('a');}
+  else{
+    // Programmatic call — find and activate the matching pill
+    document.querySelectorAll('#meta-status-filters button').forEach(function(b){
+      if((b.textContent||'').trim().toLowerCase()===(status==='top'?'top active':status).toLowerCase()) b.classList.add('a');
+    });
+  }
   var active=_metaActiveOnly(window._metaCreatives||[]);
   if(status==='top'){_renderMetaCreatives(active.slice(0,25));}
   else{_renderMetaCreatives(active.filter(function(d){return d.status===status}));}
+}
+
+function _jumpToCreativeFilter(status){
+  _filterMetaStatus(status);
+  var tbl=document.getElementById('meta-perf-tbl');
+  if(tbl) tbl.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function openCreativeDetail(adId){
@@ -6805,11 +6817,14 @@ async function loadMetaAds(){
     document.getElementById('meta-cpa').textContent=p.cpa!=null?cur(p.cpa):'--';
     document.getElementById('meta-adcount').textContent=p.active_ads||'--';
     var scH='';
-    if(sc.Winner)scH+='<span style="color:var(--g)">'+sc.Winner+' winners</span>';
-    if(sc.Proven)scH+=(scH?' · ':'')+'<span style="color:#0891b2">'+sc.Proven+' proven</span>';
-    if(sc.Potential)scH+=(scH?' · ':'')+'<span style="color:#8b5cf6">'+sc.Potential+' potential</span>';
-    if(sc.Fatiguing)scH+=(scH?' · ':'')+'<span style="color:#f97316">'+sc.Fatiguing+' fatiguing</span>';
-    if(sc.Loser)scH+=(scH?' · ':'')+'<span style="color:var(--r)">'+sc.Loser+' losers</span>';
+    var _scTag=function(label,key,color){
+      return '<span onclick="_jumpToCreativeFilter(\''+key+'\')" style="color:'+color+';cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px" title="Click to filter table">'+sc[key]+' '+label+'</span>';
+    };
+    if(sc.Winner)scH+=_scTag('winners','Winner','var(--g)');
+    if(sc.Proven)scH+=(scH?' · ':'')+_scTag('proven','Proven','#0891b2');
+    if(sc.Potential)scH+=(scH?' · ':'')+_scTag('potential','Potential','#8b5cf6');
+    if(sc.Fatiguing)scH+=(scH?' · ':'')+_scTag('fatiguing','Fatiguing','#f97316');
+    if(sc.Loser)scH+=(scH?' · ':'')+_scTag('losers','Loser','var(--r)');
     document.getElementById('meta-adcount-sub').innerHTML=scH||'&nbsp;';
 
     // ── Funnel health ──
