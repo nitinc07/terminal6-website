@@ -1007,11 +1007,10 @@
             <th>Orders</th>
             <th>Freq</th>
             <th>Bucket</th>
-            <th title="Stability trend (recent vs baseline)" style="text-align:center">Stab</th>
             <th>Action</th>
             <th>Live</th>
           </tr></thead>
-          <tbody id="meta-perf-body"><tr><td colspan="14" class="loading">Loading...</td></tr></tbody>
+          <tbody id="meta-perf-body"><tr><td colspan="13" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -4566,11 +4565,11 @@ function _renderMetaCreatives(list){
       '<td>'+fmt(d.attributed_orders)+'</td>'+
       '<td>'+(d.cumulative_frequency!=null?'<span style="font-weight:600;color:'+(d.cumulative_frequency>3?'#f97316':d.cumulative_frequency>2?'var(--y)':'var(--g)')+'">'+d.cumulative_frequency.toFixed(1)+'x</span>':'--')+'</td>'+
       '<td>'+(bucket?'<span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+bucket+'</span>':'<span style="color:var(--t3)">\u2014</span>')+'</td>'+
-      '<td style="text-align:center">'+stabHTML+'</td>'+
+      /* Stab column removed — confusing label, info now lives in the LLM reason */
       '<td>'+actionHTML+'</td>'+
       '<td><span style="font-size:10.5px;color:'+(d.effective_status==='ACTIVE'?'var(--g)':'var(--t3)')+'">'+(d.effective_status||'--')+'</span></td></tr>';
   });
-  document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="14" style="text-align:center;color:var(--t3);padding:40px">No creatives match filter</td></tr>';
+  document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="13" style="text-align:center;color:var(--t3);padding:40px">No creatives match filter</td></tr>';
   var note=_metaStatusFilter==='top'?'top '+list.length+' active by spend':list.length+' '+_metaStatusFilter+' active creatives';
   document.getElementById('meta-perf-note').textContent=note+' · last '+(window._metaDays||7)+' days';
 }
@@ -4624,15 +4623,17 @@ function _renderDailyDecisions(digest){
     (digest.cached?' \u00b7 cached '+(digest.generated_at||'').slice(0,10):'');
 
   // Card spec: each card aggregates one or more action keys.
+  // Labels and hints are SIGNAL-descriptive (what triggered the bucket) so the operator
+  // can scan the panel and understand the pattern at a glance.
   // A creative with multiple actions is assigned to the FIRST card spec that matches
   // (priority order is the spec array order). Prevents double-counting.
   var cardSpec=[
-    {key:'potential_winners',label:'Potential Winners',icon:'\uD83D\uDE80',color:'#16a34a',bg:'#f0fdf4',hint:"Investing here — Harini's pipeline candidates",actions:['scale_budget','spend_more']},
-    {key:'audit_landing_page',label:'Audit LP',icon:'\uD83D\uDC8E',color:'#0891b2',bg:'#ecfeff',hint:'Hidden Gems — creative wins click, post-click loses sale',actions:['audit_landing_page']},
-    {key:'plan_sequel',label:'Plan Sequel',icon:'\uD83C\uDFC6',color:'#0369a1',bg:'#eff6ff',hint:'Proven workhorses — protect, prep refresh',actions:['plan_sequel']},
-    {key:'refresh_creative',label:'Refresh',icon:'\uD83D\uDD04',color:'#d97706',bg:'#fffbeb',hint:'Fatiguing — refresh before the cliff',actions:['refresh_creative']},
-    {key:'pause',label:'Pause',icon:'\u23F8\uFE0F',color:'#dc2626',bg:'#fef2f2',hint:'Underperformers — wasting budget',actions:['pause']},
-    {key:'investigate_data',label:'Investigate',icon:'\u26A0\uFE0F',color:'#6b7280',bg:'#f9fafb',hint:'Attribution lag or data-quality concerns',actions:['investigate_data']},
+    {key:'potential_winners',label:'Potential Winners',icon:'\uD83D\uDE80',color:'#16a34a',bg:'#f0fdf4',hint:'Strong CPA + ROAS, room to scale',actions:['scale_budget','spend_more']},
+    {key:'audit_landing_page',label:'High CTR, low CVR',icon:'\uD83D\uDC8E',color:'#0891b2',bg:'#ecfeff',hint:'Click-through is healthy, conversion is leaking — audit the landing page',actions:['audit_landing_page']},
+    {key:'plan_sequel',label:'Working at scale',icon:'\uD83C\uDFC6',color:'#0369a1',bg:'#eff6ff',hint:'Proven workhorses — protect, prep a sequel',actions:['plan_sequel']},
+    {key:'refresh_creative',label:'Fatiguing',icon:'\uD83D\uDD04',color:'#d97706',bg:'#fffbeb',hint:'Rising CPA or ROAS decay — refresh creative before the cliff',actions:['refresh_creative']},
+    {key:'pause',label:'Underperforming',icon:'\u23F8\uFE0F',color:'#dc2626',bg:'#fef2f2',hint:'ROAS and CPA both below target — pause',actions:['pause']},
+    {key:'investigate_data',label:'Data concern',icon:'\u26A0\uFE0F',color:'#6b7280',bg:'#f9fafb',hint:'Attribution lag or data-quality flags',actions:['investigate_data']},
   ];
 
   // Build a creative_key → first-matching-card map so each creative shows up exactly once
@@ -4669,21 +4670,18 @@ function _renderDailyDecisions(digest){
   });
   document.getElementById('meta-daily-decisions-cards').innerHTML=html||'<div style="color:var(--t3);font-size:12px">No actionable items in this window.</div>';
 
-  // Strategic warnings
-  var warns=Array.isArray(digest.warnings)?digest.warnings:[];
-  var wH='';
-  warns.slice(0,5).forEach(function(w){
-    wH+='<div style="font-size:12px;padding:8px 12px;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:4px">\u26A0\uFE0F '+w+'</div>';
-  });
-  document.getElementById('meta-daily-decisions-warnings').innerHTML=wH;
+  // Strategic warnings panel removed per operator feedback — narrative noise
+  // outweighs operator value when the action cards already surface what to do.
+  var w=document.getElementById('meta-daily-decisions-warnings');
+  if(w) w.innerHTML='';
 }
 
 /* Action modal: opens when a Daily Decisions card is clicked.
    Renders a mini creatives table from digest.creatives filtered by action. */
 var _metaActionState={key:null,rows:[],title:''};
 // Card-key → label / headline / member action keys. Mirrors cardSpec in _renderDailyDecisions.
-var _CARD_LABELS={potential_winners:'Potential Winners',audit_landing_page:'Audit Landing Page',plan_sequel:'Plan Sequel',refresh_creative:'Refresh',pause:'Pause',investigate_data:'Investigate'};
-var _CARD_HEADLINE={potential_winners:"Harini's pipeline — Winners ready to scale + Potentials worth more spend",audit_landing_page:'Hidden Gems — creative wins click, post-click loses sale',plan_sequel:'Proven workhorses — protect & prep refresh',refresh_creative:'Fatiguing — refresh before the cliff',pause:'Underperformers — wasting budget',investigate_data:'Attribution lag or data quality concerns'};
+var _CARD_LABELS={potential_winners:'Potential Winners',audit_landing_page:'High CTR, low CVR',plan_sequel:'Working at scale',refresh_creative:'Fatiguing',pause:'Underperforming',investigate_data:'Data concern'};
+var _CARD_HEADLINE={potential_winners:'Strong CPA + ROAS, room to scale or spend more',audit_landing_page:'Click-through is healthy, conversion is leaking — audit the landing page',plan_sequel:'Proven workhorses — protect & prep refresh',refresh_creative:'Rising CPA or ROAS decay — refresh before the cliff',pause:'Below-target on both ROAS and CPA — pause',investigate_data:'Attribution lag or data-quality concerns'};
 var _CARD_ACTIONS={potential_winners:['scale_budget','spend_more'],audit_landing_page:['audit_landing_page'],plan_sequel:['plan_sequel'],refresh_creative:['refresh_creative'],pause:['pause'],investigate_data:['investigate_data']};
 var _BUCKET_COLORS={Winner:'var(--g)',Proven:'#0891b2',Underperformer:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
 var _STAB_SYM={stable:'\u2192',improving:'\u2197',degrading:'\u2198',unknown:'?'};
@@ -4723,6 +4721,12 @@ function _openActionModal(cardKey){
     thumbMap[k]={thumbnail_url:d.thumbnail_url,ad_id:d.ad_id};
   });
 
+  // Account benchmark for CTR / CVR tooltips
+  var acctW=(digest.account_window||{});
+  var acctCtr=acctW.ctr;
+  var acctCvr=acctW.cvr;
+  var ctrTitle=acctCtr?('account avg: '+acctCtr.toFixed(2)+'%'):'';
+  var cvrTitle=acctCvr?('account avg: '+acctCvr.toFixed(2)+'%'):'';
   var hdr='<tr style="background:#f9fafb;text-align:left;font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.4px">'+
     '<th style="padding:10px 12px;width:48px"></th>'+
     '<th style="padding:10px 12px;min-width:240px">Creative</th>'+
@@ -4733,7 +4737,8 @@ function _openActionModal(cardKey){
     '<th style="padding:10px 12px;text-align:right">Orders</th>'+
     '<th style="padding:10px 12px;text-align:right">CPA</th>'+
     '<th style="padding:10px 12px;text-align:right">ROAS</th>'+
-    '<th style="padding:10px 12px;text-align:center" title="Stability trend (recent vs baseline)">Stab</th>'+
+    '<th style="padding:10px 12px;text-align:right" title="'+ctrTitle+'">CTR</th>'+
+    '<th style="padding:10px 12px;text-align:right" title="'+cvrTitle+'">CVR</th>'+
     '<th style="padding:10px 12px;min-width:280px">Reason</th>'+
     '</tr>';
   var body='';
@@ -4758,8 +4763,11 @@ function _openActionModal(cardKey){
     var cpa=sig.cpa;
     var roas=sig.roas;
     var rCol=roas>=2?'var(--g)':roas>=1?'inherit':'var(--r)';
-    var stab=c.stability;
-    var stHTML=stab?'<span style="color:'+(_STAB_COLOR[stab]||'var(--t3)')+';font-size:14px;font-weight:600" title="'+stab+'">'+(_STAB_SYM[stab]||'\u2014')+'</span>':'<span style="color:var(--t3)">\u2014</span>';
+    var ctrV=sig.ctr;
+    var cvrV=sig.cvr;
+    // Color CTR/CVR vs account benchmark
+    var ctrColor=(ctrV!=null && acctCtr)?(ctrV>=acctCtr*1.1?'var(--g)':ctrV<acctCtr*0.9?'var(--r)':'inherit'):'inherit';
+    var cvrColor=(cvrV!=null && acctCvr)?(cvrV>=acctCvr*1.1?'var(--g)':cvrV<acctCvr*0.7?'var(--r)':cvrV<acctCvr*0.9?'#f97316':'inherit'):'inherit';
     var hgBadge=(c.subtype==='hidden_gem')?' <span title="Hidden Gem: CTR healthy, CVR weak. Investigate landing page before pausing." style="font-size:11px;margin-left:4px">\uD83D\uDC8E</span>':'';
     var reason=c.reason||'';
     body+='<tr style="border-bottom:1px solid var(--c2);font-size:12px">'+
@@ -4775,12 +4783,13 @@ function _openActionModal(cardKey){
       '<td style="padding:10px 12px;text-align:right">'+fmt(ord)+'</td>'+
       '<td style="padding:10px 12px;text-align:right">'+(cpa!=null?cur(cpa):'--')+'</td>'+
       '<td style="padding:10px 12px;text-align:right;color:'+rCol+';font-weight:600">'+(roas!=null?roas.toFixed(2)+'x':'--')+'</td>'+
-      '<td style="padding:10px 12px;text-align:center">'+stHTML+'</td>'+
+      '<td style="padding:10px 12px;text-align:right;color:'+ctrColor+'">'+(ctrV!=null?ctrV.toFixed(2)+'%':'--')+'</td>'+
+      '<td style="padding:10px 12px;text-align:right;color:'+cvrColor+'">'+(cvrV!=null?cvrV.toFixed(2)+'%':'--')+'</td>'+
       '<td style="padding:10px 12px;color:var(--t2);line-height:1.4">'+reason+'</td>'+
       '</tr>';
   });
   if(!rows.length){
-    body='<tr><td colspan="11" style="padding:40px;text-align:center;color:var(--t3)">No creatives match this action right now.</td></tr>';
+    body='<tr><td colspan="12" style="padding:40px;text-align:center;color:var(--t3)">No creatives match this action right now.</td></tr>';
   }
   document.getElementById('metaActionBody').innerHTML='<table style="width:100%;border-collapse:collapse"><thead>'+hdr+'</thead><tbody>'+body+'</tbody></table>';
   document.getElementById('metaActionOverlay').style.display='block';
