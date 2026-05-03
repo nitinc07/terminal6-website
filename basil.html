@@ -981,6 +981,7 @@
           <button data-days="30">30d</button>
         </div>
         <span class="note" id="meta-perf-note"></span>
+        <button onclick="_downloadCreativesCsv()" style="margin-left:auto;background:#fff;border:1px solid var(--c2);color:var(--t1);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer" title="Download the currently filtered rows as CSV">⬇ Download CSV</button>
       </div>
       <div id="meta-status-filters" class="pills" style="margin-bottom:10px;gap:6px">
         <button class="a" onclick="_filterMetaStatus('top')">Top Active</button>
@@ -4644,7 +4645,7 @@ function _renderDailyDecisions(digest){
     var bucketSet={};
     items.forEach(function(c){bucketSet[c.bucket]=(bucketSet[c.bucket]||0)+1;});
     var bucketStr=Object.keys(bucketSet).map(function(k){return bucketSet[k]+' '+k;}).join(' \u00b7 ');
-    html+='<div onclick="_jumpToActionFilter(\''+s.key+'\')" style="background:'+s.bg+';border-left:4px solid '+s.color+';border-radius:8px;padding:14px 18px;flex:1;min-width:200px;cursor:pointer">';
+    html+='<div onclick="_openActionModal(\''+s.key+'\')" style="background:'+s.bg+';border-left:4px solid '+s.color+';border-radius:8px;padding:14px 18px;flex:1;min-width:200px;cursor:pointer">';
     html+='<div style="font-size:11px;font-weight:700;color:'+s.color+';text-transform:uppercase;letter-spacing:.5px">'+s.icon+' '+s.label+'</div>';
     html+='<div style="font-size:24px;font-weight:700;margin:6px 0">'+items.length+'</div>';
     html+='<div style="font-size:11px;color:var(--t3)">'+s.hint+'</div>';
@@ -4662,8 +4663,182 @@ function _renderDailyDecisions(digest){
   document.getElementById('meta-daily-decisions-warnings').innerHTML=wH;
 }
 
+/* Action modal: opens when a Daily Decisions card is clicked.
+   Renders a mini creatives table from digest.creatives filtered by action. */
+var _metaActionState={key:null,rows:[],title:''};
+var _ACTION_LABELS={scale_budget:'Scale',spend_more:'Spend more',audit_landing_page:'Audit Landing Page',plan_sequel:'Plan sequel',refresh_creative:'Refresh',pause:'Pause',investigate_data:'Investigate'};
+var _ACTION_HEADLINE={scale_budget:'Winners ready to scale',spend_more:'Potentials worth more spend',audit_landing_page:'Hidden Gems — creative wins click, post-click loses sale',plan_sequel:'Proven workhorses — protect & prep refresh',refresh_creative:'Fatiguing — refresh before the cliff',pause:'Underperformers — wasting budget',investigate_data:'Attribution lag or data quality concerns'};
+var _BUCKET_COLORS={Winner:'var(--g)',Proven:'#0891b2',Underperformer:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
+var _STAB_SYM={stable:'\u2192',improving:'\u2197',degrading:'\u2198',unknown:'?'};
+var _STAB_COLOR={stable:'var(--t3)',improving:'var(--g)',degrading:'var(--r)',unknown:'var(--t3)'};
+
+function _openActionModal(actionKey){
+  var digest=window._metaDigest;
+  if(!digest || !Array.isArray(digest.creatives)) return;
+  var rows=digest.creatives.filter(function(c){return (c.actions||[]).indexOf(actionKey)>=0;});
+  // sort by spend descending so the highest-leverage creatives are at top
+  rows.sort(function(a,b){
+    var aS=(a.key_signals && a.key_signals.spend)||0;
+    var bS=(b.key_signals && b.key_signals.spend)||0;
+    return bS-aS;
+  });
+  _metaActionState={key:actionKey,rows:rows,title:_ACTION_LABELS[actionKey]||actionKey};
+
+  var win=digest.window||{};
+  document.getElementById('metaActionTitle').textContent=
+    _metaActionState.title+' — '+rows.length+' creative'+(rows.length===1?'':'s');
+  document.getElementById('metaActionSubtitle').textContent=
+    (_ACTION_HEADLINE[actionKey]||'')+
+    (win.start_date?' · window: '+win.start_date+' → '+win.end_date+' ('+win.days+'d)':'');
+
+  // Build the mini table: Thumb | Creative+Campaign | Bucket | Age+Tier | Status | Spend | Orders | CPA | ROAS | Stab | Reason
+  var dmap=window._metaDigestMap||{};
+  // Look up thumbnail / ad_name from the dashboard creatives for visuals
+  var thumbMap={};
+  (window._metaCreatives||[]).forEach(function(d){
+    var k=d.creative_id||d.ad_id;
+    thumbMap[k]={thumbnail_url:d.thumbnail_url,ad_id:d.ad_id};
+  });
+
+  var hdr='<tr style="background:#f9fafb;text-align:left;font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.4px">'+
+    '<th style="padding:10px 12px;width:48px"></th>'+
+    '<th style="padding:10px 12px;min-width:240px">Creative</th>'+
+    '<th style="padding:10px 12px">Bucket</th>'+
+    '<th style="padding:10px 12px">Age</th>'+
+    '<th style="padding:10px 12px">Status</th>'+
+    '<th style="padding:10px 12px;text-align:right">Spend</th>'+
+    '<th style="padding:10px 12px;text-align:right">Orders</th>'+
+    '<th style="padding:10px 12px;text-align:right">CPA</th>'+
+    '<th style="padding:10px 12px;text-align:right">ROAS</th>'+
+    '<th style="padding:10px 12px;text-align:center" title="Stability trend (recent vs baseline)">Stab</th>'+
+    '<th style="padding:10px 12px;min-width:280px">Reason</th>'+
+    '</tr>';
+  var body='';
+  rows.forEach(function(c){
+    var k=c.creative_key||c.creative_id||c.rep_ad_id;
+    var thumb=thumbMap[k]||{};
+    var t=thumb.thumbnail_url?'<img src="'+thumb.thumbnail_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'<div style="width:36px;height:36px;background:var(--c2);border-radius:4px"></div>';
+    var nm=(c.ad_name||'').length>50?c.ad_name.slice(0,50)+'...':c.ad_name||'--';
+    var camp=(c.campaign_name||'').length>40?c.campaign_name.slice(0,40)+'...':c.campaign_name||'';
+    var sig=c.key_signals||{};
+    var bucket=c.bucket||'--';
+    var bColor=_BUCKET_COLORS[bucket]||'var(--t3)';
+    var ageT=c.age_tier;
+    var ageStr=(sig.days_since_launch!=null?sig.days_since_launch+'d':'--');
+    var ageBadge=ageT?' <span style="font-size:9px;font-weight:600;color:'+(ageT==='new'?'#15803d':'#475569')+';background:'+(ageT==='new'?'#dcfce7':'#e2e8f0')+';padding:1px 4px;border-radius:2px;text-transform:uppercase;margin-left:4px">'+ageT+'</span>':'';
+    var stat=c.effective_status||'--';
+    var sCol=stat==='ACTIVE'?'var(--g)':'var(--t3)';
+    var sp=sig.spend||0;
+    var ord=sig.orders||0;
+    var cpa=sig.cpa;
+    var roas=sig.roas;
+    var rCol=roas>=2?'var(--g)':roas>=1?'inherit':'var(--r)';
+    var stab=c.stability;
+    var stHTML=stab?'<span style="color:'+(_STAB_COLOR[stab]||'var(--t3)')+';font-size:14px;font-weight:600" title="'+stab+'">'+(_STAB_SYM[stab]||'\u2014')+'</span>':'<span style="color:var(--t3)">\u2014</span>';
+    var hgBadge=(c.subtype==='hidden_gem')?' <span title="Hidden Gem: CTR healthy, CVR weak. Investigate landing page before pausing." style="font-size:11px;margin-left:4px">\uD83D\uDC8E</span>':'';
+    var reason=c.reason||'';
+    body+='<tr style="border-bottom:1px solid var(--c2);font-size:12px">'+
+      '<td style="padding:10px 12px">'+t+'</td>'+
+      '<td style="padding:10px 12px">'+
+        '<div style="font-weight:500" title="'+(c.ad_name||'')+'">'+nm+hgBadge+'</div>'+
+        '<div style="font-size:11px;color:var(--t3);margin-top:2px">'+camp+'</div>'+
+      '</td>'+
+      '<td style="padding:10px 12px"><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+bColor+'22;color:'+bColor+'">'+bucket+'</span></td>'+
+      '<td style="padding:10px 12px">'+ageStr+ageBadge+'</td>'+
+      '<td style="padding:10px 12px"><span style="font-size:11px;color:'+sCol+'">'+stat+'</span></td>'+
+      '<td style="padding:10px 12px;text-align:right">'+cur(sp)+'</td>'+
+      '<td style="padding:10px 12px;text-align:right">'+fmt(ord)+'</td>'+
+      '<td style="padding:10px 12px;text-align:right">'+(cpa!=null?cur(cpa):'--')+'</td>'+
+      '<td style="padding:10px 12px;text-align:right;color:'+rCol+';font-weight:600">'+(roas!=null?roas.toFixed(2)+'x':'--')+'</td>'+
+      '<td style="padding:10px 12px;text-align:center">'+stHTML+'</td>'+
+      '<td style="padding:10px 12px;color:var(--t2);line-height:1.4">'+reason+'</td>'+
+      '</tr>';
+  });
+  if(!rows.length){
+    body='<tr><td colspan="11" style="padding:40px;text-align:center;color:var(--t3)">No creatives match this action right now.</td></tr>';
+  }
+  document.getElementById('metaActionBody').innerHTML='<table style="width:100%;border-collapse:collapse"><thead>'+hdr+'</thead><tbody>'+body+'</tbody></table>';
+  document.getElementById('metaActionOverlay').style.display='block';
+  document.getElementById('metaActionModal').style.display='flex';
+}
+
+function _closeActionModal(){
+  document.getElementById('metaActionOverlay').style.display='none';
+  document.getElementById('metaActionModal').style.display='none';
+}
+
+function _csvEscape(v){
+  if(v==null) return '';
+  var s=String(v);
+  if(s.indexOf(',')>=0 || s.indexOf('"')>=0 || s.indexOf('\n')>=0){
+    return '"'+s.replace(/"/g,'""')+'"';
+  }
+  return s;
+}
+
+function _downloadCsv(filename, rows){
+  var csv=rows.map(function(r){return r.map(_csvEscape).join(',');}).join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+}
+
+function _downloadActionCsv(){
+  var st=_metaActionState;
+  if(!st || !st.rows || !st.rows.length) return;
+  var hdrs=['ad_name','campaign','bucket','age_tier','effective_status','days_since_launch','spend','orders','cpa','roas','ctr','cvr','frequency','spend_share_pct','stability','subtype','reason','actions'];
+  var rows=[hdrs];
+  st.rows.forEach(function(c){
+    var s=c.key_signals||{};
+    rows.push([
+      c.ad_name||'', c.campaign_name||'', c.bucket||'', c.age_tier||'', c.effective_status||'',
+      s.days_since_launch||'', s.spend||'', s.orders||'', s.cpa||'', s.roas||'',
+      s.ctr||'', s.cvr||'', s.frequency||'', s.spend_share_pct||'',
+      c.stability||'', c.subtype||'', c.reason||'', (c.actions||[]).join('|'),
+    ]);
+  });
+  var d=window._metaDigest && window._metaDigest.window || {};
+  var fn='meta_'+st.key+'_'+(d.start_date||'')+'_to_'+(d.end_date||'')+'.csv';
+  _downloadCsv(fn, rows);
+}
+
+/* Top Creatives table CSV download — exports the currently filtered rows. */
+function _downloadCreativesCsv(){
+  // Derive the currently rendered set: re-apply the filter logic from _filterMetaStatus
+  var all=window._metaCreatives||[];
+  var subset;
+  if(_metaStatusFilter==='top') subset=_metaActiveOnly(all).slice(0,25);
+  else if(_metaStatusFilter==='Active') subset=_metaActiveOnly(all);
+  else subset=all.filter(function(d){return d.status===_metaStatusFilter;});
+
+  var dmap=window._metaDigestMap||{};
+  var hdrs=['ad_id','ad_name','campaign_name','creative_id','creative_type','bucket','age_tier','effective_status','days_since_launch','spend','attributed_orders','cpa','roas','ctr','spend_share_pct','frequency','cumulative_frequency','stability','subtype','primary_action','reason'];
+  var rows=[hdrs];
+  subset.forEach(function(d){
+    var dg=dmap[d.creative_id]||dmap[d.ad_id]||{};
+    var sig=dg.key_signals||{};
+    rows.push([
+      d.ad_id||'', d.ad_name||'', d.campaign_name||'', d.creative_id||'', d.creative_type||'',
+      dg.bucket||d.status||'', dg.age_tier||'', d.effective_status||'',
+      sig.days_since_launch||d.days_active||'', d.spend||'', d.attributed_orders||'',
+      d.cpa||sig.cpa||'', d.roas||'', d.ctr||'', d.spend_share_pct||sig.spend_share_pct||'',
+      d.recent_frequency||'', d.cumulative_frequency||'',
+      dg.stability||'', dg.subtype||'',
+      (dg.actions||[])[0]||'', dg.reason||'',
+    ]);
+  });
+  var days=window._metaDays||7;
+  var label=_metaStatusFilter==='top'?'top_active':_metaStatusFilter;
+  var fn='meta_creatives_'+label+'_last'+days+'d_'+(new Date().toISOString().slice(0,10))+'.csv';
+  _downloadCsv(fn, rows);
+}
+
+/* Legacy helper — preserved if anything still calls it (e.g. status badge clicks).
+   Kept for backward-compat but no longer wired to Daily Decisions cards. */
 function _jumpToActionFilter(actionKey){
-  // Filter Top Creatives table to creatives with this action
   var digest=window._metaDigest;
   if(!digest || !Array.isArray(digest.creatives)) return;
   var keys={};
@@ -7128,6 +7303,22 @@ async function loadMetaAds(){
   loadBugs();
 })();
 </script>
+<!-- Action modal (Daily Decisions card click → mini creatives table) -->
+<div id="metaActionOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);z-index:1000" onclick="_closeActionModal()"></div>
+<div id="metaActionModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(1200px,92vw);max-height:88vh;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:1001;overflow:hidden;border-radius:12px;display:none;flex-direction:column">
+  <div style="background:#fff;padding:16px 24px;border-bottom:1px solid var(--c2);display:flex;justify-content:space-between;align-items:center;border-radius:12px 12px 0 0">
+    <div>
+      <h3 id="metaActionTitle" style="margin:0;font-size:16px"></h3>
+      <div id="metaActionSubtitle" style="font-size:12px;color:var(--t3);margin-top:3px"></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button onclick="_downloadActionCsv()" style="background:#fff;border:1px solid var(--c2);color:var(--t1);padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer">⬇ Download CSV</button>
+      <button onclick="_closeActionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3)">&times;</button>
+    </div>
+  </div>
+  <div id="metaActionBody" style="overflow:auto;padding:0 0 16px 0"></div>
+</div>
+
 <!-- Campaign detail modal (outside all page containers so it renders from any sub-tab) -->
 <div id="metaCampOverlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.45);z-index:1000" onclick="document.getElementById('metaCampDrawer').style.display='none';this.style.display='none'"></div>
 <div id="metaCampDrawer" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(960px,65vw);max-height:85vh;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.2);z-index:1001;overflow-y:auto;padding:0;border-radius:12px">
