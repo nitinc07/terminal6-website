@@ -4540,7 +4540,8 @@ function _renderMetaCreatives(list){
       var cn=d.cannibalization;
       cannBadge=' <span title="ROAS varies '+cn.roas_min+'x-'+cn.roas_max+'x across '+cn.n_campaigns+' campaigns. Worst: '+(cn.worst_campaign||'')+'" style="font-size:9px;font-weight:600;color:#b91c1c;background:#fee2e2;padding:0 4px;border-radius:2px">&#9888; cannibalize</span>';
     }
-    var sc2=statusColors[bucket]||'var(--t3)';
+    var sc2=bucket?statusColors[bucket]||'var(--t3)':'transparent';
+    var bucketDisplay=bucket||'\u2014';
     var fc2=fmtP[d.creative_type]||'#6b7280';
     var rc='';
     if(d.roas_change_pct!=null){var ar=d.roas_change_pct>=0?'\u25B2':'\u25BC';rc='<div style="font-size:10px;color:'+(d.roas_change_pct>=0?'var(--g)':'var(--r)')+'">'+ar+' '+Math.abs(d.roas_change_pct).toFixed(0)+'%</div>';}
@@ -4564,7 +4565,7 @@ function _renderMetaCreatives(list){
       '<td>'+(d.spend_share_pct||0).toFixed(1)+'%</td>'+
       '<td>'+fmt(d.attributed_orders)+'</td>'+
       '<td>'+(d.cumulative_frequency!=null?'<span style="font-weight:600;color:'+(d.cumulative_frequency>3?'#f97316':d.cumulative_frequency>2?'var(--y)':'var(--g)')+'">'+d.cumulative_frequency.toFixed(1)+'x</span>':'--')+'</td>'+
-      '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+(bucket||'--')+'</span></td>'+
+      '<td>'+(bucket?'<span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+bucket+'</span>':'<span style="color:var(--t3)">\u2014</span>')+'</td>'+
       '<td style="text-align:center">'+stabHTML+'</td>'+
       '<td>'+actionHTML+'</td>'+
       '<td><span style="font-size:10.5px;color:'+(d.effective_status==='ACTIVE'?'var(--g)':'var(--t3)')+'">'+(d.effective_status||'--')+'</span></td></tr>';
