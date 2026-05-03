@@ -960,6 +960,16 @@
       <div id="meta-fmt-cards" style="display:flex;gap:12px;flex-wrap:wrap"></div>
     </div>
 
+    <!-- Daily Decisions (LLM-authoritative classifier output) -->
+    <div class="sec" id="meta-daily-decisions-sec" style="display:none">
+      <div class="sec-h" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <h3>Daily Decisions</h3>
+        <span class="note" id="meta-daily-decisions-note"></span>
+      </div>
+      <div id="meta-daily-decisions-cards" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+      <div id="meta-daily-decisions-warnings" style="margin-top:14px;display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
     <!-- Creative performance table -->
     <div class="sec">
       <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -995,10 +1005,12 @@
             <th>Share</th>
             <th>Orders</th>
             <th>Freq</th>
-            <th>Status</th>
+            <th>Bucket</th>
+            <th title="Stability trend (recent vs baseline)" style="text-align:center">Stab</th>
+            <th>Action</th>
             <th>Live</th>
           </tr></thead>
-          <tbody id="meta-perf-body"><tr><td colspan="12" class="loading">Loading...</td></tr></tbody>
+          <tbody id="meta-perf-body"><tr><td colspan="14" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -4499,10 +4511,22 @@ function _metaActiveOnly(list){
 }
 
 function _renderMetaCreatives(list){
-  var statusColors={Winner:'var(--g)',Proven:'#0891b2',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
+  var statusColors={Winner:'var(--g)',Proven:'#0891b2',Underperformer:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)',Loser:'var(--r)'};
+  var actionLabels={scale_budget:'Scale',spend_more:'Spend more',audit_landing_page:'Audit LP',plan_sequel:'Plan sequel',refresh_creative:'Refresh',pause:'Pause',investigate_data:'Investigate',promote_to_main_asc:'Promote to ASC'};
+  var actionColors={scale_budget:'#16a34a',spend_more:'#7c3aed',audit_landing_page:'#0891b2',plan_sequel:'#0369a1',refresh_creative:'#d97706',pause:'#dc2626',investigate_data:'#6b7280',promote_to_main_asc:'#2563eb'};
+  var stabSym={stable:'\u2192',improving:'\u2197',degrading:'\u2198',unknown:'?'};
+  var stabColor={stable:'var(--t3)',improving:'var(--g)',degrading:'var(--r)',unknown:'var(--t3)'};
+  var dmap=window._metaDigestMap||{};
   var fmtP={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
   var tR='';
   list.forEach(function(d){
+    // Look up LLM-authoritative classification, fallback to dashboard's status
+    var dg=dmap[d.creative_id]||dmap[d.ad_id]||null;
+    var bucket=dg?dg.bucket:d.status;
+    var ageTier=dg?dg.age_tier:null;
+    var subtype=dg?dg.subtype:null;
+    var stability=dg?dg.stability:null;
+    var primaryAction=dg && Array.isArray(dg.actions) && dg.actions.length?dg.actions[0]:null;
     var thumb=d.thumbnail_url?'<img src="'+d.thumbnail_url+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'<div style="width:40px;height:40px;background:var(--c2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">'+(d.creative_type==='VIDEO'?'&#9654;':'&#128444;')+'</div>';
     var nm=(d.ad_name||'').length>40?d.ad_name.slice(0,40)+'...':d.ad_name||'--';
     var cp=(d.campaign_name||'').length>28?d.campaign_name.slice(0,28)+'...':d.campaign_name||'';
@@ -4515,14 +4539,22 @@ function _renderMetaCreatives(list){
       var cn=d.cannibalization;
       cannBadge=' <span title="ROAS varies '+cn.roas_min+'x-'+cn.roas_max+'x across '+cn.n_campaigns+' campaigns. Worst: '+(cn.worst_campaign||'')+'" style="font-size:9px;font-weight:600;color:#b91c1c;background:#fee2e2;padding:0 4px;border-radius:2px">&#9888; cannibalize</span>';
     }
-    var sc2=statusColors[d.status]||'var(--t3)';
+    var sc2=statusColors[bucket]||'var(--t3)';
     var fc2=fmtP[d.creative_type]||'#6b7280';
     var rc='';
     if(d.roas_change_pct!=null){var ar=d.roas_change_pct>=0?'\u25B2':'\u25BC';rc='<div style="font-size:10px;color:'+(d.roas_change_pct>=0?'var(--g)':'var(--r)')+'">'+ar+' '+Math.abs(d.roas_change_pct).toFixed(0)+'%</div>';}
     var fw='';
     if(d.recent_frequency&&d.recent_frequency>3)fw='<span style="color:#f97316;font-size:10px;margin-left:4px">f'+d.recent_frequency.toFixed(1)+'</span>';
+    var tierBadge=ageTier?' <span title="Age tier" style="font-size:9px;font-weight:600;color:'+(ageTier==='new'?'#15803d':'#475569')+';background:'+(ageTier==='new'?'#dcfce7':'#e2e8f0')+';padding:0 4px;border-radius:2px;text-transform:uppercase">'+ageTier+'</span>':'';
+    var hgBadge=(subtype==='hidden_gem')?' <span title="Hidden Gem: CTR healthy, CVR weak. Investigate landing page before pausing." style="font-size:11px;margin-left:2px">\uD83D\uDC8E</span>':'';
+    var stabHTML=stability?'<span title="Stability: '+stability+'" style="color:'+(stabColor[stability]||'var(--t3)')+';font-size:14px;font-weight:600">'+(stabSym[stability]||'\u2014')+'</span>':'<span style="color:var(--t3)">\u2014</span>';
+    var actionHTML='';
+    if(primaryAction && actionLabels[primaryAction]){
+      var ac=actionColors[primaryAction]||'#6b7280';
+      actionHTML='<span style="font-size:10.5px;font-weight:600;background:'+ac+'22;color:'+ac+';padding:2px 8px;border-radius:10px">'+actionLabels[primaryAction]+'</span>';
+    } else { actionHTML='<span style="color:var(--t3);font-size:10.5px">\u2014</span>'; }
     tR+='<tr style="cursor:pointer" onclick="openCreativeDetail(\''+d.ad_id+'\')"><td>'+thumb+'</td>'+
-      '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+'</div><div style="font-size:11px;color:var(--t3)">'+cp+ascBadge+campsBadge+cannBadge+'</div></td>'+
+      '<td><div style="font-weight:500;font-size:12.5px" title="'+(d.ad_name||'')+'">'+nm+fw+hgBadge+'</div><div style="font-size:11px;color:var(--t3)">'+cp+ascBadge+campsBadge+cannBadge+tierBadge+'</div></td>'+
       '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+fc2+'22;color:'+fc2+'">'+d.creative_type+'</span></td>'+
       '<td><div style="font-weight:600;color:'+(d.roas>=2?'var(--g)':d.roas>=1?'inherit':'var(--r)')+'">'+(d.roas!=null?d.roas.toFixed(1)+'x':'--')+'</div>'+rc+'</td>'+
       '<td>'+(d.cpa!=null?cur(d.cpa):'--')+'</td>'+
@@ -4531,10 +4563,12 @@ function _renderMetaCreatives(list){
       '<td>'+(d.spend_share_pct||0).toFixed(1)+'%</td>'+
       '<td>'+fmt(d.attributed_orders)+'</td>'+
       '<td>'+(d.cumulative_frequency!=null?'<span style="font-weight:600;color:'+(d.cumulative_frequency>3?'#f97316':d.cumulative_frequency>2?'var(--y)':'var(--g)')+'">'+d.cumulative_frequency.toFixed(1)+'x</span>':'--')+'</td>'+
-      '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+d.status+'</span></td>'+
+      '<td><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+sc2+'22;color:'+sc2+'">'+(bucket||'--')+'</span></td>'+
+      '<td style="text-align:center">'+stabHTML+'</td>'+
+      '<td>'+actionHTML+'</td>'+
       '<td><span style="font-size:10.5px;color:'+(d.effective_status==='ACTIVE'?'var(--g)':'var(--t3)')+'">'+(d.effective_status||'--')+'</span></td></tr>';
   });
-  document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="12" style="text-align:center;color:var(--t3);padding:40px">No creatives match filter</td></tr>';
+  document.getElementById('meta-perf-body').innerHTML=tR||'<tr><td colspan="14" style="text-align:center;color:var(--t3);padding:40px">No creatives match filter</td></tr>';
   var note=_metaStatusFilter==='top'?'top '+list.length+' active by spend':list.length+' '+_metaStatusFilter+' active creatives';
   document.getElementById('meta-perf-note').textContent=note+' · last '+(window._metaDays||7)+' days';
 }
@@ -4571,6 +4605,81 @@ function _filterMetaStatus(status){
 
 function _jumpToCreativeFilter(status){
   _filterMetaStatus(status);
+  var tbl=document.getElementById('meta-perf-tbl');
+  if(tbl) tbl.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function _renderDailyDecisions(digest){
+  var sec=document.getElementById('meta-daily-decisions-sec');
+  if(!sec) return;
+  if(!digest || !Array.isArray(digest.creatives) || !digest.creatives.length){
+    sec.style.display='none'; return;
+  }
+  sec.style.display='';
+  document.getElementById('meta-daily-decisions-note').textContent=
+    (digest.window?digest.window.start_date+' \u2192 '+digest.window.end_date+' \u00b7 ':'')+
+    'classified by skill (LLM)' +
+    (digest.cached?' \u00b7 cached '+(digest.generated_at||'').slice(0,10):'');
+
+  // Group creatives by primary action
+  var byAction={scale_budget:[],spend_more:[],audit_landing_page:[],plan_sequel:[],refresh_creative:[],pause:[],investigate_data:[]};
+  digest.creatives.forEach(function(c){
+    var acts=c.actions||[];
+    acts.forEach(function(a){if(byAction[a]!==undefined && byAction[a].indexOf(c)<0)byAction[a].push(c);});
+  });
+
+  var cardSpec=[
+    {key:'scale_budget',icon:'\uD83D\uDE80',label:'Scale',color:'#16a34a',bg:'#f0fdf4',hint:'Winners ready to scale'},
+    {key:'spend_more',icon:'\uD83D\uDC40',label:'Spend more',color:'#7c3aed',bg:'#f5f3ff',hint:'Potentials worth more spend'},
+    {key:'audit_landing_page',icon:'\uD83D\uDC8E',label:'Audit LP',color:'#0891b2',bg:'#ecfeff',hint:'Hidden Gems — creative wins click, post-click loses sale'},
+    {key:'plan_sequel',icon:'\uD83C\uDFC6',label:'Plan sequel',color:'#0369a1',bg:'#eff6ff',hint:'Proven workhorses — protect, prep refresh'},
+    {key:'refresh_creative',icon:'\uD83D\uDD04',label:'Refresh',color:'#d97706',bg:'#fffbeb',hint:'Fatiguing — refresh before the cliff'},
+    {key:'pause',icon:'\u23F8\uFE0F',label:'Pause',color:'#dc2626',bg:'#fef2f2',hint:'Underperformers — wasting budget'},
+    {key:'investigate_data',icon:'\u26A0\uFE0F',label:'Investigate',color:'#6b7280',bg:'#f9fafb',hint:'Attribution lag or data quality concerns'},
+  ];
+  var html='';
+  cardSpec.forEach(function(s){
+    var items=byAction[s.key]||[];
+    if(!items.length) return;
+    var bucketSet={};
+    items.forEach(function(c){bucketSet[c.bucket]=(bucketSet[c.bucket]||0)+1;});
+    var bucketStr=Object.keys(bucketSet).map(function(k){return bucketSet[k]+' '+k;}).join(' \u00b7 ');
+    html+='<div onclick="_jumpToActionFilter(\''+s.key+'\')" style="background:'+s.bg+';border-left:4px solid '+s.color+';border-radius:8px;padding:14px 18px;flex:1;min-width:200px;cursor:pointer">';
+    html+='<div style="font-size:11px;font-weight:700;color:'+s.color+';text-transform:uppercase;letter-spacing:.5px">'+s.icon+' '+s.label+'</div>';
+    html+='<div style="font-size:24px;font-weight:700;margin:6px 0">'+items.length+'</div>';
+    html+='<div style="font-size:11px;color:var(--t3)">'+s.hint+'</div>';
+    html+='<div style="font-size:11px;color:var(--t3);margin-top:4px">'+bucketStr+'</div>';
+    html+='</div>';
+  });
+  document.getElementById('meta-daily-decisions-cards').innerHTML=html||'<div style="color:var(--t3);font-size:12px">No actionable items in this window.</div>';
+
+  // Strategic warnings
+  var warns=Array.isArray(digest.warnings)?digest.warnings:[];
+  var wH='';
+  warns.slice(0,5).forEach(function(w){
+    wH+='<div style="font-size:12px;padding:8px 12px;background:#fef3c7;border-left:3px solid #f59e0b;border-radius:4px">\u26A0\uFE0F '+w+'</div>';
+  });
+  document.getElementById('meta-daily-decisions-warnings').innerHTML=wH;
+}
+
+function _jumpToActionFilter(actionKey){
+  // Filter Top Creatives table to creatives with this action
+  var digest=window._metaDigest;
+  if(!digest || !Array.isArray(digest.creatives)) return;
+  var keys={};
+  digest.creatives.forEach(function(c){
+    if((c.actions||[]).indexOf(actionKey)>=0){
+      if(c.creative_key)keys[c.creative_key]=1;
+      if(c.creative_id)keys[c.creative_id]=1;
+      if(c.rep_ad_id)keys[c.rep_ad_id]=1;
+    }
+  });
+  var matched=(window._metaCreatives||[]).filter(function(c){
+    return keys[c.creative_id||c.ad_id]||keys[c.ad_id];
+  });
+  document.querySelectorAll('#meta-status-filters button').forEach(function(b){b.classList.remove('a')});
+  _renderMetaCreatives(matched);
+  document.getElementById('meta-perf-note').textContent=matched.length+' creatives flagged for: '+actionKey.replace(/_/g,' ');
   var tbl=document.getElementById('meta-perf-tbl');
   if(tbl) tbl.scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -6801,11 +6910,23 @@ async function loadMetaAds(){
   _loadDigest();
   _loadCreativeIntelligence();
   try{
-    var [db, campHealth]=await Promise.all([
+    var [db, campHealth, digest]=await Promise.all([
       api('/v1/meta/dashboard?days='+days+'&limit=25'),
       api('/v1/meta/campaign-health?days='+days),
+      api('/v1/meta/daily-digest').catch(function(){return null;}),
     ]);
     var p=db.pulse, sc=db.status_counts||{}, acts=db.actions||{}, fun=db.funnel||{};
+
+    // Build creative_key/ad_id -> digest classification map (LLM-authoritative)
+    window._metaDigest=digest;
+    window._metaDigestMap={};
+    if(digest && Array.isArray(digest.creatives)){
+      digest.creatives.forEach(function(c){
+        if(c.creative_key) window._metaDigestMap[c.creative_key]=c;
+        if(c.creative_id) window._metaDigestMap[c.creative_id]=c;
+        if(c.rep_ad_id) window._metaDigestMap[c.rep_ad_id]=c;
+      });
+    }
 
     // ── Pulse KPIs ──
     document.getElementById('meta-spend').textContent=cur(p.spend);
@@ -6817,15 +6938,39 @@ async function loadMetaAds(){
     document.getElementById('meta-cpa').textContent=p.cpa!=null?cur(p.cpa):'--';
     document.getElementById('meta-adcount').textContent=p.active_ads||'--';
     var scH='';
-    var _scTag=function(label,key,color){
-      return '<span onclick="_jumpToCreativeFilter(\''+key+'\')" style="color:'+color+';cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px" title="Click to filter table">'+sc[key]+' '+label+'</span>';
+    var _scTag=function(label,key,n,color){
+      return '<span onclick="_jumpToCreativeFilter(\''+key+'\')" style="color:'+color+';cursor:pointer;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px" title="Click to filter table">'+n+' '+label+'</span>';
     };
-    if(sc.Winner)scH+=_scTag('winners','Winner','var(--g)');
-    if(sc.Proven)scH+=(scH?' · ':'')+_scTag('proven','Proven','#0891b2');
-    if(sc.Potential)scH+=(scH?' · ':'')+_scTag('potential','Potential','#8b5cf6');
-    if(sc.Fatiguing)scH+=(scH?' · ':'')+_scTag('fatiguing','Fatiguing','#f97316');
-    if(sc.Loser)scH+=(scH?' · ':'')+_scTag('losers','Loser','var(--r)');
+    var pipe=digest && digest.pipeline ? digest.pipeline : null;
+    if(pipe){
+      // Two-line layout: NEW (≤14d) and MATURE (>14d) bucket counts
+      var newLine='', matLine='';
+      if(pipe.new_winners) newLine+=_scTag('winners','Winner',pipe.new_winners,'var(--g)');
+      if(pipe.new_potentials) newLine+=(newLine?' · ':'')+_scTag('potentials','Potential',pipe.new_potentials,'#8b5cf6');
+      if(pipe.new_testing) newLine+=(newLine?' · ':'')+_scTag('testing','Testing',pipe.new_testing,'var(--y)');
+      if(pipe.mature_proven) matLine+=_scTag('proven','Proven',pipe.mature_proven,'#0891b2');
+      if(pipe.mature_fatiguing) matLine+=(matLine?' · ':'')+_scTag('fatiguing','Fatiguing',pipe.mature_fatiguing,'#f97316');
+      if(pipe.mature_underperformers) matLine+=(matLine?' · ':'')+_scTag('under','Underperformer',pipe.mature_underperformers,'var(--r)');
+      var totalPerf=pipe.performing_total||0;
+      var needed=pipe.needed_per_brand_card||0;
+      var gap=pipe.gap||0;
+      var pipeColor=gap===0?'var(--g)':gap<=2?'var(--y)':'var(--r)';
+      var pipeBadge=needed?'<span style="font-size:10.5px;color:'+pipeColor+';margin-left:8px">'+totalPerf+' / '+needed+' pipeline'+(gap===0?' \u2713':'')+'</span>':'';
+      scH='<div style="font-size:10.5px;color:var(--t3);margin-bottom:1px">NEW</div>'+
+          (newLine||'<span style="color:var(--t3)">none</span>')+
+          '<div style="font-size:10.5px;color:var(--t3);margin-top:3px;margin-bottom:1px">MATURE</div>'+
+          (matLine||'<span style="color:var(--t3)">none</span>')+
+          pipeBadge;
+    } else {
+      // Fallback: old single-line layout from /v1/meta/dashboard status_counts
+      if(sc.Winner)scH+=_scTag('winners','Winner',sc.Winner,'var(--g)');
+      if(sc.Proven)scH+=(scH?' · ':'')+_scTag('proven','Proven',sc.Proven,'#0891b2');
+      if(sc.Potential)scH+=(scH?' · ':'')+_scTag('potential','Potential',sc.Potential,'#8b5cf6');
+      if(sc.Fatiguing)scH+=(scH?' · ':'')+_scTag('fatiguing','Fatiguing',sc.Fatiguing,'#f97316');
+      if(sc.Loser)scH+=(scH?' · ':'')+_scTag('losers','Loser',sc.Loser,'var(--r)');
+    }
     document.getElementById('meta-adcount-sub').innerHTML=scH||'&nbsp;';
+    _renderDailyDecisions(digest);
 
     // ── Funnel health ──
     var fc=fun.current||{}, fp=fun.prior||{};
