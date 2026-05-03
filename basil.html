@@ -4623,28 +4623,42 @@ function _renderDailyDecisions(digest){
     'classified by skill (LLM)' +
     (digest.cached?' \u00b7 cached '+(digest.generated_at||'').slice(0,10):'');
 
-  // Group creatives by primary action
-  var byAction={scale_budget:[],spend_more:[],audit_landing_page:[],plan_sequel:[],refresh_creative:[],pause:[],investigate_data:[]};
+  // Card spec: each card aggregates one or more action keys.
+  // A creative with multiple actions is assigned to the FIRST card spec that matches
+  // (priority order is the spec array order). Prevents double-counting.
+  var cardSpec=[
+    {key:'potential_winners',label:'Potential Winners',icon:'\uD83D\uDE80',color:'#16a34a',bg:'#f0fdf4',hint:"Investing here — Harini's pipeline candidates",actions:['scale_budget','spend_more']},
+    {key:'audit_landing_page',label:'Audit LP',icon:'\uD83D\uDC8E',color:'#0891b2',bg:'#ecfeff',hint:'Hidden Gems — creative wins click, post-click loses sale',actions:['audit_landing_page']},
+    {key:'plan_sequel',label:'Plan Sequel',icon:'\uD83C\uDFC6',color:'#0369a1',bg:'#eff6ff',hint:'Proven workhorses — protect, prep refresh',actions:['plan_sequel']},
+    {key:'refresh_creative',label:'Refresh',icon:'\uD83D\uDD04',color:'#d97706',bg:'#fffbeb',hint:'Fatiguing — refresh before the cliff',actions:['refresh_creative']},
+    {key:'pause',label:'Pause',icon:'\u23F8\uFE0F',color:'#dc2626',bg:'#fef2f2',hint:'Underperformers — wasting budget',actions:['pause']},
+    {key:'investigate_data',label:'Investigate',icon:'\u26A0\uFE0F',color:'#6b7280',bg:'#f9fafb',hint:'Attribution lag or data-quality concerns',actions:['investigate_data']},
+  ];
+
+  // Build a creative_key → first-matching-card map so each creative shows up exactly once
+  window._metaCardForCreative={};
+  var byCard={};
+  cardSpec.forEach(function(s){byCard[s.key]=[];});
   digest.creatives.forEach(function(c){
     var acts=c.actions||[];
-    acts.forEach(function(a){if(byAction[a]!==undefined && byAction[a].indexOf(c)<0)byAction[a].push(c);});
+    if(!acts.length) return;
+    for(var i=0;i<cardSpec.length;i++){
+      var s=cardSpec[i];
+      if(s.actions.some(function(a){return acts.indexOf(a)>=0;})){
+        byCard[s.key].push(c);
+        var ck=c.creative_key||c.creative_id||c.rep_ad_id;
+        if(ck) window._metaCardForCreative[ck]=s.key;
+        return;  // assign to first match only
+      }
+    }
   });
 
-  var cardSpec=[
-    {key:'scale_budget',icon:'\uD83D\uDE80',label:'Scale',color:'#16a34a',bg:'#f0fdf4',hint:'Winners ready to scale'},
-    {key:'spend_more',icon:'\uD83D\uDC40',label:'Spend more',color:'#7c3aed',bg:'#f5f3ff',hint:'Potentials worth more spend'},
-    {key:'audit_landing_page',icon:'\uD83D\uDC8E',label:'Audit LP',color:'#0891b2',bg:'#ecfeff',hint:'Hidden Gems — creative wins click, post-click loses sale'},
-    {key:'plan_sequel',icon:'\uD83C\uDFC6',label:'Plan sequel',color:'#0369a1',bg:'#eff6ff',hint:'Proven workhorses — protect, prep refresh'},
-    {key:'refresh_creative',icon:'\uD83D\uDD04',label:'Refresh',color:'#d97706',bg:'#fffbeb',hint:'Fatiguing — refresh before the cliff'},
-    {key:'pause',icon:'\u23F8\uFE0F',label:'Pause',color:'#dc2626',bg:'#fef2f2',hint:'Underperformers — wasting budget'},
-    {key:'investigate_data',icon:'\u26A0\uFE0F',label:'Investigate',color:'#6b7280',bg:'#f9fafb',hint:'Attribution lag or data quality concerns'},
-  ];
   var html='';
   cardSpec.forEach(function(s){
-    var items=byAction[s.key]||[];
+    var items=byCard[s.key]||[];
     if(!items.length) return;
     var bucketSet={};
-    items.forEach(function(c){bucketSet[c.bucket]=(bucketSet[c.bucket]||0)+1;});
+    items.forEach(function(c){var b=c.bucket||'(null)';bucketSet[b]=(bucketSet[b]||0)+1;});
     var bucketStr=Object.keys(bucketSet).map(function(k){return bucketSet[k]+' '+k;}).join(' \u00b7 ');
     html+='<div onclick="_openActionModal(\''+s.key+'\')" style="background:'+s.bg+';border-left:4px solid '+s.color+';border-radius:8px;padding:14px 18px;flex:1;min-width:200px;cursor:pointer">';
     html+='<div style="font-size:11px;font-weight:700;color:'+s.color+';text-transform:uppercase;letter-spacing:.5px">'+s.icon+' '+s.label+'</div>';
@@ -4667,29 +4681,37 @@ function _renderDailyDecisions(digest){
 /* Action modal: opens when a Daily Decisions card is clicked.
    Renders a mini creatives table from digest.creatives filtered by action. */
 var _metaActionState={key:null,rows:[],title:''};
-var _ACTION_LABELS={scale_budget:'Scale',spend_more:'Spend more',audit_landing_page:'Audit Landing Page',plan_sequel:'Plan sequel',refresh_creative:'Refresh',pause:'Pause',investigate_data:'Investigate'};
-var _ACTION_HEADLINE={scale_budget:'Winners ready to scale',spend_more:'Potentials worth more spend',audit_landing_page:'Hidden Gems — creative wins click, post-click loses sale',plan_sequel:'Proven workhorses — protect & prep refresh',refresh_creative:'Fatiguing — refresh before the cliff',pause:'Underperformers — wasting budget',investigate_data:'Attribution lag or data quality concerns'};
+// Card-key → label / headline / member action keys. Mirrors cardSpec in _renderDailyDecisions.
+var _CARD_LABELS={potential_winners:'Potential Winners',audit_landing_page:'Audit Landing Page',plan_sequel:'Plan Sequel',refresh_creative:'Refresh',pause:'Pause',investigate_data:'Investigate'};
+var _CARD_HEADLINE={potential_winners:"Harini's pipeline — Winners ready to scale + Potentials worth more spend",audit_landing_page:'Hidden Gems — creative wins click, post-click loses sale',plan_sequel:'Proven workhorses — protect & prep refresh',refresh_creative:'Fatiguing — refresh before the cliff',pause:'Underperformers — wasting budget',investigate_data:'Attribution lag or data quality concerns'};
+var _CARD_ACTIONS={potential_winners:['scale_budget','spend_more'],audit_landing_page:['audit_landing_page'],plan_sequel:['plan_sequel'],refresh_creative:['refresh_creative'],pause:['pause'],investigate_data:['investigate_data']};
 var _BUCKET_COLORS={Winner:'var(--g)',Proven:'#0891b2',Underperformer:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
 var _STAB_SYM={stable:'\u2192',improving:'\u2197',degrading:'\u2198',unknown:'?'};
 var _STAB_COLOR={stable:'var(--t3)',improving:'var(--g)',degrading:'var(--r)',unknown:'var(--t3)'};
 
-function _openActionModal(actionKey){
+function _openActionModal(cardKey){
   var digest=window._metaDigest;
   if(!digest || !Array.isArray(digest.creatives)) return;
-  var rows=digest.creatives.filter(function(c){return (c.actions||[]).indexOf(actionKey)>=0;});
+  // cardKey is a card-spec key (e.g. 'potential_winners' which spans scale_budget + spend_more).
+  // Backward compat: a raw action key passed through still works.
+  var memberActions=_CARD_ACTIONS[cardKey] || [cardKey];
+  var rows=digest.creatives.filter(function(c){
+    var acts=c.actions||[];
+    return acts.some(function(a){return memberActions.indexOf(a)>=0;});
+  });
   // sort by spend descending so the highest-leverage creatives are at top
   rows.sort(function(a,b){
     var aS=(a.key_signals && a.key_signals.spend)||0;
     var bS=(b.key_signals && b.key_signals.spend)||0;
     return bS-aS;
   });
-  _metaActionState={key:actionKey,rows:rows,title:_ACTION_LABELS[actionKey]||actionKey};
+  _metaActionState={key:cardKey,rows:rows,title:_CARD_LABELS[cardKey]||cardKey};
 
   var win=digest.window||{};
   document.getElementById('metaActionTitle').textContent=
     _metaActionState.title+' — '+rows.length+' creative'+(rows.length===1?'':'s');
   document.getElementById('metaActionSubtitle').textContent=
-    (_ACTION_HEADLINE[actionKey]||'')+
+    (_CARD_HEADLINE[cardKey]||'')+
     (win.start_date?' · window: '+win.start_date+' → '+win.end_date+' ('+win.days+'d)':'');
 
   // Build the mini table: Thumb | Creative+Campaign | Bucket | Age+Tier | Status | Spend | Orders | CPA | ROAS | Stab | Reason
