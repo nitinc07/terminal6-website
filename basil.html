@@ -4721,6 +4721,8 @@ function _openActionModal(actionKey){
     var t=thumb.thumbnail_url?'<img src="'+thumb.thumbnail_url+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">':'<div style="width:36px;height:36px;background:var(--c2);border-radius:4px"></div>';
     var nm=(c.ad_name||'').length>50?c.ad_name.slice(0,50)+'...':c.ad_name||'--';
     var camp=(c.campaign_name||'').length>40?c.campaign_name.slice(0,40)+'...':c.campaign_name||'';
+    var isAsc=(c.tier==='main_asc')||(c.campaign_type==='ASC');
+    var ascBadge=isAsc?' <span style="font-size:9px;font-weight:700;color:#6d28d9;background:#ede9fe;padding:1px 5px;border-radius:3px;letter-spacing:.3px;margin-left:4px;vertical-align:middle" title="Already in ASC main campaign">ASC</span>':'';
     var sig=c.key_signals||{};
     var bucket=c.bucket||'--';
     var bColor=_BUCKET_COLORS[bucket]||'var(--t3)';
@@ -4742,7 +4744,7 @@ function _openActionModal(actionKey){
       '<td style="padding:10px 12px">'+t+'</td>'+
       '<td style="padding:10px 12px">'+
         '<div style="font-weight:500" title="'+(c.ad_name||'')+'">'+nm+hgBadge+'</div>'+
-        '<div style="font-size:11px;color:var(--t3);margin-top:2px">'+camp+'</div>'+
+        '<div style="font-size:11px;color:var(--t3);margin-top:2px">'+camp+ascBadge+'</div>'+
       '</td>'+
       '<td style="padding:10px 12px"><span style="padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;background:'+bColor+'22;color:'+bColor+'">'+bucket+'</span></td>'+
       '<td style="padding:10px 12px">'+ageStr+ageBadge+'</td>'+
