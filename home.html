@@ -299,6 +299,10 @@ async function handleEmailLogin(e) {
       throw new Error(data.detail || 'Invalid email or password');
     }
     const data = await resp.json();
+    // On main domain, only platform emails can access the workspace hub
+    if (!IS_SUBDOMAIN && !PLATFORM_EMAILS.includes((data.user.email || '').toLowerCase())) {
+      throw new Error('Access restricted. This account is not authorised for this domain.');
+    }
     sessionStorage.setItem('t6_token', data.token);
     sessionStorage.setItem('t6_user', JSON.stringify(data.user));
     enterHub(data.user);
