@@ -285,8 +285,7 @@ async function handleEmailLogin(e) {
   btn.disabled = true;
   btn.textContent = 'Signing in\u2026';
   try {
-    const apiBase = IS_SUBDOMAIN ? '' : 'https://api.terminal6.io';
-    const resp = await fetch(apiBase + '/auth/login', {
+    const resp = await fetch('https://api.terminal6.io/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
