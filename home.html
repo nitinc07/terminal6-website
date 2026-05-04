@@ -32,6 +32,14 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); -web
 .login-footer { margin-top: 28px; font-size: 11px; color: var(--text-light); line-height: 1.6; }
 .login-footer a { color: var(--accent); text-decoration: none; }
 .login-error { color: var(--r); font-size: 12px; margin-top: 12px; display: none; }
+.login-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0 20px; font-size: 12px; color: var(--text-light); }
+.login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.login-form { display: flex; flex-direction: column; gap: 10px; }
+.login-form input { font-family: var(--sans); font-size: 14px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); outline: none; transition: border-color .2s; }
+.login-form input:focus { border-color: var(--accent); }
+.login-form button { font-family: var(--sans); font-size: 14px; font-weight: 500; padding: 10px 14px; border: none; border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; transition: opacity .2s; }
+.login-form button:hover { opacity: .9; }
+.login-form button:disabled { opacity: .5; cursor: not-allowed; }
 
 /* HUB */
 .hub { display: none; }
@@ -107,6 +115,12 @@ footer { text-align: center; padding: 40px 20px; border-top: 1px solid var(--bor
            data-logo_alignment="left"
            data-width="300"></div>
     </div>
+    <div class="login-divider">or sign in with email</div>
+    <form class="login-form" id="loginForm" onsubmit="handleEmailLogin(event)">
+      <input type="email" id="loginEmail" placeholder="Email" required autocomplete="email">
+      <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password">
+      <button type="submit" id="loginBtn">Sign in</button>
+    </form>
     <div class="login-error" id="loginError">Sign-in failed. Please try again.</div>
     <div class="login-footer">By signing in you agree to Terminal6's <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</div>
   </div>
@@ -261,6 +275,40 @@ function signOut() {
   sessionStorage.removeItem('t6_user');
   sessionStorage.removeItem('t6_token');
   location.reload();
+}
+
+async function handleEmailLogin(e) {
+  e.preventDefault();
+  const err = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Signing in\u2026';
+  try {
+    const apiBase = IS_SUBDOMAIN ? '' : 'https://api.terminal6.io';
+    const resp = await fetch(apiBase + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: document.getElementById('loginEmail').value.trim(),
+        password: document.getElementById('loginPassword').value,
+      }),
+    });
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      throw new Error(data.detail || 'Invalid email or password');
+    }
+    const data = await resp.json();
+    sessionStorage.setItem('t6_token', data.token);
+    sessionStorage.setItem('t6_user', JSON.stringify(data.user));
+    enterHub(data.user);
+  } catch (ex) {
+    err.textContent = ex.message || 'Sign-in failed. Please try again.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+  }
 }
 
 document.getElementById('year').textContent = new Date().getFullYear();
