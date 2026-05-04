@@ -4622,50 +4622,43 @@ function _renderDailyDecisions(digest){
     'classified by skill (LLM)' +
     (digest.cached?' \u00b7 cached '+(digest.generated_at||'').slice(0,10):'');
 
-  // Card spec: each card aggregates one or more action keys.
-  // Labels and hints are SIGNAL-descriptive (what triggered the bucket) so the operator
-  // can scan the panel and understand the pattern at a glance.
-  // A creative with multiple actions is assigned to the FIRST card spec that matches
-  // (priority order is the spec array order). Prevents double-counting.
-  var cardSpec=[
-    {key:'potential_winners',label:'Potential Winners',icon:'\uD83D\uDE80',color:'#16a34a',bg:'#f0fdf4',hint:'Strong CPA + ROAS, room to scale',actions:['scale_budget','spend_more']},
-    {key:'audit_landing_page',label:'High CTR, low CVR',icon:'\uD83D\uDC8E',color:'#0891b2',bg:'#ecfeff',hint:'Click-through is healthy, conversion is leaking — audit the landing page',actions:['audit_landing_page']},
-    {key:'plan_sequel',label:'Working at scale',icon:'\uD83C\uDFC6',color:'#0369a1',bg:'#eff6ff',hint:'Proven workhorses — protect, prep a sequel',actions:['plan_sequel']},
-    {key:'refresh_creative',label:'Fatiguing',icon:'\uD83D\uDD04',color:'#d97706',bg:'#fffbeb',hint:'Rising CPA or ROAS decay — refresh creative before the cliff',actions:['refresh_creative']},
-    {key:'pause',label:'Underperforming',icon:'\u23F8\uFE0F',color:'#dc2626',bg:'#fef2f2',hint:'ROAS and CPA both below target — pause',actions:['pause']},
-    {key:'investigate_data',label:'Data concern',icon:'\u26A0\uFE0F',color:'#6b7280',bg:'#f9fafb',hint:'Attribution lag or data-quality flags',actions:['investigate_data']},
+  // Bucket spec: LLM-assigned bucket is the single classification source.
+  // Actions are recommendations within each bucket, not grouping keys.
+  var bucketSpec=[
+    {key:'Winner',label:'Winners',icon:'\uD83C\uDFC6',color:'#0369a1',bg:'#eff6ff',hint:'Strong ROAS, scaling well — protect and prep sequels'},
+    {key:'Proven',label:'Proven Performers',icon:'\uD83D\uDCC8',color:'#0891b2',bg:'#ecfeff',hint:'Mature, consistent returns — maintain spend'},
+    {key:'Potential',label:'Potential Winners',icon:'\uD83D\uDE80',color:'#16a34a',bg:'#f0fdf4',hint:'Early signal, room to scale or test further'},
+    {key:'Fatiguing',label:'Fatiguing',icon:'\uD83D\uDD04',color:'#d97706',bg:'#fffbeb',hint:'Rising CPA or ROAS decay — refresh before the cliff'},
+    {key:'Underperformer',label:'Underperforming',icon:'\u23F8\uFE0F',color:'#dc2626',bg:'#fef2f2',hint:'Below target on ROAS and CPA — pause or replace'},
+    {key:'Testing',label:'Testing',icon:'\uD83E\uDDEA',color:'#8b5cf6',bg:'#faf5ff',hint:'Too early to call — needs more data'},
   ];
 
-  // Build a creative_key → first-matching-card map so each creative shows up exactly once
+  // Group creatives by their LLM-assigned bucket
   window._metaCardForCreative={};
-  var byCard={};
-  cardSpec.forEach(function(s){byCard[s.key]=[];});
+  var byBucket={};
+  bucketSpec.forEach(function(s){byBucket[s.key]=[];});
   digest.creatives.forEach(function(c){
-    var acts=c.actions||[];
-    if(!acts.length) return;
-    for(var i=0;i<cardSpec.length;i++){
-      var s=cardSpec[i];
-      if(s.actions.some(function(a){return acts.indexOf(a)>=0;})){
-        byCard[s.key].push(c);
-        var ck=c.creative_key||c.creative_id||c.rep_ad_id;
-        if(ck) window._metaCardForCreative[ck]=s.key;
-        return;  // assign to first match only
-      }
+    var b=c.bucket;
+    if(!b) return;
+    if(byBucket[b]){
+      byBucket[b].push(c);
     }
+    var ck=c.creative_key||c.creative_id||c.rep_ad_id;
+    if(ck) window._metaCardForCreative[ck]=b;
   });
 
   var html='';
-  cardSpec.forEach(function(s){
-    var items=byCard[s.key]||[];
+  bucketSpec.forEach(function(s){
+    var items=byBucket[s.key]||[];
     if(!items.length) return;
-    var bucketSet={};
-    items.forEach(function(c){var b=c.bucket||'(null)';bucketSet[b]=(bucketSet[b]||0)+1;});
-    var bucketStr=Object.keys(bucketSet).map(function(k){return bucketSet[k]+' '+k;}).join(' \u00b7 ');
+    var actSet={};
+    items.forEach(function(c){(c.actions||[]).forEach(function(a){actSet[a]=(actSet[a]||0)+1;});});
+    var actStr=Object.keys(actSet).map(function(k){return actSet[k]+' '+k.replace(/_/g,' ');}).join(' \u00b7 ');
     html+='<div onclick="_openActionModal(\''+s.key+'\')" style="background:'+s.bg+';border-left:4px solid '+s.color+';border-radius:8px;padding:14px 18px;flex:1;min-width:200px;cursor:pointer">';
     html+='<div style="font-size:11px;font-weight:700;color:'+s.color+';text-transform:uppercase;letter-spacing:.5px">'+s.icon+' '+s.label+'</div>';
     html+='<div style="font-size:24px;font-weight:700;margin:6px 0">'+items.length+'</div>';
     html+='<div style="font-size:11px;color:var(--t3)">'+s.hint+'</div>';
-    html+='<div style="font-size:11px;color:var(--t3);margin-top:4px">'+bucketStr+'</div>';
+    if(actStr) html+='<div style="font-size:10px;color:var(--t3);margin-top:4px">'+actStr+'</div>';
     html+='</div>';
   });
   document.getElementById('meta-daily-decisions-cards').innerHTML=html||'<div style="color:var(--t3);font-size:12px">No actionable items in this window.</div>';
@@ -4680,9 +4673,9 @@ function _renderDailyDecisions(digest){
    Renders a mini creatives table from digest.creatives filtered by action. */
 var _metaActionState={key:null,rows:[],title:''};
 // Card-key → label / headline / member action keys. Mirrors cardSpec in _renderDailyDecisions.
-var _CARD_LABELS={potential_winners:'Potential Winners',audit_landing_page:'High CTR, low CVR',plan_sequel:'Working at scale',refresh_creative:'Fatiguing',pause:'Underperforming',investigate_data:'Data concern'};
-var _CARD_HEADLINE={potential_winners:'Strong CPA + ROAS, room to scale or spend more',audit_landing_page:'Click-through is healthy, conversion is leaking — audit the landing page',plan_sequel:'Proven workhorses — protect & prep refresh',refresh_creative:'Rising CPA or ROAS decay — refresh before the cliff',pause:'Below-target on both ROAS and CPA — pause',investigate_data:'Attribution lag or data-quality concerns'};
-var _CARD_ACTIONS={potential_winners:['scale_budget','spend_more'],audit_landing_page:['audit_landing_page'],plan_sequel:['plan_sequel'],refresh_creative:['refresh_creative'],pause:['pause'],investigate_data:['investigate_data']};
+var _CARD_LABELS={Winner:'Winners',Proven:'Proven Performers',Potential:'Potential Winners',Fatiguing:'Fatiguing',Underperformer:'Underperforming',Testing:'Testing'};
+var _CARD_HEADLINE={Winner:'Strong ROAS, scaling well — protect and prep sequels',Proven:'Mature, consistent returns — maintain spend',Potential:'Early signal, room to scale or test further',Fatiguing:'Rising CPA or ROAS decay — refresh before the cliff',Underperformer:'Below target on ROAS and CPA — pause or replace',Testing:'Too early to call — needs more data'};
+var _CARD_ACTIONS={Winner:['plan_sequel','scale_budget'],Proven:['plan_sequel','maintain'],Potential:['scale_budget','spend_more','investigate_data'],Fatiguing:['refresh_creative','plan_sequel'],Underperformer:['pause'],Testing:['investigate_data']};
 var _BUCKET_COLORS={Winner:'var(--g)',Proven:'#0891b2',Underperformer:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
 var _STAB_SYM={stable:'\u2192',improving:'\u2197',degrading:'\u2198',unknown:'?'};
 var _STAB_COLOR={stable:'var(--t3)',improving:'var(--g)',degrading:'var(--r)',unknown:'var(--t3)'};
@@ -4690,12 +4683,10 @@ var _STAB_COLOR={stable:'var(--t3)',improving:'var(--g)',degrading:'var(--r)',un
 function _openActionModal(cardKey){
   var digest=window._metaDigest;
   if(!digest || !Array.isArray(digest.creatives)) return;
-  // cardKey is a card-spec key (e.g. 'potential_winners' which spans scale_budget + spend_more).
-  // Backward compat: a raw action key passed through still works.
-  var memberActions=_CARD_ACTIONS[cardKey] || [cardKey];
+  // cardKey is now a bucket name (Winner, Proven, Fatiguing, etc.)
+  // Filter creatives by their LLM-assigned bucket
   var rows=digest.creatives.filter(function(c){
-    var acts=c.actions||[];
-    return acts.some(function(a){return memberActions.indexOf(a)>=0;});
+    return c.bucket === cardKey;
   });
   // sort by spend descending so the highest-leverage creatives are at top
   rows.sort(function(a,b){
