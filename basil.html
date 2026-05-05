@@ -7370,14 +7370,14 @@ async function loadMetaAds(){
 <div id="metaChatFab" style="display:none;position:fixed;bottom:24px;right:24px;z-index:900;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 16px rgba(99,102,241,.4);cursor:pointer;display:none;align-items:center;justify-content:center" onclick="toggleMetaChat()">
   <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
 </div>
-<div id="metaChatPanel" style="display:none;position:fixed;bottom:88px;right:24px;z-index:901;width:420px;max-height:600px;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden;display:none;flex-direction:column">
+<div id="metaChatPanel" style="display:none;position:fixed;bottom:88px;right:24px;z-index:901;width:520px;max-height:650px;background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden;display:none;flex-direction:column">
   <div style="padding:14px 18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;gap:10px">
     <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     <span style="font-weight:600;font-size:14px">Meta Ads Agent</span>
     <span style="font-size:11px;opacity:.7;margin-left:auto">Experiment</span>
     <button onclick="toggleMetaChat()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 4px">&times;</button>
   </div>
-  <div id="metaChatMessages" style="flex:1;overflow-y:auto;padding:16px;min-height:300px;max-height:440px;font-size:13px;line-height:1.6"></div>
+  <div id="metaChatMessages" style="flex:1;overflow-y:auto;padding:16px;min-height:350px;max-height:500px;font-size:13px;line-height:1.6"></div>
   <div style="border-top:1px solid #eee;padding:10px 14px;display:flex;gap:8px">
     <input id="metaChatInput" type="text" placeholder="Ask about Meta Ads performance..." style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;font-size:13px;outline:none" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMetaChat()}">
     <button onclick="sendMetaChat()" style="background:#6366f1;color:#fff;border:none;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:500">Send</button>
@@ -7403,7 +7403,7 @@ async function loadMetaAds(){
     window._metaChatOpen=!window._metaChatOpen;
     panel.style.display=window._metaChatOpen?'flex':'none';
     if(window._metaChatOpen && !window._metaChatHistory.length){
-      _appendChatMsg('assistant','Hi! I\'m your Meta Ads analyst. Ask me anything about your campaigns, creatives, budgets, or performance. I have access to the last 7 days of live data.');
+      _appendChatMsg('assistant','Hi! I\'m your Meta Ads analyst. Ask me anything about your campaigns, creatives, budgets, or performance. I have access to 60 days of live data including launch dates, fatigue signals, and audience segments.');
     }
     if(window._metaChatOpen) document.getElementById('metaChatInput').focus();
   };
@@ -7418,14 +7418,52 @@ async function loadMetaAds(){
     _streamResponse(msg);
   };
 
+  function _renderChatMd(text){
+    // Minimal markdown renderer for chat: tables, bold, headers, links, lists
+    var h=text;
+    // Headers
+    h=h.replace(/^### (.+)$/gm,'<div style="font-weight:700;font-size:13px;margin:8px 0 4px">$1</div>');
+    h=h.replace(/^## (.+)$/gm,'<div style="font-weight:700;font-size:14px;margin:10px 0 4px">$1</div>');
+    // Bold
+    h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    // Creative links: [name](creative:AD_ID) → clickable
+    h=h.replace(/\[([^\]]+)\]\(creative:([^)]+)\)/g,'<a href="#" onclick="openCreativeDetail(\'$2\');return false" style="color:#6366f1;text-decoration:underline;cursor:pointer">$1</a>');
+    // Regular links
+    h=h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" style="color:#6366f1">$1</a>');
+    // Tables: detect |---|---| pattern
+    h=h.replace(/^(\|.+\|)\n\|[-| :]+\|\n((?:\|.+\|\n?)*)/gm, function(m,hdr,body){
+      var cols=hdr.split('|').filter(function(c){return c.trim();});
+      var html='<table style="width:100%;border-collapse:collapse;font-size:11px;margin:6px 0"><thead><tr>';
+      cols.forEach(function(c){html+='<th style="text-align:left;padding:3px 6px;border-bottom:1px solid #e2e8f0;font-weight:600;white-space:nowrap">'+c.trim()+'</th>';});
+      html+='</tr></thead><tbody>';
+      body.trim().split('\n').forEach(function(row){
+        var cells=row.split('|').filter(function(c){return c.trim();});
+        html+='<tr>';
+        cells.forEach(function(c){html+='<td style="padding:3px 6px;border-bottom:1px solid #f1f5f9;white-space:nowrap">'+c.trim()+'</td>';});
+        html+='</tr>';
+      });
+      html+='</tbody></table>';
+      return html;
+    });
+    // Bullet lists
+    h=h.replace(/^- (.+)$/gm,'<div style="padding-left:12px">• $1</div>');
+    // Line breaks
+    h=h.replace(/\n/g,'<br>');
+    // Clean up double <br> after block elements
+    h=h.replace(/(<\/div>)<br>/g,'$1');
+    h=h.replace(/(<\/table>)<br>/g,'$1');
+    return h;
+  }
+
   function _appendChatMsg(role,content){
     var container=document.getElementById('metaChatMessages');
     var div=document.createElement('div');
     div.style.cssText='margin-bottom:12px;'+(role==='user'?'text-align:right':'');
     var bubble=document.createElement('div');
-    bubble.style.cssText='display:inline-block;max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;'
-      +(role==='user'?'background:#6366f1;color:#fff;border-bottom-right-radius:4px':'background:#f1f5f9;color:#1e293b;border-bottom-left-radius:4px');
-    bubble.textContent=content;
+    bubble.style.cssText='display:inline-block;max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6;word-break:break-word;'
+      +(role==='user'?'background:#6366f1;color:#fff;border-bottom-right-radius:4px;white-space:pre-wrap':'background:#f1f5f9;color:#1e293b;border-bottom-left-radius:4px');
+    if(role==='user') bubble.textContent=content;
+    else bubble.innerHTML=_renderChatMd(content);
     div.appendChild(bubble);
     container.appendChild(div);
     container.scrollTop=container.scrollHeight;
@@ -7452,7 +7490,7 @@ async function loadMetaAds(){
       body:JSON.stringify({message:msg,history:window._metaChatHistory.slice(0,-1)})
     }).then(function(resp){
       if(!resp.ok){
-        bubble.textContent='Error: '+resp.status;
+        bubble.innerHTML='<span style="color:#e11d48">Error: '+resp.status+'</span>';
         bubble.style.opacity='1';
         document.getElementById('metaChatInput').disabled=false;
         return;
@@ -7477,12 +7515,12 @@ async function loadMetaAds(){
               if(ev.type==='token'){
                 accumulated+=ev.content;
                 bubble.style.opacity='1';
-                bubble.textContent=accumulated;
+                bubble.innerHTML=_renderChatMd(accumulated);
                 container.scrollTop=container.scrollHeight;
               } else if(ev.type==='status'){
-                bubble.textContent='⏳ '+ev.content;
+                bubble.innerHTML='<span style="opacity:.6">⏳ '+ev.content+'</span>';
               } else if(ev.type==='error'){
-                bubble.textContent='❌ '+ev.content;
+                bubble.innerHTML='<span style="color:#e11d48">❌ '+ev.content+'</span>';
                 bubble.style.opacity='1';
                 document.getElementById('metaChatInput').disabled=false;
               }
@@ -7493,7 +7531,7 @@ async function loadMetaAds(){
       }
       read();
     }).catch(function(err){
-      bubble.textContent='Connection error: '+err.message;
+      bubble.innerHTML='<span style="color:#e11d48">Connection error: '+err.message+'</span>';
       bubble.style.opacity='1';
       document.getElementById('metaChatInput').disabled=false;
     });
