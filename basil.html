@@ -7280,8 +7280,13 @@ async function loadMetaAds(){
     _metaStatusFilter='top';
     document.querySelectorAll('#meta-status-filters button').forEach(function(b){b.classList.remove('a')});
     document.querySelector('#meta-status-filters button').classList.add('a');
-    _renderMetaCreatives(_metaActiveOnly(window._metaCreatives).slice(0,25));
-    _updateMetaFilterCounts();
+    if(!window._metaCreatives.length){
+      document.getElementById('meta-perf-body').innerHTML='<tr><td colspan="13" style="text-align:center;color:var(--t3);padding:40px"><div style="font-size:14px;margin-bottom:6px">No Meta data available for this period</div><div style="font-size:12px">Data may not have been ingested yet. Try a wider window (7d/14d).</div></td></tr>';
+      _updateMetaFilterCounts();
+    } else {
+      _renderMetaCreatives(_metaActiveOnly(window._metaCreatives).slice(0,25));
+      _updateMetaFilterCounts();
+    }
 
     // ── Campaign teaser (full view in Campaigns sub-tab) ──
     window._metaCampHealth=campHealth;
