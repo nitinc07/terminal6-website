@@ -985,13 +985,12 @@
       </div>
       <div id="meta-status-filters" class="pills" style="margin-bottom:10px;gap:6px">
         <button class="a" onclick="_filterMetaStatus('top')">Top Active</button>
-        <button onclick="_filterMetaStatus('Winner')">Winners</button>
+        <button onclick="_filterMetaStatus('Winner')">Winner</button>
         <button onclick="_filterMetaStatus('Proven')">Proven</button>
-        <button onclick="_filterMetaStatus('Fatiguing')">Fatiguing</button>
-        <button onclick="_filterMetaStatus('Loser')">Losers</button>
         <button onclick="_filterMetaStatus('Potential')">Potential</button>
-        <button onclick="_filterMetaStatus('Testing')">Testing</button>
-        <button onclick="_filterMetaStatus('Active')">Active</button>
+        <button onclick="_filterMetaStatus('Fatiguing')">Fatiguing</button>
+        <button onclick="_filterMetaStatus('Underperformer')">Underperformer</button>
+        <button onclick="_filterMetaStatus('Unclassified')">Unclassified</button>
       </div>
       <div style="overflow-x:auto">
         <table class="tbl" id="meta-perf-tbl">
@@ -4511,7 +4510,7 @@ function _metaActiveOnly(list){
 }
 
 function _renderMetaCreatives(list){
-  var statusColors={Winner:'var(--g)',Proven:'#0891b2',Underperformer:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)',Loser:'var(--r)'};
+  var statusColors={Winner:'var(--g)',Proven:'#0891b2',Underperformer:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)',Loser:'var(--r)',Unclassified:'#9ca3af'};
   var actionLabels={scale_budget:'Scale',spend_more:'Spend more',audit_landing_page:'Audit LP',plan_sequel:'Plan sequel',refresh_creative:'Refresh',pause:'Pause',investigate_data:'Investigate',promote_to_main_asc:'Promote to ASC'};
   var actionColors={scale_budget:'#16a34a',spend_more:'#7c3aed',audit_landing_page:'#0891b2',plan_sequel:'#0369a1',refresh_creative:'#d97706',pause:'#dc2626',investigate_data:'#6b7280',promote_to_main_asc:'#2563eb'};
   var stabSym={stable:'\u2192',improving:'\u2197',degrading:'\u2198',unknown:'?'};
@@ -7257,13 +7256,27 @@ async function loadMetaAds(){
     document.getElementById('meta-fmt-cards').innerHTML=cardsH;
 
     // ── Creative table ──
-    var statusColors={Winner:'var(--g)',Proven:'#0891b2',Loser:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)'};
+    var statusColors={Winner:'var(--g)',Proven:'#0891b2',Underperformer:'var(--r)',Testing:'var(--y)',Fatiguing:'#f97316',Potential:'#8b5cf6',Active:'var(--t3)',Unclassified:'var(--t3)'};
     var fmtP={VIDEO:'#9333ea',IMAGE:'#3b82f6',CAROUSEL:'#14b8a6'};
     window._metaCreatives=db.creatives||[];
     window._metaTotalCreatives=db.total_creatives||0;
     window._metaAccountRoas=db.account_roas||2.0;
     window._metaAdAccountId=db.meta_account_id||'';
     window._metaDays=days;
+
+    // Overlay LLM digest buckets onto dashboard creatives.
+    // LLM classifies top ~26 creatives; the rest become "Unclassified".
+    var dmap=window._metaDigestMap||{};
+    window._metaCreatives.forEach(function(d){
+      var key=d.creative_id||d.ad_id;
+      var dc=dmap[key]||dmap[d.ad_id];
+      if(dc && dc.bucket){
+        d.status=dc.bucket;
+      } else {
+        d.status='Unclassified';
+      }
+    });
+
     _metaStatusFilter='top';
     document.querySelectorAll('#meta-status-filters button').forEach(function(b){b.classList.remove('a')});
     document.querySelector('#meta-status-filters button').classList.add('a');
