@@ -2618,7 +2618,7 @@ function renderKWI(r){
   document.getElementById('kwi-gen-click').textContent=genMedClick!=null?pct(genMedClick,1):'--';
 
   // §2 Cohort summary table (sort by priority)
-  var priority={'Branded':1,'Competitor':2,'Must-Win':3,'Generic':4,'Excluded':5,'Others':6};
+  var priority={'Branded':1,'Competitor':2,'Excluded':3,'Generic':4,'Must-Win':5,'Others':6};
   var sumSorted=summary.slice().sort(function(a,b){return (priority[a.cohort]||99)-(priority[b.cohort]||99)});
   var sHtml='<table class="tbl"><thead><tr>'
     +'<th>Cohort</th><th class="r">Distinct Keywords</th><th class="r">4W SV (sum)</th>'
