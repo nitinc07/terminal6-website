@@ -261,7 +261,7 @@
     <div class="si sb-sub" onclick="swSub('amzads','agent',this)"><span>Analysis Agent</span></div>
     <div class="si" onclick="sw('gads',this)"><div class="ic">&#128269;</div><span>Google Ads</span></div>
     <div class="si" onclick="sw('serp',this)"><div class="ic">&#128208;</div><span>SERP Rank</span></div>
-    <!-- Keyword Intelligence: hidden until SERP carousel tracking resolved (SellerApp API eval pending) -->
+    <div class="si" onclick="sw('kwi',this)"><div class="ic">&#127919;</div><span>Keyword Intelligence</span></div>
     <div class="si" onclick="sw('catalog',this)"><div class="ic">&#128230;</div><span>Catalogue</span></div>
     <div class="si sb-sub" onclick="swSub('catalog','master',this)"><span>Product Master</span></div>
     <div class="si sb-sub" onclick="swSub('catalog','listing-health',this)"><span>Listing Health</span></div>
@@ -594,34 +594,52 @@
   <div class="vw" id="v-kwi">
     <div class="head">
       <div class="icon" style="background:var(--acc)">&#127919;</div>
-      <div><h2>Keyword Intelligence &middot; Amazon IN</h2><p class="sub">MSKU &times; Cohort performance matrix + harvest/negate recommendations. Cohorts classified by AI.</p></div>
+      <div><h2>Keyword Intelligence &middot; Amazon IN</h2><p class="sub">Brand-rolled-up keyword view from Amazon Brand Analytics SQP. Cohort assigned per-MSKU; brand row uses priority tie-break (Branded &gt; Competitor &gt; Must-Win &gt; Generic &gt; Excluded &gt; Others).</p></div>
     </div>
 
     <!-- Sub-tab nav -->
     <div class="subtabs" id="kwiSubtabs">
-      <button class="a" onclick="kwiSub('cohorts',this)">Cohort Overview</button>
+      <button class="a" onclick="kwiSub('cohorts',this)">Keywords</button>
       <button onclick="kwiSub('harvest',this)">Harvest Queue</button>
     </div>
 
-    <!-- Sub-tab 1: Cohort Overview -->
+    <!-- Sub-tab 1: Keywords (brand-rollup) -->
     <div class="iv-sub act" id="kwis-cohorts">
-      <div class="g4" style="margin-bottom:20px" id="kwi-kpis">
-        <div class="cd"><div class="kl">Classified Keywords</div><div class="kv" id="kwi-total">--</div><div class="kd n">across all MSKUs</div></div>
-        <div class="cd"><div class="kl">Must-Win SOV</div><div class="kv" id="kwi-mw-sov">--</div><div class="kd n">position-weighted</div></div>
-        <div class="cd"><div class="kl">Branded SOV</div><div class="kv" id="kwi-br-sov">--</div><div class="kd n">position-weighted</div></div>
-        <div class="cd"><div class="kl">Must-Win ACoS</div><div class="kv" id="kwi-mw-acos">--</div><div class="kd n">vs Generic ACoS</div></div>
+      <!-- KPI strip — distinct keyword counts -->
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd"><div class="kl">Distinct Keywords</div><div class="kv" id="kwi-total">--</div><div class="kd n" id="kwi-total-sub">classified across MSKUs</div></div>
+        <div class="cd"><div class="kl">Branded SV Share</div><div class="kv" id="kwi-br-sv">--</div><div class="kd n">of total 4W search volume</div></div>
+        <div class="cd"><div class="kl">Must-Win Median Click %</div><div class="kv" id="kwi-mw-click">--</div><div class="kd n">brand share on the SERP</div></div>
+        <div class="cd"><div class="kl">Generic Median Click %</div><div class="kv" id="kwi-gen-click">--</div><div class="kd n">head terms — low share expected</div></div>
       </div>
 
+      <!-- §2 Cohort summary table -->
       <div class="sec">
-        <div class="sec-h"><h3>MSKU &times; Cohort Matrix</h3></div>
-        <div id="kwi-matrix" class="loading">Loading...</div>
+        <div class="sec-h"><h3>Cohort Summary</h3></div>
+        <div id="kwi-summary-table" class="loading">Loading...</div>
       </div>
 
-      <div class="sec" id="kwi-drilldown-sec" style="display:none">
-        <div class="sec-h"><h3 id="kwi-dd-title">Keywords</h3>
-          <div class="pills" id="kwi-cohort-pills"></div>
+      <!-- §3 Filters + keyword list -->
+      <div class="sec">
+        <div class="sec-h" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <h3>Keywords</h3>
+          <div class="pills" id="kwi-cohort-filter">
+            <button class="a" data-cohort="all">All</button>
+            <button data-cohort="Branded">Branded</button>
+            <button data-cohort="Must-Win">Must-Win</button>
+            <button data-cohort="Generic">Generic</button>
+            <button data-cohort="Competitor">Competitor</button>
+            <button data-cohort="Others">Others</button>
+          </div>
+          <div class="pills" id="kwi-tier-filter">
+            <button class="a" data-tier="all">All tiers</button>
+            <button data-tier="head">Head</button>
+            <button data-tier="mid">Mid</button>
+            <button data-tier="tail">Tail</button>
+          </div>
+          <input type="text" id="kwi-search" placeholder="Search keyword…" style="margin-left:auto;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:220px">
         </div>
-        <div id="kwi-drilldown" class="loading">Loading...</div>
+        <div id="kwi-list-table" class="loading">Loading...</div>
       </div>
     </div>
 
@@ -2545,8 +2563,17 @@ function renderSERP(s){
   el.innerHTML=html;
 }
 
-/* ========== KEYWORD INTELLIGENCE ========== */
-var _kwiData=null, _kwiSubActive='cohorts';
+/* ========== KEYWORD INTELLIGENCE (SQP-driven, brand-rolled-up) ========== */
+var _kwiState={cohort:'all', tier:'all', search:'', sort:'sv', loaded:false};
+var _kwiSubActive='cohorts';
+var _COHORT_COLORS={
+  'Branded':    {bg:'#dbeafe', fg:'#1e40af'},
+  'Must-Win':   {bg:'#ede9fe', fg:'#5b21b6'},
+  'Generic':    {bg:'#ccfbf1', fg:'#0f766e'},
+  'Competitor': {bg:'#fee2e2', fg:'#991b1b'},
+  'Excluded':   {bg:'#f9fafb', fg:'#9ca3af'},
+  'Others':     {bg:'#f9fafb', fg:'#9ca3af'},
+};
 
 function kwiSub(subId, btn){
   _kwiSubActive=subId;
@@ -2555,63 +2582,99 @@ function kwiSub(subId, btn){
   if(target) target.classList.add('act');
   document.querySelectorAll('#kwiSubtabs button').forEach(b=>b.classList.remove('a'));
   if(btn) btn.classList.add('a');
-  else document.querySelectorAll('#kwiSubtabs button').forEach(b=>{if(b.textContent.toLowerCase().includes(subId.substring(0,4))) b.classList.add('a');});
   if(subId==='harvest' && !document.getElementById('kwis-harvest').dataset.loaded) loadKWIHarvest();
 }
 
 function loadKWI(){
-  if(_kwiData) return; // cache
-  api('/v1/keywords/cohorts?days=30').then(renderKWI).catch(showErr('kwi-matrix'));
+  // Always fetch — fast endpoint (~50ms), filters applied server-side.
+  document.getElementById('kwi-list-table').innerHTML='<div class="loading">Loading…</div>';
+  document.querySelectorAll('#kwi-cohort-filter button').forEach(b=>b.classList.toggle('a',b.dataset.cohort===_kwiState.cohort));
+  document.querySelectorAll('#kwi-tier-filter button').forEach(b=>b.classList.toggle('a',b.dataset.tier===_kwiState.tier));
+  var qs='?cohort='+encodeURIComponent(_kwiState.cohort)
+       +'&volume_tier='+encodeURIComponent(_kwiState.tier)
+       +'&sort='+_kwiState.sort
+       +'&limit=1000';
+  if(_kwiState.search) qs+='&search='+encodeURIComponent(_kwiState.search);
+  api('/v1/keywords/list'+qs).then(renderKWI).catch(showErr('kwi-list-table'));
 }
 
 function renderKWI(r){
-  _kwiData=r;
-  // KPIs
-  var totalKW=0, mwSovSum=0, mwSovCnt=0, brSovSum=0, brSovCnt=0, mwSpend=0, mwSales=0, genSpend=0, genSales=0;
-  for(var m of r.mskus){
-    for(var c in m.cohorts){
-      var d=m.cohorts[c];
-      totalKW+=d.keywords||0;
-      if(c==='Must-Win' && d.sov_pct!=null){mwSovSum+=d.sov_pct; mwSovCnt++; mwSpend+=d.spend||0; mwSales+=d.sales||0;}
-      if(c==='Branded' && d.sov_pct!=null){brSovSum+=d.sov_pct; brSovCnt++;}
-      if(c==='Generic'){genSpend+=d.spend||0; genSales+=d.sales||0;}
-    }
-  }
-  document.getElementById('kwi-total').textContent=fmt(totalKW);
-  document.getElementById('kwi-mw-sov').textContent=mwSovCnt?pct(mwSovSum/mwSovCnt,1):'--';
-  document.getElementById('kwi-br-sov').textContent=brSovCnt?pct(brSovSum/brSovCnt,1):'--';
-  var mwAcos=mwSales>0?(mwSpend/mwSales*100):0, genAcos=genSales>0?(genSpend/genSales*100):0;
-  document.getElementById('kwi-mw-acos').textContent=mwSales>0?pct(mwAcos,0):'--';
-  document.getElementById('kwi-mw-acos').parentElement.querySelector('.kd').textContent=genSales>0?'vs Generic '+pct(genAcos,0):'vs Generic --';
+  _kwiState.loaded=true;
 
-  // Matrix table
-  var cohorts=['Branded','Must-Win','Generic','Competitor','Unclassified'];
-  var html='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>MSKU</th>';
-  for(var c of cohorts) html+='<th class="r" colspan="3" style="border-bottom:2px solid var(--border-s)">'+c+'</th>';
-  html+='</tr><tr><th></th>';
-  for(var i=0;i<cohorts.length;i++) html+='<th class="r" style="font-size:10px;color:var(--t3)">KW</th><th class="r" style="font-size:10px;color:var(--t3)">SOV%</th><th class="r" style="font-size:10px;color:var(--t3)">ACoS</th>';
-  html+='</tr></thead><tbody>';
-
-  for(var m of r.mskus){
-    html+='<tr style="cursor:pointer" onclick="loadKWIDrilldown(\''+m.msku_id+'\',\''+m.msku_name.replace(/'/g,"\\'")+'\')">';
-    html+='<td class="hi" style="white-space:nowrap">'+m.msku_name+'</td>';
-    for(var c of cohorts){
-      var d=m.cohorts[c];
-      if(d){
-        var sovStr=d.sov_pct!=null?pct(d.sov_pct,1):'-';
-        var acosStr=d.acos!=null?pct(d.acos,0):'-';
-        var acosColor=d.acos!=null?(d.acos<25?'var(--g)':d.acos>50?'var(--r)':'var(--a)'):'var(--t3)';
-        html+='<td class="mn2 r">'+fmt(d.keywords)+'</td>';
-        html+='<td class="mn2 r">'+sovStr+'</td>';
-        html+='<td class="mn2 r" style="color:'+acosColor+'">'+acosStr+'</td>';
-      } else {
-        html+='<td class="mn2 r" style="color:var(--t3)">-</td><td class="mn2 r" style="color:var(--t3)">-</td><td class="mn2 r" style="color:var(--t3)">-</td>';
-      }
-    }
-    html+='</tr>';
+  // KPI strip + cohort summary derive from r.summary (server-computed, full unfiltered).
+  var summary=r.summary||[];
+  var totalKw=0, brandedSv=0, totalSv=0, mwMedClick=null, genMedClick=null;
+  for(var s of summary){
+    totalKw+=s.keyword_count||0;
+    totalSv+=s.sv_sum||0;
+    if(s.cohort==='Branded') brandedSv=s.sv_sum||0;
+    if(s.cohort==='Must-Win') mwMedClick=s.median_click_share;
+    if(s.cohort==='Generic') genMedClick=s.median_click_share;
   }
-  html+='</tbody></table></div>';
-  document.getElementById('kwi-matrix').innerHTML=html;
+  document.getElementById('kwi-total').textContent=fmt(totalKw);
+  document.getElementById('kwi-total-sub').textContent='from '+fmt(totalSv)+' total 4w SV';
+  document.getElementById('kwi-br-sv').textContent=totalSv?pct(brandedSv/totalSv*100,1):'--';
+  document.getElementById('kwi-mw-click').textContent=mwMedClick!=null?pct(mwMedClick,1):'--';
+  document.getElementById('kwi-gen-click').textContent=genMedClick!=null?pct(genMedClick,1):'--';
+
+  // §2 Cohort summary table (sort by priority)
+  var priority={'Branded':1,'Competitor':2,'Must-Win':3,'Generic':4,'Excluded':5,'Others':6};
+  var sumSorted=summary.slice().sort(function(a,b){return (priority[a.cohort]||99)-(priority[b.cohort]||99)});
+  var sHtml='<table class="tbl"><thead><tr>'
+    +'<th>Cohort</th><th class="r">Distinct Keywords</th><th class="r">4W SV (sum)</th>'
+    +'<th class="r">Median Click Share</th><th class="r">Median Purchase Share</th></tr></thead><tbody>';
+  for(var s of sumSorted){
+    var ic=_COHORT_COLORS[s.cohort]||{bg:'#f9fafb',fg:'#6b7280'};
+    sHtml+='<tr><td class="hi"><span style="background:'+ic.bg+';color:'+ic.fg+';padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500">'+s.cohort+'</span></td>'
+      +'<td class="mn2 r">'+fmt(s.keyword_count)+'</td>'
+      +'<td class="mn2 r">'+fmt(s.sv_sum)+'</td>'
+      +'<td class="mn2 r">'+(s.median_click_share!=null?pct(s.median_click_share,1):'--')+'</td>'
+      +'<td class="mn2 r">'+(s.median_purchase_share!=null?pct(s.median_purchase_share,1):'--')+'</td></tr>';
+  }
+  sHtml+='</tbody></table>';
+  document.getElementById('kwi-summary-table').innerHTML=sHtml;
+
+  // §3 Keyword list (filtered + sorted server-side already)
+  var rows=r.data||[];
+  if(!rows.length){
+    document.getElementById('kwi-list-table').innerHTML='<div class="empty">No keywords match these filters</div>';
+    return;
+  }
+  function sortHdr(col, label, align){
+    var caret=_kwiState.sort===col?' &#9660;':'';
+    return '<th'+(align==='r'?' class="r"':'')+' style="cursor:pointer;user-select:none" onclick="_kwiSort(\''+col+'\')">'+label+caret+'</th>';
+  }
+  var lHtml='<table class="tbl"><thead><tr>'
+    +sortHdr('cohort','Keyword')
+    +'<th>Cohort</th>'
+    +sortHdr('sv','4W SV','r')
+    +sortHdr('click_share','Click Share','r')
+    +sortHdr('cart_share','Cart Share','r')
+    +sortHdr('purchase_share','Purchase Share','r')
+    +'<th class="r">MSKUs</th>'
+    +'<th>Volume Tier</th>'
+    +'</tr></thead><tbody>';
+  for(var k of rows){
+    var ic=_COHORT_COLORS[k.cohort]||{bg:'#f9fafb',fg:'#6b7280'};
+    var mskuTitle=(k.msku_names||'').replace(/"/g,'&quot;');
+    lHtml+='<tr>'
+      +'<td class="hi">'+k.keyword+'</td>'
+      +'<td><span style="background:'+ic.bg+';color:'+ic.fg+';padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500">'+(k.cohort||'--')+'</span></td>'
+      +'<td class="mn2 r">'+fmt(k.search_volume_4w)+'</td>'
+      +'<td class="mn2 r">'+pct(k.click_share,2)+'</td>'
+      +'<td class="mn2 r">'+pct(k.cart_share,2)+'</td>'
+      +'<td class="mn2 r">'+pct(k.purchase_share,2)+'</td>'
+      +'<td class="mn2 r" title="'+mskuTitle+'">'+fmt(k.msku_count)+'</td>'
+      +'<td style="font-size:11.5px;color:var(--t2)">'+(k.volume_tier||'--')+'</td>'
+      +'</tr>';
+  }
+  lHtml+='</tbody></table>';
+  document.getElementById('kwi-list-table').innerHTML=lHtml;
+}
+
+function _kwiSort(col){
+  _kwiState.sort=col;
+  loadKWI();
 }
 
 function loadKWIDrilldown(mskuId, mskuName, cohortFilter){
@@ -3798,6 +3861,32 @@ document.querySelectorAll('.ads-gran-pills').forEach(function(pills){
     _renderAdsTransposed('az');
   });
 })();
+// Keyword Intelligence: cohort + tier filter pills + search
+(function(){
+  var cf=document.getElementById('kwi-cohort-filter');
+  if(cf) cf.addEventListener('click', function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.cohort) return;
+    _kwiState.cohort=btn.dataset.cohort;
+    loadKWI();
+  });
+  var tf=document.getElementById('kwi-tier-filter');
+  if(tf) tf.addEventListener('click', function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.tier) return;
+    _kwiState.tier=btn.dataset.tier;
+    loadKWI();
+  });
+  var sb=document.getElementById('kwi-search');
+  if(sb){
+    var t;
+    sb.addEventListener('input', function(){
+      clearTimeout(t);
+      t=setTimeout(function(){_kwiState.search=sb.value.trim(); loadKWI();}, 350);
+    });
+  }
+})();
+
 // Campaigns sub-tab: range / ad-type / state filter pills + search
 (function(){
   var rng=document.getElementById('campRangePills');
