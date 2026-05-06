@@ -406,6 +406,12 @@
             <button class="a" data-gran="day">Day</button>
             <button data-gran="week">Week</button>
           </div>
+          <div class="pills" id="azAdTypeFilter" style="margin-left:auto">
+            <button data-adtype="SP">SP</button>
+            <button data-adtype="SD">SD</button>
+            <button data-adtype="SB">SB</button>
+            <button class="a" data-adtype="all">All</button>
+          </div>
         </div>
         <div id="az-daily" class="loading">Loading...</div>
       </div>
@@ -2187,10 +2193,12 @@ function _buildAdsCols(byDate, gran){
 
 // Per-prefix expand state for breakdown-capable rows (currently: Spend).
 var _adsExpand={az:{spend:false}, gd:{spend:false}};
+// Single-select ad-type filter for the trend table. 'all' = blended (default).
+var _adsAdTypeFilter={az:'all', gd:'all'};
 var _AD_TYPE_SUBROWS={az:[
-  {key:'SP', label:'Sponsored Products'},
-  {key:'SB', label:'Sponsored Brands'},
-  {key:'SD', label:'Sponsored Display'},
+  {key:'SP', label:'SP'},
+  {key:'SD', label:'SD'},
+  {key:'SB', label:'SB'},
 ], gd:[
   {key:'GOOGLE_PMAX',     label:'PMax'},
   {key:'GOOGLE_SHOPPING', label:'Shopping'},
@@ -2201,6 +2209,23 @@ function toggleAdsExpand(prefix, key){
   _adsExpand[prefix][key]=!_adsExpand[prefix][key];
   _renderAdsTransposed(prefix);
 }
+function _projectByAdType(byDate, adType){
+  // Re-derive a byDate-shaped object scoped to a single ad_type's metrics.
+  // Used when the filter is set to SP/SB/SD — every metric in the trend
+  // table then reflects only that ad-type's funnel.
+  var out={};
+  Object.keys(byDate).forEach(function(d){
+    var src=(byDate[d].by_ad_type||{})[adType]||{spend:0,impressions:0,clicks:0,attr_sales:0};
+    var r={spend:src.spend||0, impressions:src.impressions||0, clicks:src.clicks||0,
+           attr_sales:src.attr_sales||0, by_ad_type:byDate[d].by_ad_type||{}};
+    r.ctr_pct =r.impressions?r.clicks/r.impressions*100:null;
+    r.acos_pct=r.attr_sales?r.spend/r.attr_sales*100:null;
+    r.roas    =r.spend?r.attr_sales/r.spend:null;
+    r.cpc     =r.clicks?r.spend/r.clicks:null;
+    out[d]=r;
+  });
+  return out;
+}
 
 function _renderAdsTransposed(prefix){
   var rows=_adsRawCache[prefix]||[];
@@ -2209,12 +2234,19 @@ function _renderAdsTransposed(prefix){
   var gran=_adsGran[prefix]||'day';
   var metrics=prefix==='az'?_adsMetricsAz:_adsMetricsGd;
   var byDate=_aggAdsByDate(rows);
+  var adTypeFilter=_adsAdTypeFilter[prefix]||'all';
+  if(adTypeFilter!=='all'){
+    byDate=_projectByAdType(byDate, adTypeFilter);
+  }
   // Trend table is intentionally decoupled from the date-range pills above —
   // it always shows last 7 days/weeks + MTD + 3 prior months as long-context.
   // The Day/Week pill above this table is its only control.
   var cols=_buildAdsCols(byDate, gran);
   var subRows=_AD_TYPE_SUBROWS[prefix]||[];
-  var spendOpen=!!(_adsExpand[prefix]&&_adsExpand[prefix].spend);
+  // Spend expand only makes sense when filter='all' (otherwise the row is
+  // already scoped to a single ad-type and the breakdown is redundant).
+  var spendOpen=adTypeFilter==='all' && !!(_adsExpand[prefix]&&_adsExpand[prefix].spend);
+  var canExpand=adTypeFilter==='all' && subRows.length>0;
 
   var html='<table class="tbl"><thead><tr><th>Metric</th>';
   for(var c=0;c<cols.length;c++){
@@ -2224,7 +2256,7 @@ function _renderAdsTransposed(prefix){
   html+='</tr></thead><tbody>';
   for(var m=0;m<metrics.length;m++){
     var met=metrics[m];
-    var isSpend=met.key==='spend' && subRows.length>0;
+    var isSpend=met.key==='spend' && canExpand;
     var labelHtml=met.label+(met.tip?(' '+tip(met.tip)):'');
     if(isSpend){
       var chev=spendOpen?'&#9662;':'&#9656;';
@@ -3548,6 +3580,18 @@ document.querySelectorAll('.ads-gran-pills').forEach(function(pills){
     _renderAdsTransposed(prefix);
   });
 });
+// Ad-type filter pill (SP/SD/SB/All) — Recent Trend, Amazon only
+(function(){
+  var pills=document.getElementById('azAdTypeFilter');
+  if(!pills) return;
+  pills.addEventListener('click', function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.adtype) return;
+    _adsAdTypeFilter.az=btn.dataset.adtype;
+    pills.querySelectorAll('button').forEach(function(b){b.classList.toggle('a',b===btn)});
+    _renderAdsTransposed('az');
+  });
+})();
 // Amazon Ads date-range pills (Yesterday / 7D / 1W / 1M / Custom)
 (function(){
   var pills=document.getElementById('amzadsRangePills');
