@@ -325,10 +325,63 @@ creative_audit        → listing_health_snapshots + product_reviews</div>
   <p>A full daily brief is a tree of 20&ndash;30 agent invocations. L0 triage decides which branches fire &mdash; calm day ~&#8377;15, active day ~&#8377;80. Cost tracks situation complexity, not batch size.</p>
 </section>
 
-<!-- 8. ONBOARDING -->
+<!-- 8. BRAND-TUNING -->
 <section>
-  <h2>8. Onboarding a new brand</h2>
-  <p>3 DB inserts (<code>BrandProfile</code>, <code>brand_users</code>, <code>oauth_tokens</code> per channel) + 1 new brand card. Same skills, same compute modules, same schema. Tested with Dish Dash &mdash; zero to running daily in under a day.</p>
+  <h2>8. Brand-tuning &mdash; universal rules + brand-specific inputs</h2>
+  <p>A skill is written once and runs for every brand &mdash; but every brand has different specifics. Basil's brand terms are <em>basil / yourbasil / bento</em>; its competitors are Milton, Cello, Rabitat; its excluded category is cookware. A mobile-accessories brand has a completely different lexicon.</p>
+
+  <div class="callout">The pattern: <strong>universal logic stays in code or skill markdown; brand-specific inputs live in JSON next to the brand card.</strong></div>
+
+  <h3>Live example &mdash; the keyword classifier</h3>
+  <p><code>core/data/compute/keyword_classification.py</code> runs weekly and tags every keyword for every brand into 6 cohorts. The rule structure is universal &mdash; it does not change per brand:</p>
+  <div class="diagram">1. Branded    — keyword matches brand_terms regex
+2. Competitor — matches a competitor_terms group
+3. Excluded   — matches global ∪ brand-level excluded terms
+4. Generic    — search volume above head_term threshold
+5. Must-Win   — meets share / clicks / volume thresholds
+6. Other      — default</div>
+
+  <p>What changes per brand:</p>
+  <ul>
+    <li><strong>Brand lexicon</strong> &mdash; <code>["basil", "yourbasil", "bento"]</code> vs. <code>["spigen", "ringke"]</code></li>
+    <li><strong>Competitor lexicon</strong> &mdash; <code>{"value_negate": ["milton", "cello"], "premium_comparative": ["rabitat", "yumbox"]}</code></li>
+    <li><strong>Excluded terms</strong> &mdash; kitchenware out for kids' lunch boxes; smartphones out for phone cases</li>
+    <li><strong>Thresholds</strong> &mdash; head-term cut-off 50K/month for kitchenware, ~10K for niche phone cases</li>
+  </ul>
+
+  <p>These live in <code>knowledge/brand_cards/{brand}/classification.json</code> next to the brand's prose card. At runtime the loader merges global defaults with brand overrides:</p>
+  <div class="code-block">cfg = deep_merge(_defaults.json, brand/classification.json)
+classifier.run(cfg)</div>
+
+  <h3>Onboarding a new brand</h3>
+  <p>3 DB inserts (<code>BrandProfile</code>, <code>brand_users</code>, <code>oauth_tokens</code> per channel) + 1 brand card + 1 <code>classification.json</code>. The JSON config is built in two steps:</p>
+  <ol>
+    <li><strong>LLM bootstrap</strong> &mdash; at onboarding, an LLM reads the brand's prose card + top 200 search keywords + product titles, and emits a <code>classification.json.proposal</code> with lexicons.</li>
+    <li><strong>Operator review</strong> &mdash; T6 ops diffs the proposal, edits where wrong, renames to <code>.json</code>, commits.</li>
+  </ol>
+  <p>The bootstrap LLM call happens only at onboarding, new-category SKU launches, and quarterly reviews &mdash; not at every classification run. Tested end-to-end with Dish Dash &mdash; zero to running daily in under a day.</p>
+
+  <h3>How brands compound &mdash; promotion to globals</h3>
+  <p>A quarterly script proposes updates to <code>_defaults.json</code>:</p>
+  <ul>
+    <li>A lexicon item promotes if used by &ge;3 brands AND not contradicted by any</li>
+    <li>A threshold promotes if the median across brands is stable for 2 quarters AND &ge;70% of brands sit within 20% of the median</li>
+  </ul>
+  <p>Never auto-merges &mdash; emits a PR diff for review.</p>
+  <p>The first kitchenware brand had to specify <em>"exclude pressure cooker, mixer, kadai."</em> Once 3 kitchenware brands all exclude these, the items move to global defaults &mdash; and the 4th kitchenware brand gets them for free.</p>
+
+  <h3>Across the skill library</h3>
+  <p>Every skill needing brand-specific logic follows the same pattern:</p>
+  <table>
+    <thead><tr><th>Skill</th><th>Universal</th><th>Brand-specific JSON</th></tr></thead>
+    <tbody>
+      <tr><td><code>keyword_classification.py</code></td><td>6-cohort rule structure</td><td>brand / competitor / excluded terms, thresholds</td></tr>
+      <tr><td><code>creative_classification.py</code></td><td>7-bucket Meta creative rules</td><td>bucket thresholds, naming conventions</td></tr>
+      <tr><td><code>event_lift_baseline</code> (planning)</td><td>event-type extraction logic</td><td>per-MSKU historical lift % per event</td></tr>
+      <tr><td><code>keyword_intelligence.md</code> (decision)</td><td>F1&ndash;F5 decision logic</td><td>max bid per MSKU, target ACoS, hero MSKU list</td></tr>
+    </tbody>
+  </table>
+  <p>The skill file never changes. Every brand's JSON adds without touching a line of skill code or compute logic. Every promoted global default makes the next brand's JSON shorter.</p>
 </section>
 
 <!-- 9. WHY THIS MATTERS -->
@@ -339,6 +392,7 @@ creative_audit        → listing_health_snapshots + product_reviews</div>
     <li><strong>Auditable reasoning.</strong> Every recommendation traces to a tree of rows in <code>decision_records</code>, each linked to the data it received.</li>
     <li><strong>Reusable pieces.</strong> 17 compute modules + ~150 skill files apply to every brand, every channel, every question that fits the pattern.</li>
     <li><strong>Two scaling axes that compound.</strong> Agents get sharper as more data is wired in (horizontal). Agents become building blocks for larger agents above them (hierarchical).</li>
+    <li><strong>Brand-tuned at scale.</strong> Universal logic in code; brand specifics in JSON. Items used by &ge;3 brands promote into global defaults. Each new brand makes the next brand cheaper to onboard.</li>
   </ol>
 </section>
 
