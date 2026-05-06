@@ -2621,7 +2621,7 @@ function renderKWI(r){
   var priority={'Branded':1,'Competitor':2,'Excluded':3,'Generic':4,'Must-Win':5,'Others':6};
   var sumSorted=summary.slice().sort(function(a,b){return (priority[a.cohort]||99)-(priority[b.cohort]||99)});
   var sHtml='<table class="tbl"><thead><tr>'
-    +'<th>Cohort</th><th class="r">Distinct Keywords</th><th class="r">4W SV (sum)</th>'
+    +'<th>Cohort</th><th class="r">Distinct Keywords</th><th class="r">Weekly SV (sum)</th>'
     +'<th class="r">SV-wtd Click Share</th><th class="r">SV-wtd Purchase Share</th></tr></thead><tbody>';
   for(var s of sumSorted){
     var ic=_COHORT_COLORS[s.cohort]||{bg:'#f9fafb',fg:'#6b7280'};
@@ -2647,7 +2647,7 @@ function renderKWI(r){
   var lHtml='<table class="tbl"><thead><tr>'
     +sortHdr('cohort','Keyword')
     +'<th>Cohort</th>'
-    +sortHdr('sv','4W SV','r')
+    +sortHdr('sv','Weekly SV','r')
     +sortHdr('click_share','Brand Click Share','r')
     +sortHdr('cart_share','Brand Cart Share','r')
     +sortHdr('purchase_share','Brand Purch Share','r')
