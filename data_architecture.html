@@ -51,8 +51,10 @@ code { font-family: var(--mono); font-size: 12.5px; background: var(--bg-warm); 
 .hero .lead { max-width: 660px; margin: 0 auto 24px; }
 .hero-meta { display: flex; gap: 18px; justify-content: center; font-size: 12px; color: var(--text-light); flex-wrap: wrap; }
 
+.tw { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 14px 0 22px; border-radius: 8px; border: 1px solid var(--border); }
+.tw table { margin: 0; border: none; border-radius: 0; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 14px 0 22px; background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
-th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-light); border-bottom: 1px solid var(--border); font-weight: 600; background: var(--bg-warm); }
+th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-light); border-bottom: 1px solid var(--border); font-weight: 600; background: var(--bg-warm); white-space: nowrap; }
 td { padding: 10px 14px; border-bottom: 1px solid #f0eeea; color: var(--text-mid); vertical-align: top; }
 tr:last-child td { border-bottom: none; }
 td code { font-size: 12px; }
@@ -90,9 +92,39 @@ footer a { color: var(--accent); text-decoration: none; }
 
 @media print { nav { display: none; } .page { padding-top: 20px; } }
 @media (max-width: 768px) {
-  .layer-row { grid-template-columns: 60px 1fr; }
-  .layer-row .layer-desc { grid-column: 1 / -1; border-left: 1px solid var(--border); border-top: none; }
-  .kv { grid-template-columns: 1fr; }
+  .page { padding: 88px 18px 60px; }
+  .nav-inner { padding: 12px 18px; }
+  .nav-tag { display: none; }
+
+  h1 { font-size: 26px; line-height: 1.2; }
+  h2 { font-size: 21px; padding-top: 8px; }
+  h3 { font-size: 17px; margin: 22px 0 8px; }
+  p, ul, ol { font-size: 14.5px; }
+  .lead { font-size: 15px; }
+  section { margin-bottom: 44px; }
+
+  .hero { padding: 16px 0 28px; }
+  .hero-meta { gap: 10px; font-size: 11px; }
+  .label { font-size: 10px; }
+
+  .layer-stack { gap: 8px; }
+  .layer-row { grid-template-columns: 48px 1fr; grid-template-rows: auto auto; }
+  .layer-id { font-size: 13px; padding: 10px; grid-row: 1 / 3; }
+  .layer-name { padding: 10px 12px; font-size: 13px; border-bottom: none; }
+  .layer-desc { padding: 4px 12px 12px; font-size: 12.5px; border-left: 1px solid var(--border); border-top: none; grid-column: 2 / 3; }
+
+  .kv { grid-template-columns: 1fr; gap: 8px; }
+  .kv-card { padding: 12px 14px; }
+
+  table { font-size: 12.5px; }
+  th { padding: 8px 10px; font-size: 10px; }
+  td { padding: 8px 10px; }
+  td code { font-size: 11.5px; }
+
+  .code-block, .diagram { font-size: 11.5px; padding: 14px 16px; line-height: 1.7; }
+  .callout { padding: 12px 14px; font-size: 13.5px; }
+
+  footer { padding: 28px 18px; }
 }
 </style>
 </head>
@@ -217,7 +249,7 @@ footer a { color: var(--accent); text-decoration: none; }
   <p>JSON with summary, health score (0&ndash;100), and six prioritised lists &mdash; bleeders, low-stock pause, wasted spend, cannibalisation risk, scalers, overstock push. Each item has entity, numbers, reason, recommended action.</p>
 
   <h3>The 9 data inputs, mapped to layers</h3>
-  <table>
+  <div class="tw"><table>
     <thead><tr><th>#</th><th>Input</th><th>Source</th><th>Layer</th></tr></thead>
     <tbody>
       <tr><td>1, 2</td><td>Campaign + per-ASIN performance</td><td><code>amazon_campaign_metrics</code></td><td>B</td></tr>
@@ -228,10 +260,10 @@ footer a { color: var(--accent); text-decoration: none; }
       <tr><td>7</td><td>Cannibalisation classification</td><td>runtime &rarr; <code>campaign_efficiency_daily</code></td><td>C</td></tr>
       <tr><td>8</td><td>Impact summary (&#8377;)</td><td>runtime &rarr; <code>campaign_impact_summary</code></td><td>C</td></tr>
     </tbody>
-  </table>
+  </table></div>
 
   <h3>Layer C tables this agent (and its sub-skills) read from</h3>
-  <table>
+  <div class="tw"><table>
     <thead><tr><th>Table</th><th>Grain</th><th>What it holds</th><th>State</th></tr></thead>
     <tbody>
       <tr><td><code>asin_unit_economics</code></td><td>(asin, date)</td><td>Per-ASIN CM2, CM3, ASP, COGS, return rate</td><td><span class="badge badge-live">Live</span></td></tr>
@@ -242,7 +274,7 @@ footer a { color: var(--accent); text-decoration: none; }
       <tr><td><code>campaign_efficiency_daily</code></td><td>(campaign, date)</td><td>Spend, ACoS, CM3, cannibalisation classification</td><td><span class="badge badge-todo">To materialise</span></td></tr>
       <tr><td><code>campaign_impact_summary</code></td><td>(campaign, date)</td><td>&#8377; margin destroyed, lost revenue, scaler upside</td><td><span class="badge badge-todo">To materialise</span></td></tr>
     </tbody>
-  </table>
+  </table></div>
 
   <div class="kv">
     <div class="kv-card"><div class="k">Run cost</div><div class="v">~&#8377;70</div></div>
@@ -374,7 +406,7 @@ classifier.run(cfg)</div>
 
   <h3>Across the skill library</h3>
   <p>Every skill needing brand-specific logic follows the same pattern:</p>
-  <table>
+  <div class="tw"><table>
     <thead><tr><th>Skill</th><th>Universal</th><th>Brand-specific JSON</th></tr></thead>
     <tbody>
       <tr><td><code>keyword_classification.py</code></td><td>6-cohort rule structure</td><td>brand / competitor / excluded terms, thresholds</td></tr>
@@ -382,7 +414,7 @@ classifier.run(cfg)</div>
       <tr><td><code>event_lift_baseline</code> (planning)</td><td>event-type extraction logic</td><td>per-MSKU historical lift % per event</td></tr>
       <tr><td><code>keyword_intelligence.md</code> (decision)</td><td>F1&ndash;F5 decision logic</td><td>max bid per MSKU, target ACoS, hero MSKU list</td></tr>
     </tbody>
-  </table>
+  </table></div>
   <p>The skill file never changes. Every brand's JSON adds without touching a line of skill code or compute logic. Every promoted global default makes the next brand's JSON shorter.</p>
 </section>
 
