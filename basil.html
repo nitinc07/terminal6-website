@@ -467,6 +467,19 @@
         </div>
         <input type="text" id="campSearch" placeholder="Search campaigns…" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:240px;margin-left:auto">
       </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+        <div class="pills" id="campIntentFilter">
+          <button class="a" data-intent="all">All intents</button>
+          <button data-intent="Branded">Branded</button>
+          <button data-intent="Must-Win">Must-Win</button>
+          <button data-intent="Generic">Generic</button>
+          <button data-intent="Competitor">Competitor</button>
+          <button data-intent="Auto Discovery">Auto</button>
+          <button data-intent="Product Targeting">Product Targeting</button>
+          <button data-intent="Brand Showcase">Brand Showcase</button>
+          <button data-intent="Unclassified">Unclassified</button>
+        </div>
+      </div>
       <div id="campCustomRange" style="display:none;align-items:center;gap:8px;margin-bottom:14px;font-size:12px">
         From <input type="date" id="campFrom" style="padding:4px 6px;border:1px solid var(--border);border-radius:4px">
         To <input type="date" id="campTo" style="padding:4px 6px;border:1px solid var(--border);border-radius:4px">
@@ -1948,8 +1961,8 @@ function applyAmzadsCustomRange(){
 }
 
 /* ========== CAMPAIGNS sub-tab ========== */
-var _campState={range:{label:'7d', from:null, to:null}, ad_type:'all', state:'enabled', search:'',
-                sort:{col:'spend', dir:'desc'}, data:[]};
+var _campState={range:{label:'7d', from:null, to:null}, ad_type:'all', state:'enabled', intent:'all',
+                search:'', sort:{col:'spend', dir:'desc'}, data:[]};
 function _resolveCampRange(label){return _resolveAmzadsRange(label);}  /* identical mapping */
 function applyCampCustomRange(){
   var f=document.getElementById('campFrom').value;
@@ -1974,8 +1987,10 @@ function loadCampaigns(){
   document.querySelectorAll('#campRangePills button').forEach(b=>b.classList.toggle('a',b.dataset.range===_campState.range.label));
   document.querySelectorAll('#campAdTypeFilter button').forEach(b=>b.classList.toggle('a',b.dataset.adtype===_campState.ad_type));
   document.querySelectorAll('#campStateFilter button').forEach(b=>b.classList.toggle('a',b.dataset.state===_campState.state));
+  document.querySelectorAll('#campIntentFilter button').forEach(b=>b.classList.toggle('a',b.dataset.intent===_campState.intent));
   document.getElementById('camp-window-note').textContent=_campRangeLabel(rs);
   var qs='?from='+rs.from+'&to='+rs.to+'&ad_type='+_campState.ad_type+'&state='+_campState.state;
+  if(_campState.intent && _campState.intent!=='all') qs+='&intent='+encodeURIComponent(_campState.intent);
   if(_campState.search) qs+='&search='+encodeURIComponent(_campState.search);
   document.getElementById('camp-table').innerHTML='<div class="loading">Loading campaigns…</div>';
   api('/v1/amazon/campaigns/list'+qs).then(renderCampaigns).catch(showErr('camp-table'));
@@ -2018,6 +2033,7 @@ function renderCampaigns(r){
   }
   var html='<table class="tbl"><thead><tr>'
     +sortHdr('name','Campaign')
+    +sortHdr('intent','Intent')
     +sortHdr('ad_type','Type')
     +sortHdr('state','State')
     +sortHdr('bid_strategy','Bid strategy')
@@ -2031,6 +2047,17 @@ function renderCampaigns(r){
     +sortHdr('orders','Orders','r')
     +sortHdr('hit_budget_days','Days capped','r')
     +'</tr></thead><tbody>';
+  var intentColors={
+    'Branded':           {bg:'#dbeafe', fg:'#1e40af'},
+    'Must-Win':          {bg:'#ede9fe', fg:'#5b21b6'},
+    'Generic':           {bg:'#ccfbf1', fg:'#0f766e'},
+    'Competitor':        {bg:'#fee2e2', fg:'#991b1b'},
+    'Auto Discovery':    {bg:'#f3f4f6', fg:'#374151'},
+    'Product Targeting': {bg:'#fef3c7', fg:'#92400e'},
+    'Brand Showcase':    {bg:'#fce7f3', fg:'#9d174d'},
+    'Unclassified':      {bg:'#f9fafb', fg:'#9ca3af'},
+    'Others':            {bg:'#f9fafb', fg:'#9ca3af'},
+  };
   for(var i=0;i<sorted.length;i++){
     var c=sorted[i];
     var stateBadge='', ss=(c.state||'').toLowerCase();
@@ -2039,8 +2066,12 @@ function renderCampaigns(r){
     else if(ss==='archived') stateBadge='<span style="color:var(--t3);font-weight:600">●</span> '+(c.state||'--');
     else stateBadge=c.state||'--';
     var capBadge=c.hit_budget_days>0?'<span style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px;font-size:11px">'+c.hit_budget_days+'</span>':'0';
+    var ic=intentColors[c.intent]||intentColors.Unclassified;
+    var intentTitle=c.intent_source==='keyword'?'Derived from this campaign\'s keyword cohort':'Inferred from ad_type / targeting_type (no keyword match)';
+    var intentBadge='<span title="'+intentTitle+'" style="background:'+ic.bg+';color:'+ic.fg+';padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500">'+(c.intent||'--')+(c.intent_source==='keyword'?'':' &middot;')+'</span>';
     html+='<tr>'
       +'<td class="hi">'+(c.name||'<span style="color:var(--t3)">'+c.campaign_id+'</span>')+'</td>'
+      +'<td>'+intentBadge+'</td>'
       +'<td>'+(c.ad_type||'--')+'</td>'
       +'<td>'+stateBadge+'</td>'
       +'<td style="font-size:11.5px">'+(c.bid_strategy||'--')+'</td>'
@@ -3783,6 +3814,13 @@ document.querySelectorAll('.ads-gran-pills').forEach(function(pills){
     var btn=e.target.closest('button');
     if(!btn||!btn.dataset.state) return;
     _campState.state=btn.dataset.state;
+    loadCampaigns();
+  });
+  var inf=document.getElementById('campIntentFilter');
+  if(inf) inf.addEventListener('click', function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.intent) return;
+    _campState.intent=btn.dataset.intent;
     loadCampaigns();
   });
   var sb=document.getElementById('campSearch');
