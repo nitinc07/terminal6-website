@@ -605,10 +605,25 @@
 
     <!-- Sub-tab 1: Keywords (brand-rollup) -->
     <div class="iv-sub act" id="kwis-cohorts">
+      <!-- Period selector — Weekly/Monthly + period dropdown (matches Amazon Brand View) -->
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px">
+        <label style="font-size:12px;color:var(--t2)">Reporting Range
+          <select id="kwi-period-type" style="margin-left:6px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+            <option value="weekly" selected>Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </label>
+        <label style="font-size:12px;color:var(--t2)">Select period
+          <select id="kwi-period-start" style="margin-left:6px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:200px">
+            <option>Loading…</option>
+          </select>
+        </label>
+      </div>
+
       <!-- KPI strip — distinct keyword counts -->
       <div class="g4" style="margin-bottom:20px">
         <div class="cd"><div class="kl">Distinct Keywords</div><div class="kv" id="kwi-total">--</div><div class="kd n" id="kwi-total-sub">classified across MSKUs</div></div>
-        <div class="cd"><div class="kl">Branded SV Share</div><div class="kv" id="kwi-br-sv">--</div><div class="kd n">of total 4W search volume</div></div>
+        <div class="cd"><div class="kl">Branded SV Share</div><div class="kv" id="kwi-br-sv">--</div><div class="kd n">of total search volume</div></div>
         <div class="cd"><div class="kl">Must-Win SV-wtd Click %</div><div class="kv" id="kwi-mw-click">--</div><div class="kd n">share captured, weighted by volume</div></div>
         <div class="cd"><div class="kl">Generic SV-wtd Click %</div><div class="kv" id="kwi-gen-click">--</div><div class="kd n">head terms — low share expected</div></div>
       </div>
@@ -2564,7 +2579,8 @@ function renderSERP(s){
 }
 
 /* ========== KEYWORD INTELLIGENCE (SQP-driven, brand-rolled-up) ========== */
-var _kwiState={cohort:'all', tier:'all', search:'', sort:'sv', loaded:false};
+var _kwiState={cohort:'all', tier:'all', search:'', sort:'sv', loaded:false,
+               period_type:'weekly', period_start:''};
 var _kwiSubActive='cohorts';
 var _COHORT_COLORS={
   'Branded':    {bg:'#dbeafe', fg:'#1e40af'},
@@ -2586,20 +2602,36 @@ function kwiSub(subId, btn){
 }
 
 function loadKWI(){
-  // Always fetch — fast endpoint (~50ms), filters applied server-side.
   document.getElementById('kwi-list-table').innerHTML='<div class="loading">Loading…</div>';
   document.querySelectorAll('#kwi-cohort-filter button').forEach(b=>b.classList.toggle('a',b.dataset.cohort===_kwiState.cohort));
   document.querySelectorAll('#kwi-tier-filter button').forEach(b=>b.classList.toggle('a',b.dataset.tier===_kwiState.tier));
   var qs='?cohort='+encodeURIComponent(_kwiState.cohort)
        +'&volume_tier='+encodeURIComponent(_kwiState.tier)
        +'&sort='+_kwiState.sort
+       +'&period='+_kwiState.period_type
        +'&limit=1000';
+  if(_kwiState.period_start) qs+='&period_start='+encodeURIComponent(_kwiState.period_start);
   if(_kwiState.search) qs+='&search='+encodeURIComponent(_kwiState.search);
   api('/v1/keywords/list'+qs).then(renderKWI).catch(showErr('kwi-list-table'));
 }
 
 function renderKWI(r){
   _kwiState.loaded=true;
+
+  // Populate the period dropdown each load (server returns the available list).
+  var p=r.period||{};
+  if(p.available && p.available.length){
+    var sel=document.getElementById('kwi-period-start');
+    if(sel){
+      var html='';
+      for(var opt of p.available){
+        html+='<option value="'+opt.value+'"'+(opt.value===p.start?' selected':'')+'>'+opt.label+'</option>';
+      }
+      sel.innerHTML=html;
+      _kwiState.period_start=p.start;
+    }
+  }
+  document.getElementById('kwi-period-type').value=p.type||'weekly';
 
   // KPI strip + cohort summary derive from r.summary (server-computed, full unfiltered).
   var summary=r.summary||[];
@@ -2647,12 +2679,13 @@ function renderKWI(r){
   var lHtml='<table class="tbl"><thead><tr>'
     +sortHdr('cohort','Keyword')
     +'<th>Cohort</th>'
-    +sortHdr('sv','Weekly SV','r')
-    +sortHdr('click_share','Brand Click Share','r')
-    +sortHdr('cart_share','Brand Cart Share','r')
-    +sortHdr('purchase_share','Brand Purch Share','r')
+    +sortHdr('sv','Search Volume','r')
+    +'<th class="r">Brand Impressions</th>'
+    +sortHdr('impression_share','Impr Share (SOV)','r')
+    +sortHdr('click_share','Click Share','r')
+    +sortHdr('cart_share','Cart Share','r')
+    +sortHdr('purchase_share','Purch Share','r')
     +'<th class="r">MSKUs</th>'
-    +'<th>Volume Tier</th>'
     +'</tr></thead><tbody>';
   for(var k of rows){
     var ic=_COHORT_COLORS[k.cohort]||{bg:'#f9fafb',fg:'#6b7280'};
@@ -2661,11 +2694,12 @@ function renderKWI(r){
       +'<td class="hi">'+k.keyword+'</td>'
       +'<td><span style="background:'+ic.bg+';color:'+ic.fg+';padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500">'+(k.cohort||'--')+'</span></td>'
       +'<td class="mn2 r">'+fmt(k.search_volume_4w)+'</td>'
+      +'<td class="mn2 r">'+fmt(k.impressions||0)+'</td>'
+      +'<td class="mn2 r">'+pct(k.impression_share||0,2)+'</td>'
       +'<td class="mn2 r">'+pct(k.click_share,2)+'</td>'
       +'<td class="mn2 r">'+pct(k.cart_share,2)+'</td>'
       +'<td class="mn2 r">'+pct(k.purchase_share,2)+'</td>'
       +'<td class="mn2 r" title="'+mskuTitle+'">'+fmt(k.msku_count)+'</td>'
-      +'<td style="font-size:11.5px;color:var(--t2)">'+(k.volume_tier||'--')+'</td>'
       +'</tr>';
   }
   lHtml+='</tbody></table>';
@@ -3859,6 +3893,20 @@ document.querySelectorAll('.ads-gran-pills').forEach(function(pills){
     _adsAdTypeFilter.az=btn.dataset.adtype;
     pills.querySelectorAll('button').forEach(function(b){b.classList.toggle('a',b===btn)});
     _renderAdsTransposed('az');
+  });
+})();
+// Keyword Intelligence: period dropdowns
+(function(){
+  var pt=document.getElementById('kwi-period-type');
+  if(pt) pt.addEventListener('change', function(){
+    _kwiState.period_type=pt.value;
+    _kwiState.period_start='';   // reset; server picks latest
+    loadKWI();
+  });
+  var ps=document.getElementById('kwi-period-start');
+  if(ps) ps.addEventListener('change', function(){
+    _kwiState.period_start=ps.value;
+    loadKWI();
   });
 })();
 // Keyword Intelligence: cohort + tier filter pills + search
