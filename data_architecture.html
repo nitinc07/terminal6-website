@@ -245,10 +245,12 @@ footer a { color: var(--accent); text-decoration: none; }
   </table>
 
   <div class="kv">
-    <div class="kv-card"><div class="k">Run cost</div><div class="v">~&#8377;10</div></div>
+    <div class="kv-card"><div class="k">Run cost</div><div class="v">~&#8377;70</div></div>
     <div class="kv-card"><div class="k">Wall time</div><div class="v">~30 sec</div></div>
     <div class="kv-card"><div class="k">Cadence</div><div class="v">On-demand</div></div>
   </div>
+
+  <p style="font-size: 13px; color: var(--text-light); margin-top:-12px;">Today's run uses Claude Sonnet. Narrower function skills (triage gates, harvest checks) run on Haiku at ~&#8377;10.</p>
 
   <p>Layer D: the run writes one row to <code>agent_recommendations</code>. Operator clicks (accept / dismiss) are recorded too. Every recommendation is replayable and auditable.</p>
 </section>
@@ -307,7 +309,7 @@ creative_audit        → listing_health_snapshots + product_reviews</div>
 
   <p>The parent's Data Required does not list raw tables &mdash; it lists <em>child agent outputs</em>. Each child returns its 6-bucket JSON. The parent reads those four JSONs (~2K tokens each) and reasons cross-channel: which channels are over- or under-funded, where to reallocate, where the same customer is being targeted on multiple channels at once.</p>
 
-  <p>A full multi-channel marketing review costs roughly 4 &times; &#8377;10 (children) + &#8377;15 (parent) &asymp; <strong>&#8377;55</strong>.</p>
+  <p>A full multi-channel marketing review on Sonnet costs roughly 4 &times; &#8377;70 (children) + &#8377;40 (parent) &asymp; <strong>&#8377;320</strong>. If the parent runs on Haiku (it's just synthesising compact JSON inputs), the total drops to ~&#8377;285.</p>
 
   <p>The same pattern compounds upward to a daily morning brief:</p>
 
@@ -322,7 +324,7 @@ creative_audit        → listing_health_snapshots + product_reviews</div>
     ├── L1  Senior Category
     └── L1  Senior Channels</div>
 
-  <p>A full daily brief is a tree of 20&ndash;30 agent invocations. L0 triage decides which branches fire &mdash; calm day ~&#8377;15, active day ~&#8377;80. Cost tracks situation complexity, not batch size.</p>
+  <p>A full daily brief is a tree of 20&ndash;30 agent invocations, mixing Haiku (triage gates, narrow function skills) and Sonnet (investigations). L0 triage decides which branches fire &mdash; <strong>calm day ~&#8377;30</strong> (mostly Haiku triage), <strong>active day ~&#8377;500</strong> (Sonnet investigations across multiple branches). Cost tracks situation complexity, not batch size.</p>
 </section>
 
 <!-- 8. BRAND-TUNING -->
