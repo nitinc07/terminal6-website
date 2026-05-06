@@ -594,7 +594,7 @@
   <div class="vw" id="v-kwi">
     <div class="head">
       <div class="icon" style="background:var(--acc)">&#127919;</div>
-      <div><h2>Keyword Intelligence &middot; Amazon IN</h2><p class="sub">Brand-rolled-up keyword view from Amazon Brand Analytics SQP. Cohort assigned per-MSKU; brand row uses priority tie-break (Branded &gt; Competitor &gt; Must-Win &gt; Generic &gt; Excluded &gt; Others).</p></div>
+      <div><h2>Keyword Intelligence &middot; Amazon IN</h2><p class="sub">Brand-rolled-up keyword view from Amazon Brand Analytics SQP. Cohort uses priority tie-break across MSKUs (Branded &gt; Competitor &gt; Must-Win &gt; Generic &gt; Excluded &gt; Others). Share % = the top MSKU's share for that keyword (conservative — captures our best-performing product).</p></div>
     </div>
 
     <!-- Sub-tab nav -->
@@ -609,7 +609,7 @@
       <div class="g4" style="margin-bottom:20px">
         <div class="cd"><div class="kl">Distinct Keywords</div><div class="kv" id="kwi-total">--</div><div class="kd n" id="kwi-total-sub">classified across MSKUs</div></div>
         <div class="cd"><div class="kl">Branded SV Share</div><div class="kv" id="kwi-br-sv">--</div><div class="kd n">of total 4W search volume</div></div>
-        <div class="cd"><div class="kl">Must-Win Median Click %</div><div class="kv" id="kwi-mw-click">--</div><div class="kd n">brand share on the SERP</div></div>
+        <div class="cd"><div class="kl">Must-Win Median Click %</div><div class="kv" id="kwi-mw-click">--</div><div class="kd n">top MSKU's share — best product</div></div>
         <div class="cd"><div class="kl">Generic Median Click %</div><div class="kv" id="kwi-gen-click">--</div><div class="kd n">head terms — low share expected</div></div>
       </div>
 
@@ -2648,9 +2648,9 @@ function renderKWI(r){
     +sortHdr('cohort','Keyword')
     +'<th>Cohort</th>'
     +sortHdr('sv','4W SV','r')
-    +sortHdr('click_share','Click Share','r')
-    +sortHdr('cart_share','Cart Share','r')
-    +sortHdr('purchase_share','Purchase Share','r')
+    +sortHdr('click_share','Top Click Share','r')
+    +sortHdr('cart_share','Top Cart Share','r')
+    +sortHdr('purchase_share','Top Purch Share','r')
     +'<th class="r">MSKUs</th>'
     +'<th>Volume Tier</th>'
     +'</tr></thead><tbody>';
