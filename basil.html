@@ -609,8 +609,8 @@
       <div class="g4" style="margin-bottom:20px">
         <div class="cd"><div class="kl">Distinct Keywords</div><div class="kv" id="kwi-total">--</div><div class="kd n" id="kwi-total-sub">classified across MSKUs</div></div>
         <div class="cd"><div class="kl">Branded SV Share</div><div class="kv" id="kwi-br-sv">--</div><div class="kd n">of total 4W search volume</div></div>
-        <div class="cd"><div class="kl">Must-Win Median Click %</div><div class="kv" id="kwi-mw-click">--</div><div class="kd n">top MSKU's share — best product</div></div>
-        <div class="cd"><div class="kl">Generic Median Click %</div><div class="kv" id="kwi-gen-click">--</div><div class="kd n">head terms — low share expected</div></div>
+        <div class="cd"><div class="kl">Must-Win SV-wtd Click %</div><div class="kv" id="kwi-mw-click">--</div><div class="kd n">share captured, weighted by volume</div></div>
+        <div class="cd"><div class="kl">Generic SV-wtd Click %</div><div class="kv" id="kwi-gen-click">--</div><div class="kd n">head terms — low share expected</div></div>
       </div>
 
       <!-- §2 Cohort summary table -->
@@ -2608,8 +2608,8 @@ function renderKWI(r){
     totalKw+=s.keyword_count||0;
     totalSv+=s.sv_sum||0;
     if(s.cohort==='Branded') brandedSv=s.sv_sum||0;
-    if(s.cohort==='Must-Win') mwMedClick=s.median_click_share;
-    if(s.cohort==='Generic') genMedClick=s.median_click_share;
+    if(s.cohort==='Must-Win') mwMedClick=s.wavg_click_share;
+    if(s.cohort==='Generic') genMedClick=s.wavg_click_share;
   }
   document.getElementById('kwi-total').textContent=fmt(totalKw);
   document.getElementById('kwi-total-sub').textContent='from '+fmt(totalSv)+' total 4w SV';
@@ -2622,14 +2622,14 @@ function renderKWI(r){
   var sumSorted=summary.slice().sort(function(a,b){return (priority[a.cohort]||99)-(priority[b.cohort]||99)});
   var sHtml='<table class="tbl"><thead><tr>'
     +'<th>Cohort</th><th class="r">Distinct Keywords</th><th class="r">4W SV (sum)</th>'
-    +'<th class="r">Median Click Share</th><th class="r">Median Purchase Share</th></tr></thead><tbody>';
+    +'<th class="r">SV-wtd Click Share</th><th class="r">SV-wtd Purchase Share</th></tr></thead><tbody>';
   for(var s of sumSorted){
     var ic=_COHORT_COLORS[s.cohort]||{bg:'#f9fafb',fg:'#6b7280'};
     sHtml+='<tr><td class="hi"><span style="background:'+ic.bg+';color:'+ic.fg+';padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500">'+s.cohort+'</span></td>'
       +'<td class="mn2 r">'+fmt(s.keyword_count)+'</td>'
       +'<td class="mn2 r">'+fmt(s.sv_sum)+'</td>'
-      +'<td class="mn2 r">'+(s.median_click_share!=null?pct(s.median_click_share,1):'--')+'</td>'
-      +'<td class="mn2 r">'+(s.median_purchase_share!=null?pct(s.median_purchase_share,1):'--')+'</td></tr>';
+      +'<td class="mn2 r">'+(s.wavg_click_share!=null?pct(s.wavg_click_share,2):'--')+'</td>'
+      +'<td class="mn2 r">'+(s.wavg_purchase_share!=null?pct(s.wavg_purchase_share,2):'--')+'</td></tr>';
   }
   sHtml+='</tbody></table>';
   document.getElementById('kwi-summary-table').innerHTML=sHtml;
