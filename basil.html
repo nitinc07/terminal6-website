@@ -2677,14 +2677,13 @@ function renderKWI(r){
     return '<th'+(align==='r'?' class="r"':'')+' style="cursor:pointer;user-select:none" onclick="_kwiSort(\''+col+'\')">'+label+caret+'</th>';
   }
   var lHtml='<table class="tbl"><thead><tr>'
-    +sortHdr('cohort','Keyword')
+    +sortHdr('cohort','Search Query')
     +'<th>Cohort</th>'
-    +sortHdr('sv','Search Volume','r')
-    +'<th class="r">Brand Impressions</th>'
-    +sortHdr('impression_share','Impr Share (SOV)','r')
-    +sortHdr('click_share','Click Share','r')
-    +sortHdr('cart_share','Cart Share','r')
-    +sortHdr('purchase_share','Purch Share','r')
+    +sortHdr('sv','Total Impressions','r')
+    +sortHdr('impression_share','Brand Impr Share','r')
+    +sortHdr('click_share','Brand Click Share','r')
+    +sortHdr('cart_share','Brand Cart Share','r')
+    +sortHdr('purchase_share','Brand Purch Share','r')
     +'<th class="r">MSKUs</th>'
     +'</tr></thead><tbody>';
   for(var i=0;i<rows.length;i++){
@@ -2696,8 +2695,7 @@ function renderKWI(r){
       +'<td class="hi" style="text-align:left;cursor:pointer;user-select:none" onclick="toggleKwiAsinDetail(\''+kwEsc+'\','+i+')">'
         +'<span class="kwi-chev" id="kwi-chev-'+i+'" style="display:inline-block;width:12px;color:var(--t3)">&#9656;</span> '+k.keyword+'</td>'
       +'<td><span style="background:'+ic.bg+';color:'+ic.fg+';padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500">'+(k.cohort||'--')+'</span></td>'
-      +'<td class="mn2 r">'+fmt(k.search_volume_4w)+'</td>'
-      +'<td class="mn2 r">'+fmt(k.impressions||0)+'</td>'
+      +'<td class="mn2 r">'+fmt(k.market_impressions||0)+'</td>'
       +'<td class="mn2 r">'+pct(k.impression_share||0,2)+'</td>'
       +'<td class="mn2 r">'+pct(k.click_share,2)+'</td>'
       +'<td class="mn2 r">'+pct(k.cart_share,2)+'</td>'
@@ -2759,7 +2757,6 @@ function toggleKwiAsinDetail(keyword, idx){
          '<td class="hi" style="padding-left:32px;font-size:11.5px;color:var(--t2);text-align:left">'
            +'&#x2514; <span class="mn2">'+a.asin+'</span> <span style="color:var(--t3)">'+(a.msku_name||'')+'</span></td>'
         +'<td></td>'
-        +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+fmt(a.search_volume_4w)+'</td>'
         +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+fmt(a.impressions)+'</td>'
         +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+pct(a.impression_share,2)+'</td>'
         +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+pct(a.click_share,2)+'</td>'
