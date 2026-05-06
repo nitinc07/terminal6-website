@@ -594,7 +594,7 @@
   <div class="vw" id="v-kwi">
     <div class="head">
       <div class="icon" style="background:var(--acc)">&#127919;</div>
-      <div><h2>Keyword Intelligence &middot; Amazon IN</h2><p class="sub">Brand-rolled-up keyword view from Amazon Brand Analytics SQP. Cohort uses priority tie-break across MSKUs (Branded &gt; Competitor &gt; Must-Win &gt; Generic &gt; Excluded &gt; Others). Share % = the top MSKU's share for that keyword (conservative — captures our best-performing product).</p></div>
+      <div><h2>Keyword Intelligence &middot; Amazon IN</h2><p class="sub">Brand-rolled-up keyword view from Amazon Brand Analytics SQP. Cohort re-classified at brand level (Branded/Competitor/Excluded by text; Generic by Pareto top 80% of cumulative SV; Must-Win by share threshold). Share % = sum of MSKU shares (capped at 100%).</p></div>
     </div>
 
     <!-- Sub-tab nav -->
@@ -2648,9 +2648,9 @@ function renderKWI(r){
     +sortHdr('cohort','Keyword')
     +'<th>Cohort</th>'
     +sortHdr('sv','4W SV','r')
-    +sortHdr('click_share','Top Click Share','r')
-    +sortHdr('cart_share','Top Cart Share','r')
-    +sortHdr('purchase_share','Top Purch Share','r')
+    +sortHdr('click_share','Brand Click Share','r')
+    +sortHdr('cart_share','Brand Cart Share','r')
+    +sortHdr('purchase_share','Brand Purch Share','r')
     +'<th class="r">MSKUs</th>'
     +'<th>Volume Tier</th>'
     +'</tr></thead><tbody>';
