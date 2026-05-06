@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>Terminal6 — Data &amp; Use Case Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAFAF8; --bg-warm: #F5F0EB; --bg-dark: #1C1917; --bg-card: #FFF;
+  --text: #1C1917; --text-mid: #57534E; --text-light: #A8A29E;
+  --accent: #C2410C; --accent-light: #FFF7ED; --accent-bg: rgba(194,65,12,.06);
+  --teal: #0F766E; --teal-light: #F0FDFA; --teal-bg: rgba(15,118,110,.06);
+  --blue: #1565C0; --blue-light: #E3F2FD;
+  --green: #2E7D32; --green-light: #E8F5E9;
+  --purple: #6A1B9A;
+  --border: #E7E5E4;
+  --serif: 'Source Serif 4', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.7; }
+
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(250,250,248,.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+.nav-inner { max-width: 960px; margin: 0 auto; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+.nav-logo { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--accent); text-decoration: none; }
+.nav-tag { font-size: 11px; color: var(--text-light); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; margin-left: 10px; }
+.nav-back { font-size: 13px; color: var(--text-mid); text-decoration: none; }
+.nav-back:hover { color: var(--accent); }
+
+.page { max-width: 960px; margin: 0 auto; padding: 100px 32px 80px; }
+section { margin-bottom: 56px; }
+
+h1 { font-family: var(--serif); font-size: clamp(30px, 4vw, 44px); font-weight: 700; line-height: 1.15; letter-spacing: -1px; margin-bottom: 16px; }
+h2 { font-family: var(--serif); font-size: 26px; font-weight: 600; margin-bottom: 18px; padding-top: 10px; border-top: 2px solid var(--accent); display: inline-block; }
+h3 { font-family: var(--serif); font-size: 19px; font-weight: 600; margin: 24px 0 10px; }
+h4 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 8px; }
+p { margin-bottom: 14px; color: var(--text-mid); font-size: 15px; }
+ul, ol { margin: 12px 0 18px 22px; color: var(--text-mid); font-size: 15px; }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+em { font-style: italic; }
+code { font-family: var(--mono); font-size: 12.5px; background: var(--bg-warm); padding: 1px 6px; border-radius: 3px; color: var(--text); }
+.lead { font-size: 17px; color: var(--text-mid); line-height: 1.7; margin-bottom: 28px; }
+.label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 12px; }
+
+.hero { text-align: center; padding: 30px 0 36px; }
+.hero h1 { max-width: 720px; margin: 0 auto 14px; }
+.hero .lead { max-width: 660px; margin: 0 auto 24px; }
+.hero-meta { display: flex; gap: 18px; justify-content: center; font-size: 12px; color: var(--text-light); flex-wrap: wrap; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 14px 0 22px; background: var(--bg-card); border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+th { text-align: left; padding: 10px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-light); border-bottom: 1px solid var(--border); font-weight: 600; background: var(--bg-warm); }
+td { padding: 10px 14px; border-bottom: 1px solid #f0eeea; color: var(--text-mid); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+td code { font-size: 12px; }
+
+.code-block { background: var(--bg-dark); color: #e8e5e0; border-radius: 10px; padding: 18px 22px; font-family: var(--mono); font-size: 12.5px; line-height: 1.8; overflow-x: auto; margin: 14px 0 22px; white-space: pre; }
+.diagram { background: var(--bg-warm); border: 1px solid var(--border); border-radius: 10px; padding: 22px 26px; margin: 16px 0 22px; font-family: var(--mono); font-size: 12.5px; line-height: 1.85; overflow-x: auto; white-space: pre; color: var(--text); }
+
+.layer-stack { display: flex; flex-direction: column; gap: 4px; margin: 16px 0 22px; }
+.layer-row { display: grid; grid-template-columns: 60px 180px 1fr; gap: 0; border-radius: 8px; overflow: hidden; font-size: 13.5px; }
+.layer-id { padding: 14px; font-family: var(--mono); font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.layer-name { padding: 14px; font-weight: 600; background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; }
+.layer-desc { padding: 14px; color: var(--text-mid); background: var(--bg-card); border: 1px solid var(--border); border-left: none; display: flex; align-items: center; font-size: 13.5px; }
+
+.steps { counter-reset: step; padding-left: 0; list-style: none; margin: 16px 0 22px; }
+.steps li { counter-increment: step; padding: 10px 0 10px 44px; position: relative; border-bottom: 1px solid #f0eeea; color: var(--text-mid); font-size: 14px; }
+.steps li:last-child { border-bottom: none; }
+.steps li::before { content: counter(step); position: absolute; left: 0; top: 10px; width: 28px; height: 28px; border-radius: 6px; background: var(--accent); color: #fff; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; font-family: var(--sans); }
+.steps li strong { display: block; color: var(--text); margin-bottom: 2px; }
+
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 10.5px; font-weight: 600; letter-spacing: .3px; }
+.badge-live { background: var(--green-light); color: var(--green); }
+.badge-roadmap { background: var(--accent-light); color: var(--accent); }
+.badge-todo { background: var(--bg-warm); color: var(--text-mid); }
+
+.callout { background: var(--accent-bg); border-left: 3px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14px; color: var(--text-mid); }
+.callout strong { color: var(--text); }
+
+.kv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0 22px; }
+.kv-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.kv-card .k { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-light); margin-bottom: 4px; }
+.kv-card .v { font-family: var(--mono); font-size: 16px; font-weight: 600; color: var(--text); }
+
+footer { text-align: center; padding: 36px 32px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-light); }
+footer a { color: var(--accent); text-decoration: none; }
+
+@media print { nav { display: none; } .page { padding-top: 20px; } }
+@media (max-width: 768px) {
+  .layer-row { grid-template-columns: 60px 1fr; }
+  .layer-row .layer-desc { grid-column: 1 / -1; border-left: 1px solid var(--border); border-top: none; }
+  .kv { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/home.html" class="nav-logo">Terminal6</a>
+    <a href="/home.html" class="nav-back">&larr; Workspace</a>
+  </div>
+</nav>
+
+<div class="page">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="label">Data &amp; Use Case Architecture</div>
+  <h1>How Terminal6 turns multi-channel commerce data into agent reasoning</h1>
+  <p class="lead">A walk-through of how data is stored, how reusable computation is built on top of it, and how those pieces are combined to answer operator questions.</p>
+  <div class="hero-meta">
+    <span>May 2026</span>
+    <span>Live agent: Amazon Performance Marketing</span>
+    <span>contact@terminal6.io</span>
+  </div>
+</section>
+
+<!-- 1. THE PROBLEM -->
+<section>
+  <h2>1. The problem</h2>
+  <p>A brand selling on Amazon, Shopify, Flipkart, Meta, Google, GA4, and Unicommerce gets data in seven formats. Answering <em>"why did Amazon revenue drop 35% yesterday"</em> today requires pulling and reconciling numbers from each tool, identifying which channel and products moved, and diagnosing the cause across paid, organic, inventory, pricing, and returns. Terminal6 does each of these in code.</p>
+  <p>The system has three parts:</p>
+  <ol>
+    <li>A database that stores all channels in the same shape.</li>
+    <li>A set of small Python modules, each computing one signal.</li>
+    <li>Markdown skill files that describe how to investigate a specific question. An LLM reads them; the system fetches the declared data; the skill writes a structured answer.</li>
+  </ol>
+</section>
+
+<!-- 2. FOUR LAYERS -->
+<section>
+  <h2>2. The database — four layers</h2>
+  <div class="layer-stack">
+    <div class="layer-row">
+      <div class="layer-id" style="background:var(--green)">A</div>
+      <div class="layer-name">Raw</div>
+      <div class="layer-desc">Untouched API responses, one row per call. Audit + replay.</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:var(--teal)">B</div>
+      <div class="layer-name">Canonical</div>
+      <div class="layer-desc">35+ tables, all channels in one shape. Single FK hub (<code>channel_listing_id</code>) so cross-channel queries are one join.</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:var(--blue)">C</div>
+      <div class="layer-name">Computed</div>
+      <div class="layer-desc">Derived signals materialised as tables (z-scores, P&amp;L per ASIN, keyword cohorts, listing health, etc.).</div>
+    </div>
+    <div class="layer-row">
+      <div class="layer-id" style="background:var(--accent)">D</div>
+      <div class="layer-name">Decisions</div>
+      <div class="layer-desc">Every agent run writes a row: which skill, what input, what output, parent run. Full audit tree.</div>
+    </div>
+  </div>
+
+  <h3>Layer C — building blocks</h3>
+  <p>Layer C is where the building blocks live. Examples:</p>
+  <ul>
+    <li><code>unit_economics.py</code> &rarr; <code>asin_unit_economics</code> (per-ASIN ASP, COGS, CM2, CM3, return rate)</li>
+    <li><code>keyword_classification.py</code> &rarr; <code>keyword_classifications</code> (Branded / Must-Win / Generic / Competitor)</li>
+    <li><code>creative_classification.py</code> &rarr; 7-bucket Meta creative tags</li>
+    <li><code>listing_health.py</code> &rarr; cross-channel listing scores</li>
+    <li><code>realtime_pnl.py</code> &rarr; per-ASIN profit before settlement reconciles</li>
+  </ul>
+  <p>There are 17 such modules. Each is 100&ndash;400 lines, has one responsibility, runs daily, writes one table.</p>
+
+  <div class="callout"><strong>Rule:</strong> a Layer C table earns its existence if it (a) changes grain, (b) joins two or more Layer B sources, or (c) derives a novel signal. Same-grain derived columns belong on the canonical Layer B table.</div>
+</section>
+
+<!-- 3. SKILLS -->
+<section>
+  <h2>3. The reasoning layer — skills</h2>
+  <p>The data layers are deterministic code. The reasoning layer uses an LLM with one principle: <strong>the LLM does not decide what data to fetch.</strong> A markdown skill file declares its inputs; the system fetches them; the LLM reads the data and writes an answer.</p>
+
+  <p>Every skill follows the same structure:</p>
+  <div class="code-block"># Skill: &lt;name&gt;
+## Trigger          — when this skill runs
+## Context Required — which knowledge cards to load
+## Data Required    — exact tables and fields needed (per factor)
+## Decision Logic   — factors to check, in order
+## Actions          — what the skill can recommend
+## Edge Cases       — when to mark inconclusive</div>
+
+  <p>Skill files never name a brand. Brand-specific facts live in <strong>knowledge cards</strong>:</p>
+  <ul>
+    <li><strong>Brand card</strong> &mdash; categories, channels, target ACoS, fulfilment model</li>
+    <li><strong>Category card</strong> &mdash; how a category behaves (mobile accessories: long-tail, high substitution; kids' lunch: head category, individual SKU tracking matters)</li>
+    <li><strong>Region card</strong> &mdash; market context (India: salary cycle drives 1st-of-month spike, COD %, return-rate norms)</li>
+  </ul>
+
+  <p>Skills are organised in 4 levels: L0 brand-head triage, L1 senior managers (marketing, operations, finance, category, channels), L2 channels, L3 function skills under a channel. About 150 skill files today.</p>
+</section>
+
+<!-- 4. WORKED EXAMPLE -->
+<section>
+  <h2>4. Worked example &mdash; Amazon Performance Marketing agent</h2>
+  <p>In production for Basil today. Operators trigger it on demand from the dashboard.</p>
+
+  <h3>The 8 reasoning steps</h3>
+  <p>Skill: <code>skills/sr_marketing/ads_review.md</code></p>
+  <ol class="steps">
+    <li><strong>Portfolio baseline</strong>TACoS, ROAS, organic share of revenue.</li>
+    <li><strong>MSKU family profitability</strong>CM2/CM3 per family, not per variant.</li>
+    <li><strong>Stock-constrained ASINs</strong>Running ads with under 14 days of cover.</li>
+    <li><strong>Bleeders</strong>CM3 below 0% or ACoS above 100%.</li>
+    <li><strong>Root-cause</strong>Decompose into CPC &times; CTR &times; revenue-per-click.</li>
+    <li><strong>Search term &amp; ASIN drill-down</strong>Zero-sale search terms, ASINs in wrong campaigns.</li>
+    <li><strong>Underfunded winners</strong>High-ROAS campaigns with impression headroom.</li>
+    <li><strong>SERP cannibalisation</strong>Paying for keywords where own ASIN ranks organic top-5.</li>
+  </ol>
+
+  <h3>Output</h3>
+  <p>JSON with summary, health score (0&ndash;100), and six prioritised lists &mdash; bleeders, low-stock pause, wasted spend, cannibalisation risk, scalers, overstock push. Each item has entity, numbers, reason, recommended action.</p>
+
+  <h3>The 9 data inputs, mapped to layers</h3>
+  <table>
+    <thead><tr><th>#</th><th>Input</th><th>Source</th><th>Layer</th></tr></thead>
+    <tbody>
+      <tr><td>1, 2</td><td>Campaign + per-ASIN performance</td><td><code>amazon_campaign_metrics</code></td><td>B</td></tr>
+      <tr><td>3</td><td>Search term performance</td><td><code>amazon_search_term_harvest</code></td><td>B</td></tr>
+      <tr><td>5</td><td>Brand revenue and units</td><td><code>daily_item_sales</code></td><td>B</td></tr>
+      <tr><td>6</td><td>Organic + sponsored SERP positions</td><td><code>daily_serp_rankings</code></td><td>B</td></tr>
+      <tr><td>4, 9</td><td>MSKU family + per-ASIN economics</td><td><code>asin_unit_economics</code></td><td>C</td></tr>
+      <tr><td>7</td><td>Cannibalisation classification</td><td>runtime &rarr; <code>campaign_efficiency_daily</code></td><td>C</td></tr>
+      <tr><td>8</td><td>Impact summary (&#8377;)</td><td>runtime &rarr; <code>campaign_impact_summary</code></td><td>C</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Layer C tables this agent (and its sub-skills) read from</h3>
+  <table>
+    <thead><tr><th>Table</th><th>Grain</th><th>What it holds</th><th>State</th></tr></thead>
+    <tbody>
+      <tr><td><code>asin_unit_economics</code></td><td>(asin, date)</td><td>Per-ASIN CM2, CM3, ASP, COGS, return rate</td><td><span class="badge badge-live">Live</span></td></tr>
+      <tr><td><code>daily_channel_summary</code></td><td>(channel, date)</td><td>Cross-channel revenue, ad spend, ROAS, TACoS</td><td><span class="badge badge-live">Live</span></td></tr>
+      <tr><td><code>listing_health_snapshots</code></td><td>(channel_listing, date)</td><td>Listing score, Buy Box %, content quality, rating</td><td><span class="badge badge-live">Live</span></td></tr>
+      <tr><td><code>keyword_intelligence_daily</code></td><td>(keyword, date)</td><td>Cohort + organic/sponsored rank + search volume</td><td><span class="badge badge-roadmap">Roadmap</span></td></tr>
+      <tr><td><code>asin_forward_cover</code></td><td>(asin, date)</td><td>Stock, velocity, days-of-cover, projected stock-out</td><td><span class="badge badge-todo">To materialise</span></td></tr>
+      <tr><td><code>campaign_efficiency_daily</code></td><td>(campaign, date)</td><td>Spend, ACoS, CM3, cannibalisation classification</td><td><span class="badge badge-todo">To materialise</span></td></tr>
+      <tr><td><code>campaign_impact_summary</code></td><td>(campaign, date)</td><td>&#8377; margin destroyed, lost revenue, scaler upside</td><td><span class="badge badge-todo">To materialise</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="kv">
+    <div class="kv-card"><div class="k">Run cost</div><div class="v">~&#8377;10</div></div>
+    <div class="kv-card"><div class="k">Wall time</div><div class="v">~30 sec</div></div>
+    <div class="kv-card"><div class="k">Cadence</div><div class="v">On-demand</div></div>
+  </div>
+
+  <p>Layer D: the run writes one row to <code>agent_recommendations</code>. Operator clicks (accept / dismiss) are recorded too. Every recommendation is replayable and auditable.</p>
+</section>
+
+<!-- 5. SKILL EVOLUTION -->
+<section>
+  <h2>5. Skill structure &mdash; today and evolution</h2>
+  <p><strong>Today</strong> the agent is a single skill file. The runner loads <code>ads_review.md</code> (~3.2K tokens) as system prompt + the 9-input brief as user message. One LLM call. Done.</p>
+
+  <p><strong>Tomorrow</strong> the monolith splits. Each function becomes its own skill file:</p>
+  <div class="diagram">sr_marketing/
+├── triage.md           (gate — is anything wrong with marketing today?)
+├── investigate.md       (cross-channel parent — invokes channel agents)
+└── ads_review.md        (today's monolith — splits into channel agents below)
+
+channels/amazon/ppc/
+├── investigate.md
+├── keyword_intelligence.md   (search terms, cohorts, harvest)
+├── structure_audit.md        (campaign sprawl, ad-group hygiene)
+├── bid_optimization.md       (bids constrained by margin + cover)
+└── creative_audit.md         (image quality, listing fixes)
+
+channels/meta_ads/    (same pattern)
+channels/google_ads/  (same pattern)</div>
+
+  <h3>Sub-skills read different subsets of Layer C</h3>
+  <div class="diagram">keyword_intelligence  → keyword_intelligence_daily + amazon_search_term_harvest
+                        + asin_unit_economics
+structure_audit       → campaign_efficiency_daily + amazon_campaign_metrics
+bid_optimization      → campaign_efficiency_daily + asin_unit_economics
+                        + asin_forward_cover + keyword_intelligence_daily
+creative_audit        → listing_health_snapshots + product_reviews</div>
+
+  <p>Each sub-skill pulls only what its Data Required declares. Token budget per sub-skill stays bounded. The materialised tables compound: <code>asin_unit_economics</code> is read by 3 sub-skills; <code>campaign_efficiency_daily</code> by 4. Building each table once pays for itself across the marketing function &mdash; and the same tables serve operations, finance, and category sub-skills downstream.</p>
+
+  <p>The skill itself becomes brand-agnostic. The same <code>keyword_intelligence.md</code> works for a kids' lunch brand in India and a pet food brand in the US &mdash; the brand card and region card differ; the skill does not. Every new brand onboarded benefits from every skill ever written.</p>
+</section>
+
+<!-- 6. HORIZONTAL SCALING -->
+<section>
+  <h2>6. Scaling the answer &mdash; adding data inputs (horizontal)</h2>
+  <p>Each new input wired in makes the diagnosis sharper. Examples not in the brief today:</p>
+  <ul>
+    <li><strong>Competitor price tracking</strong> &mdash; distinguish "we were undercut" from "creative fatigue"</li>
+    <li><strong>Buy Box win-rate per day</strong> &mdash; catch ad spend lost to a competitor winning the box</li>
+    <li><strong>Returns by reason per ASIN</strong> &mdash; fixable (defect, listing) vs. structural (sizing)</li>
+    <li><strong>Customer LTV per first-purchase ASIN</strong> &mdash; reframe a "high-CAC scaler" as profitable if LTV exceeds payback</li>
+  </ul>
+  <p>Pattern: new compute module &rarr; new Layer C table &rarr; new row in skill's Data Required. Cost grows linearly with brief size (~100&ndash;300 tokens per input). Output structure unchanged.</p>
+</section>
+
+<!-- 7. HIERARCHICAL SCALING -->
+<section>
+  <h2>7. Scaling hierarchically &mdash; agents that invoke agents (vertical)</h2>
+  <p>Today the Amazon agent is a leaf. The next build is a parent <strong>Senior Marketing</strong> agent that runs the four channel leaves (Amazon, Meta, Google, Shopify) in parallel and synthesises their outputs.</p>
+
+  <p>The parent's Data Required does not list raw tables &mdash; it lists <em>child agent outputs</em>. Each child returns its 6-bucket JSON. The parent reads those four JSONs (~2K tokens each) and reasons cross-channel: which channels are over- or under-funded, where to reallocate, where the same customer is being targeted on multiple channels at once.</p>
+
+  <p>A full multi-channel marketing review costs roughly 4 &times; &#8377;10 (children) + &#8377;15 (parent) &asymp; <strong>&#8377;55</strong>.</p>
+
+  <p>The same pattern compounds upward to a daily morning brief:</p>
+
+  <div class="diagram">L0  Brand Head — produces the morning brief
+    ├── L1  Senior Marketing
+    │       ├── Amazon  (running today)
+    │       ├── Meta    (data flowing, agent partial)
+    │       ├── Google  (data flowing, agent partial)
+    │       └── Shopify (data flowing, agent stub)
+    ├── L1  Senior Operations  (Inventory, Returns, Fulfilment)
+    ├── L1  Senior Finance     (P&L health, Working capital)
+    ├── L1  Senior Category
+    └── L1  Senior Channels</div>
+
+  <p>A full daily brief is a tree of 20&ndash;30 agent invocations. L0 triage decides which branches fire &mdash; calm day ~&#8377;15, active day ~&#8377;80. Cost tracks situation complexity, not batch size.</p>
+</section>
+
+<!-- 8. ONBOARDING -->
+<section>
+  <h2>8. Onboarding a new brand</h2>
+  <p>3 DB inserts (<code>BrandProfile</code>, <code>brand_users</code>, <code>oauth_tokens</code> per channel) + 1 new brand card. Same skills, same compute modules, same schema. Tested with Dish Dash &mdash; zero to running daily in under a day.</p>
+</section>
+
+<!-- 9. WHY THIS MATTERS -->
+<section>
+  <h2>9. Why this matters</h2>
+  <ol>
+    <li><strong>Predictable cost.</strong> Token budgets bounded by skill + brief size, both declared. Per-brand-per-day cost can be quoted in advance.</li>
+    <li><strong>Auditable reasoning.</strong> Every recommendation traces to a tree of rows in <code>decision_records</code>, each linked to the data it received.</li>
+    <li><strong>Reusable pieces.</strong> 17 compute modules + ~150 skill files apply to every brand, every channel, every question that fits the pattern.</li>
+    <li><strong>Two scaling axes that compound.</strong> Agents get sharper as more data is wired in (horizontal). Agents become building blocks for larger agents above them (hierarchical).</li>
+  </ol>
+</section>
+
+</div>
+
+<footer>
+  <p>Terminal6 &middot; <a href="mailto:contact@terminal6.io">contact@terminal6.io</a> &middot; <a href="/home.html">Workspace</a></p>
+</footer>
+
+</body>
+</html>
