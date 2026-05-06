@@ -2096,11 +2096,18 @@ function _aggAdsByDate(rows){
   var byDate={};
   rows.forEach(function(x){
     var d=x.date;
-    if(!byDate[d]) byDate[d]={spend:0,impressions:0,clicks:0,attr_sales:0};
+    if(!byDate[d]) byDate[d]={spend:0,impressions:0,clicks:0,attr_sales:0,by_ad_type:{}};
     byDate[d].spend+=(x.spend||0);
     byDate[d].impressions+=(x.impressions||0);
     byDate[d].clicks+=(x.clicks||0);
     byDate[d].attr_sales+=(x.attributed_sales||0);
+    // Per-ad-type breakdown for the expandable Spend row.
+    var t=x.ad_type||'OTHER';
+    if(!byDate[d].by_ad_type[t]) byDate[d].by_ad_type[t]={spend:0,impressions:0,clicks:0,attr_sales:0};
+    byDate[d].by_ad_type[t].spend+=(x.spend||0);
+    byDate[d].by_ad_type[t].impressions+=(x.impressions||0);
+    byDate[d].by_ad_type[t].clicks+=(x.clicks||0);
+    byDate[d].by_ad_type[t].attr_sales+=(x.attributed_sales||0);
   });
   // Compute derived metrics
   Object.keys(byDate).forEach(function(d){
@@ -2114,8 +2121,19 @@ function _aggAdsByDate(rows){
 }
 
 function _sumAdsRows(rows){
-  var s={spend:0,impressions:0,clicks:0,attr_sales:0};
-  rows.forEach(function(r){s.spend+=r.spend;s.impressions+=r.impressions;s.clicks+=r.clicks;s.attr_sales+=r.attr_sales;});
+  var s={spend:0,impressions:0,clicks:0,attr_sales:0,by_ad_type:{}};
+  rows.forEach(function(r){
+    s.spend+=r.spend;s.impressions+=r.impressions;s.clicks+=r.clicks;s.attr_sales+=r.attr_sales;
+    if(r.by_ad_type){
+      Object.keys(r.by_ad_type).forEach(function(t){
+        if(!s.by_ad_type[t]) s.by_ad_type[t]={spend:0,impressions:0,clicks:0,attr_sales:0};
+        s.by_ad_type[t].spend+=(r.by_ad_type[t].spend||0);
+        s.by_ad_type[t].impressions+=(r.by_ad_type[t].impressions||0);
+        s.by_ad_type[t].clicks+=(r.by_ad_type[t].clicks||0);
+        s.by_ad_type[t].attr_sales+=(r.by_ad_type[t].attr_sales||0);
+      });
+    }
+  });
   s.ctr_pct=s.impressions?s.clicks/s.impressions*100:null;
   s.acos_pct=s.attr_sales?s.spend/s.attr_sales*100:null;
   s.roas=s.spend?s.attr_sales/s.spend:null;
@@ -2167,6 +2185,23 @@ function _buildAdsCols(byDate, gran){
   return cols;
 }
 
+// Per-prefix expand state for breakdown-capable rows (currently: Spend).
+var _adsExpand={az:{spend:false}, gd:{spend:false}};
+var _AD_TYPE_SUBROWS={az:[
+  {key:'SP', label:'Sponsored Products'},
+  {key:'SB', label:'Sponsored Brands'},
+  {key:'SD', label:'Sponsored Display'},
+], gd:[
+  {key:'GOOGLE_PMAX',     label:'PMax'},
+  {key:'GOOGLE_SHOPPING', label:'Shopping'},
+  {key:'GOOGLE_SEARCH',   label:'Search'},
+]};
+function toggleAdsExpand(prefix, key){
+  if(!_adsExpand[prefix]) _adsExpand[prefix]={};
+  _adsExpand[prefix][key]=!_adsExpand[prefix][key];
+  _renderAdsTransposed(prefix);
+}
+
 function _renderAdsTransposed(prefix){
   var rows=_adsRawCache[prefix]||[];
   var el=document.getElementById(prefix+'-daily');
@@ -2178,6 +2213,8 @@ function _renderAdsTransposed(prefix){
   // it always shows last 7 days/weeks + MTD + 3 prior months as long-context.
   // The Day/Week pill above this table is its only control.
   var cols=_buildAdsCols(byDate, gran);
+  var subRows=_AD_TYPE_SUBROWS[prefix]||[];
+  var spendOpen=!!(_adsExpand[prefix]&&_adsExpand[prefix].spend);
 
   var html='<table class="tbl"><thead><tr><th>Metric</th>';
   for(var c=0;c<cols.length;c++){
@@ -2187,7 +2224,13 @@ function _renderAdsTransposed(prefix){
   html+='</tr></thead><tbody>';
   for(var m=0;m<metrics.length;m++){
     var met=metrics[m];
-    html+='<tr><td class="hi">'+met.label+(met.tip?(' '+tip(met.tip)):'')+'</td>';
+    var isSpend=met.key==='spend' && subRows.length>0;
+    var labelHtml=met.label+(met.tip?(' '+tip(met.tip)):'');
+    if(isSpend){
+      var chev=spendOpen?'&#9662;':'&#9656;';
+      labelHtml='<span style="cursor:pointer;user-select:none" onclick="toggleAdsExpand(\''+prefix+'\',\'spend\')">'+chev+' '+met.label+'</span>'+(met.tip?(' '+tip(met.tip)):'');
+    }
+    html+='<tr><td class="hi">'+labelHtml+'</td>';
     for(var c2=0;c2<cols.length;c2++){
       var val=cols[c2].data[met.key];
       var bg='';
@@ -2210,6 +2253,21 @@ function _renderAdsTransposed(prefix){
       html+='<td class="mn2 r"'+style+'>'+met.fn(val)+'</td>';
     }
     html+='</tr>';
+    // Sub-rows: per-ad-type Spend breakdown when Spend is expanded.
+    if(isSpend && spendOpen){
+      for(var s=0;s<subRows.length;s++){
+        var sr=subRows[s];
+        html+='<tr style="background:#fafafa"><td class="hi" style="padding-left:24px;color:var(--t2);font-size:11.5px">&#x2514; '+sr.label+'</td>';
+        for(var cc=0;cc<cols.length;cc++){
+          var bat=cols[cc].data.by_ad_type||{};
+          var sval=bat[sr.key]?bat[sr.key].spend:null;
+          var bl3=cols[cc].cls==='az-mtd'?'border-left:2px solid var(--border);':'';
+          var st=bl3?' style="'+bl3+'"':'';
+          html+='<td class="mn2 r" style="font-size:11.5px;color:var(--t2);'+(bl3||'')+'">'+(sval==null||sval===0?'—':cur(sval))+'</td>';
+        }
+        html+='</tr>';
+      }
+    }
   }
   html+='</tbody></table>';
   el.innerHTML=html;
