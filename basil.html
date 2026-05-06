@@ -2122,18 +2122,12 @@ function _sumAdsRows(rows){
   return s;
 }
 
-function _buildAdsCols(byDate, gran, rangeFrom, rangeTo){
-  var allDates=Object.keys(byDate).sort().reverse();
-  // For Amazon, restrict the daily/weekly cols to the selected pill range.
-  // Google still uses the trailing-7-cols behaviour (rangeFrom/rangeTo undefined).
-  var dates=(rangeFrom && rangeTo)
-    ? allDates.filter(function(d){return d>=rangeFrom && d<=rangeTo;})
-    : allDates;
+function _buildAdsCols(byDate, gran){
+  var dates=Object.keys(byDate).sort().reverse();
   var cols=[];
 
   if(gran==='day'){
-    var maxDailyCols=(rangeFrom && rangeTo) ? dates.length : Math.min(7,dates.length);
-    for(var i=0;i<maxDailyCols;i++){
+    for(var i=0;i<Math.min(7,dates.length);i++){
       cols.push({label:shortD(dates[i]), data:byDate[dates[i]]});
     }
   } else {
@@ -2147,8 +2141,7 @@ function _buildAdsCols(byDate, gran, rangeFrom, rangeTo){
       if(!weeks[key]) weeks[key]=[];
       weeks[key].push(byDate[d]);
     });
-    var wkKeys=Object.keys(weeks).sort().reverse();
-    if(!(rangeFrom && rangeTo)) wkKeys=wkKeys.slice(0,7);
+    var wkKeys=Object.keys(weeks).sort().reverse().slice(0,7);
     wkKeys.forEach(function(k){
       cols.push({label:k.split('-')[1], data:_sumAdsRows(weeks[k])});
     });
@@ -2180,12 +2173,10 @@ function _renderAdsTransposed(prefix){
   var gran=_adsGran[prefix]||'day';
   var metrics=prefix==='az'?_adsMetricsAz:_adsMetricsGd;
   var byDate=_aggAdsByDate(rows);
-  var rangeFrom=null, rangeTo=null;
-  if(prefix==='az' && _amzadsRange.from && _amzadsRange.to){
-    rangeFrom=_amzadsRange.from;
-    rangeTo=_amzadsRange.to;
-  }
-  var cols=_buildAdsCols(byDate, gran, rangeFrom, rangeTo);
+  // Trend table is intentionally decoupled from the date-range pills above —
+  // it always shows last 7 days/weeks + MTD + 3 prior months as long-context.
+  // The Day/Week pill above this table is its only control.
+  var cols=_buildAdsCols(byDate, gran);
 
   var html='<table class="tbl"><thead><tr><th>Metric</th>';
   for(var c=0;c<cols.length;c++){
