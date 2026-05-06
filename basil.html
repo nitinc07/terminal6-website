@@ -445,8 +445,23 @@
 
     <!-- SUB-TAB: Campaigns -->
     <div class="iv-sub" id="adss-campaigns">
-      <!-- Filter row -->
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+
+      <!-- KPI strip — bound to YESTERDAY (independent of date pill below) -->
+      <div class="g4" style="margin-bottom:20px">
+        <div class="cd"><div class="kl">Active Campaigns</div><div class="kv" id="camp-kpi-count">--</div><div class="kd n" id="camp-kpi-count-sub">currently enabled</div></div>
+        <div class="cd"><div class="kl">Total Daily Budget</div><div class="kv" id="camp-kpi-budget">--</div><div class="kd n" id="camp-kpi-budget-sub">sum of latest snapshots</div></div>
+        <div class="cd"><div class="kl">Yesterday Spend</div><div class="kv" id="camp-kpi-spend">--</div><div class="kd n" id="camp-kpi-spend-sub">&nbsp;</div></div>
+        <div class="cd"><div class="kl">Yesterday ROAS</div><div class="kv" id="camp-kpi-roas">--</div><div class="kd n" id="camp-kpi-roas-sub">SP=1d, SB/SD=7d</div></div>
+      </div>
+
+      <!-- Filters — sit just above the table; only affect the table -->
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <div class="pills" id="campAdTypeFilter">
+          <button data-adtype="SP">SP</button>
+          <button data-adtype="SD">SD</button>
+          <button data-adtype="SB">SB</button>
+          <button class="a" data-adtype="all">All</button>
+        </div>
         <div class="pills" id="campRangePills">
           <button data-range="yesterday">Yesterday</button>
           <button class="a" data-range="7d">7D</button>
@@ -454,20 +469,14 @@
           <button data-range="1m">1M</button>
           <button data-range="custom">Custom</button>
         </div>
-        <div class="pills" id="campAdTypeFilter">
-          <button data-adtype="SP">SP</button>
-          <button data-adtype="SD">SD</button>
-          <button data-adtype="SB">SB</button>
-          <button class="a" data-adtype="all">All</button>
-        </div>
         <div class="pills" id="campStateFilter">
           <button class="a" data-state="enabled">Active</button>
           <button data-state="paused">Paused</button>
           <button data-state="all">All</button>
         </div>
-        <input type="text" id="campSearch" placeholder="Search campaigns…" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:240px;margin-left:auto">
+        <input type="text" id="campSearch" placeholder="Search campaigns…" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;min-width:220px;margin-left:auto">
       </div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
         <div class="pills" id="campIntentFilter">
           <button class="a" data-intent="all">All intents</button>
           <button data-intent="Branded">Branded</button>
@@ -475,23 +484,13 @@
           <button data-intent="Generic">Generic</button>
           <button data-intent="Competitor">Competitor</button>
           <button data-intent="Auto Discovery">Auto</button>
-          <button data-intent="Product Targeting">Product Targeting</button>
-          <button data-intent="Brand Showcase">Brand Showcase</button>
           <button data-intent="Unclassified">Unclassified</button>
         </div>
       </div>
-      <div id="campCustomRange" style="display:none;align-items:center;gap:8px;margin-bottom:14px;font-size:12px">
+      <div id="campCustomRange" style="display:none;align-items:center;gap:8px;margin-bottom:10px;font-size:12px">
         From <input type="date" id="campFrom" style="padding:4px 6px;border:1px solid var(--border);border-radius:4px">
         To <input type="date" id="campTo" style="padding:4px 6px;border:1px solid var(--border);border-radius:4px">
         <button class="btn" onclick="applyCampCustomRange()" style="font-size:12px;padding:4px 12px">Apply</button>
-      </div>
-
-      <!-- KPI strip -->
-      <div class="g4" style="margin-bottom:20px">
-        <div class="cd"><div class="kl">Active Campaigns</div><div class="kv" id="camp-kpi-count">--</div><div class="kd n" id="camp-kpi-count-sub">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Total Daily Budget</div><div class="kv" id="camp-kpi-budget">--</div><div class="kd n" id="camp-kpi-budget-sub">sum of latest snapshots</div></div>
-        <div class="cd"><div class="kl">Window Spend</div><div class="kv" id="camp-kpi-spend">--</div><div class="kd n" id="camp-kpi-spend-sub">&nbsp;</div></div>
-        <div class="cd"><div class="kl">Blended ROAS</div><div class="kv" id="camp-kpi-roas">--</div><div class="kd n" id="camp-kpi-roas-sub">SP=1d, SB/SD=7d</div></div>
       </div>
 
       <!-- Per-campaign table -->
@@ -1970,7 +1969,7 @@ function applyCampCustomRange(){
   if(!f||!t){alert('Pick both From and To dates'); return;}
   if(f>t){alert('From must be on or before To'); return;}
   _campState.range={label:'custom', from:f, to:t};
-  loadCampaigns();
+  loadCampaignsTable();
 }
 function _campRangeLabel(r){
   if(!r||!r.from||!r.to) return '';
@@ -1978,6 +1977,17 @@ function _campRangeLabel(r){
   return r.from+' → '+r.to;
 }
 function loadCampaigns(){
+  loadCampaignsKpis();
+  loadCampaignsTable();
+}
+function loadCampaignsKpis(){
+  // KPIs are bound to YESTERDAY, regardless of the date-range pill below.
+  var y=_resolveCampRange('yesterday');
+  api('/v1/amazon/campaigns/list?from='+y.from+'&to='+y.to+'&ad_type=all&state=all')
+    .then(renderCampaignsKpis)
+    .catch(function(e){ console.error('Campaigns KPIs failed', e); });
+}
+function loadCampaignsTable(){
   var rs=_campState.range.label==='custom'
     ? {from:_campState.range.from, to:_campState.range.to}
     : _resolveCampRange(_campState.range.label);
@@ -2000,20 +2010,25 @@ function _campSort(col){
   else { _campState.sort.col=col; _campState.sort.dir='desc'; }
   renderCampaigns({data:_campState.data});
 }
+function renderCampaignsKpis(r){
+  // KPI strip — all-data, all-states, yesterday window. Active count comes
+  // from the metadata snapshot (state='ENABLED'), budget likewise.
+  var rows=(r&&r.data)||[];
+  var totalActive=rows.filter(c=>(c.state||'').toLowerCase()==='enabled').length;
+  var totalBudget=rows.reduce(function(a,c){return a+((c.state||'').toLowerCase()==='enabled' && c.daily_budget?c.daily_budget:0);},0);
+  var ydaySpend=rows.reduce(function(a,c){return a+(c.spend||0);},0);
+  var ydaySales=rows.reduce(function(a,c){return a+(c.sales||0);},0);
+  document.getElementById('camp-kpi-count').textContent=fmt(totalActive);
+  document.getElementById('camp-kpi-budget').textContent=cur(totalBudget);
+  document.getElementById('camp-kpi-spend').textContent=cur(ydaySpend);
+  document.getElementById('camp-kpi-spend-sub').textContent=(r&&r.from)||'';
+  document.getElementById('camp-kpi-roas').textContent=ydaySpend?(ydaySales/ydaySpend).toFixed(2)+'x':'--';
+  document.getElementById('camp-kpi-roas-sub').textContent='sales ÷ spend (yesterday)';
+}
+
 function renderCampaigns(r){
   var rows=(r&&r.data)||[];
   _campState.data=rows;
-  // KPI strip
-  var totalActive=rows.filter(c=>(c.state||'').toLowerCase()==='enabled').length;
-  var totalBudget=rows.reduce(function(a,c){return a+((c.state||'').toLowerCase()==='enabled' && c.daily_budget?c.daily_budget:0);},0);
-  var totalSpend=rows.reduce(function(a,c){return a+(c.spend||0);},0);
-  var totalSales=rows.reduce(function(a,c){return a+(c.sales||0);},0);
-  document.getElementById('camp-kpi-count').textContent=fmt(totalActive);
-  document.getElementById('camp-kpi-count-sub').textContent='of '+rows.length+' shown';
-  document.getElementById('camp-kpi-budget').textContent=cur(totalBudget);
-  document.getElementById('camp-kpi-spend').textContent=cur(totalSpend);
-  document.getElementById('camp-kpi-roas').textContent=totalSpend?(totalSales/totalSpend).toFixed(2)+'x':'--';
-
   if(!rows.length){document.getElementById('camp-table').innerHTML='<div class="empty">No campaigns match these filters</div>';return;}
 
   // Sort
@@ -3800,35 +3815,35 @@ document.querySelectorAll('.ads-gran-pills').forEach(function(pills){
       return;
     }
     _campState.range={label:label, from:null, to:null};
-    loadCampaigns();
+    loadCampaignsTable();
   });
   var atf=document.getElementById('campAdTypeFilter');
   if(atf) atf.addEventListener('click', function(e){
     var btn=e.target.closest('button');
     if(!btn||!btn.dataset.adtype) return;
     _campState.ad_type=btn.dataset.adtype;
-    loadCampaigns();
+    loadCampaignsTable();
   });
   var stf=document.getElementById('campStateFilter');
   if(stf) stf.addEventListener('click', function(e){
     var btn=e.target.closest('button');
     if(!btn||!btn.dataset.state) return;
     _campState.state=btn.dataset.state;
-    loadCampaigns();
+    loadCampaignsTable();
   });
   var inf=document.getElementById('campIntentFilter');
   if(inf) inf.addEventListener('click', function(e){
     var btn=e.target.closest('button');
     if(!btn||!btn.dataset.intent) return;
     _campState.intent=btn.dataset.intent;
-    loadCampaigns();
+    loadCampaignsTable();
   });
   var sb=document.getElementById('campSearch');
   if(sb){
     var t;
     sb.addEventListener('input', function(){
       clearTimeout(t);
-      t=setTimeout(function(){_campState.search=sb.value.trim(); loadCampaigns();}, 350);
+      t=setTimeout(function(){_campState.search=sb.value.trim(); loadCampaignsTable();}, 350);
     });
   }
   // Future-date guard for the custom inputs
