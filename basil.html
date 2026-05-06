@@ -2687,7 +2687,8 @@ function renderKWI(r){
     +sortHdr('purchase_share','Purch Share','r')
     +'<th class="r">MSKUs</th>'
     +'</tr></thead><tbody>';
-  for(var k of rows){
+  for(var i=0;i<rows.length;i++){
+    var k=rows[i];
     var ic=_COHORT_COLORS[k.cohort]||{bg:'#f9fafb',fg:'#6b7280'};
     var mskuTitle=(k.msku_names||'').replace(/"/g,'&quot;');
     var kwEsc=(k.keyword||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;");
