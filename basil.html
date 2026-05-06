@@ -399,7 +399,19 @@
         <div class="cd"><div class="kl">Blended ROAS</div><div class="kv" id="az-roas">--</div><div class="kd n">attributed / spend</div></div>
       </div>
 
-      <!-- Date-range pill row — applies to By Ad Type + Trend tables below -->
+      <div class="sec">
+        <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <h3>Recent Trend</h3>
+          <div class="pills ads-gran-pills" data-target="az">
+            <button class="a" data-gran="day">Day</button>
+            <button data-gran="week">Week</button>
+          </div>
+        </div>
+        <div id="az-daily" class="loading">Loading...</div>
+      </div>
+
+      <!-- Date-range pill row — applies to the By Ad Type rollup below only.
+           The Recent Trend table above is controlled by its own Day/Week pill. -->
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
         <div class="pills" id="amzadsRangePills">
           <button data-range="yesterday">Yesterday</button>
@@ -420,17 +432,6 @@
       <div class="sec">
         <div class="sec-h"><h3>By Ad Type</h3></div>
         <div id="az-byType" class="loading">Loading...</div>
-      </div>
-
-      <div class="sec">
-        <div class="sec-h" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-          <h3>Trend</h3>
-          <div class="pills ads-gran-pills" data-target="az">
-            <button class="a" data-gran="day">Day</button>
-            <button data-gran="week">Week</button>
-          </div>
-        </div>
-        <div id="az-daily" class="loading">Loading...</div>
       </div>
     </div>
 
