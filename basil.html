@@ -399,6 +399,24 @@
         <div class="cd"><div class="kl">Blended ROAS</div><div class="kv" id="az-roas">--</div><div class="kd n">attributed / spend</div></div>
       </div>
 
+      <!-- Date-range pill row — applies to By Ad Type + Trend tables below -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+        <div class="pills" id="amzadsRangePills">
+          <button data-range="yesterday">Yesterday</button>
+          <button class="a" data-range="7d">7D</button>
+          <button data-range="1w">1W</button>
+          <button data-range="1m">1M</button>
+          <button data-range="custom">Custom</button>
+        </div>
+        <span class="note" id="amzadsRangeNote" style="font-size:12px;color:var(--t2)"></span>
+      </div>
+      <div id="amzadsCustomRange" style="display:none;align-items:center;gap:8px;margin-bottom:14px;font-size:12px">
+        From <input type="date" id="amzadsFrom" max="" style="padding:4px 6px;border:1px solid var(--border);border-radius:4px">
+        To <input type="date" id="amzadsTo" max="" style="padding:4px 6px;border:1px solid var(--border);border-radius:4px">
+        <button class="btn" onclick="applyAmzadsCustomRange()" style="font-size:12px;padding:4px 12px">Apply</button>
+      </div>
+      <script>(function(){var t=new Date(),i=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');document.getElementById('amzadsFrom').max=i;document.getElementById('amzadsTo').max=i;})();</script>
+
       <div class="sec">
         <div class="sec-h"><h3>By Ad Type</h3></div>
         <div id="az-byType" class="loading">Loading...</div>
@@ -1433,8 +1451,9 @@ function sw(id,el){
   if(el) el.classList.add('act');
   document.getElementById('viewTitle').innerHTML=viewTitles[id]||id;
   currentView=id;
-  // Range pills visibility
-  const showPills=['amzads','gads'].includes(id);
+  // Range pills visibility — global pills only show for Google Ads now;
+  // Amazon Ads has its own dedicated date-range pill row.
+  const showPills=['gads'].includes(id);
   document.getElementById('rangePills').style.display=showPills?'flex':'none';
 
   if(id==='mc') loadMultiChannel();
@@ -1832,16 +1851,76 @@ function adsSub(id){
 }
 var _adsGran={az:'day',gd:'day'};  // per-platform granularity
 var _adsRawCache={};               // cache daily data for gran switching
+// Amazon-only date range state (Yesterday / 7D / 1W / 1M / Custom).
+// Google still uses the global #rangePills (range.days).
+var _amzadsRange={label:'7d', from:null, to:null};
+function _isoDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function _resolveAmzadsRange(label){
+  var today=new Date(); today.setHours(0,0,0,0);
+  if(label==='yesterday'){
+    var y=new Date(today); y.setDate(y.getDate()-1);
+    return {from:_isoDate(y), to:_isoDate(y)};
+  }
+  if(label==='7d'){
+    var f=new Date(today); f.setDate(f.getDate()-6);
+    return {from:_isoDate(f), to:_isoDate(today)};
+  }
+  if(label==='1w'){
+    // Last completed ISO week (Mon-Sun, ending most recent Sunday)
+    var dow=today.getDay()||7; // Sun(0)→7
+    var sun=new Date(today); sun.setDate(today.getDate()-dow);
+    var mon=new Date(sun); mon.setDate(sun.getDate()-6);
+    return {from:_isoDate(mon), to:_isoDate(sun)};
+  }
+  if(label==='1m'){
+    var f=new Date(today); f.setDate(f.getDate()-29);
+    return {from:_isoDate(f), to:_isoDate(today)};
+  }
+  return null; // custom — caller sets from/to explicitly
+}
+function _amzadsRangeNote(r){
+  if(!r||!r.from||!r.to) return '';
+  if(r.from===r.to) return r.from;
+  return r.from+' → '+r.to;
+}
+function applyAmzadsCustomRange(){
+  var f=document.getElementById('amzadsFrom').value;
+  var t=document.getElementById('amzadsTo').value;
+  if(!f||!t){alert('Pick both From and To dates'); return;}
+  if(f>t){alert('From must be on or before To'); return;}
+  _amzadsRange={label:'custom', from:f, to:t};
+  loadAds('amazon');
+}
 function loadAds(platform){
+  if(platform==='amazon'){
+    adsSub(_adsSubCurrent);
+    var r=_amzadsRange.label==='custom'
+      ? {from:_amzadsRange.from, to:_amzadsRange.to}
+      : _resolveAmzadsRange(_amzadsRange.label);
+    if(!r) return;
+    _amzadsRange.from=r.from; _amzadsRange.to=r.to;
+    document.getElementById('amzadsRangeNote').textContent=_amzadsRangeNote(r);
+    document.querySelectorAll('#amzadsRangePills button').forEach(function(b){
+      b.classList.toggle('a', b.dataset.range===_amzadsRange.label);
+    });
+    document.getElementById('amzadsCustomRange').style.display=(_amzadsRange.label==='custom')?'flex':'none';
+    var qs='?from='+r.from+'&to='+r.to;
+    api('/v1/amazon/ads-summary'+qs).then(function(resp){renderAdsSummary(resp,'amazon');});
+    // Trend always pulls 120d so MTD + 3mo cols can render; the daily/weekly
+    // cols are then filtered to the selected range inside _renderAdsTransposed.
+    api('/v1/amazon/ads-daily?days=120&platform=amazon').then(function(resp){
+      _adsRawCache.az=resp.data||[];
+      _renderAdsTransposed('az');
+    }).catch(showErr('az-daily'));
+    return;
+  }
+  // Google: keep the global #rangePills behaviour.
   document.querySelectorAll('#rangePills button').forEach(b=>b.classList.toggle('a',+b.dataset.days===range.days));
-  if(platform==='amazon') adsSub(_adsSubCurrent);
   api('/v1/amazon/ads-summary?days='+range.days).then(r=>renderAdsSummary(r,platform));
-  // Fetch 120 days for transposed table (7 days/weeks + MTD + 3 months)
   api('/v1/amazon/ads-daily?days=120&platform='+platform).then(function(r){
-    var prefix=platform==='amazon'?'az':'gd';
-    _adsRawCache[prefix]=r.data||[];
-    _renderAdsTransposed(prefix);
-  }).catch(showErr(platform==='amazon'?'az-daily':'gd-daily'));
+    _adsRawCache.gd=r.data||[];
+    _renderAdsTransposed('gd');
+  }).catch(showErr('gd-daily'));
 }
 
 /* ========== AUDIT INSIGHTS (Amazon) ========== */
@@ -2043,12 +2122,18 @@ function _sumAdsRows(rows){
   return s;
 }
 
-function _buildAdsCols(byDate, gran){
-  var dates=Object.keys(byDate).sort().reverse();
+function _buildAdsCols(byDate, gran, rangeFrom, rangeTo){
+  var allDates=Object.keys(byDate).sort().reverse();
+  // For Amazon, restrict the daily/weekly cols to the selected pill range.
+  // Google still uses the trailing-7-cols behaviour (rangeFrom/rangeTo undefined).
+  var dates=(rangeFrom && rangeTo)
+    ? allDates.filter(function(d){return d>=rangeFrom && d<=rangeTo;})
+    : allDates;
   var cols=[];
 
   if(gran==='day'){
-    for(var i=0;i<Math.min(7,dates.length);i++){
+    var maxDailyCols=(rangeFrom && rangeTo) ? dates.length : Math.min(7,dates.length);
+    for(var i=0;i<maxDailyCols;i++){
       cols.push({label:shortD(dates[i]), data:byDate[dates[i]]});
     }
   } else {
@@ -2062,7 +2147,8 @@ function _buildAdsCols(byDate, gran){
       if(!weeks[key]) weeks[key]=[];
       weeks[key].push(byDate[d]);
     });
-    var wkKeys=Object.keys(weeks).sort().reverse().slice(0,7);
+    var wkKeys=Object.keys(weeks).sort().reverse();
+    if(!(rangeFrom && rangeTo)) wkKeys=wkKeys.slice(0,7);
     wkKeys.forEach(function(k){
       cols.push({label:k.split('-')[1], data:_sumAdsRows(weeks[k])});
     });
@@ -2094,7 +2180,12 @@ function _renderAdsTransposed(prefix){
   var gran=_adsGran[prefix]||'day';
   var metrics=prefix==='az'?_adsMetricsAz:_adsMetricsGd;
   var byDate=_aggAdsByDate(rows);
-  var cols=_buildAdsCols(byDate, gran);
+  var rangeFrom=null, rangeTo=null;
+  if(prefix==='az' && _amzadsRange.from && _amzadsRange.to){
+    rangeFrom=_amzadsRange.from;
+    rangeTo=_amzadsRange.to;
+  }
+  var cols=_buildAdsCols(byDate, gran, rangeFrom, rangeTo);
 
   var html='<table class="tbl"><thead><tr><th>Metric</th>';
   for(var c=0;c<cols.length;c++){
@@ -3407,6 +3498,28 @@ document.querySelectorAll('.ads-gran-pills').forEach(function(pills){
     _renderAdsTransposed(prefix);
   });
 });
+// Amazon Ads date-range pills (Yesterday / 7D / 1W / 1M / Custom)
+(function(){
+  var pills=document.getElementById('amzadsRangePills');
+  if(!pills) return;
+  pills.addEventListener('click', function(e){
+    var btn=e.target.closest('button');
+    if(!btn||!btn.dataset.range) return;
+    var label=btn.dataset.range;
+    if(label==='custom'){
+      // Pre-fill with current resolved range so the picker has sane defaults
+      var f=document.getElementById('amzadsFrom'), t=document.getElementById('amzadsTo');
+      if(f && !f.value && _amzadsRange.from) f.value=_amzadsRange.from;
+      if(t && !t.value && _amzadsRange.to) t.value=_amzadsRange.to;
+      _amzadsRange.label='custom';
+      pills.querySelectorAll('button').forEach(function(b){b.classList.toggle('a',b===btn)});
+      document.getElementById('amzadsCustomRange').style.display='flex';
+      return;
+    }
+    _amzadsRange={label:label, from:null, to:null};
+    loadAds('amazon');
+  });
+})();
 
 /* ========== RANGE PILLS ========== */
 /* ========== P&L ========== */
