@@ -2690,8 +2690,10 @@ function renderKWI(r){
   for(var k of rows){
     var ic=_COHORT_COLORS[k.cohort]||{bg:'#f9fafb',fg:'#6b7280'};
     var mskuTitle=(k.msku_names||'').replace(/"/g,'&quot;');
-    lHtml+='<tr>'
-      +'<td class="hi">'+k.keyword+'</td>'
+    var kwEsc=(k.keyword||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+    lHtml+='<tr id="kwi-row-'+i+'">'
+      +'<td class="hi" style="text-align:left;cursor:pointer;user-select:none" onclick="toggleKwiAsinDetail(\''+kwEsc+'\','+i+')">'
+        +'<span class="kwi-chev" id="kwi-chev-'+i+'" style="display:inline-block;width:12px;color:var(--t3)">&#9656;</span> '+k.keyword+'</td>'
       +'<td><span style="background:'+ic.bg+';color:'+ic.fg+';padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500">'+(k.cohort||'--')+'</span></td>'
       +'<td class="mn2 r">'+fmt(k.search_volume_4w)+'</td>'
       +'<td class="mn2 r">'+fmt(k.impressions||0)+'</td>'
@@ -2709,6 +2711,66 @@ function renderKWI(r){
 function _kwiSort(col){
   _kwiState.sort=col;
   loadKWI();
+}
+
+// Per-keyword ASIN drilldown — fetches and inserts child <tr>s under the
+// parent row. Same column count = exact alignment. Toggle by class.
+function toggleKwiAsinDetail(keyword, idx){
+  var parent=document.getElementById('kwi-row-'+idx);
+  if(!parent) return;
+  var chev=document.getElementById('kwi-chev-'+idx);
+  // If next siblings are already detail rows, remove them.
+  var existing=[];
+  var n=parent.nextElementSibling;
+  while(n && n.classList.contains('kwi-detail-'+idx)){existing.push(n); n=n.nextElementSibling;}
+  if(existing.length){
+    existing.forEach(function(el){el.remove();});
+    if(chev) chev.innerHTML='&#9656;';
+    return;
+  }
+  if(chev) chev.innerHTML='&#9662;';
+  // Loading row (one TD spanning all 9 cols)
+  var loading=document.createElement('tr');
+  loading.className='kwi-detail-'+idx;
+  loading.innerHTML='<td colspan="9" style="padding-left:32px;color:var(--t3);font-size:12px">Loading ASIN breakdown…</td>';
+  parent.parentNode.insertBefore(loading, parent.nextSibling);
+
+  var qs='?keyword='+encodeURIComponent(keyword)
+       +'&period='+_kwiState.period_type
+       +(_kwiState.period_start?('&period_start='+encodeURIComponent(_kwiState.period_start)):'');
+  api('/v1/keywords/asin-detail'+qs).then(function(r){
+    loading.remove();
+    var rows=(r&&r.data)||[];
+    if(!rows.length){
+      var empty=document.createElement('tr');
+      empty.className='kwi-detail-'+idx;
+      empty.innerHTML='<td colspan="9" style="padding-left:32px;color:var(--t3);font-size:12px">No ASIN data for this keyword in the selected period.</td>';
+      parent.parentNode.insertBefore(empty, parent.nextSibling);
+      return;
+    }
+    // Insert in reverse so first ASIN ends up directly under parent
+    for(var i=rows.length-1;i>=0;i--){
+      var a=rows[i];
+      var tr=document.createElement('tr');
+      tr.className='kwi-detail-'+idx;
+      tr.style.background='#fafafa';
+      tr.innerHTML=
+         '<td class="hi" style="padding-left:32px;font-size:11.5px;color:var(--t2);text-align:left">'
+           +'&#x2514; <span class="mn2">'+a.asin+'</span> <span style="color:var(--t3)">'+(a.msku_name||'')+'</span></td>'
+        +'<td></td>'
+        +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+fmt(a.search_volume_4w)+'</td>'
+        +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+fmt(a.impressions)+'</td>'
+        +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+pct(a.impression_share,2)+'</td>'
+        +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+pct(a.click_share,2)+'</td>'
+        +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+pct(a.cart_share,2)+'</td>'
+        +'<td class="mn2 r" style="font-size:11.5px;color:var(--t2)">'+pct(a.purchase_share,2)+'</td>'
+        +'<td></td>';
+      parent.parentNode.insertBefore(tr, parent.nextSibling);
+    }
+  }).catch(function(e){
+    loading.innerHTML='<td colspan="9" style="padding-left:32px;color:var(--r);font-size:12px">Failed to load ASIN breakdown.</td>';
+    console.error('asin-detail failed', e);
+  });
 }
 
 function loadKWIDrilldown(mskuId, mskuName, cohortFilter){
